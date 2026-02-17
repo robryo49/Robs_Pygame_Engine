@@ -4,9 +4,9 @@ import pygame as pg
 
 from .camera import Camera
 from .display import Display
-from ..rendering import DrawCircle, DrawCommand, DrawRect, DrawText, DrawTexture
-from ..resources import SurfaceCache, Texture
-from ..utils import Font, Transform, Vec2, surface_pos_from_uv_pos
+from ..rendering import DrawCommand
+from ..resources import SurfaceCache
+from ..utils import Vec2
 
 
 class Renderer:

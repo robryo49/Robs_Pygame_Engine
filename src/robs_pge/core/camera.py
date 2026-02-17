@@ -1,7 +1,7 @@
 from typing import Optional
 
 from .display import Display
-from ..utils import Transform, Vec2, invert_y, FRect
+from ..utils import FRect, Transform, Vec2, invert_y
 
 
 class Camera:

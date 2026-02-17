@@ -1,7 +1,7 @@
 from typing import Optional
 
 from .object_collection import ObjectCollection
-from ..objects import PygameObject
+from .objects import PygameObject
 from ..core.camera import Camera
 from ..input import InputManager
 from ..utils import ObjectFlags, Vec2

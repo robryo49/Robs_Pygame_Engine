@@ -1,14 +1,14 @@
 import pygame as pg
 
+from .clock import Clock
+from .display import Display
+from .renderer import Renderer
 from ..debug import DebugOverlay, FrameTimer
 from ..input import InputManager
 from ..objects import InteractionManager
 from ..resources import ResourceManager
 from ..states import StateManager
-from ..utils import Vec2, Font, Colors
-from .display import Display
-from .renderer import Renderer
-from .clock import Clock
+from ..utils import Colors, Font, Vec2
 
 
 class Engine:

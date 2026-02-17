@@ -1,7 +1,6 @@
 from typing import Callable
 
-from ..objects import ObjectCollection, TextObject
-from ..utils import Vec2, Font, Anchor
+from ..utils import Anchor, Font, Vec2
 
 
 class DebugOverlay:

@@ -1,9 +1,9 @@
 from typing import Optional
 
+from .draw_commands import DrawCircle, DrawRect, DrawText, DrawTexture, RectStyle
 from .styles import *
-from .draw_commands import DrawRect, DrawTexture, RectStyle, DrawCircle, DrawText
-from ..utils import Transform, Vec2, Color, Font, Anchor
 from ..resources import Texture
+from ..utils import Anchor, Color, Font, Transform, Vec2
 
 
 class ObjectRenderer:

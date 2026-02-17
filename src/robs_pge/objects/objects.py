@@ -1,12 +1,11 @@
-from dataclasses import dataclass
-from typing import Any, Callable, Optional, cast
+from typing import cast
 
 from .behavior_collection import BehaviorCollection
-from .object_collection import ObjectCollection
 from .behaviors import *
+from .object_collection import ObjectCollection
 from ..core.camera import Camera
-from ..rendering import CircleShape, ObjectRenderer, RectShape, TextRenderer, SpriteRenderer
-from ..utils import Anchor, Easing, Rect, ObjectFlags, Transform, Vec2, DictCollection, Color, clamp, inf
+from ..rendering import CircleShape, ObjectRenderer, RectShape, SpriteRenderer, TextRenderer
+from ..utils import Anchor, Color, DictCollection, Easing, ObjectFlags, Rect, Transform, Vec2, clamp, inf
 
 
 class PygameObject:

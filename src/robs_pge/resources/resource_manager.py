@@ -1,9 +1,8 @@
 from pathlib import Path
 from typing import Any
 
-from ..utils import Vec2
 from ..resources import Texture
-from ..utils.collection import DictCollection
+from ..utils import Vec2, DictCollection
 
 
 class ResourceManager:

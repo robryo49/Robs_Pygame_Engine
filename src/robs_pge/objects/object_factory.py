@@ -3,7 +3,7 @@ from typing import Callable
 from .objects import ButtonObject, CircleObject, LayoutObject, PygameObject, RectObject, TextObject
 from ..rendering import ButtonStyle, CircleShape, CircleStyle, RectShape, RectStyle, SpriteRenderer, TextRenderer
 from ..resources import Texture
-from ..utils import Anchor, Color, Font, Transform, Vec2, DictCollection, inf
+from ..utils import Anchor, Color, DictCollection, Font, Transform, Vec2, inf
 
 
 class ObjectFactory:
