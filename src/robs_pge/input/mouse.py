@@ -7,9 +7,9 @@ from ..utils import Transform, Vec2
 class Mouse:
     def __init__(self):
         
-        self._transform = Transform(Vec2(pg.mouse.get_pos()))
-        self._movement = Vec2(pg.mouse.get_rel())
-        self._scroll = 0
+        self._transform: Transform = Transform(Vec2(pg.mouse.get_pos()))
+        self._movement: Vec2 = Vec2(pg.mouse.get_rel())
+        self._scroll: int = 0
         
         self._pressed_buttons: set[int] = set()
         self._held_buttons: dict[int, int]  = {}
@@ -18,39 +18,39 @@ class Mouse:
     # region PROPERTIES
     
     @property
-    def transform(self):
+    def transform(self) -> Transform:
         return self._transform
     
     @property
-    def pos(self):
+    def pos(self) -> Vec2:
         return self.transform.pos
     
     @property
-    def movement(self):
+    def movement(self) -> Vec2:
         return self._movement
     
     @property
-    def scroll(self):
+    def scroll(self) -> int:
         return self._scroll
     
     @property
-    def pressed_buttons(self):
+    def pressed_buttons(self) -> set[int]:
         return self._pressed_buttons
     
     @property
-    def held_buttons(self):
+    def held_buttons(self) -> dict[int, int]:
         return self._held_buttons
     
     @property
-    def released_buttons(self):
+    def released_buttons(self) -> set[int]:
         return self._released_buttons
     
     # endregion
     
-    def world_pos(self, camera: Camera):
+    def world_pos(self, camera: Camera) -> Vec2:
         return camera.screen_to_world_pos(self.pos)
     
-    def update(self):
+    def update(self)  -> "Mouse":
         self.transform.pos = Vec2(pg.mouse.get_pos())
         self._movement = Vec2(pg.mouse.get_rel())
         
@@ -64,24 +64,26 @@ class Mouse:
         self.pressed_buttons.clear()
         self.released_buttons.clear()
         self._scroll = 0
+        return self
     
-    def process_event(self, event):
+    def process_event(self, event) -> "Mouse":
         if event.type == pg.MOUSEBUTTONDOWN:
             self.pressed_buttons.add(event.button)
         elif event.type == pg.MOUSEBUTTONUP:
             self.released_buttons.add(event.button)
         elif event.type == pg.MOUSEWHEEL:
             self._scroll = event.y
+        return self
         
 
-    def pressed(self, button: int):
+    def pressed(self, button: int) -> bool:
         return button in self.pressed_buttons
     
-    def held(self, button:int):
+    def held(self, button: int) -> bool:
         return button in self.held_buttons
     
-    def hold_duration(self, button:int):
+    def hold_duration(self, button: int) -> int:
         return self.held_buttons.get(button, 0)
     
-    def released(self, button:int):
+    def released(self, button: int) -> bool:
         return button in self.released_buttons

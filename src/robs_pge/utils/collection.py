@@ -73,6 +73,9 @@ class DictCollection:
     def get(self, key: Any, default=None):
         return self.elements.get(key, default)
     
+    def pop(self, key: Any, default=None):
+        return self.elements.pop(key, default)
+    
     def __setitem__(self, key, value):
         self.elements[key] = value
     

@@ -10,6 +10,6 @@ class Keybind:
     action: Callable
     flag: int = KeybindFlags.PRESS
     
-    def has_flag(self, flag: int):
+    def has_flag(self, flag: int) -> bool:
         return bool(flag & self.flag)
 

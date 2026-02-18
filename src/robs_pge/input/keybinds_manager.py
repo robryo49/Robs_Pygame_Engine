@@ -1,6 +1,6 @@
 from .input_manager import InputManager
 from .keybind import Keybind
-from ..utils import KeybindFlags, Keybinds
+from ..utils import KeybindFlags, Keybinds, DictCollection
 
 
 class KeybindsManager:
@@ -8,7 +8,7 @@ class KeybindsManager:
         
         self._input_manager = input_manager
         
-        self._keybinds: dict[int | tuple[int, ...], list[Keybind]] = {}
+        self._keybinds: DictCollection = DictCollection()
         
     # region PROPERTIES
     
@@ -17,25 +17,28 @@ class KeybindsManager:
         return self._input_manager
     
     @property
-    def keybinds(self):
-        return dict(self._keybinds)
+    def keybinds(self) -> DictCollection:
+        return self._keybinds
     
     # endregion
     
-    def has(self, kb: int | tuple[int, ...]):
-        return kb in self._keybinds
+    def has(self, kb: int | tuple[int, ...]) -> bool:
+        return self.keybinds.has(kb)
     
-    def remove(self, kb: int | tuple[int, ...]):
-        self._keybinds.pop(kb, None)
+    def remove(self, kb: int | tuple[int, ...]) -> "KeybindsManager":
+        self.keybinds.pop(kb)
+        return self
         
-    def set(self, keybind: Keybind):
-        self._keybinds[keybind.key] = [keybind]
+    def set(self, keybind: Keybind) -> "KeybindsManager":
+        self.keybinds.set(keybind.key, [keybind])
+        return self
         
-    def add(self, keybind: Keybind):
+    def add(self, keybind: Keybind) -> "KeybindsManager":
         if self.has(keybind.key):
-            self._keybinds[keybind.key].append(keybind)
+            self.keybinds.get(keybind.key).append(keybind)
         else:
             self.set(keybind)
+        return self
             
     def _test_mouse_wheel(self, mouse_wheel_kb: int):
         if mouse_wheel_kb == Keybinds.MOUSEWHEEL_UP:
@@ -44,11 +47,10 @@ class KeybindsManager:
             return self.input_manager.mouse_scroll < 0
         elif mouse_wheel_kb == Keybinds.MOUSEWHEEL:
             return bool(self.input_manager.mouse_scroll)
+        else:
+            return False
         
-        return False
-        
-            
-    def _test_keybind(self, keybind: Keybind):
+    def _test_keybind(self, keybind: Keybind) -> bool:
         
         valid = True
         if isinstance(keybind.key, tuple):
@@ -70,8 +72,10 @@ class KeybindsManager:
         
         return valid and (pressed or held or released or scroll)
     
-    def update(self):
+    def update(self) -> "KeybindsManager":
         for keybinds in self._keybinds.values():
             for keybind in keybinds:
                 if self._test_keybind(keybind):
                     keybind.action()
+                    
+        return self

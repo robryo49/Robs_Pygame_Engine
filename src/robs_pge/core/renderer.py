@@ -1,4 +1,3 @@
-from typing import Optional
 
 import pygame as pg
 
@@ -31,55 +30,58 @@ class Renderer:
     # region PROPERTIES
     
     @property
-    def display(self):
+    def display(self) -> Display:
         return self._display
     
     @property
-    def world_commands(self):
+    def world_commands(self) -> list[DrawCommand]:
         return self._world_commands
     
     @property
-    def ui_commands(self):
+    def ui_commands(self) -> list[DrawCommand]:
         return self._ui_commands
     
     @property
-    def debug_commands(self):
+    def debug_commands(self) -> list[DrawCommand]:
         return self._debug_commands
     
     @property
-    def world_commands_count(self):
+    def world_commands_count(self) -> int:
         return self._world_commands_count
     
     @property
-    def ui_commands_count(self):
+    def ui_commands_count(self) -> int:
         return self._ui_commands_count
     
     @property
-    def debug_commands_count(self):
+    def debug_commands_count(self) -> int:
         return self._debug_commands_count
     
     # endregion
     
-    def draw_world(self, cmd: DrawCommand):
+    def draw_world(self, cmd: DrawCommand) -> "Renderer":
         self.world_commands.append(cmd)
+        return self
     
-    def draw_ui(self, cmd: DrawCommand):
+    def draw_ui(self, cmd: DrawCommand) -> "Renderer":
         self.ui_commands.append(cmd)
+        return self
     
-    def draw_debug(self, cmd: DrawCommand):
+    def draw_debug(self, cmd: DrawCommand) -> "Renderer":
         self.debug_commands.append(cmd)
+        return self
     
-    def render(self, camera: Camera):
+    def render(self, camera: Camera) -> "Renderer":
         self.display.clear()
         
         for cmd in sorted(self.world_commands, key=lambda c: c.layer):
-            self._execute_world(cmd, camera)
+            self._execute_command(cmd, camera)
         
         for cmd in sorted(self.ui_commands, key=lambda c: c.layer):
-            self._execute_ui(cmd)
+            self._execute_command(cmd, self._default_camera)
         
         for cmd in sorted(self.debug_commands, key=lambda c: c.layer):
-            self._execute_ui(cmd)
+            self._execute_command(cmd, self._default_camera)
             
         self.display.surface.blits(self.blit_calls)
         
@@ -91,11 +93,11 @@ class Renderer:
         self.ui_commands.clear()
         self.debug_commands.clear()
         self.blit_calls.clear()
+        
+        return self
     
-    def _execute_world(self, cmd: DrawCommand, camera: Camera):
+    def _execute_command(self, cmd: DrawCommand, camera: Camera) -> "Renderer":
         cmd.draw(self.blit_calls, camera, self._surface_cache, self._font_cache)
-    
-    def _execute_ui(self, cmd):
-        self._execute_world(cmd, self._default_camera)
+        return self
     
     

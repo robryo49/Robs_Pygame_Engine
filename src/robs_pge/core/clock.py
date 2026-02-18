@@ -2,8 +2,8 @@ import pygame as pg
 
 
 class Clock:
-    def __init__(self, target_fps):
-        self._pg_clock: pg.time.Clock = pg.time.Clock()
+    def __init__(self, target_fps: float):
+        self._clock: pg.time.Clock = pg.time.Clock()
         
         self._target_fps: float = target_fps
         self._target_dtime: float = 1/target_fps
@@ -17,45 +17,46 @@ class Clock:
     # region PROPERTIES
     
     @property
-    def pg_clock(self):
-        return self._pg_clock
+    def clock(self) -> pg.time.Clock:
+        return self._clock
     
     @property
-    def target_fps(self):
+    def target_fps(self) -> float:
         return self._target_fps
     
     @target_fps.setter
-    def target_fps(self, value):
+    def target_fps(self, value: float) -> None:
         self._target_fps = value
         self._target_dtime = 1/value
     
     @property
-    def target_dtime(self):
+    def target_dtime(self) -> float:
         return self._target_dtime
     
     @property
-    def time(self):
+    def time(self) -> float:
         return self._time
     
     @property
-    def tick_num(self):
+    def tick_num(self) -> int:
         return self._tick_num
     
     @property
-    def fps(self):
+    def fps(self) -> float:
         return self._fps
     
     @property
-    def dtime(self):
+    def dtime(self) -> float:
         return self._dtime
     
     # endregion
     
-    def tick(self):
-        self.pg_clock.tick(self.target_fps)
-        self._dtime = self.pg_clock.get_time() / 1000
+    def tick(self) -> "Clock":
+        self._clock.tick(self.target_fps)
+        self._dtime = self.clock.get_time() / 1000
         self._time += self.dtime
         self._tick_num += 1
-        self._fps = self.pg_clock.get_fps()
-
+        self._fps = self.clock.get_fps()
+        
+        return self
 
