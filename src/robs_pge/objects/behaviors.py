@@ -102,7 +102,7 @@ class ScaleOnClickBehavior(ObjectBehavior):
             
 
 class DynamicAttribute(ObjectBehavior):
-    def __init__(self, attribute: str, getter: Callable | tuple[Callable], template: Optional[str] = None):
+    def __init__(self, attribute: str, getter: Callable | tuple[Callable, ...], template: Optional[str] = None):
         super().__init__()
         
         self._attribute = attribute
@@ -115,7 +115,7 @@ class DynamicAttribute(ObjectBehavior):
         if not self._template:
             return list(getter() for getter in self._getter) if isinstance(self._getter, tuple) else self._getter()
         else:
-            return str(self._template.format(*list(str(getter()) for getter in self._getter) if isinstance(self._getter, list) else [self._getter()]))
+            return str(self._template.format(*list(str(getter()) for getter in self._getter) if isinstance(self._getter, tuple) else [self._getter()]))
         
     def on_update(self, dt: float):
         if not self.owner:

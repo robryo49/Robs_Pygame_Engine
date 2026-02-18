@@ -116,7 +116,7 @@ class State:
     # endregion
     
     def init_debug_objects(self):
-        self.debug_overlay.add_object(self.factory.make_text(Vec2(), "-  111  -"), 0, 0)
+        self.debug_overlay.add_dynamic_text(0, 0, self.factory, (lambda: str(self.engine.clock.fps), lambda: str(self.engine.clock.dtime)), anchor=Anchor.L)
         self.debug_overlay.add_object(self.factory.make_text(Vec2(), "-    22222    -"), 0, 1)
         self.debug_overlay.add_object(self.factory.make_text(Vec2(), "- 33 3 33 -"), 0, 2)
     

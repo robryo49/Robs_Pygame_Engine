@@ -1,6 +1,7 @@
 from typing import Callable
 
 from .objects import ButtonObject, CircleObject, LayoutObject, PygameObject, RectObject, TextObject, DebugOverlay
+from .behaviors import DynamicAttribute
 from ..rendering import ButtonStyle, CircleShape, CircleStyle, RectShape, RectStyle, SpriteRenderer, TextRenderer
 from ..resources import Texture
 from ..utils import Anchor, Color, DictCollection, Font, Transform, Vec2, inf
@@ -77,6 +78,17 @@ class ObjectFactory:
         
         return obj
     
+    def make_dynamic_text(
+            self, position: Vec2, template: str, getter: Callable[[], str] | tuple[Callable[[], str], ...], font: Font = None,
+            rotation: float = 0.0, scale: float = 1.0, layer: int = 0, anchor: Vec2 = Anchor.C
+    ):
+        
+        obj = self.make_text(position, "", font, rotation, scale, layer, anchor)
+        obj.add_behavior(DynamicAttribute("text", getter, template))
+        
+        return obj
+    
+    
     def make_button(
             self, position: Vec2, text: str, action: Callable[[], None] | tuple[Callable[[], None]], dims: Vec2 = None, bg_color: Color = None,
             border: int = None, bd_color: Color = None, bd_radius: int = None, margin: int | Vec2 = None, font: Font = None, style: ButtonStyle = None,
@@ -95,6 +107,9 @@ class ObjectFactory:
         )
         
         return obj
+    
+    
+    # region Layouts
     
     def make_grid_layout(
             self, position: Vec2, width: int = None, height: int = None, min_col=0, max_col=inf, min_row=0, max_row=inf, invert_x=False, invert_y=False,
@@ -162,6 +177,7 @@ class ObjectFactory:
             obj.invert_up_down()
         
         return obj
-        
+    
+    # endregion
         
         

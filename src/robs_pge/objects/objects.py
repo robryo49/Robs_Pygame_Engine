@@ -893,7 +893,11 @@ class LayoutObject(RectObject):
 
 
 class DebugOverlay(LayoutObject):
-    pass
+    def __init__(self, transform: Transform, renderer: RectShape, services: DictCollection, layer: int = 0, anchor: Vec2=Anchor.C):
+        super().__init__(transform, renderer, services, layer, anchor)
+    
+    def add_dynamic_text(self, x: int, y: int, factory, template: str, getter: Callable[[], str] | tuple[Callable[[], str], ...]):
+        self.add_object(factory.make_dynamic_text(Vec2(), template, getter), x, y)
 
 
 class ButtonObject(RectObject):
