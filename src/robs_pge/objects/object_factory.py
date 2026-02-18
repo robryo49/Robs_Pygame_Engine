@@ -1,14 +1,14 @@
 from typing import Callable
 
-from .objects import ButtonObject, CircleObject, LayoutObject, PygameObject, RectObject, TextObject
+from .objects import ButtonObject, CircleObject, LayoutObject, PygameObject, RectObject, TextObject, DebugOverlay
 from ..rendering import ButtonStyle, CircleShape, CircleStyle, RectShape, RectStyle, SpriteRenderer, TextRenderer
 from ..resources import Texture
 from ..utils import Anchor, Color, DictCollection, Font, Transform, Vec2, inf
 
 
 class ObjectFactory:
-    def __init__(self, services: DictCollection):
-        self._services = services
+    def __init__(self):
+        self._services = DictCollection()
     
     # region PROPERTIES
     
@@ -16,6 +16,9 @@ class ObjectFactory:
     
     def _get_services(self):
         return self._services
+    
+    def set_services(self, services: DictCollection):
+        self._services = services
     
     def make_sprite(
             self, position: Vec2, texture: Texture,
@@ -94,7 +97,7 @@ class ObjectFactory:
         return obj
     
     def make_grid_layout(
-            self, position: Vec2, width: int = None, height: int = None, min_col=0, max_col=inf, min_row=0, max_row=inf,
+            self, position: Vec2, width: int = None, height: int = None, min_col=0, max_col=inf, min_row=0, max_row=inf, invert_x=False, invert_y=False,
             rotation: float = 0.0, scale: float = 1.0, layer: int = 0, anchor: Vec2 = Anchor.C
     ):
         
@@ -113,17 +116,52 @@ class ObjectFactory:
             obj.fix_width(width)
         if height is not None:
             obj.fix_height(height)
+            
+        if invert_x:
+            obj.invert_left_right()
+        if invert_y:
+            obj.invert_up_down()
         
         return obj
     
     def make_column_layout(
-            self, position: Vec2, width: int = None, height: int = None, min_row=0, max_row=inf,
+            self, position: Vec2, width: int = None, height: int = None, min_row=0, max_row=inf, invert_x=False, invert_y=False,
             rotation: float = 0.0, scale: float = 1.0, layer: int = 0, anchor: Vec2 = Anchor.C
     ):
-        return self.make_grid_layout(position, width, height, 0, 0, min_row, max_row, rotation, scale, layer, anchor)
+        return self.make_grid_layout(position, width, height, 0, 0, min_row, max_row, invert_x, invert_y, rotation, scale, layer, anchor)
     
     def make_row_layout(
-            self, position: Vec2, width: int = None, height: int = None, min_col=0, max_col=inf,
+            self, position: Vec2, width: int = None, height: int = None, min_col=0, max_col=inf, invert_x=False, invert_y=False,
             rotation: float = 0.0, scale: float = 1.0, layer: int = 0, anchor: Vec2 = Anchor.C
     ):
-        return self.make_grid_layout(position, width, height, min_col, max_col, 0, 0, rotation, scale, layer, anchor)
+        return self.make_grid_layout(position, width, height, min_col, max_col, 0, 0, invert_x, invert_y, rotation, scale, layer, anchor)
+    
+    def make_debug_overlay(
+            self, position: Vec2, width: int = None, height: int = None, min_col=0, max_col=inf, min_row=0, max_row=inf, invert_x=False, invert_y=False,
+            rotation: float = 0.0, scale: float = 1.0, layer: int = 0, anchor: Vec2 = Anchor.C
+    ):
+        obj = DebugOverlay(
+            Transform(position, rotation, scale),
+            RectShape(Vec2()),
+            self._services, layer, anchor
+        )
+        
+        obj.min_col = min_col
+        obj.max_col = max_col
+        obj.min_row = min_row
+        obj.max_row = max_row
+        
+        if width is not None:
+            obj.fix_width(width)
+        if height is not None:
+            obj.fix_height(height)
+        
+        if invert_x:
+            obj.invert_left_right()
+        if invert_y:
+            obj.invert_up_down()
+        
+        return obj
+        
+        
+        

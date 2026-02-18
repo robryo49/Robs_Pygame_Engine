@@ -5,7 +5,7 @@ import pygame as pg
 from .styles import CircleStyle, RectStyle
 from ..core.camera import Camera
 from ..resources import Texture
-from ..utils import Anchor, Font, Transform, Vec2, surface_pos_from_uv_pos
+from ..utils import Anchor, Font, Transform, Vec2, surface_pos_from_uv_pos, invert_uv_y
 
 
 @dataclass
@@ -19,8 +19,8 @@ class DrawCommand:
     def blit(blit_call_queue: list[tuple[pg.Surface, Vec2]], surface: pg.Surface, screen_pos: Vec2, offset: Vec2 = None):
         blit_call_queue.append((surface, screen_pos - (offset or Vec2())))
         
-    def get_composed_transform(self, camera):
-        camera_transform: Transform =   camera.transform if camera else Transform()
+    def get_composed_transform(self, camera: Camera):
+        camera_transform: Transform =   camera.transform
         rotation =  round((self.transform.rotation - camera_transform.rotation)%360, 2)
         scale =     round(self.transform.scale / camera_transform.scale, 4)
         screen_pos = camera.world_to_screen_pos(self.transform.pos) if camera else self.transform.pos

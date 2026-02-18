@@ -1,11 +1,12 @@
 import pygame as pg
 
+from .camera import Camera
 from .clock import Clock
 from .display import Display
 from .renderer import Renderer
-from ..debug import DebugOverlay, FrameTimer
+from ..debug import FrameTimer
 from ..input import InputManager
-from ..objects import InteractionManager
+from ..objects import InteractionManager, DebugOverlay
 from ..resources import ResourceManager
 from ..states import StateManager
 from ..utils import Colors, Font, Vec2
@@ -16,6 +17,7 @@ class Engine:
         self._name: str = name
         
         self._display = Display(Vec2(1920, 1080))
+        self._default_camera = Camera(self._display).move(self._display.dims*0.5)
         
         self._clock: Clock = Clock(60)
         self._input = InputManager()
@@ -23,16 +25,14 @@ class Engine:
         
         self._resource_manager = ResourceManager()
         
-        self._debug_overlay = DebugOverlay()
         self._frame_timer = FrameTimer()
         
         self._state_manager = StateManager()
-        self._renderer = Renderer(self.display)
+        self._renderer = Renderer(self.display, self._default_camera)
         
         self._running = True
         
         self.init_resources()
-        self.init_debug_objects()
         
     # region PROPERTIES
     
@@ -61,10 +61,6 @@ class Engine:
         return self._resource_manager
     
     @property
-    def debug_overlay(self):
-        return self._debug_overlay
-    
-    @property
     def frame_timer(self):
         return self._frame_timer
     
@@ -89,10 +85,8 @@ class Engine:
     def init_resources(self):
         pass
     
-    def init_debug_objects(self):
-        self.debug_overlay.add_text(
-            Vec2(10), "FPS: {:.1f} | {:.1f}ms", (lambda: self.clock.fps, lambda: self.clock.dtime*1000), Font(size=14, font_color=Colors.WHITE)
-        )
+    def init_debug_objects(self, debug_overlay: DebugOverlay):
+        pass
     
     def process_events(self):
         events = pg.event.get()
@@ -107,12 +101,9 @@ class Engine:
         self.state_manager.update(dt)
         self.input.update()
         
-        self.debug_overlay.update(dt)
-        
     
     def render(self):
         self.state_manager.render()
-        self.debug_overlay.render(self.renderer.draw_debug)
         
         self.renderer.render(self.state.camera if self.state else None)
         self.display.update()

@@ -4,12 +4,12 @@ import pygame as pg
 
 from ..animation import AnimationManager
 from ..core.camera import Camera
-from ..debug import DebugOverlay, FrameTimer
+from ..debug import FrameTimer
 from ..input import Keybind, KeybindsManager
 from ..objects import ObjectCollection, ObjectFactory, PygameObject
 from ..particles.particle_system import ParticleSystem
 from ..resources import ResourceManager
-from ..utils import DictCollection
+from ..utils import DictCollection, Vec2, Anchor, ObjectFlags
 
 
 class State:
@@ -22,15 +22,17 @@ class State:
         
         self._animation_manager = AnimationManager()
         self._keybinds_manager = KeybindsManager(self.input)
-        
+        self._factory = ObjectFactory()
         self._particle_system = ParticleSystem()
         
-        self._services = DictCollection({AnimationManager: self.animation_manager, ParticleSystem: self.particle_system})
-        self._factory = ObjectFactory(self._services)
+        self._services = DictCollection({AnimationManager: self.animation_manager, ParticleSystem: self.particle_system, ObjectFactory: self.factory})
+        self._factory.set_services(self._services)
         
         self._objects = ObjectCollection()
         self._ui_objects = ObjectCollection()
-        self._debug_overlay = DebugOverlay()
+        
+        self._debug_overlay = self.factory.make_debug_overlay(Vec2(0, self.engine.display.dims.y), invert_y=True, anchor=Anchor.TL)
+        self._ui_objects.add(self._debug_overlay)
         
         self.engine.state_manager.add_state(self)
         
@@ -114,7 +116,9 @@ class State:
     # endregion
     
     def init_debug_objects(self):
-        pass
+        self.debug_overlay.add_object(self.factory.make_text(Vec2(), "-  111  -"), 0, 0)
+        self.debug_overlay.add_object(self.factory.make_text(Vec2(), "-    22222    -"), 0, 1)
+        self.debug_overlay.add_object(self.factory.make_text(Vec2(), "- 33 3 33 -"), 0, 2)
     
     def init_keybinds(self):
         self.add_keybind(pg.K_F3, lambda: self.debug_overlay.toggle())

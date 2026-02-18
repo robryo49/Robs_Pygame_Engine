@@ -37,12 +37,15 @@ class Camera:
         
     def move(self, value):
         self.pos += value
+        return self
     
     def move_x(self, dx):
         self.pos.x += dx
+        return self
     
     def move_y(self, dy):
         self.pos.y += dy
+        return self
     # endregion
         
     # region rotation
@@ -56,6 +59,7 @@ class Camera:
         
     def rotate(self, value: float):
         self.rotation += value
+        return self
     # endregion
     
     # region zoom
@@ -120,10 +124,12 @@ class Camera:
     def zoom_in(self, fact: float, point: Optional[Vec2]):
         if point is not None: self.pos = point - (point - self.pos) / fact
         self.zoom *= fact
+        return self
     
     def zoom_out(self, fact: float, point: Optional[Vec2]):
         if point is not None: self.pos = point - (point - self.pos) * fact
         self.zoom /= fact
+        return self
     
     def world_to_screen_pos(self, world_pos: Vec2):
         x, y = self.transform.apply_inverse(world_pos) + self.display_center
@@ -141,6 +147,7 @@ class Camera:
     
     def update(self, dt: float):
         self._world_aabb = self._get_world_aabb()
+        return self
     
     def __str__(self):
         return "Camera"

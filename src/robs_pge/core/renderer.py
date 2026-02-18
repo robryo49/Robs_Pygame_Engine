@@ -10,9 +10,10 @@ from ..utils import Vec2
 
 
 class Renderer:
-    def __init__(self, display: Display):
+    def __init__(self, display: Display, default_camera: Camera):
         
         self._display: Display = display
+        self._default_camera: Camera = default_camera
         
         self._surface_cache: SurfaceCache = SurfaceCache()
         self._font_cache: dict[tuple, pg.Font] = {}
@@ -91,10 +92,10 @@ class Renderer:
         self.debug_commands.clear()
         self.blit_calls.clear()
     
-    def _execute_world(self, cmd: DrawCommand, camera: Optional[Camera]):
+    def _execute_world(self, cmd: DrawCommand, camera: Camera):
         cmd.draw(self.blit_calls, camera, self._surface_cache, self._font_cache)
     
     def _execute_ui(self, cmd):
-        self._execute_world(cmd, None)
+        self._execute_world(cmd, self._default_camera)
     
     

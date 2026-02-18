@@ -564,6 +564,9 @@ class LayoutObject(RectObject):
         self._min_row = 0
         self._max_row = inf
         
+        self._invert_y_order = False
+        self._invert_x_order = False
+        
         self._fixed_width = None
         self._fixed_height = None
         
@@ -626,6 +629,26 @@ class LayoutObject(RectObject):
             self._grid_objects_grid_positions[obj] = (self._grid_objects_grid_positions[obj][0], min(value, self._grid_objects_grid_positions[obj][1]))
     # endregion
     
+    # region invert_x_order
+    @property
+    def invert_x_order(self):
+        return self._invert_x_order
+    
+    @invert_x_order.setter
+    def invert_x_order(self, value):
+        self._invert_x_order = value
+    # endregion
+    
+    # region invert_y_order
+    @property
+    def invert_y_order(self):
+        return self._invert_y_order
+    
+    @invert_y_order.setter
+    def invert_y_order(self, value):
+        self._invert_y_order = value
+    # endregion
+    
     # endregion
     
     
@@ -675,6 +698,13 @@ class LayoutObject(RectObject):
         self.mark_dirty()
     
     
+    def invert_left_right(self):
+        self._invert_x_order = True
+        
+    def invert_up_down(self):
+        self._invert_y_order = True
+    
+    
     def set_constant_padding(self, padding: Vec2 | int):
         self.set_cell_padding(padding / 2)
         self.set_outer_padding(padding / 2)
@@ -720,10 +750,20 @@ class LayoutObject(RectObject):
         span_x, span_y = self._grid_objects_spanning.get(obj, (0, 0))
         padding = self._cells_padding.get(grid_pos, self._padding)
         
-        cel_x = self._col_offsets[grid_x] + sum(self.get_col_width(col_x) for col_x in range(grid_x, grid_x + span_x)) * obj.anchor.x + padding.x * (1 - 2 * obj.anchor.x)
-        cel_y = self._row_offsets[grid_y] + sum(self.get_row_height(row_y) for row_y in range(grid_y, grid_y + span_y)) * obj.anchor.y + padding.y * (1 - 2 * obj.anchor.y)
+        dir_x = -1 if self._invert_x_order else 1
+        dir_y = -1 if self._invert_y_order else 1
         
-        return Vec2(cel_x, cel_y) + self._outer_padding - self.get_anchor_offset(self.anchor)
+        cell_x = (
+            dir_x * (self._col_offsets[grid_x] + sum(self.get_col_width(col_x) for col_x in range(grid_x, grid_x + span_x)) * obj.anchor.x) +
+            padding.x * (1 - 2 * obj.anchor.x) + (self.width - self._outer_padding.x * 2) * (1 - dir_x) / 2
+        )
+        
+        cell_y = (
+            dir_y * (self._row_offsets[grid_y] + sum(self.get_row_height(row_y) for row_y in range(grid_y, grid_y + span_y)) * obj.anchor.y) +
+            padding.y * (1 - 2 * obj.anchor.y) + (self.height - self._outer_padding.y * 2) * (1 - dir_y) / 2
+        )
+        
+        return Vec2(cell_x, cell_y) + self._outer_padding - self.get_anchor_offset(self.anchor)
         
         
     def add_object(self, obj: PygameObject, x: int, y: int, span_x: int = 1, span_y: int = 1, anchor: Vec2 = Anchor.C):
@@ -851,8 +891,11 @@ class LayoutObject(RectObject):
         if self.renderer:
             self.renderer.update(dt)
 
-    
-    
+
+class DebugOverlay(LayoutObject):
+    pass
+
+
 class ButtonObject(RectObject):
     def __init__(self, transform: Transform, background: RectShape, text: TextObject, action: Callable, services: DictCollection, layer: int = 0, anchor: Vec2 = Anchor.C):
         
@@ -879,6 +922,3 @@ class ButtonObject(RectObject):
         self._text.text = value
     
     # endregion
-    
-
-
