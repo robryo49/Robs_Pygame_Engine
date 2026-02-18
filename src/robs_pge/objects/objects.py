@@ -544,7 +544,7 @@ class LayoutObject(RectObject):
         
         self._grid_objects_grid_positions: dict[PygameObject, tuple[int, int]] = {}
         self._grid_objects_spanning: dict[PygameObject, tuple[int, int]] = {}
-        self._grid_objects_dimensions : dict[PygameObject, Vec2] = {}
+        self._grid_objects_dims : dict[PygameObject, Vec2] = {}
         self._grid_objects_positions : dict[PygameObject, Vec2] = {}
         
         self._fixed_cols: dict[int, bool] = {}
@@ -769,7 +769,7 @@ class LayoutObject(RectObject):
     def add_object(self, obj: PygameObject, x: int, y: int, span_x: int = 1, span_y: int = 1, anchor: Vec2 = Anchor.C):
         self.add_child(obj)
         self._grid_objects_grid_positions[obj] = (clamp(x, self._min_col, self._max_col), clamp(y, self._min_row, self._max_row))
-        self._grid_objects_dimensions[obj] = Vec2(obj.dims)
+        self._grid_objects_dims[obj] = Vec2(obj.dims)
         self._grid_objects_spanning[obj] = (span_x, span_y)
         
         obj.anchor = anchor
@@ -786,17 +786,17 @@ class LayoutObject(RectObject):
         for obj, grid_pos in self._grid_objects_grid_positions.items():
             grid_x, grid_y = grid_pos
             span_x, span_y = self._grid_objects_spanning.get(obj, (1, 1))
-            if self._grid_objects_dimensions.get(obj, Vec2()).x != obj.dims.x:
+            if self._grid_objects_dims.get(obj, Vec2()).x != obj.dims.x:
                 for col_x in range(grid_x, grid_x + span_x):
                     if not self._fixed_cols.get(col_x, False):
                         self.mark_dirty()
                         
-            if self._grid_objects_dimensions.get(obj, Vec2()).y != obj.dims.y:
+            if self._grid_objects_dims.get(obj, Vec2()).y != obj.dims.y:
                 for row_y in range(grid_y, grid_y + span_y):
                     if not self._fixed_rows.get(row_y, False):
                         self.mark_dirty()
         
-            self._grid_objects_dimensions[obj] = Vec2(obj.dims)
+            self._grid_objects_dims[obj] = Vec2(obj.dims)
                 
         return self._dirty
         
@@ -832,7 +832,7 @@ class LayoutObject(RectObject):
         for obj, spanning in sorted(self._grid_objects_spanning.items(), key=lambda x: x[1][0] * x[1][1]):
             grid_x, grid_y = grid_pos = self._grid_objects_grid_positions.get(obj, (0, 0))
             pad_x, pad_y = self._cells_padding.get(grid_pos, self._padding)
-            width, height = self._grid_objects_dimensions.get(obj, Vec2(0, 0))
+            width, height = self._grid_objects_dims.get(obj, Vec2(0, 0))
             span_x, span_y = spanning
             
             free_columns = [col_x for col_x in range(grid_x, grid_x + span_x) if not self._fixed_cols.get(col_x, False)]
