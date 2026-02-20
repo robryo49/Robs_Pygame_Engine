@@ -82,7 +82,7 @@ class Renderer:
         
         for cmd in sorted(self.debug_commands, key=lambda c: c.layer):
             self._execute_command(cmd, self._default_camera)
-            
+        
         self.display.surface.blits(self.blit_calls)
         
         self._world_commands_count = len(self._world_commands)

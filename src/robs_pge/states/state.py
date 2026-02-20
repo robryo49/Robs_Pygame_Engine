@@ -31,7 +31,7 @@ class State:
         self._objects = ObjectCollection()
         self._ui_objects = ObjectCollection()
         
-        self._debug_overlay = self.factory.make_debug_overlay(Vec2(0, self.engine.display.dims.y), invert_y=True, anchor=Anchor.TL)
+        self._debug_overlay = self.factory.make_debug_overlay(Vec2(0, self.engine.display.dims.y), anchor=Anchor.TL).set_outer_padding(10).invert_up_down()
         self._ui_objects.add(self._debug_overlay)
         
         self.engine.state_manager.add_state(self)
@@ -116,9 +116,7 @@ class State:
     # endregion
     
     def init_debug_objects(self):
-        self.debug_overlay.add_dynamic_text(0, 0, self.factory, (lambda: str(self.engine.clock.fps), lambda: str(self.engine.clock.dtime)), anchor=Anchor.L)
-        self.debug_overlay.add_object(self.factory.make_text(Vec2(), "-    22222    -"), 0, 1)
-        self.debug_overlay.add_object(self.factory.make_text(Vec2(), "- 33 3 33 -"), 0, 2)
+        self.engine.init_debug_objects(self.factory, self.debug_overlay)
     
     def init_keybinds(self):
         self.add_keybind(pg.K_F3, lambda: self.debug_overlay.toggle())
@@ -136,8 +134,6 @@ class State:
         self.ui_objects.update(dt)
         self.objects.update(dt)
         
-        self.particle_system.update(dt)
-        
         self.camera.update(dt)
     
     def render(self):
@@ -150,6 +146,6 @@ class State:
         obj.render(self.renderer.draw_world, self.camera)
     
     def draw_ui(self, obj: PygameObject | ObjectCollection):
-        obj.render(self.renderer.draw_ui)
+        obj.render(self.renderer.draw_ui, self.engine.default_camera)
     
     

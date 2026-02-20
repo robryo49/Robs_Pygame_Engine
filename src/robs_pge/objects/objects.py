@@ -305,15 +305,14 @@ class PygameObject:
     
     # endregion
     
-    def render(self, submit, camera: Optional[Camera] = None):
+    def render(self, submit, camera: Camera):
         self._culled = False
-        
         if self.visible and self.renderer and not self.has_flag(ObjectFlags.SKIP_RENDERING):
             
-            if self.has_flag(ObjectFlags.CULLABLE) and camera:
+            if self.has_flag(ObjectFlags.CULLABLE):
                 camera_rect = camera.world_aabb
                 object_rect = self.get_world_aabb()
-                
+            
                 if not object_rect.colliderect(camera_rect):
                     self._culled = True
             
@@ -658,6 +657,7 @@ class LayoutObject(RectObject):
         self._fixed_cols[col_x] = True
         
         self.mark_dirty()
+        return self
     
     def fix_row_height(self, row_y: int, height: int = None):
         if height is not None:
@@ -665,49 +665,59 @@ class LayoutObject(RectObject):
         self._fixed_rows[row_y] = True
         
         self.mark_dirty()
+        return self
         
     def unfix_col_width(self, col_x: int):
         self._fixed_cols[col_x] = False
         
         self.mark_dirty()
+        return self
         
     def unfix_row_height(self, row_y: int):
         self._fixed_rows[row_y] = False
         
         self.mark_dirty()
+        return self
         
         
     def fix_width(self, width: int = None):
         self._fixed_width = width or self.width
         
         self.mark_dirty()
+        return self
         
     def fix_height(self, height: int = None):
         self._fixed_height = height or self.height
         
         self.mark_dirty()
+        return self
         
     def unfix_width(self):
         self._fixed_width = None
         
         self.mark_dirty()
+        return self
         
     def unfix_height(self):
         self._fixed_height = None
         
         self.mark_dirty()
+        return self
     
     
     def invert_left_right(self):
         self._invert_x_order = True
+        return self
         
     def invert_up_down(self):
         self._invert_y_order = True
+        return self
     
     
     def set_constant_padding(self, padding: Vec2 | int):
         self.set_cell_padding(padding / 2)
         self.set_outer_padding(padding / 2)
+        return self
     
     def set_cell_padding(self, padding: Vec2 | int, cell: Optional[tuple[int, int]] = None):
         if cell is not None:
@@ -716,6 +726,7 @@ class LayoutObject(RectObject):
             self._padding = Vec2(padding)
             
         self.mark_dirty()
+        return self
             
     def clear_cell_padding(self, cell: Optional[tuple[int, int]] = None):
         if cell is not None:
@@ -724,17 +735,20 @@ class LayoutObject(RectObject):
             self._padding = Vec2()
             
         self.mark_dirty()
+        return self
         
     def set_outer_padding(self, padding: Vec2 | int):
         padding = Vec2(padding)
         self._outer_padding = padding
         self.renderer.border = min(padding.x, padding.y)
         self.mark_dirty()
+        return self
         
     def clear_outer_padding(self):
         self._outer_padding = Vec2()
         self.renderer.border = 0
         self.mark_dirty()
+        return self
         
     
     
@@ -748,26 +762,28 @@ class LayoutObject(RectObject):
     def get_obj_pos(self, obj: PygameObject):
         grid_x, grid_y = grid_pos = self._grid_objects_grid_positions.get(obj, (0, 0))
         span_x, span_y = self._grid_objects_spanning.get(obj, (0, 0))
-        padding = self._cells_padding.get(grid_pos, self._padding)
+        pad_x, pad_y = self._cells_padding.get(grid_pos, self._padding)
         
-        dir_x = -1 if self._invert_x_order else 1
-        dir_y = -1 if self._invert_y_order else 1
+        obj_offset_x = sum(self.get_col_width(col_x) for col_x in range(grid_x, grid_x + span_x)) * (obj.anchor.x if not self._invert_x_order else (1 - obj.anchor.x))
+        obj_offset_y = sum(self.get_row_height(row_y) for row_y in range(grid_y, grid_y + span_y)) * (obj.anchor.y if not self._invert_y_order else (1 - obj.anchor.y))
         
-        cell_x = (
-            dir_x * (self._col_offsets[grid_x] + sum(self.get_col_width(col_x) for col_x in range(grid_x, grid_x + span_x)) * obj.anchor.x) +
-            padding.x * (1 - 2 * obj.anchor.x) + (self.width - self._outer_padding.x * 2) * (1 - dir_x) / 2
-        )
+        cell_x =  self._col_offsets[grid_x] + obj_offset_x + pad_x * (1 - 2 * obj.anchor.x)
+        cell_y = self._row_offsets[grid_y] + obj_offset_y + pad_y * (1 - 2 * obj.anchor.y)
         
-        cell_y = (
-            dir_y * (self._row_offsets[grid_y] + sum(self.get_row_height(row_y) for row_y in range(grid_y, grid_y + span_y)) * obj.anchor.y) +
-            padding.y * (1 - 2 * obj.anchor.y) + (self.height - self._outer_padding.y * 2) * (1 - dir_y) / 2
-        )
+        if self._invert_x_order:
+            cell_x = self.width - self._outer_padding.x * 2 - cell_x
+        
+        if self._invert_y_order:
+            cell_y = self.height - self._outer_padding.y * 2 - cell_y
+            
         
         return Vec2(cell_x, cell_y) + self._outer_padding - self.get_anchor_offset(self.anchor)
-        
-        
+    
+    
+    
     def add_object(self, obj: PygameObject, x: int, y: int, span_x: int = 1, span_y: int = 1, anchor: Vec2 = Anchor.C):
         self.add_child(obj)
+        
         self._grid_objects_grid_positions[obj] = (clamp(x, self._min_col, self._max_col), clamp(y, self._min_row, self._max_row))
         self._grid_objects_dims[obj] = Vec2(obj.dims)
         self._grid_objects_spanning[obj] = (span_x, span_y)
@@ -895,9 +911,36 @@ class LayoutObject(RectObject):
 class DebugOverlay(LayoutObject):
     def __init__(self, transform: Transform, renderer: RectShape, services: DictCollection, layer: int = 0, anchor: Vec2=Anchor.C):
         super().__init__(transform, renderer, services, layer, anchor)
+        
+        self._frozen: bool = False
+        
+    # region PROPERTIES
     
-    def add_dynamic_text(self, x: int, y: int, factory, template: str, getter: Callable[[], str] | tuple[Callable[[], str], ...]):
-        self.add_object(factory.make_dynamic_text(Vec2(), template, getter), x, y)
+    @property
+    def frozen(self) -> bool:
+        return self._frozen
+    
+    def toggle_freeze(self) -> "LayoutObject":
+        self._frozen = not self._frozen
+        return self
+        
+    def freeze(self) -> "LayoutObject":
+        self._frozen = True
+        return self
+    
+    def unfreeze(self) -> "LayoutObject":
+        self._frozen = False
+        return self
+        
+    # endregion
+    
+    def toggle(self) -> "LayoutObject":
+        self.visible = not self.visible
+        return self
+        
+    
+        
+        
 
 
 class ButtonObject(RectObject):

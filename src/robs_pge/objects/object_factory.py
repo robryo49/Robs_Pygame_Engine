@@ -1,4 +1,4 @@
-from typing import Callable
+from typing import Any, Callable
 
 from .objects import ButtonObject, CircleObject, LayoutObject, PygameObject, RectObject, TextObject, DebugOverlay
 from .behaviors import DynamicAttribute
@@ -79,7 +79,7 @@ class ObjectFactory:
         return obj
     
     def make_dynamic_text(
-            self, position: Vec2, template: str, getter: Callable[[], str] | tuple[Callable[[], str], ...], font: Font = None,
+            self, position: Vec2, template: str, getter: Callable[[], Any | tuple[Any, ...]], font: Font = None,
             rotation: float = 0.0, scale: float = 1.0, layer: int = 0, anchor: Vec2 = Anchor.C
     ):
         

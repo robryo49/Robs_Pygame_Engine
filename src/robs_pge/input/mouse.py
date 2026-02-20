@@ -66,7 +66,7 @@ class Mouse:
         self._scroll = 0
         return self
     
-    def process_event(self, event) -> "Mouse":
+    def process_event(self, event: pg.Event) -> "Mouse":
         if event.type == pg.MOUSEBUTTONDOWN:
             self.pressed_buttons.add(event.button)
         elif event.type == pg.MOUSEBUTTONUP:

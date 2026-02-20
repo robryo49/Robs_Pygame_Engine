@@ -6,10 +6,10 @@ from .display import Display
 from .renderer import Renderer
 from ..debug import FrameTimer
 from ..input import InputManager
-from ..objects import InteractionManager, DebugOverlay
+from ..objects import InteractionManager, DebugOverlay, ObjectFactory
 from ..resources import ResourceManager
 from ..states import StateManager
-from ..utils import Vec2
+from ..utils import Vec2, Font, Colors, Anchor
 
 
 class Engine:
@@ -17,7 +17,6 @@ class Engine:
         self._name: str = name
         
         self._display: Display = Display(Vec2(1920, 1080))
-        self._default_camera: Camera = Camera(self._display).move(self._display.dims*0.5)
         
         self._clock: Clock = Clock(60)
         self._input: InputManager = InputManager()
@@ -26,6 +25,8 @@ class Engine:
         self._resource_manager: ResourceManager = ResourceManager()
         
         self._frame_timer: FrameTimer = FrameTimer()
+        
+        self._default_camera: Camera = Camera(self._display).move(self._display.dims*0.5).update(self.clock.dtime)
         
         self._state_manager: StateManager = StateManager()
         self._renderer: Renderer = Renderer(self.display, self._default_camera)
@@ -77,15 +78,23 @@ class Engine:
         return self.state_manager.state
     
     @property
+    def default_camera(self) -> Camera:
+        return self._default_camera
+    
+    @property
     def running(self) -> bool:
         return self._running
     
     # endregion
     
     def init_resources(self) -> "Engine":
+        self.resource_manager.set(Font, "debug_font_14", Font(size=14, font_color=Colors.WHITE))
         return self
     
-    def init_debug_objects(self, debug_overlay: DebugOverlay) -> "Engine":
+    def init_debug_objects(self, factory: ObjectFactory, debug_overlay: DebugOverlay) -> "Engine":
+        font = self.resource_manager.get(Font, "debug_font_14")
+        debug_overlay.fix_col_width(0, 200)
+        debug_overlay.add_object(factory.make_dynamic_text(Vec2(), "FPS: {:.1f} | {:.1f} ms", lambda: (self.clock.fps, self.clock.dtime*1000), font), 0, 0, anchor=Anchor.L)
         return self
     
     def process_events(self) -> "Engine":

@@ -71,7 +71,7 @@ class InputManager:
         self.mouse.update()
         return self
         
-    def process_event(self, event) -> "InputManager":
+    def process_event(self, event: pg.Event) -> "InputManager":
         if event.type == pg.KEYDOWN:
             self.pressed_keys.add(event.key)
         elif event.type == pg.KEYUP:

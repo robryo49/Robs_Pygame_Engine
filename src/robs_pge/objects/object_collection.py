@@ -1,62 +1,67 @@
 from typing import Any, Optional
 
 from ..core.camera import Camera
-from ..utils import Collection
+from ..utils import Collection, ObjectLike
 
 
 class ObjectCollection(Collection):
-    def __init__(self, objects: list[Any] = None):
+    def __init__(self, objects: list[ObjectLike] = None):
         super().__init__(objects)
         
-        self._to_remove: list = []
-        self._to_add: list = []
+        self._to_remove: list[ObjectLike] = []
+        self._to_add: list[ObjectLike] = []
 
     # region PROPERTIES
     
     @property
-    def objects(self):
+    def objects(self) -> list[ObjectLike]:
         return self.elements
     
     # endregion
     
-    def _handle_object_additions(self):
+    def _handle_object_additions(self) -> "ObjectCollection":
         if not self._to_add:
-            return
+            return self
         
         self._elements.extend(self._to_add)
         self._to_add.clear()
+        return self
         
-    def _handle_object_removals(self):
+    def _handle_object_removals(self) -> "ObjectCollection":
         if not self._to_remove:
-            return
+            return self
         
         self._elements = [obj for obj in self._elements if obj not in self._to_remove]
         self._to_remove.clear()
-        
+        return self
     
-    def add(self, obj: Any | list[Any]):
+    def add(self, obj: ObjectLike | list[ObjectLike]) -> "ObjectCollection":
         if isinstance(obj, list):
             for o in obj:
                 self.add(o)
         else:
             self._to_add.append(obj)
+        return self
         
-    def remove(self, obj: Any | list[Any]):
+    def remove(self, obj: ObjectLike | list[ObjectLike]) -> "ObjectCollection":
         if isinstance(obj, list):
             for o in obj:
                 self.remove(o)
         elif self.has(obj):
             self._to_remove.append(obj)
+        return self
         
-    def update(self, dt: float):
+    def update(self, dt: float) -> "ObjectCollection":
         self._handle_object_additions()
         self._handle_object_removals()
         
         for obj in self._elements:
             obj.update(dt)
+        return self
             
-    def render(self, submit, camera: Optional[Camera] = None):
+    def render(self, submit, camera: Camera) -> "ObjectCollection":
         for obj in self._elements:
-            obj.render(submit, camera) if camera else obj.render(submit)
+            obj.render(submit, camera)
+        return self
         
     
