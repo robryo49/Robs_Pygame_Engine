@@ -12,6 +12,7 @@ from ..resources import ResourceManager
 from ..utils import DictCollection, Vec2, Anchor, ObjectFlags, Font
 
 
+
 class State:
     def __init__(self, engine, state_id: str):
         
@@ -135,7 +136,7 @@ class State:
         inp = self.input
         input_debug_layout = self.factory.make_column_layout(Vec2(), invert_y=True)
         debug_mouse_pos = self.factory.make_dynamic_text(Vec2(), "Mouse Pos: Screen({}) World({})", lambda: (round(inp.mouse_pos), round(inp.mouse.world_pos(self.camera))), font)
-        debug_pressed_keys = self.factory.make_dynamic_text(Vec2(), "Held Keys: {}", lambda: inp.held_keys, font)
+        debug_pressed_keys = self.factory.make_dynamic_text(Vec2(), "Held Keys: {}", lambda: {pg.key.name(k): inp.held_keys[k] for k in inp.held_keys}, font)
         debug_pressed_buttons = self.factory.make_dynamic_text(Vec2(), "Held Buttons: {}", lambda: inp.held_buttons, font)
         
         input_debug_layout.add_object(debug_mouse_pos, 0, 0, anchor=Anchor.TL)

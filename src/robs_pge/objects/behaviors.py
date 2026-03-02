@@ -1,3 +1,4 @@
+from copy import copy
 from typing import Any, Callable, Optional
 
 from ..animation import AnimationManager, MultiplierAnimation
@@ -120,7 +121,7 @@ class DynamicAttribute(ObjectBehavior):
         if value == self._value:
             return
         
-        self._value = value
+        self._value = copy(value)
         
         if self._template is not None:
             value = self._template.format(*value if isinstance(value, tuple) else (value, ))
