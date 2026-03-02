@@ -42,7 +42,7 @@ class InteractionManager:
     def _collect_objects(self, object_collection: ObjectCollection):
         objects = []
         
-        collection_objects: list[PygameObject | ObjectCollection] = object_collection.objects
+        collection_objects: list[PygameObject | ObjectCollection] = object_collection.elements
         for obj in collection_objects:
             if isinstance(obj, ObjectCollection):
                 objects.extend(self._collect_objects(obj))

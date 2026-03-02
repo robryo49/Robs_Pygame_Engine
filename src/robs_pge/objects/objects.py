@@ -9,7 +9,7 @@ from ..utils import Anchor, Color, DictCollection, Easing, ObjectFlags, Rect, Tr
 
 
 class PygameObject:
-    DEFAULT_FLAGS = ObjectFlags.CULLABLE | ObjectFlags.VISIBLE
+    DEFAULT_FLAGS = ObjectFlags.CULLABLE
     
     def __init__(self, transform: Transform, renderer: Optional[ObjectRenderer], services: DictCollection, layer: int=0, anchor: Vec2=Anchor.C):
         self._transform = transform
@@ -161,26 +161,64 @@ class PygameObject:
     
     @property
     def visible(self):
-        return self.has_flag(ObjectFlags.VISIBLE) and (self.parent is None or self.parent.visible)
+        return not self.has_flag(ObjectFlags.HIDDEN) and (self.parent is None or self.parent.visible)
     
     @visible.setter
     def visible(self, value: bool):
         self.show() if value else self.hide()
     
     def show(self):
-        self.add_flag(ObjectFlags.VISIBLE)
+        if self.has_flag(ObjectFlags.HIDDEN):
+            self.remove_flag(ObjectFlags.HIDDEN)
+        return self
     
     def hide(self):
-        self.remove_flag(ObjectFlags.VISIBLE)
+        self.add_flag(ObjectFlags.HIDDEN)
+        return self
     
     def toggle_visible(self):
         self.visible = not self.visible
+        return self
+        
         
     def skip_rendering(self):
         self.add_flag(ObjectFlags.SKIP_RENDERING)
+        return self
         
     def enable_rendering(self):
         self.remove_flag(ObjectFlags.SKIP_RENDERING)
+        return self
+    
+    
+    @property
+    def frozen(self):
+        return self.has_flag(ObjectFlags.FROZEN) and (self.parent is None or self.parent.frozen)
+    
+    @frozen.setter
+    def frozen(self, value: bool):
+        self.freeze() if value else self.unfreeze()
+    
+    def unfreeze(self):
+        if self.has_flag(ObjectFlags.FROZEN):
+            self.remove_flag(ObjectFlags.FROZEN)
+        return self
+    
+    def freeze(self):
+        self.add_flag(ObjectFlags.FROZEN)
+        return self
+    
+    def toggle_freeze(self):
+        self.frozen = not self.frozen
+        return self
+    
+    
+    def skip_update(self):
+        self.add_flag(ObjectFlags.SKIP_UPDATE)
+        return self
+    
+    def enable_update(self):
+        self.remove_flag(ObjectFlags.SKIP_UPDATE)
+        return self
         
     
     @property
@@ -303,28 +341,39 @@ class PygameObject:
     
     # endregion
     
+    
+    def _render_self(self, submit, camera: Camera):
+        self.renderer.render(submit, self.world_transform, self.layer, self.anchor)
+    
     def render(self, submit, camera: Camera):
         self._culled = False
-        if self.visible and self.renderer and not self.has_flag(ObjectFlags.SKIP_RENDERING):
+        if self.visible:
+            if self.renderer and not self.has_flag(ObjectFlags.SKIP_RENDERING):
             
-            if self.has_flag(ObjectFlags.CULLABLE):
-                camera_rect = camera.world_aabb
-                object_rect = self.get_world_aabb()
+                if self.has_flag(ObjectFlags.CULLABLE):
+                    camera_rect = camera.world_aabb
+                    object_rect = self.get_world_aabb()
+                
+                    if not object_rect.colliderect(camera_rect):
+                        self._culled = True
+                
+                if not self._culled:
+                    self._render_self(submit, camera)
+            self.children.render(submit, camera)
             
-                if not object_rect.colliderect(camera_rect):
-                    self._culled = True
             
-            if not self._culled:
-                self.renderer.render(submit, self.world_transform, self.layer, self.anchor)
-        
-        self.children.render(submit, camera)
+    def _update_self(self, dt):
+        self.behaviors.on_update(dt)
         
     def update(self, dt: float):
-        self.behaviors.on_update(dt)
-        self.children.update(dt)
-        
+        if not self.frozen:
+            self.children.update(dt)
+            if not self.has_flag(ObjectFlags.SKIP_UPDATE):
+                self._update_self(dt)
+            
         if self.renderer:
             self.renderer.update(dt)
+            
     
     def __repr__(self):
         return f"PygameObject({id(self)})"
@@ -544,13 +593,20 @@ class LayoutObject(RectObject):
         self._grid_objects_dims : dict[PygameObject, Vec2] = {}
         self._grid_objects_positions : dict[PygameObject, Vec2] = {}
         
+        
         self._fixed_cols: dict[int, bool] = {}
+        self._min_col_widths: dict[int, float] = {}
+        
         self._col_widths: dict[int, float] = {}
         self._col_offsets: dict[int, float] = {}
         
+        
         self._fixed_rows: dict[int, bool] = {}
+        self._min_row_heights: dict[int, float] = {}
+        
         self._row_heights: dict[int, float] = {}
         self._row_offsets: dict[int, float] = {}
+        
         
         self._outer_padding: Vec2 = Vec2()
         self._padding: Vec2 = Vec2()
@@ -569,9 +625,6 @@ class LayoutObject(RectObject):
         
         self._dirty = False
         
-        self.add_flag(ObjectFlags.SKIP_RENDERING)
-        
-    
     # region PROPERITIES
     
     # region min_col
@@ -788,13 +841,41 @@ class LayoutObject(RectObject):
         
         obj.anchor = anchor
         self.mark_dirty()
+        return self
         
     def remove_object(self, obj: PygameObject):
         self.remove_child(obj)
         self._grid_objects_grid_positions.pop(obj, None)
         
         self.mark_dirty()
-    
+        
+    def stack_y(self, obj: PygameObject, x: int = None, span_x: int = None, anchor: Vec2 = Anchor.C):
+        
+        min_x = (min(pos[0] for pos in self._grid_objects_grid_positions.values()) + 1) if self._grid_objects_grid_positions else 0
+        max_x = (max(pos[0] for pos in self._grid_objects_grid_positions.values()) + 1) if self._grid_objects_grid_positions else 0
+        
+        positions = list(pos for pos in self._grid_objects_grid_positions.values() if pos[0] == x or x is None)
+        max_y = (max(pos[1] for pos in positions) + 1) if positions else 0
+        
+        x = min_x if x is None else x
+        span_x = (max_x - min_x + 1) if span_x is None else span_x
+        
+        self.add_object(obj, x, max_y, span_x, 1, anchor)
+        return self
+        
+    def stack_x(self, obj: PygameObject, y: int = None, span_y: int = None, anchor: Vec2 = Anchor.C):
+        
+        positions = list(pos for pos in self._grid_objects_grid_positions.values() if pos[1] == y or y is None)
+        max_x = (max(pos[0] for pos in positions) + 1) if positions else 0
+        
+        min_y = (min(pos[1] for pos in self._grid_objects_grid_positions.values()) + 1) if self._grid_objects_grid_positions else 0
+        max_y = (max(pos[1] for pos in self._grid_objects_grid_positions.values()) + 1) if self._grid_objects_grid_positions else 0
+        
+        y = min_y if y is None else y
+        span_y = (max_y - min_y + 1) if span_y is None else span_y
+        
+        self.add_object(obj, max_x, y, 1, span_y, anchor)
+        return self
     
     def check_if_dirty(self):
         for obj, grid_pos in self._grid_objects_grid_positions.items():
@@ -822,10 +903,16 @@ class LayoutObject(RectObject):
         for col_x in dict(self._col_widths):
             if not self._fixed_cols.get(col_x, False):
                 self._col_widths.pop(col_x)
+                
+            if self._min_row_heights.get(col_x, False):
+                self._col_widths[col_x] = self._min_row_heights[col_x]
         
         for row_y in dict(self._row_heights):
             if not self._fixed_rows.get(row_y, False):
                 self._row_heights.pop(row_y)
+                
+            if self._min_row_heights.get(row_y, False):
+                self._row_heights[row_y] = self._min_row_heights[row_y]
         
     def _compute_offsets(self):
         offset = 0
@@ -895,46 +982,29 @@ class LayoutObject(RectObject):
         self._dirty = False
     
     
-    def update(self, dt: float):
+    def _update_self(self, dt: float):
         self.behaviors.on_update(dt)
-        self.children.update(dt)
         
         if self.check_if_dirty():
             self.update_grid()
             
         if self.renderer:
             self.renderer.update(dt)
-
+    
+    def __repr__(self):
+        return f"LayoutObject({id(self)})"
+    
 
 class DebugOverlay(LayoutObject):
     def __init__(self, transform: Transform, renderer: RectShape, services: DictCollection, layer: int = 0, anchor: Vec2=Anchor.C):
         super().__init__(transform, renderer, services, layer, anchor)
-        
-        self._frozen: bool = False
-        
-    # region PROPERTIES
-    
-    @property
-    def frozen(self) -> bool:
-        return self._frozen
-    
-    def toggle_freeze(self) -> "LayoutObject":
-        self._frozen = not self._frozen
-        return self
-        
-    def freeze(self) -> "LayoutObject":
-        self._frozen = True
-        return self
-    
-    def unfreeze(self) -> "LayoutObject":
-        self._frozen = False
-        return self
-        
-    # endregion
     
     def toggle(self) -> "LayoutObject":
         self.visible = not self.visible
         return self
+    
+    def __repr__(self):
+        return f"DebugOverlay({id(self)})"
         
         
 

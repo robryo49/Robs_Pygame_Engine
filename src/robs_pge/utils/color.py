@@ -17,3 +17,5 @@ class Colors:
     GREY = Color(128, 128, 128)
     LIGHT_GREY = Color(192, 192, 192)
     DARK_GREY = Color(64, 64, 64)
+    
+    TRANSPARENT = Color(0)

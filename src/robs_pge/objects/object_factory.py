@@ -1,10 +1,10 @@
 from typing import Any, Callable
 
-from .objects import ButtonObject, CircleObject, LayoutObject, PygameObject, RectObject, TextObject, DebugOverlay
+from .objects import ButtonObject, CircleObject, LayoutObject, PygameObject, RectObject, TextObject, DebugOverlay, ObjectFlags
 from .behaviors import DynamicAttribute
 from ..rendering import ButtonStyle, CircleShape, CircleStyle, RectShape, RectStyle, SpriteRenderer, TextRenderer
 from ..resources import Texture
-from ..utils import Anchor, Color, DictCollection, Font, Transform, Vec2, inf
+from ..utils import Anchor, Color, Colors, DictCollection, Font, Transform, Vec2, inf
 
 
 class ObjectFactory:
@@ -113,12 +113,15 @@ class ObjectFactory:
     
     def make_grid_layout(
             self, position: Vec2, width: int = None, height: int = None, min_col=0, max_col=inf, min_row=0, max_row=inf, invert_x=False, invert_y=False,
+            bg_color: Color = None, border: int = 0, bd_color: Color = None, bd_radius: int = 0, style: RectStyle = None,
             rotation: float = 0.0, scale: float = 1.0, layer: int = 0, anchor: Vec2 = Anchor.C
     ):
         
+        style = style or RectStyle()
+        
         obj = LayoutObject(
             Transform(position, rotation, scale),
-            RectShape(Vec2()),
+            RectShape(Vec2(), bg_color, border, bd_color, bd_radius, style),
             self._services, layer, anchor
         )
         
@@ -140,16 +143,24 @@ class ObjectFactory:
         return obj
     
     def make_column_layout(
-            self, position: Vec2, width: int = None, height: int = None, min_row=0, max_row=inf, invert_x=False, invert_y=False,
+            self, position: Vec2, width: int = None, height: int = None, min_row=0, max_row=inf, invert_y=False,
+            bg_color: Color = None, border: int = 0, bd_color: Color = None, bd_radius: int = 0, style: RectStyle = None,
             rotation: float = 0.0, scale: float = 1.0, layer: int = 0, anchor: Vec2 = Anchor.C
     ):
-        return self.make_grid_layout(position, width, height, 0, 0, min_row, max_row, invert_x, invert_y, rotation, scale, layer, anchor)
+        return self.make_grid_layout(
+            position, width, height, 0, 0, min_row, max_row, False, invert_y,
+            bg_color, border, bd_color, bd_radius, style, rotation, scale, layer, anchor
+        )
     
     def make_row_layout(
-            self, position: Vec2, width: int = None, height: int = None, min_col=0, max_col=inf, invert_x=False, invert_y=False,
+            self, position: Vec2, width: int = None, height: int = None, min_col=0, max_col=inf, invert_x=False,
+            bg_color: Color = None, border: int = 0, bd_color: Color = None, bd_radius: int = 0, style: RectStyle = None,
             rotation: float = 0.0, scale: float = 1.0, layer: int = 0, anchor: Vec2 = Anchor.C
     ):
-        return self.make_grid_layout(position, width, height, min_col, max_col, 0, 0, invert_x, invert_y, rotation, scale, layer, anchor)
+        return self.make_grid_layout(
+            position, width, height, min_col, max_col, 0, 0, invert_x, False,
+            bg_color, border, bd_color, bd_radius, style, rotation, scale, layer, anchor
+        )
     
     def make_debug_overlay(
             self, position: Vec2, width: int = None, height: int = None, min_col=0, max_col=inf, min_row=0, max_row=inf, invert_x=False, invert_y=False,
@@ -159,7 +170,7 @@ class ObjectFactory:
             Transform(position, rotation, scale),
             RectShape(Vec2()),
             self._services, layer, anchor
-        )
+        ).skip_rendering()
         
         obj.min_col = min_col
         obj.max_col = max_col

@@ -3,13 +3,14 @@ from typing import Callable
 import pygame as pg
 
 from ..animation import AnimationManager
+from ..rendering import RectStyle
 from ..core.camera import Camera
 from ..debug import FrameTimer
 from ..input import InputManager, Keybind, KeybindsManager
-from ..objects import ObjectCollection, ObjectFactory, PygameObject
+from ..objects import ObjectCollection, ObjectFactory, PygameObject, ObjectFlags
 from ..particles.particle_system import ParticleSystem
 from ..resources import ResourceManager
-from ..utils import DictCollection, Vec2, Anchor, ObjectFlags, Font
+from ..utils import DictCollection, Vec2, Anchor, Font
 
 
 
@@ -35,7 +36,7 @@ class State:
         self._objects = ObjectCollection()
         self._ui_objects = ObjectCollection()
         
-        self._debug_overlay = self.factory.make_debug_overlay(Vec2(0, self.engine.display.dims.y), anchor=Anchor.TL).set_constant_padding(10).invert_up_down().fix_col_width(0, 500)
+        self._debug_overlay = self.factory.make_debug_overlay(Vec2(0, self.engine.display.dims.y), anchor=Anchor.TL)
         
         self.init_keybinds()
         self.init_debug_objects()
@@ -83,8 +84,8 @@ class State:
         return self.engine.frame_timer
     
     @property
-    def resource_manager(self) -> ResourceManager:
-        return self.engine.resource_manager
+    def resources(self) -> ResourceManager:
+        return self.engine.resources
     
     @property
     def animation_manager(self):
@@ -117,39 +118,61 @@ class State:
     # endregion
     
     def init_debug_objects(self):
+        self.debug_overlay.set_constant_padding(10).invert_up_down()
         self.engine.init_debug_objects(self.factory, self.debug_overlay)
         
-        font = self.resource_manager.get(Font, "debug_font_16")
-        
+        font = self.resources.get(Font, "debug_font_16")
+        style = self.resources.get(RectStyle, "debug_rect_style")
         
         camera = self.camera
-        camera_debug_layout = self.factory.make_column_layout(Vec2(), invert_y=True)
-        debug_camera_pos = self.factory.make_dynamic_text(Vec2(), "Camera Pos: {} | Zoom: {:.2f} | Rot: {:.1f}", lambda: (round(camera.pos, 1), camera.zoom, camera.rotation), font)
-        debug_camera_aabb = self.factory.make_dynamic_text(Vec2(), "Camera AABB: {}", lambda: [round(v, 1) for v in camera.world_aabb], font)
-        debug_camera_corners = self.factory.make_dynamic_text(Vec2(), "Camera Limits: {:.1f} {:.1f} | {:.1f} {:.1f}", lambda: (*camera.bottom_left, *camera.top_right), font)
+        camera_debug_layout = self.factory.make_column_layout(Vec2(), style=style, invert_y=True).set_outer_padding(16)
+        debug_camera_pos = self.factory.make_dynamic_text(Vec2(), "Pos: {} | Zoom: {:.2f} | Rot: {:.1f}", lambda: (round(camera.pos, 1), camera.zoom, camera.rotation), font)
+        debug_camera_aabb = self.factory.make_dynamic_text(Vec2(), "AABB: {}", lambda: [round(v, 1) for v in camera.world_aabb], font)
+        debug_camera_corners = self.factory.make_dynamic_text(Vec2(), "Limits: {:.1f} {:.1f} | {:.1f} {:.1f}", lambda: (*camera.bottom_left, *camera.top_right), font)
         
-        camera_debug_layout.add_object(debug_camera_pos, 0, 0, anchor=Anchor.TL)
-        camera_debug_layout.add_object(debug_camera_aabb, 0, 1, anchor=Anchor.TL)
-        camera_debug_layout.add_object(debug_camera_corners, 0, 2, anchor=Anchor.TL)
+        camera_debug_layout.stack_y(self.factory.make_text(Vec2(), "Camera :", font), anchor=Anchor.TL).set_cell_padding(5, (0, 0))
+        camera_debug_layout.stack_y(debug_camera_pos, anchor=Anchor.TL)
+        camera_debug_layout.stack_y(debug_camera_aabb, anchor=Anchor.TL)
+        camera_debug_layout.stack_y(debug_camera_corners, anchor=Anchor.TL)
         
         
         inp = self.input
-        input_debug_layout = self.factory.make_column_layout(Vec2(), invert_y=True)
-        debug_mouse_pos = self.factory.make_dynamic_text(Vec2(), "Mouse Pos: Screen({}) World({})", lambda: (round(inp.mouse_pos), round(inp.mouse.world_pos(self.camera))), font)
+        input_debug_layout = self.factory.make_column_layout(Vec2(), style=style, invert_y=True).set_outer_padding(16)
+        debug_mouse_pos = self.factory.make_dynamic_text(Vec2(), "Pos: Screen({}) | World({})", lambda: (round(inp.mouse_pos), round(inp.mouse.world_pos(self.camera))), font)
         debug_pressed_keys = self.factory.make_dynamic_text(Vec2(), "Held Keys: {}", lambda: {pg.key.name(k): inp.held_keys[k] for k in inp.held_keys}, font)
         debug_pressed_buttons = self.factory.make_dynamic_text(Vec2(), "Held Buttons: {}", lambda: inp.held_buttons, font)
         
-        input_debug_layout.add_object(debug_mouse_pos, 0, 0, anchor=Anchor.TL)
-        input_debug_layout.add_object(debug_pressed_keys, 0, 1, anchor=Anchor.TL)
-        input_debug_layout.add_object(debug_pressed_buttons, 0, 2, anchor=Anchor.TL)
+        input_debug_layout.stack_y(self.factory.make_text(Vec2(), "Mouse :", font), anchor=Anchor.TL).set_cell_padding(5, (0, 0))
+        input_debug_layout.stack_y(debug_mouse_pos, anchor=Anchor.TL)
+        input_debug_layout.stack_y(debug_pressed_keys, anchor=Anchor.TL)
+        input_debug_layout.stack_y(debug_pressed_buttons, anchor=Anchor.TL)
         
         
+        animation_debug_layout = self.factory.make_column_layout(Vec2(), style=style, invert_y=True).set_outer_padding(16)
+        debug_running_animation_count = self.factory.make_dynamic_text(Vec2(), "Running: {}", lambda: len(self.animation_manager.active), font)
+        debug_scheduled_animation_count = self.factory.make_dynamic_text(Vec2(), "Scheduled: {}", lambda: len(self.animation_manager.scheduled), font)
         
-        self.debug_overlay.add_object(camera_debug_layout, 0, 1, anchor=Anchor.TL)
-        self.debug_overlay.add_object(input_debug_layout, 0, 2, anchor=Anchor.TL)
+        animation_debug_layout.stack_y(self.factory.make_text(Vec2(), "Animations :", font), anchor=Anchor.TL).set_cell_padding(5, (0, 0))
+        animation_debug_layout.stack_y(debug_running_animation_count, anchor=Anchor.TL)
+        animation_debug_layout.stack_y(debug_scheduled_animation_count, anchor=Anchor.TL)
+        
+        
+        object_debug_layout = self.factory.make_column_layout(Vec2(), style=style, invert_y=True).set_outer_padding(16)
+        debug_object_count = self.factory.make_dynamic_text(Vec2(), "Count: World({}) | UI({})", lambda: (len(self.objects.elements), len(self.ui_objects.elements)), font)
+        debug_hovered_object = self.factory.make_dynamic_text(Vec2(), "Hovered : {}", lambda: str(self.interaction_manager.hovered), font)
+        
+        object_debug_layout.stack_y(self.factory.make_text(Vec2(), "Objects :", font), anchor=Anchor.TL)
+        object_debug_layout.stack_y(debug_object_count, anchor=Anchor.TL)
+        object_debug_layout.stack_y(debug_hovered_object, anchor=Anchor.TL)
+        
+        
+        self.debug_overlay.stack_y(camera_debug_layout, 0, 1, anchor=Anchor.TL)
+        self.debug_overlay.stack_y(input_debug_layout, 0, 1, anchor=Anchor.TL)
+        self.debug_overlay.stack_y(animation_debug_layout, 0, 1, anchor=Anchor.TL)
+        self.debug_overlay.stack_y(object_debug_layout, 0, 1, anchor=Anchor.TL)
     
     def init_keybinds(self):
-        self.add_keybind(pg.K_F3, lambda: self.debug_overlay.toggle())
+        self.add_keybind(pg.K_F3, lambda: self.debug_overlay.toggle_visible())
         self.add_keybind(pg.K_F4, lambda: self.debug_overlay.toggle_freeze())
     
     def add_keybind(self, key: int | tuple[int, ...], action: Callable, *args):

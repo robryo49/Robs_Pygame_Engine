@@ -14,9 +14,13 @@ class ObjectFlags(IntFlag):
     CLICKABLE = _CLICK | HOVERABLE
     DRAGGABLE = _DRAG  | CLICKABLE
     
-    VISIBLE = auto()
-    CULLABLE = auto()
+    HIDDEN = auto()
     SKIP_RENDERING = auto()
+    
+    FROZEN = auto()
+    SKIP_UPDATE = auto()
+    
+    CULLABLE = auto()
 
 
 class KeybindFlags(IntFlag):

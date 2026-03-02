@@ -8,8 +8,9 @@ from ..debug import FrameTimer
 from ..input import InputManager
 from ..objects import InteractionManager, DebugOverlay, ObjectFactory
 from ..resources import ResourceManager
+from ..rendering import RectStyle
 from ..states import StateManager
-from ..utils import Vec2, Font, Colors, Anchor
+from ..utils import Vec2, Font, Colors, Anchor, Color
 
 
 class Engine:
@@ -22,7 +23,7 @@ class Engine:
         self._input: InputManager = InputManager()
         self._interaction_manager: InteractionManager = InteractionManager(self.input)
         
-        self._resource_manager: ResourceManager = ResourceManager()
+        self._resources: ResourceManager = ResourceManager()
         
         self._frame_timer: FrameTimer = FrameTimer()
         
@@ -58,8 +59,8 @@ class Engine:
         return self._interaction_manager
     
     @property
-    def resource_manager(self) -> ResourceManager:
-        return self._resource_manager
+    def resources(self) -> ResourceManager:
+        return self._resources
     
     @property
     def frame_timer(self) -> FrameTimer:
@@ -88,23 +89,26 @@ class Engine:
     # endregion
     
     def init_resources(self) -> "Engine":
-        self.resource_manager.set(Font, "debug_font_16", Font(size=16, font_color=Colors.WHITE))
+        self.resources.set(Font, "debug_font_16", Font(size=16, font_color=Colors.WHITE))
+        self.resources.set(RectStyle, "debug_rect_style", RectStyle(bg_color=Color(0, 0, 0, 160), bd_color=Color(0, 0, 0, 160), bd_radius=16))
         return self
     
     def init_debug_objects(self, factory: ObjectFactory, debug_overlay: DebugOverlay) -> "Engine":
         
-        font = self.resource_manager.get(Font, "debug_font_16")
+        font = self.resources.get(Font, "debug_font_16")
+        style = self.resources.get(RectStyle, "debug_rect_style")
         
-        engine_debug_layout = factory.make_column_layout(Vec2(), invert_y=True)
-        debug_fps = factory.make_dynamic_text(Vec2(), "FPS: {:.1f} | {:.1f} ms", lambda: (self.clock.fps, self.clock.dtime*1000), font)
+        engine_debug_layout = factory.make_column_layout(Vec2(), style=style, invert_y=True).set_outer_padding(10)
+        debug_fps = factory.make_dynamic_text(Vec2(), "FPS: {:.1f} | {:.0f} ms", lambda: (self.clock.fps, self.clock.dtime*1000), font)
         debug_renderer = factory.make_dynamic_text(Vec2(), "Draw Calls : World({}), UI({}), Debug({})", lambda: self.renderer.commands_count, font)
         debug_cache = factory.make_dynamic_text(Vec2(), "Cache Size : Surface({}), Font({})", lambda: (self.renderer.surface_cache_size, self.renderer.font_cache_size), font)
         
-        engine_debug_layout.add_object(debug_fps, 0, 0, anchor=Anchor.TL)
-        engine_debug_layout.add_object(debug_renderer, 0, 1, anchor=Anchor.TL)
-        engine_debug_layout.add_object(debug_cache, 0, 2, anchor=Anchor.TL)
+        engine_debug_layout.stack_y(factory.make_text(Vec2(), "Engine :", font), anchor=Anchor.TL).set_cell_padding(5, (0, 0))
+        engine_debug_layout.stack_y(debug_fps, anchor=Anchor.TL)
+        engine_debug_layout.stack_y(debug_renderer, anchor=Anchor.TL)
+        engine_debug_layout.stack_y(debug_cache, anchor=Anchor.TL)
         
-        debug_overlay.add_object(engine_debug_layout, 0, 0, anchor=Anchor.TL)
+        debug_overlay.stack_y(engine_debug_layout, 0, 1, anchor=Anchor.TL)
         
         return self
     
