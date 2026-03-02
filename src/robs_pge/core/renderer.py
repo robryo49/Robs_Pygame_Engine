@@ -24,6 +24,7 @@ class Renderer:
         self._world_commands_count: int = 0
         self._ui_commands_count: int = 0
         self._debug_commands_count: int = 0
+        self._commands_count = (0, 0, 0)
         
         self.blit_calls: list[tuple[pg.Surface, Vec2]] = []
     
@@ -57,6 +58,18 @@ class Renderer:
     def debug_commands_count(self) -> int:
         return self._debug_commands_count
     
+    @property
+    def commands_count(self) -> tuple[int, int, int]:
+        return self._commands_count
+    
+    @property
+    def surface_cache_size(self):
+        return self._surface_cache.size
+    
+    @property
+    def font_cache_size(self):
+        return len(self._font_cache)
+    
     # endregion
     
     def draw_world(self, cmd: DrawCommand) -> "Renderer":
@@ -88,6 +101,7 @@ class Renderer:
         self._world_commands_count = len(self._world_commands)
         self._ui_commands_count = len(self._ui_commands)
         self._debug_commands_count = len(self._debug_commands)
+        self._commands_count = (self._world_commands_count, self._ui_commands_count, self._debug_commands_count)
         
         self.world_commands.clear()
         self.ui_commands.clear()

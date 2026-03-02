@@ -140,8 +140,6 @@ class PygameObject:
         self._parent = obj
         self._parent_anchor = anchor
         
-        if self._parent is not None and not self._parent.children.has(self):
-            self._parent.add_child(self)
         return self
     # endregion
     
@@ -767,8 +765,8 @@ class LayoutObject(RectObject):
         obj_offset_x = sum(self.get_col_width(col_x) for col_x in range(grid_x, grid_x + span_x)) * (obj.anchor.x if not self._invert_x_order else (1 - obj.anchor.x))
         obj_offset_y = sum(self.get_row_height(row_y) for row_y in range(grid_y, grid_y + span_y)) * (obj.anchor.y if not self._invert_y_order else (1 - obj.anchor.y))
         
-        cell_x =  self._col_offsets[grid_x] + obj_offset_x + pad_x * (1 - 2 * obj.anchor.x)
-        cell_y = self._row_offsets[grid_y] + obj_offset_y + pad_y * (1 - 2 * obj.anchor.y)
+        cell_x =  self._col_offsets[grid_x] + obj_offset_x + pad_x * (1 - 2 * obj.anchor.x) * (1 if not self._invert_x_order else -1)
+        cell_y = self._row_offsets[grid_y] + obj_offset_y + pad_y * (1 - 2 * obj.anchor.y) * (1 if not self._invert_y_order else -1)
         
         if self._invert_x_order:
             cell_x = self.width - self._outer_padding.x * 2 - cell_x
@@ -938,10 +936,7 @@ class DebugOverlay(LayoutObject):
         self.visible = not self.visible
         return self
         
-    
         
-        
-
 
 class ButtonObject(RectObject):
     def __init__(self, transform: Transform, background: RectShape, text: TextObject, action: Callable, services: DictCollection, layer: int = 0, anchor: Vec2 = Anchor.C):

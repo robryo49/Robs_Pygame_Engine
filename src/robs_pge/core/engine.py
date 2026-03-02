@@ -88,13 +88,24 @@ class Engine:
     # endregion
     
     def init_resources(self) -> "Engine":
-        self.resource_manager.set(Font, "debug_font_14", Font(size=14, font_color=Colors.WHITE))
+        self.resource_manager.set(Font, "debug_font_16", Font(size=16, font_color=Colors.WHITE))
         return self
     
     def init_debug_objects(self, factory: ObjectFactory, debug_overlay: DebugOverlay) -> "Engine":
-        font = self.resource_manager.get(Font, "debug_font_14")
-        debug_overlay.fix_col_width(0, 200)
-        debug_overlay.add_object(factory.make_dynamic_text(Vec2(), "FPS: {:.1f} | {:.1f} ms", lambda: (self.clock.fps, self.clock.dtime*1000), font), 0, 0, anchor=Anchor.L)
+        
+        font = self.resource_manager.get(Font, "debug_font_16")
+        
+        engine_debug_layout = factory.make_column_layout(Vec2(), invert_y=True)
+        debug_fps = factory.make_dynamic_text(Vec2(), "FPS: {:.1f} | {:.1f} ms", lambda: (self.clock.fps, self.clock.dtime*1000), font)
+        debug_renderer = factory.make_dynamic_text(Vec2(), "Draw Calls : World({}), UI({}), Debug({})", lambda: self.renderer.commands_count, font)
+        debug_cache = factory.make_dynamic_text(Vec2(), "Cache Size : Surface({}), Font({})", lambda: (self.renderer.surface_cache_size, self.renderer.font_cache_size), font)
+        
+        engine_debug_layout.add_object(debug_fps, 0, 0, anchor=Anchor.TL)
+        engine_debug_layout.add_object(debug_renderer, 0, 1, anchor=Anchor.TL)
+        engine_debug_layout.add_object(debug_cache, 0, 2, anchor=Anchor.TL)
+        
+        debug_overlay.add_object(engine_debug_layout, 0, 0, anchor=Anchor.TL)
+        
         return self
     
     def process_events(self) -> "Engine":

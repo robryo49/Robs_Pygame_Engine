@@ -118,6 +118,22 @@ class Camera:
     def left(self) -> Vec2:
         return Vec2(-1, 0).rotate(self.rotation) * self.transform.scale
     
+    @property
+    def top_left(self):
+        return self.world_aabb.bottomleft
+    
+    @property
+    def top_right(self):
+        return self.world_aabb.bottomright
+    
+    @property
+    def bottom_left(self):
+        return self.world_aabb.topleft
+    
+    @property
+    def bottom_right(self):
+        return self.world_aabb.topright
+    
     # endregion
     
     def _get_world_aabb(self) -> FRect:

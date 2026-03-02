@@ -25,7 +25,7 @@ class ResourceManager:
     
     def add_folder(self, name: str, path: Path):
         path = path.resolve()
-        
+        print(path)
         if not path.exists():
             raise FileNotFoundError(path)
         if not path.is_dir():
