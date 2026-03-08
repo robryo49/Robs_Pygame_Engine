@@ -228,7 +228,8 @@ class TextRenderer(ObjectRenderer):
     
     @property
     def dims(self):
-        return self._dims
+        all_dims = list(self.font.get_render_size(txt) for txt in self.text.split("\n"))
+        return Vec2(max(v.x for v in all_dims), sum(v.y for v in all_dims) + self.font.line_spacing * (len(all_dims) - 1))
     
     @property
     def width(self):

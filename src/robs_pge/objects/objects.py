@@ -636,8 +636,11 @@ class LayoutObject(RectObject):
     def min_col(self, value):
         self._min_col = value
         
-        for obj in self._grid_objects_grid_positions:
-            self._grid_objects_grid_positions[obj] = (max(value, self._grid_objects_grid_positions[obj][0]), self._grid_objects_grid_positions[obj][1])
+        for obj, pos in self._grid_objects_grid_positions:
+            new = (max(value, self._grid_objects_grid_positions[obj][0]), self._grid_objects_grid_positions[obj][1])
+            if new != self._grid_objects_grid_positions[obj]:
+                self._grid_objects_grid_positions[obj] = new
+                self.mark_dirty()
     # endregion
     
     # region max_col
@@ -649,8 +652,11 @@ class LayoutObject(RectObject):
     def max_col(self, value):
         self._max_col = value
         
-        for obj in self._grid_objects_grid_positions:
-            self._grid_objects_grid_positions[obj] = (min(value, self._grid_objects_grid_positions[obj][0]), self._grid_objects_grid_positions[obj][1])
+        for obj, pos in self._grid_objects_grid_positions:
+            new = (min(value, self._grid_objects_grid_positions[obj][0]), self._grid_objects_grid_positions[obj][1])
+            if new != self._grid_objects_grid_positions[obj]:
+                self._grid_objects_grid_positions[obj] = new
+                self.mark_dirty()
     # endregion
     
     # region min_row
@@ -662,8 +668,11 @@ class LayoutObject(RectObject):
     def min_row(self, value):
         self._min_row = value
         
-        for obj in self._grid_objects_grid_positions:
-            self._grid_objects_grid_positions[obj] = (self._grid_objects_grid_positions[obj][0], max(value, self._grid_objects_grid_positions[obj][1]))
+        for obj, pos in self._grid_objects_grid_positions:
+            new = (self._grid_objects_grid_positions[obj][0], max(value, self._grid_objects_grid_positions[obj][1]))
+            if new != self._grid_objects_grid_positions[obj]:
+                self._grid_objects_grid_positions[obj] = new
+                self.mark_dirty()
     # endregion
     
     # region max_row
@@ -675,8 +684,11 @@ class LayoutObject(RectObject):
     def max_row(self, value):
         self._max_row = value
         
-        for obj in self._grid_objects_grid_positions:
-            self._grid_objects_grid_positions[obj] = (self._grid_objects_grid_positions[obj][0], min(value, self._grid_objects_grid_positions[obj][1]))
+        for obj, pos in self._grid_objects_grid_positions:
+            new = (self._grid_objects_grid_positions[obj][0], min(value, self._grid_objects_grid_positions[obj][1]))
+            if new != self._grid_objects_grid_positions[obj]:
+                self._grid_objects_grid_positions[obj] = new
+                self.mark_dirty()
     # endregion
     
     # region invert_x_order
@@ -687,6 +699,7 @@ class LayoutObject(RectObject):
     @invert_x_order.setter
     def invert_x_order(self, value):
         self._invert_x_order = value
+        self.mark_dirty()
     # endregion
     
     # region invert_y_order
@@ -697,6 +710,7 @@ class LayoutObject(RectObject):
     @invert_y_order.setter
     def invert_y_order(self, value):
         self._invert_y_order = value
+        self.mark_dirty()
     # endregion
     
     # endregion
@@ -758,10 +772,12 @@ class LayoutObject(RectObject):
     
     def invert_left_right(self):
         self._invert_x_order = True
+        self.mark_dirty()
         return self
         
     def invert_up_down(self):
         self._invert_y_order = True
+        self.mark_dirty()
         return self
     
     
@@ -791,7 +807,6 @@ class LayoutObject(RectObject):
     def set_outer_padding(self, padding: Vec2 | int):
         padding = Vec2(padding)
         self._outer_padding = padding
-        self.renderer.border = min(padding.x, padding.y)
         self.mark_dirty()
         return self
         

@@ -110,6 +110,9 @@ class Engine:
         
         debug_overlay.stack_y(engine_debug_layout, 0, 1, anchor=Anchor.TL)
         
+        debug_timer = factory.make_dynamic_text(Vec2(), "Timer : \n{}", lambda: self.frame_timer.format(), font)
+        debug_overlay.stack_y(debug_timer, 0, 1, anchor=Anchor.TL)
+        
         return self
     
     def process_events(self) -> "Engine":
@@ -138,20 +141,13 @@ class Engine:
         
     def tick(self) -> "Engine":
         self.clock.tick()
-        self.frame_timer.reset()
         return self
     
     def run(self) -> None:
         while self.running:
-            self.frame_timer.start("update")
-            self.update(self.clock.dtime)
-            self.frame_timer.end("update")
-            
-            self.frame_timer.start("render")
-            self.render()
-            self.frame_timer.end("render")
-            
-            self.tick()
+            self.frame_timer.time("Update", lambda: self.update(self.clock.dtime))
+            self.frame_timer.time("Rendering", self.render)
+            self.frame_timer.time("Ticking", self.tick)
             
         pg.quit()
         

@@ -30,7 +30,7 @@ class State:
         self._factory = ObjectFactory()
         self._particle_system = ParticleSystem()
         
-        self._services = DictCollection({AnimationManager: self.animation_manager, ParticleSystem: self.particle_system, ObjectFactory: self.factory})
+        self._services = DictCollection()
         self._factory.set_services(self._services)
         
         self._objects = ObjectCollection()
@@ -39,6 +39,7 @@ class State:
         self._debug_overlay = self.factory.make_debug_overlay(Vec2(0, self.engine.display.dims.y), anchor=Anchor.TL)
         
         self.init_keybinds()
+        self.init_services()
         self.init_debug_objects()
         
     # region PROPERTIES
@@ -117,6 +118,12 @@ class State:
     
     # endregion
     
+    def init_services(self):
+        self._services.set(AnimationManager, self.animation_manager)
+        self._services.set(InputManager, self.input)
+        self._services.set(ParticleSystem, self.particle_system)
+        self._services.set(ObjectFactory, self.factory)
+    
     def init_debug_objects(self):
         self.debug_overlay.set_constant_padding(10).invert_up_down()
         self.engine.init_debug_objects(self.factory, self.debug_overlay)
@@ -161,7 +168,7 @@ class State:
         debug_object_count = self.factory.make_dynamic_text(Vec2(), "Count: World({}) | UI({})", lambda: (len(self.objects.elements), len(self.ui_objects.elements)), font)
         debug_hovered_object = self.factory.make_dynamic_text(Vec2(), "Hovered : {}", lambda: str(self.interaction_manager.hovered), font)
         
-        object_debug_layout.stack_y(self.factory.make_text(Vec2(), "Objects :", font), anchor=Anchor.TL)
+        object_debug_layout.stack_y(self.factory.make_text(Vec2(), "Objects :", font), anchor=Anchor.TL).set_cell_padding(5, (0, 0))
         object_debug_layout.stack_y(debug_object_count, anchor=Anchor.TL)
         object_debug_layout.stack_y(debug_hovered_object, anchor=Anchor.TL)
         
