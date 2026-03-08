@@ -1,10 +1,10 @@
 from typing import Any, Callable
 
-from .objects import ButtonObject, CircleObject, LayoutObject, PygameObject, RectObject, TextObject, DebugOverlay, ObjectFlags
+from .objects import ButtonObject, CircleObject, LayoutObject, ProgressBar, PygameObject, RectObject, TextObject, DebugOverlay, ObjectFlags
 from .behaviors import DynamicAttribute
-from ..rendering import ButtonStyle, CircleShape, CircleStyle, RectShape, RectStyle, SpriteRenderer, TextRenderer
+from ..rendering import ButtonStyle, CircleShape, CircleStyle, ProgressBarStyle, RectShape, RectStyle, SpriteRenderer, TextRenderer
 from ..resources import Texture
-from ..utils import Anchor, Color, Colors, DictCollection, Font, Transform, Vec2, inf
+from ..utils import Anchor, DictCollection, Font, Transform, Vec2, inf, Color
 
 
 class ObjectFactory:
@@ -37,13 +37,13 @@ class ObjectFactory:
     
     
     def make_rect(
-            self, position: Vec2, dims: Vec2, bg_color: Color = None, border: int = None, bd_color: Color = None, bd_radius: int = None, style: RectStyle = None,
+            self, position: Vec2, dims: Vec2, style: RectStyle = None,
             rotation: float = 0.0, scale: float = 1.0, layer: int = 0, anchor: Vec2 = Anchor.C
     ):
         
         obj = RectObject(
             Transform(position, rotation, scale ),
-            RectShape(dims, bg_color, border, bd_color, bd_radius, style),
+            RectShape(dims, style),
             self._services, layer, anchor
         )
         
@@ -52,13 +52,13 @@ class ObjectFactory:
     
     
     def make_circle(
-            self, position: Vec2, radius: int, bg_color: Color = None, border: int = None, bd_color: Color = None, style: CircleStyle = None,
+            self, position: Vec2, radius: int, style: CircleStyle = None,
             scale: float = 1.0, layer: int = 0, anchor: Vec2 = Anchor.C
     ):
         
         obj = CircleObject(
             Transform(position, scale),
-            CircleShape(radius, bg_color, border, bd_color, style),
+            CircleShape(radius, style),
             self._services, layer, anchor
         )
         
@@ -90,18 +90,17 @@ class ObjectFactory:
     
     
     def make_button(
-            self, position: Vec2, text: str, action: Callable[[], None] | tuple[Callable[[], None]], dims: Vec2 = None, bg_color: Color = None,
-            border: int = None, bd_color: Color = None, bd_radius: int = None, margin: int | Vec2 = None, font: Font = None, style: ButtonStyle = None,
+            self, position: Vec2, text: str, action: Callable[[], None] | tuple[Callable[[], None]], dims: Vec2 = None, style: ButtonStyle = None,
             rotation: float = 0.0, scale: float = 1.0, layer: int = 0, anchor: Vec2 = Anchor.C
     ):
         style = style or ButtonStyle()
-        margin = Vec2(margin or style.margin)
-        font = font or style.font if style else Font()
+        margin = Vec2(style.margin)
+        font = style.font
         dims = dims or font.get_render_size(text) + Vec2(margin*2)
         
         obj = ButtonObject(
             Transform(position, rotation, scale),
-            RectShape(dims, bg_color, border, bd_color, bd_radius, style),
+            RectShape(dims, style),
             self.make_text(Vec2(), text, font, 0.0, 1.0, layer, Anchor.C),
             action, self._services, layer, anchor
         )
@@ -112,8 +111,7 @@ class ObjectFactory:
     # region Layouts
     
     def make_grid_layout(
-            self, position: Vec2, width: int = None, height: int = None, min_col=0, max_col=inf, min_row=0, max_row=inf, invert_x=False, invert_y=False,
-            bg_color: Color = None, border: int = 0, bd_color: Color = None, bd_radius: int = 0, style: RectStyle = None,
+            self, position: Vec2, width: int = None, height: int = None, min_col=0, max_col=inf, min_row=0, max_row=inf, invert_x=False, invert_y=False, style: RectStyle = None,
             rotation: float = 0.0, scale: float = 1.0, layer: int = 0, anchor: Vec2 = Anchor.C
     ):
         
@@ -121,7 +119,7 @@ class ObjectFactory:
         
         obj = LayoutObject(
             Transform(position, rotation, scale),
-            RectShape(Vec2(), bg_color, border, bd_color, bd_radius, style),
+            RectShape(Vec2(), style),
             self._services, layer, anchor
         )
         
@@ -143,23 +141,21 @@ class ObjectFactory:
         return obj
     
     def make_column_layout(
-            self, position: Vec2, width: int = None, height: int = None, min_row=0, max_row=inf, invert_y=False,
-            bg_color: Color = None, border: int = 0, bd_color: Color = None, bd_radius: int = 0, style: RectStyle = None,
+            self, position: Vec2, width: int = None, height: int = None, min_row=0, max_row=inf, invert_y=False, style: RectStyle = None,
             rotation: float = 0.0, scale: float = 1.0, layer: int = 0, anchor: Vec2 = Anchor.C
     ):
         return self.make_grid_layout(
             position, width, height, 0, 0, min_row, max_row, False, invert_y,
-            bg_color, border, bd_color, bd_radius, style, rotation, scale, layer, anchor
+            style, rotation, scale, layer, anchor
         )
     
     def make_row_layout(
-            self, position: Vec2, width: int = None, height: int = None, min_col=0, max_col=inf, invert_x=False,
-            bg_color: Color = None, border: int = 0, bd_color: Color = None, bd_radius: int = 0, style: RectStyle = None,
+            self, position: Vec2, width: int = None, height: int = None, min_col=0, max_col=inf, invert_x=False, style: RectStyle = None,
             rotation: float = 0.0, scale: float = 1.0, layer: int = 0, anchor: Vec2 = Anchor.C
     ):
         return self.make_grid_layout(
             position, width, height, min_col, max_col, 0, 0, invert_x, False,
-            bg_color, border, bd_color, bd_radius, style, rotation, scale, layer, anchor
+            style, rotation, scale, layer, anchor
         )
     
     def make_debug_overlay(
@@ -190,5 +186,27 @@ class ObjectFactory:
         return obj
     
     # endregion
+    
+    
+    def make_progress_bar(
+            self, position: Vec2, dims: Vec2, style: ProgressBarStyle = None,
+            rotation: float = 0.0, scale: float = 1.0, layer: int = 0, anchor: Vec2 = Anchor.C
+    ):
         
+        bg_style = style or ProgressBarStyle()
+        bar_style = RectStyle(style.color, bd_radius=(style.bd_radius-style.bd) if style.bd_radius > 0 else 0)
         
+        bar = RectObject(
+            Transform(),
+            RectShape(dims - Vec2(style.bd*2), bar_style),
+            self._services, layer, anchor
+        )
+        
+        obj = ProgressBar(
+            Transform(position, rotation, scale),
+            RectShape(dims, bg_style), bar,
+            self._services, layer, anchor
+        )
+        
+        return obj
+    

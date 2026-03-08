@@ -19,7 +19,7 @@ class Engine:
         
         self._display: Display = Display(Vec2(1920, 1080))
         
-        self._clock: Clock = Clock(60)
+        self._clock: Clock = Clock()
         self._input: InputManager = InputManager()
         self._interaction_manager: InteractionManager = InteractionManager(self.input)
         
@@ -89,8 +89,8 @@ class Engine:
     # endregion
     
     def init_resources(self) -> "Engine":
-        self.resources.set(Font, "debug_font_16", Font(size=16, font_color=Colors.WHITE))
-        self.resources.set(RectStyle, "debug_rect_style", RectStyle(bg_color=Color(0, 0, 0, 160), bd_color=Color(0, 0, 0, 160), bd_radius=16))
+        self.resources.set(Font, "debug_font_16", Font("dejavusansmono", size=16, color=Colors.WHITE))
+        self.resources.set(RectStyle, "debug_rect_style",   RectStyle(bg_color=Color(0, 0, 0, 160), bd_color=Color(0, 0, 0, 160), bd_radius=16))
         return self
     
     def init_debug_objects(self, factory: ObjectFactory, debug_overlay: DebugOverlay) -> "Engine":
@@ -110,8 +110,14 @@ class Engine:
         
         debug_overlay.stack_y(engine_debug_layout, 0, 1, anchor=Anchor.TL)
         
-        debug_timer = factory.make_dynamic_text(Vec2(), "Timer : \n{}", lambda: self.frame_timer.format(), font)
-        debug_overlay.stack_y(debug_timer, 0, 1, anchor=Anchor.TL)
+        
+        timer_debug_layout = factory.make_column_layout(Vec2(), style=style, invert_y=True).set_outer_padding(10)
+        debug_timer = factory.make_dynamic_text(Vec2(), "{}", lambda: self.frame_timer.format(), font)
+        
+        timer_debug_layout.stack_y(factory.make_text(Vec2(), "Timer :", font), anchor=Anchor.TL).set_cell_padding(5, (0, 0))
+        timer_debug_layout.stack_y(debug_timer, 0, 1, anchor=Anchor.TL)
+        
+        debug_overlay.stack_y(timer_debug_layout, 0, 1, anchor=Anchor.TL)
         
         return self
     
@@ -126,17 +132,17 @@ class Engine:
         return self
         
     def update(self, dt: float) -> "Engine":
-        self.process_events()
-        self.state_manager.update(dt)
-        self.input.update()
+        self.frame_timer.time("Update.Events",  lambda: self.process_events())
+        self.frame_timer.time("Update.State",   lambda: self.state_manager.update(dt))
+        self.frame_timer.time("Update.Input",   lambda: self.input.update())
         return self
         
     
     def render(self) -> "Engine":
-        self.state_manager.render()
+        self.frame_timer.time("Rendering.Draw Calls",       lambda: self.state_manager.render())
         
-        self.renderer.render(self.state.camera if self.state else None)
-        self.display.update(self.clock.dtime)
+        self.frame_timer.time("Rendering.Drawing",          lambda: self.renderer.render(self.state.camera if self.state else None))
+        self.frame_timer.time("Rendering.Screen Update",    lambda: self.display.update(self.clock.dtime))
         return self
         
     def tick(self) -> "Engine":

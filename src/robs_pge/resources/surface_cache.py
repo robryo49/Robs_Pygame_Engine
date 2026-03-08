@@ -31,10 +31,9 @@ class SurfaceCache:
     
     def add(self, key, surface):
         self._cache[key] = surface
-        self._cache.move_to_end(key, False)
-        
+        self._cache.move_to_end(key)
         if len(self._cache) > self._max_size:
-            self._cache.popitem()
+            self._cache.popitem(last=False)
     
     def has(self, key):
         return key in self._cache

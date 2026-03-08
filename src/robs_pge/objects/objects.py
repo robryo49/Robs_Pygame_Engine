@@ -5,7 +5,7 @@ from .behaviors import *
 from .object_collection import ObjectCollection
 from ..core.camera import Camera
 from ..rendering import CircleShape, ObjectRenderer, RectShape, SpriteRenderer, TextRenderer
-from ..utils import Anchor, Color, DictCollection, Easing, ObjectFlags, Rect, Transform, Vec2, clamp, inf
+from ..utils import Anchor, Color, DictCollection, Easing, ObjectFlags, Rect, Transform, Vec2, clamp, inf, invert_y
 
 
 class PygameObject:
@@ -45,7 +45,7 @@ class PygameObject:
     
     @property
     def aabb_dims(self):
-        return Vec2(self.renderer.get_aabb_size(self.rotation) * self.scale) if self.renderer else Vec2()
+        return Vec2(self.renderer.get_aabb_size(self.world_transform.rotation) * self.scale) if self.renderer else Vec2()
     
     @property
     def culled(self):
@@ -349,8 +349,8 @@ class PygameObject:
         self._culled = False
         if self.visible:
             if self.renderer and not self.has_flag(ObjectFlags.SKIP_RENDERING):
-            
-                if self.has_flag(ObjectFlags.CULLABLE):
+                
+                if True or self.has_flag(ObjectFlags.CULLABLE):
                     camera_rect = camera.world_aabb
                     object_rect = self.get_world_aabb()
                 
@@ -428,12 +428,12 @@ class RectObject(PygameObject):
         
     
     @property
-    def border(self):
-        return self.renderer.border
+    def bd(self):
+        return self.renderer.bd
     
-    @border.setter
-    def border(self, value: int):
-        self.renderer.border = value
+    @bd.setter
+    def bd(self, value: int):
+        self.renderer.bd = value
     
     
     @property
@@ -527,12 +527,12 @@ class CircleObject(PygameObject):
     
     
     @property
-    def border(self):
-        return self.renderer.border
+    def bd(self):
+        return self.renderer.bd
     
-    @border.setter
-    def border(self, value: int):
-        self.renderer.border = value
+    @bd.setter
+    def bd(self, value: int):
+        self.renderer.bd = value
     
     # endregion
     
@@ -812,7 +812,7 @@ class LayoutObject(RectObject):
         
     def clear_outer_padding(self):
         self._outer_padding = Vec2()
-        self.renderer.border = 0
+        self.renderer.bd = 0
         self.mark_dirty()
         return self
         
@@ -1047,5 +1047,85 @@ class ButtonObject(RectObject):
     @text.setter
     def text(self, value):
         self._text.text = value
+        
+    # endregion
+
+
+
+class ProgressBar(RectObject):
+    def __init__(self, transform: Transform, background: RectShape, bar: RectObject, services: DictCollection, layer: int = 0, anchor: Vec2 = Anchor.C):
+        super().__init__(transform, background, services, layer, anchor)
+        
+        self._value = 0.0
+        self._max_value = 1.0
+        
+        self._progress = 0.0
+        
+        self._dirty = True
+        
+        self._bar = bar
+        self._bar.anchor = Anchor.TL
+        self._bar.pos = invert_y(Vec2(self.bd))
+        self.add_child(bar, Anchor.TL)
+        
+    # region PROPERTIES
+    
+    # region color
+    @property
+    def color(self):
+        return self._bar.bg_color
+    
+    @color.setter
+    def color(self, value):
+        self._bar.bg_color = value
+    # endregion
+    
+    # region value
+    @property
+    def value(self):
+        return self._value
+    
+    @value.setter
+    def value(self, value):
+        self._value = clamp(value, 0, self.max_value)
+        self._progress = self._value / self._max_value
+        self.mark_dirty()
+    # endregion
+    
+    # region max_value
+    @property
+    def max_value(self):
+        return self._max_value
+    
+    @max_value.setter
+    def max_value(self, value):
+        self._max_value = value
+        self._value = min(self._value, self._max_value)
+        self._progress = self._value / value
+        self.mark_dirty()
+    # endregion
+    
+    # region progress
+    @property
+    def progress(self):
+        return self._progress
+    
+    @progress.setter
+    def progress(self, value):
+        self._progress = clamp(value)
+        self._value = self._progress * self._max_value
+        self.mark_dirty()
+    # endregion
     
     # endregion
+    
+    def mark_dirty(self):
+        self._dirty = True
+        
+    def _update_self(self, dt: float):
+        super()._update_self(dt)
+        
+        if self._dirty:
+            self._bar.width = round((self.width - self.bd*2) * self.progress)
+            self._dirty = False
+

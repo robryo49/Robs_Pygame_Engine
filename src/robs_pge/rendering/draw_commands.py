@@ -2,10 +2,10 @@ from dataclasses import dataclass, field
 
 import pygame as pg
 
-from .styles import CircleStyle, RectStyle
+from .styles import CircleStyle, RectStyle, LineStyle, PolygonStyle
 from ..core.camera import Camera
 from ..resources import Texture
-from ..utils import Anchor, Font, Transform, Vec2, surface_pos_from_uv_pos, invert_uv_y
+from ..utils import Anchor, Font, Transform, Vec2, surface_pos_from_uv_pos, Color
 
 
 @dataclass
@@ -63,12 +63,12 @@ class DrawRect(DrawCommand):
         screen_pos, rotation, scale = self.get_composed_transform(camera)
         
         bg_color =  tuple(self.style.bg_color)
-        border =    round(self.style.border * scale)
+        bd =    round(self.style.bd * scale)
         bd_color =  tuple(self.style.bd_color)
         bd_radius = round(self.style.bd_radius * scale)
         
         dims =      round(self.dims * scale)
-        key =       (tuple(dims), bg_color, border, bd_color, bd_radius, rotation, scale)
+        key =       (tuple(dims), bg_color, bd, bd_color, bd_radius, rotation, scale)
         
         if dims[0] <= 0 or dims[1] <= 0:
             return
@@ -76,8 +76,8 @@ class DrawRect(DrawCommand):
         if not surface_cache.has(key):
             surface = pg.Surface(dims, pg.SRCALPHA)
             pg.draw.rect(surface, bg_color, surface.get_rect(), 0, bd_radius)
-            if border:
-                pg.draw.rect(surface, bd_color, surface.get_rect(), border, bd_radius)
+            if bd:
+                pg.draw.rect(surface, bd_color, surface.get_rect(), bd, bd_radius)
             if rotation:
                 surface = pg.transform.rotozoom(surface, rotation, 1).convert_alpha()
             surface_cache.add(key, surface)
@@ -99,11 +99,11 @@ class DrawCircle(DrawCommand):
         
         radius =    round(self.radius * scale)
         bg_color =  tuple(self.style.bg_color)
-        border =    round(self.style.border * scale)
+        bd =    round(self.style.bd * scale)
         bd_color =  tuple(self.style.bd_color)
         
         dims =      Vec2(radius*2, radius*2)
-        key =       (radius, bg_color, border, bd_color, scale)
+        key =       (radius, bg_color, bd, bd_color, scale)
         
         if radius <= 0:
             return
@@ -111,8 +111,8 @@ class DrawCircle(DrawCommand):
         if not surface_cache.has(key):
             surface = pg.Surface((radius*2, radius*2), pg.SRCALPHA)
             pg.draw.circle(surface, bg_color, (radius, radius), radius, 0)
-            if border:
-                pg.draw.circle(surface, bg_color, (radius, radius), radius, border)
+            if bd:
+                pg.draw.circle(surface, bg_color, (radius, radius), radius, bd)
             surface_cache.add(key, surface)
         else:
             surface = surface_cache.get(key)
@@ -166,5 +166,3 @@ class DrawText(DrawCommand):
             surface = pg.transform.rotozoom(surface, rotation, 1).convert_alpha()
         
         self.blit(blit_call_queue, surface, screen_pos, surface_pos_from_uv_pos(self.anchor, Vec2(width, height), rotation))
-
-    

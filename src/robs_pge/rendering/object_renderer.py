@@ -54,15 +54,15 @@ class ObjectRenderer:
 
 
 class RectShape(ObjectRenderer):
-    def __init__(self, dims: Vec2, bg_color: Optional[Color]=None, border: Optional[int]=None, bd_color: Optional[Color]=None, bd_radius: Optional[int]=None, style: Optional[RectStyle]=None):
+    def __init__(self, dims: Vec2, style: Optional[RectStyle]=None):
         self._dims = dims
         
         style = style or RectStyle()
         
-        self._bg_color = bg_color or style.bg_color
-        self._border = border or style.border
-        self._bd_color = bd_color or style.bd_color
-        self._bd_radius = bd_radius or style.bd_radius
+        self._bg_color = style.bg_color
+        self._bd = style.bd
+        self._bd_color = style.bd_color
+        self._bd_radius = style.bd_radius
         
     # region PROPERTIES
     
@@ -103,14 +103,14 @@ class RectShape(ObjectRenderer):
         self._bg_color = value
     # endregion
     
-    # region border
+    # region bd
     @property
-    def border(self):
-        return self._border
+    def bd(self):
+        return self._bd
     
-    @border.setter
-    def border(self, value):
-        self._border = value
+    @bd.setter
+    def bd(self, value):
+        self._bd = value
     # endregion
     
     # region bd_color
@@ -156,7 +156,7 @@ class RectShape(ObjectRenderer):
         
 
     def render(self, submit, transform: Transform, layer: int, anchor: Vec2):
-        submit(DrawRect(transform, self.dims, RectStyle(self.bg_color, self.border, self.bd_color, self.bd_radius), layer, anchor))
+        submit(DrawRect(transform, self.dims, RectStyle(self.bg_color, self.bd, self.bd_color, self.bd_radius), layer, anchor))
 
 
 class SpriteRenderer(ObjectRenderer):
@@ -253,14 +253,14 @@ class TextRenderer(ObjectRenderer):
 
 
 class CircleShape(ObjectRenderer):
-    def __init__(self, radius: int, bg_color: Optional[Color] = None, border: Optional[int] = None, bd_color: Optional[Color] = None, style: Optional[CircleStyle] = None):
+    def __init__(self, radius: int, style: Optional[CircleStyle] = None):
         self._radius = radius
         
         style = style or CircleStyle()
         
-        self._bg_color = bg_color or style.bg_color
-        self._border = border or style.border
-        self._bd_color = bd_color or style.bd_color
+        self._bg_color = style.bg_color
+        self._bd = style.bd
+        self._bd_color = style.bd_color
     
     # region PROPERTIES
     
@@ -313,14 +313,14 @@ class CircleShape(ObjectRenderer):
         self._bg_color = value
     # endregion
     
-    # region border
+    # region bd
     @property
-    def border(self):
-        return self._border
+    def bd(self):
+        return self._bd
     
-    @border.setter
-    def border(self, value: int):
-        self._border = value
+    @bd.setter
+    def bd(self, value: int):
+        self._bd = value
     # endregion
     
     # region bd_color
@@ -343,6 +343,4 @@ class CircleShape(ObjectRenderer):
         return pos.length_squared() <= self.radius ** 2
     
     def render(self, submit, transform: Transform, layer: int, anchor: Vec2):
-        submit(DrawCircle(transform, self.radius, CircleStyle(self.bg_color, self.border, self.bd_color), layer, anchor))
-
-
+        submit(DrawCircle(transform, self.radius, CircleStyle(self.bg_color, self.bd, self.bd_color), layer, anchor))
