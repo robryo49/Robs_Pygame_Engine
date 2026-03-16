@@ -276,8 +276,8 @@ class LineRenderer(ObjectRenderer):
 
         self._points = points
         
-        self._max_x = max(p.x for p in points)
-        self._max_y = max(p.y for p in points)
+        self._max_x = max(p.x for p in points) if points else 0
+        self._max_y = max(p.y for p in points) if points else 0
         
         self._style = (style or LineStyle()).copy()
     
@@ -295,8 +295,8 @@ class LineRenderer(ObjectRenderer):
     @points.setter
     def points(self, value: list[Vec2]):
         self._points = value
-        self._max_x = max(p.x for p in value)
-        self._max_y = max(p.y for p in value)
+        self._max_x = max(p.x for p in value) if value else 0
+        self._max_y = max(p.y for p in value) if value else 0
     # endregion
     
     # region style
@@ -312,21 +312,21 @@ class LineRenderer(ObjectRenderer):
     # region color
     @property
     def color(self):
-        return self.style.color
+        return self.style.line_color
     
     @color.setter
     def color(self, value: Color):
-        self.style.color = value
+        self.style.line_color = value
     # endregion
     
     # region width
     @property
     def width(self):
-        return self.style.width
+        return self.style.line_width
     
     @width.setter
     def width(self, value):
-        self.style.width = value
+        self.style.line_width = value
     # endregion
     
     # endregion

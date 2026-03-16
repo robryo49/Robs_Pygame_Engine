@@ -1169,4 +1169,122 @@ class ProgressBar(RectObject):
         if self._dirty:
             self._bar.width = round((self.width - self.bd*2) * self.progress)
             self._dirty = False
+            
+            
+class GraphObject(RectObject):
+    def __init__(self, transform: Transform, background: RectRenderer, line: LineObject, services: DictCollection, layer: int = 0, anchor: Vec2 = Anchor.C):
+        super().__init__(transform, background, services, layer, anchor)
+        
+        self._pad_x = 0
+        self._pad_y = 0
+        
+        self._min_x = None
+        self._max_x = None
+        
+        self._min_y = None
+        self._max_y = None
+        
+        self._min_data_x = inf
+        self._max_data_x = 0.0
+        
+        self._min_data_y = inf
+        self._max_data_y = 0.0
+        
+        self._data_points = []
+        self._max_data_points = None
+        
+        self._dirty = True
+        
+        self._line = line
+        self._line.anchor = Anchor.BL
+        self.add_child(line, Anchor.BL)
+    
+    # region PROPERTIES
+    
+    # region color
+    @property
+    def color(self):
+        return self._line.color
+    
+    @color.setter
+    def color(self, value):
+        self._line.color = value
+    # endregion
+    
+    # endregion
+    
+    def add_point(self, point: Vec2):
+        
+        i = 0
+        n = len(self._data_points)
+        for i in range(n):
+            p = self._data_points[n-i-1]
+            if p.x < point.x:
+                break
+        
+        self._data_points.insert(n-i, point)
+        
+        if self._max_data_points and len(self._data_points) > self._max_data_points:
+            self.remove_last()
+            
+        self._min_data_x = min(self._min_data_x, point.x)
+        self._max_data_x = max(self._max_data_x, point.x)
+        
+        self._min_data_y = min(self._min_data_y, point.y)
+        self._max_data_y = max(self._max_data_y, point.y)
+        
+        self.mark_dirty()
+        
+    def _update_data_range_from_removed_point(self, point: Vec2):
+        if point.x == self._min_data_x:
+            self._min_data_x = min(p.x for p in self._data_points) if self._data_points else 0
+        if point.x == self._max_data_x:
+            self._max_data_x = max(p.x for p in self._data_points) if self._data_points else 0
+            
+        if point.y == self._min_data_y:
+            self._min_data_y = min(p.y for p in self._data_points) if self._data_points else 0
+        if point.y == self._max_data_y:
+            self._max_data_y = max(p.y for p in self._data_points) if self._data_points else 0
+        
+    
+    def remove_point(self, point: Vec2):
+        self._data_points.remove(point)
+        self._update_data_range_from_removed_point(point)
+        self.mark_dirty()
+    
+    
+    def remove_last(self):
+        point = self._data_points.pop(0)
+        self._update_data_range_from_removed_point(point)
+        
+        self.mark_dirty()
+    
+    def mark_dirty(self):
+        self._dirty = True
+    
+    def _update_self(self, dt: float):
+        super()._update_self(dt)
+        
+        if self._dirty:
+            points = []
+            
+            if self._data_points:
+                min_x = self._min_x if self._min_x is not None else self._min_data_x
+                max_x = self._max_x if self._max_x is not None else self._max_data_x
+                min_y = self._min_y if self._min_y is not None else self._min_data_y
+                max_y = self._max_y if self._max_y is not None else self._max_data_y
+                
+                width = max_x - min_x
+                height = max_y - min_y
+                
+                x_fac = (self.width - 2*self._pad_x)/width if width else 0
+                y_fac = (self.height - 2*self._pad_y)/height if height else 0
+                
+                for point in self._data_points:
+                    if min_x <= point.x <= max_x and min_y <= point.y <= max_y:
+                        points.append(Vec2(self._pad_x + (point.x - min_x)*x_fac, self._pad_y + (point.y - min_y)*y_fac))
+            
+            self._line.points = points
+            
+            self._dirty = False
 

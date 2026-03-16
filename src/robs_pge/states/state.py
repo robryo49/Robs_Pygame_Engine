@@ -31,7 +31,7 @@ class State:
         self._particle_system = ParticleSystem()
         
         self._services = DictCollection()
-        self._factory.set_services(self._services)
+        self._factory.services = self._services
         
         self._objects = ObjectCollection()
         self._ui_objects = ObjectCollection()

@@ -1,2 +1,2 @@
-from .animation import AdderAnimation, MultiplierAnimation, SetterAnimation
+from .animation import *
 from .animation_manager import AnimationManager

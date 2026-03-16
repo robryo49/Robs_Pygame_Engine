@@ -73,3 +73,13 @@ class ProgressBarStyle(RectStyle):
     
     def copy(self):
         return replace(self)
+    
+
+@dataclass
+class GraphStyle(RectStyle):
+    line_color: Color = field(default_factory=lambda: Color(255, 255, 255))
+    line_width: int = 1
+    
+    def copy(self):
+        return replace(self)
+    
