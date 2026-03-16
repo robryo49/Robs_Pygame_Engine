@@ -30,7 +30,7 @@ class Engine:
         self._default_camera: Camera = Camera(self._display).move(self._display.dims*0.5).update(self.clock.dtime)
         
         self._state_manager: StateManager = StateManager()
-        self._renderer: Renderer = Renderer(self.display, self._default_camera)
+        self._renderer: Renderer = Renderer(self.display, self._default_camera, 2048 * 1024*1024)
         
         self._running: bool = True
         
@@ -93,26 +93,33 @@ class Engine:
         self.resources.set(RectStyle, "debug_rect_style",   RectStyle(bg_color=Color(0, 0, 0, 160), bd_color=Color(0, 0, 0, 160), bd_radius=16))
         return self
     
-    def init_debug_objects(self, factory: ObjectFactory, debug_overlay: DebugOverlay) -> "Engine":
+    def init_debug_layout_objects(self, factory: ObjectFactory, debug_overlay: DebugOverlay) -> "Engine":
         
         font = self.resources.get(Font, "debug_font_16")
         style = self.resources.get(RectStyle, "debug_rect_style")
         
         engine_debug_layout = factory.make_column_layout(Vec2(), style=style, invert_y=True).set_outer_padding(10)
-        debug_fps = factory.make_dynamic_text(Vec2(), "FPS: {:.1f} | {:.0f} ms", lambda: (self.clock.fps, self.clock.dtime*1000), font)
-        debug_renderer = factory.make_dynamic_text(Vec2(), "Draw Calls : World({}), UI({}), Debug({})", lambda: self.renderer.commands_count, font)
-        debug_cache = factory.make_dynamic_text(Vec2(), "Cache Size : Surface({}), Font({})", lambda: (self.renderer.surface_cache_size, self.renderer.font_cache_size), font)
+        debug_fps = factory.make_dynamic_text(Vec2(), "FPS: {:.1f} | {:.0f} ms", lambda: (self.clock.fps, self.clock.dtime*1000), font, cache=False)
+        debug_renderer = factory.make_dynamic_text(Vec2(), "Draw Calls : World({}), UI({}), Debug({})", lambda: self.renderer.commands_count, font, cache=False)
+        debug_cache = factory.make_dynamic_text(
+            Vec2(), "Cache Size : {:.1f}Mb (Surface({}), Font({}))",
+            lambda: (self.renderer.surface_cache_memory_size, self.renderer.surface_cache_size, self.renderer.font_cache_size), font, cache=False
+        )
+        debug_cache_hits = factory.make_dynamic_text(
+            Vec2(), "Cache Hits : {} | Misses : {} | Skips : {}", lambda: (self.renderer.cache_hits, self.renderer.cache_misses, self.renderer.cache_skips), font, cache=False
+        )
         
         engine_debug_layout.stack_y(factory.make_text(Vec2(), "Engine :", font), anchor=Anchor.TL).set_cell_padding(5, (0, 0))
         engine_debug_layout.stack_y(debug_fps, anchor=Anchor.TL)
         engine_debug_layout.stack_y(debug_renderer, anchor=Anchor.TL)
         engine_debug_layout.stack_y(debug_cache, anchor=Anchor.TL)
+        engine_debug_layout.stack_y(debug_cache_hits, anchor=Anchor.TL)
         
         debug_overlay.stack_y(engine_debug_layout, 0, 1, anchor=Anchor.TL)
         
         
         timer_debug_layout = factory.make_column_layout(Vec2(), style=style, invert_y=True).set_outer_padding(10)
-        debug_timer = factory.make_dynamic_text(Vec2(), "{}", lambda: self.frame_timer.format(), font)
+        debug_timer = factory.make_dynamic_text(Vec2(), "{}", lambda: self.frame_timer.format(), font, cache=False)
         
         timer_debug_layout.stack_y(factory.make_text(Vec2(), "Timer :", font), anchor=Anchor.TL).set_cell_padding(5, (0, 0))
         timer_debug_layout.stack_y(debug_timer, 0, 1, anchor=Anchor.TL)
@@ -132,14 +139,14 @@ class Engine:
         return self
         
     def update(self, dt: float) -> "Engine":
-        self.frame_timer.time("Update.Events",  lambda: self.process_events())
+        self.frame_timer.time("Update.Events",  self.process_events)
         self.frame_timer.time("Update.State",   lambda: self.state_manager.update(dt))
-        self.frame_timer.time("Update.Input",   lambda: self.input.update())
+        self.frame_timer.time("Update.Input",   self.input.update)
         return self
         
     
     def render(self) -> "Engine":
-        self.frame_timer.time("Rendering.Draw Calls",       lambda: self.state_manager.render())
+        self.frame_timer.time("Rendering.Draw Calls",       self.state_manager.render)
         
         self.frame_timer.time("Rendering.Drawing",          lambda: self.renderer.render(self.state.camera if self.state else None))
         self.frame_timer.time("Rendering.Screen Update",    lambda: self.display.update(self.clock.dtime))

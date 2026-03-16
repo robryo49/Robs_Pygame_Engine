@@ -4,7 +4,8 @@ from .behavior_collection import BehaviorCollection
 from .behaviors import *
 from .object_collection import ObjectCollection
 from ..core.camera import Camera
-from ..rendering import CircleShape, ObjectRenderer, RectShape, SpriteRenderer, TextRenderer
+from ..rendering import CircleRenderer, ObjectRenderer, RectRenderer, SpriteRenderer, TextRenderer
+from ..rendering.object_renderer import LineRenderer
 from ..utils import Anchor, Color, DictCollection, Easing, ObjectFlags, Rect, Transform, Vec2, clamp, inf, invert_y
 
 
@@ -381,14 +382,14 @@ class PygameObject:
     
     
 class RectObject(PygameObject):
-    def __init__(self, transform: Transform, renderer: RectShape, services: DictCollection, layer: int = 0, anchor: Vec2=Anchor.C):
+    def __init__(self, transform: Transform, renderer: RectRenderer, services: DictCollection, layer: int = 0, anchor: Vec2=Anchor.C):
         super().__init__(transform, renderer, services, layer, anchor)
     
     # region PROPERTIES
     
     @property
     def renderer(self):
-        return cast(RectShape, self._renderer)
+        return cast(RectRenderer, self._renderer)
     
     
     @property
@@ -457,14 +458,14 @@ class RectObject(PygameObject):
     
 
 class CircleObject(PygameObject):
-    def __init__(self, transform: Transform, renderer: CircleShape, services: DictCollection, layer: int = 0, anchor: Vec2=Anchor.C):
+    def __init__(self, transform: Transform, renderer: CircleRenderer, services: DictCollection, layer: int = 0, anchor: Vec2=Anchor.C):
         super().__init__(transform, renderer, services, layer, anchor)
         
     # region PROPERTIES
     
     @property
     def renderer(self):
-        return cast(CircleShape, self._renderer)
+        return cast(CircleRenderer, self._renderer)
     
     
     @property
@@ -583,9 +584,49 @@ class SpriteObject(PygameObject):
     # endregion
 
 
+class LineObject(PygameObject):
+    def __init__(self, transform: Transform, renderer: LineRenderer, services: DictCollection, layer: int = 0, anchor: Vec2=Anchor.C):
+        super().__init__(transform, renderer, services, layer, anchor)
+    
+    # region PROPERTIES
+    
+    @property
+    def renderer(self):
+        return cast(LineRenderer, self._renderer)
+    
+    
+    @property
+    def points(self):
+        return self.renderer.points
+    
+    @points.setter
+    def points(self, value: list[Vec2]):
+        self.renderer.points = value
+    
+    
+    @property
+    def width(self):
+        return self.renderer.width
+    
+    @width.setter
+    def width(self, value: int):
+        self.renderer.width = value
+    
+    
+    @property
+    def color(self):
+        return self.renderer.color
+    
+    @color.setter
+    def color(self, value: Color):
+        self.renderer.color = value
+    
+    # endregion
+
+
 
 class LayoutObject(RectObject):
-    def __init__(self, transform: Transform, renderer: RectShape, services: DictCollection, layer: int = 0, anchor: Vec2=Anchor.C):
+    def __init__(self, transform: Transform, renderer: RectRenderer, services: DictCollection, layer: int = 0, anchor: Vec2=Anchor.C):
         super().__init__(transform, renderer, services, layer, anchor)
         
         self._grid_objects_grid_positions: dict[PygameObject, tuple[int, int]] = {}
@@ -1011,7 +1052,7 @@ class LayoutObject(RectObject):
     
 
 class DebugOverlay(LayoutObject):
-    def __init__(self, transform: Transform, renderer: RectShape, services: DictCollection, layer: int = 0, anchor: Vec2=Anchor.C):
+    def __init__(self, transform: Transform, renderer: RectRenderer, services: DictCollection, layer: int = 0, anchor: Vec2=Anchor.C):
         super().__init__(transform, renderer, services, layer, anchor)
     
     def toggle(self) -> "LayoutObject":
@@ -1024,7 +1065,7 @@ class DebugOverlay(LayoutObject):
         
 
 class ButtonObject(RectObject):
-    def __init__(self, transform: Transform, background: RectShape, text: TextObject, action: Callable, services: DictCollection, layer: int = 0, anchor: Vec2 = Anchor.C):
+    def __init__(self, transform: Transform, background: RectRenderer, text: TextObject, action: Callable, services: DictCollection, layer: int = 0, anchor: Vec2 = Anchor.C):
         
         super().__init__(transform, background, services, layer, anchor)
         
@@ -1053,7 +1094,7 @@ class ButtonObject(RectObject):
 
 
 class ProgressBar(RectObject):
-    def __init__(self, transform: Transform, background: RectShape, bar: RectObject, services: DictCollection, layer: int = 0, anchor: Vec2 = Anchor.C):
+    def __init__(self, transform: Transform, background: RectRenderer, bar: RectObject, services: DictCollection, layer: int = 0, anchor: Vec2 = Anchor.C):
         super().__init__(transform, background, services, layer, anchor)
         
         self._value = 0.0

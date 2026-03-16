@@ -9,17 +9,21 @@ from ..utils import Vec2
 
 
 class Renderer:
-    def __init__(self, display: Display, default_camera: Camera):
+    def __init__(self, display: Display, default_camera: Camera, max_cache_size: int = 2048 * 1024 * 1024):
         
         self._display: Display = display
         self._default_camera: Camera = default_camera
         
-        self._surface_cache: SurfaceCache = SurfaceCache()
+        self._surface_cache: SurfaceCache = SurfaceCache(max_cache_size)
         self._font_cache: dict[tuple, pg.Font] = {}
         
         self._world_commands: list[DrawCommand] = []
         self._ui_commands: list[DrawCommand] = []
         self._debug_commands: list[DrawCommand] = []
+        
+        self._cache_hits: int = 0
+        self._cache_misses: int = 0
+        self._cache_skips: int = 0
         
         self._world_commands_count: int = 0
         self._ui_commands_count: int = 0
@@ -59,12 +63,28 @@ class Renderer:
         return self._debug_commands_count
     
     @property
+    def cache_hits(self):
+        return self._cache_hits
+    
+    @property
+    def cache_misses(self):
+        return self._cache_misses
+    
+    @property
+    def cache_skips(self):
+        return self._cache_skips
+    
+    @property
     def commands_count(self) -> tuple[int, int, int]:
         return self._commands_count
     
     @property
     def surface_cache_size(self):
         return self._surface_cache.size
+    
+    @property
+    def surface_cache_memory_size(self):
+        return self._surface_cache.memory_size
     
     @property
     def font_cache_size(self):
@@ -86,6 +106,9 @@ class Renderer:
     
     def render(self, camera: Camera) -> "Renderer":
         self.display.clear()
+        self._cache_hits = 0
+        self._cache_misses = 0
+        self._cache_skips = 0
         
         for cmd in sorted(self.world_commands, key=lambda c: c.layer):
             self._execute_command(cmd, camera)
@@ -111,7 +134,14 @@ class Renderer:
         return self
     
     def _execute_command(self, cmd: DrawCommand, camera: Camera) -> "Renderer":
-        cmd.draw(self.blit_calls, camera, self._surface_cache, self._font_cache)
+        cache_hit = cmd.draw(self.blit_calls, camera, self._surface_cache, self._font_cache)
+        
+        if cache_hit is None:
+            self._cache_skips += 1
+        else:
+            self._cache_hits += cache_hit
+            self._cache_misses += not cache_hit
+        
         return self
     
     

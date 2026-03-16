@@ -41,7 +41,7 @@ class State:
         self.init_resources()
         self.init_keybinds()
         self.init_services()
-        self.init_debug_objects()
+        self.init_debug_layout_objects()
         
     # region PROPERTIES
     
@@ -128,19 +128,19 @@ class State:
         self._services.set(ParticleSystem, self.particle_system)
         self._services.set(ObjectFactory, self.factory)
     
-    def init_debug_objects(self):
+    def init_debug_layout_objects(self):
         
         self.debug_overlay.set_constant_padding(10).invert_up_down().fix_width(self.engine.display.dims.x)
-        self.engine.init_debug_objects(self.factory, self.debug_overlay)
+        self.engine.init_debug_layout_objects(self.factory, self.debug_overlay)
         
         font = self.resources.get(Font, "debug_font_16")
         style = self.resources.get(RectStyle, "debug_rect_style")
         
         camera = self.camera
         camera_debug_layout = self.factory.make_column_layout(Vec2(), style=style, invert_y=True).set_outer_padding(10)
-        debug_camera_pos = self.factory.make_dynamic_text(Vec2(), "Pos: {} | Zoom: {:.2f} | Rot: {:.1f}", lambda: (round(camera.pos, 1), camera.zoom, camera.rotation), font)
-        debug_camera_aabb = self.factory.make_dynamic_text(Vec2(), "AABB: {}", lambda: [round(v, 1) for v in camera.world_aabb], font)
-        debug_camera_corners = self.factory.make_dynamic_text(Vec2(), "Limits: {:.1f} {:.1f} | {:.1f} {:.1f}", lambda: (*camera.bottom_left, *camera.top_right), font)
+        debug_camera_pos = self.factory.make_dynamic_text(Vec2(), "Pos: {} | Zoom: {:.2f} | Rot: {:.1f}", lambda: (round(camera.pos, 1), camera.zoom, camera.rotation), font, cache=False)
+        debug_camera_aabb = self.factory.make_dynamic_text(Vec2(), "AABB: {}", lambda: [round(v, 1) for v in camera.world_aabb], font, cache=False)
+        debug_camera_corners = self.factory.make_dynamic_text(Vec2(), "Limits: {:.1f} {:.1f} | {:.1f} {:.1f}", lambda: (*camera.bottom_left, *camera.top_right), font, cache=False)
         
         camera_debug_layout.stack_y(self.factory.make_text(Vec2(), "Camera :", font), anchor=Anchor.TL).set_cell_padding(5, (0, 0))
         camera_debug_layout.stack_y(debug_camera_pos, anchor=Anchor.TL)
@@ -150,9 +150,9 @@ class State:
         
         inp = self.input
         input_debug_layout = self.factory.make_column_layout(Vec2(), style=style, invert_y=True).set_outer_padding(10)
-        debug_mouse_pos = self.factory.make_dynamic_text(Vec2(), "Pos: Screen({}) | World({})", lambda: (round(inp.mouse_pos), round(inp.mouse.world_pos(self.camera))), font)
-        debug_pressed_keys = self.factory.make_dynamic_text(Vec2(), "Held Keys: {}", lambda: {pg.key.name(k): inp.held_keys[k] for k in inp.held_keys}, font)
-        debug_pressed_buttons = self.factory.make_dynamic_text(Vec2(), "Held Buttons: {}", lambda: inp.held_buttons, font)
+        debug_mouse_pos = self.factory.make_dynamic_text(Vec2(), "Pos: Screen({}) | World({})", lambda: (round(inp.mouse_pos), round(inp.mouse.world_pos(self.camera))), font, cache=False)
+        debug_pressed_keys = self.factory.make_dynamic_text(Vec2(), "Held Keys: {}", lambda: {pg.key.name(k): inp.held_keys[k] for k in inp.held_keys}, font, cache=False)
+        debug_pressed_buttons = self.factory.make_dynamic_text(Vec2(), "Held Buttons: {}", lambda: inp.held_buttons, font, cache=False)
         
         input_debug_layout.stack_y(self.factory.make_text(Vec2(), "Mouse :", font), anchor=Anchor.TL).set_cell_padding(5, (0, 0))
         input_debug_layout.stack_y(debug_mouse_pos, anchor=Anchor.TL)
@@ -161,8 +161,8 @@ class State:
         
         
         animation_debug_layout = self.factory.make_column_layout(Vec2(), style=style, invert_y=True).set_outer_padding(10)
-        debug_running_animation_count = self.factory.make_dynamic_text(Vec2(), "Running: {}", lambda: len(self.animation_manager.active), font)
-        debug_scheduled_animation_count = self.factory.make_dynamic_text(Vec2(), "Scheduled: {}", lambda: len(self.animation_manager.scheduled), font)
+        debug_running_animation_count = self.factory.make_dynamic_text(Vec2(), "Running: {}", lambda: len(self.animation_manager.active), font, cache=False)
+        debug_scheduled_animation_count = self.factory.make_dynamic_text(Vec2(), "Scheduled: {}", lambda: len(self.animation_manager.scheduled), font, cache=False)
         
         animation_debug_layout.stack_y(self.factory.make_text(Vec2(), "Animations :", font), anchor=Anchor.TL).set_cell_padding(5, (0, 0))
         animation_debug_layout.stack_y(debug_running_animation_count, anchor=Anchor.TL)
@@ -170,8 +170,8 @@ class State:
         
         
         object_debug_layout = self.factory.make_column_layout(Vec2(), style=style, invert_y=True).set_outer_padding(10)
-        debug_object_count = self.factory.make_dynamic_text(Vec2(), "Count: World({}) | UI({})", lambda: (len(self.objects.elements), len(self.ui_objects.elements)), font)
-        debug_hovered_object = self.factory.make_dynamic_text(Vec2(), "Hovered : {}", lambda: str(self.interaction_manager.hovered), font)
+        debug_object_count = self.factory.make_dynamic_text(Vec2(), "Count: World({}) | UI({})", lambda: (len(self.objects.elements), len(self.ui_objects.elements)), font, cache=False)
+        debug_hovered_object = self.factory.make_dynamic_text(Vec2(), "Hovered : {}", lambda: str(self.interaction_manager.hovered), font, cache=False)
         
         object_debug_layout.stack_y(self.factory.make_text(Vec2(), "Objects :", font), anchor=Anchor.TL).set_cell_padding(5, (0, 0))
         object_debug_layout.stack_y(debug_object_count, anchor=Anchor.TL)
