@@ -7,14 +7,9 @@ class Colors:
     BLACK = Color(0,0,0)
     
     RED = Color(255,0,0)
-    DARK_RED = Color(139,0,0)
-    LIGHT_RED = Color(255,102,102)
-    
     GREEN = Color(0,255,0)
-    DARK_GREEN = Color(0,100,0)
-    LIGHT_GREEN = Color(144,238,144)
-    
     BLUE = Color(0,0,255)
+    
     NAVY = Color(0,0,128)
     SKY_BLUE = Color(135,206,235)
     
@@ -37,20 +32,24 @@ class Colors:
         return Color(value, value, value, alpha)
     
     @staticmethod
-    def lighten(color: Color, amount: int):
+    def lighten(color: Color, gamma_add: int):
+        if gamma_add < 0:
+            return Colors.darken(color, -gamma_add)
         return Color(
-            min(color.r + amount, 255),
-            min(color.g + amount, 255),
-            min(color.b + amount, 255),
+            min(color.r + gamma_add, 255),
+            min(color.g + gamma_add, 255),
+            min(color.b + gamma_add, 255),
             color.a
         )
 
     @staticmethod
-    def darken(color: Color, amount: int):
+    def darken(color: Color, gamma_add: int):
+        if gamma_add < 0:
+            return Colors.lighten(color, -gamma_add)
         return Color(
-            max(color.r - amount, 0),
-            max(color.g - amount, 0),
-            max(color.b - amount, 0),
+            max(color.r - gamma_add, 0),
+            max(color.g - gamma_add, 0),
+            max(color.b - gamma_add, 0),
             color.a
         )
     
@@ -86,43 +85,77 @@ class Colors:
         return Color(color.r, color.g, color.b, alpha)
     
     @staticmethod
-    def pastel(color, amount=0.5):
+    def pastel(color, gamma_add=0.5):
         return Color(
-            int(color.r + (255 - color.r) * amount),
-            int(color.g + (255 - color.g) * amount),
-            int(color.b + (255 - color.b) * amount),
+            int(color.r + (255 - color.r) * gamma_add),
+            int(color.g + (255 - color.g) * gamma_add),
+            int(color.b + (255 - color.b) * gamma_add),
             color.a
         )
 
 
 
 class ColorPalette:
-    def __init__(self, **colors: Color):
-        self.primary_colors = colors
+    def __init__(self, colors: dict[str, Color], shades: dict[str, int] = None, single_colors: dict[str, Color] = None):
+        self.primary_colors = dict(colors)
+        self.single_colors = {}
         
         self.shades = {}
         self.shaded_colors = {}
         
-    def add_colors(self, **colors: Color):
-        self.primary_colors.update(colors)
+        self.all_colors = dict(colors)
         
-        for name, factor in self.shades.items():
-            new_colors = {f"{name}_{color}": Colors.multiply(value, factor) for color, value in colors.items()}
-            self.shaded_colors.update(new_colors)
+        if shades is not None:
+            self.add_shades(shades)
             
-        return self
+        if single_colors is not None:
+            self.add_single_colors(single_colors)
+            
         
-        
-    def add_shade(self, name: str, factor: float):
-        new_colors = {f"{name}_{color}": Colors.multiply(value, factor) for color, value in self.primary_colors.items()}
-        self.shaded_colors.update(new_colors)
-        self.shades[name] = factor
+    def add_single_color(self, name: str, color: Color):
+        self.single_colors[name] = color
+        self.all_colors[name] = color
         return self
     
+    def add_single_colors(self, colors: dict[str, Color]):
+        for name, color in colors.items():
+            self.add_single_color(name, color)
+        return self
+        
+        
+    def add_color(self, name: str, color: Color):
+        self.primary_colors[name] = color
+        self.all_colors[name] = color
+        
+        for shade_name, gamma_add in self.shades.items():
+            color_name, new_color = f"{shade_name}_{name}", Colors.lighten(color, gamma_add)
+            self.shaded_colors[color_name] = new_color
+            self.all_colors[color_name] = new_color
+        return self
+        
+    def add_colors(self, colors: dict[str, Color]):
+        for name, color in colors:
+            self.add_color(name, color)
+        return self
+        
+        
+    def add_shade(self, name: str, gamma_add: int):
+        new_colors = {f"{name}_{color}": Colors.lighten(value, gamma_add) for color, value in self.primary_colors.items()}
+        
+        self.shaded_colors.update(new_colors)
+        self.all_colors.update(new_colors)
+        
+        self.shades[name] = gamma_add
+        return self
+    
+    def add_shades(self, shades: dict[str, int]):
+        for name, gamma_add in shades.items():
+            self.add_shade(name, gamma_add)
+        return self
+    
+    
     def get(self, color_name: str):
-        if color_name in self.primary_colors:
-            return self.primary_colors[color_name]
-        return self.shaded_colors[color_name]
+        return self.all_colors[color_name]
     
     def __getattr__(self, name):
         return self.get(name)

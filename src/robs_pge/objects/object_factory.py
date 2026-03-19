@@ -24,29 +24,23 @@ class ObjectFactory:
     # endregion
     
     
+    def _make_object(self, object_type: type, position, rotation, scale, renderer, layer, anchor, *args):
+        return object_type(Transform(position, rotation, scale), renderer, *args, self._services, layer, anchor)
+    
     def make_rect(
             self, position: Vec2, dims: Vec2, style: RectStyle = None,
             rotation: float = 0.0, scale: float = 1.0, layer: int = 0, anchor: Vec2 = Anchor.C, cache: bool = True
     ):
         
-        obj = RectObject(
-            Transform(position, rotation, scale ),
-            RectRenderer(dims, style, cache),
-            self._services, layer, anchor
-        )
+        obj = self._make_object(RectObject, position, rotation, scale, RectRenderer(dims, style, cache), layer, anchor)
         
         return obj
     
     def make_circle(
             self, position: Vec2, radius: int, style: CircleStyle = None,
-            scale: float = 1.0, layer: int = 0, anchor: Vec2 = Anchor.C, cache: bool = True
+            rotation: float = 0.0, scale: float = 1.0, layer: int = 0, anchor: Vec2 = Anchor.C, cache: bool = True
     ):
-        
-        obj = CircleObject(
-            Transform(position, scale),
-            CircleRenderer(radius, style, cache),
-            self._services, layer, anchor
-        )
+        obj = self._make_object(CircleObject, position, rotation, scale, CircleRenderer(radius, style, cache), layer, anchor)
         
         return obj
     
@@ -57,11 +51,7 @@ class ObjectFactory:
         
         style = style or LineStyle()
         
-        obj = LineObject(
-            Transform(position, rotation, scale),
-            LineRenderer(points, style, cache),
-            self._services, layer, anchor
-        )
+        obj = self._make_object(LineObject, position, rotation, scale, LineRenderer(points, style, cache), layer, anchor)
         
         return obj
     
@@ -73,11 +63,7 @@ class ObjectFactory:
             rotation: float = 0.0, scale: float = 1.0, layer: int = 1, anchor: Vec2 = Anchor.C, cache: bool = True
     ):
         
-        obj = PygameObject(
-            Transform(position, rotation, scale),
-            SpriteRenderer(texture, cache),
-            self._services, layer, anchor
-        )
+        obj = self._make_object(PygameObject, position, rotation, scale, SpriteRenderer(texture, cache), layer, anchor)
         
         return obj
     
@@ -88,11 +74,7 @@ class ObjectFactory:
             self, position: Vec2, text: str, font: Font = None,
             rotation: float = 0.0, scale: float = 1.0, layer: int = 0, anchor: Vec2 = Anchor.C, cache: bool = True
     ):
-        obj = TextObject(
-            Transform(position, rotation, scale),
-            TextRenderer(text, font, cache),
-            self._services, layer, anchor
-        )
+        obj = self._make_object(TextObject, position, rotation, scale, TextRenderer(text, font, cache), layer, anchor)
         
         return obj
     
@@ -101,8 +83,7 @@ class ObjectFactory:
             rotation: float = 0.0, scale: float = 1.0, layer: int = 0, anchor: Vec2 = Anchor.C, cache: bool = True
     ):
         
-        obj = self.make_text(position, "", font, rotation, scale, layer, anchor, cache)
-        obj.add_behavior(DynamicAttribute("text", getter, template))
+        obj = self.make_text(position, "", font, rotation, scale, layer, anchor, cache).add_behavior(DynamicAttribute("text", getter, template))
         
         return obj
     
@@ -118,11 +99,8 @@ class ObjectFactory:
         font = style.font
         dims = dims or font.get_render_size(text) + Vec2(margin*2)
         
-        obj = ButtonObject(
-            Transform(position, rotation, scale),
-            RectRenderer(dims, style, cache),
-            self.make_text(Vec2(), text, font, 0.0, 1.0, layer, Anchor.C, cache),
-            action, self._services, layer, anchor
+        obj = self._make_object(ButtonObject, position, rotation, scale, RectRenderer(dims, style, cache), layer, anchor,
+            self.make_text(Vec2(), text, font, 0.0, 1.0, layer, Anchor.C, cache), action
         )
         
         return obj
@@ -137,11 +115,7 @@ class ObjectFactory:
         
         style = style or RectStyle()
         
-        obj = LayoutObject(
-            Transform(position, rotation, scale),
-            RectRenderer(Vec2(), style, cache),
-            self._services, layer, anchor
-        )
+        obj = self._make_object(LayoutObject, position, rotation, scale, RectRenderer(Vec2(), style, cache), layer, anchor)
         
         obj.min_col = min_col
         obj.max_col = max_col
@@ -218,13 +192,8 @@ class ObjectFactory:
         bg_style = style or ProgressBarStyle()
         bar_style = RectStyle(bg_style.color, bd_radius=(bg_style.bd_radius-bg_style.bd) if bg_style.bd_radius > 0 else 0)
         
-        bar = self.make_rect(Vec2(), dims - Vec2(style.bd * 2), bar_style, 0.0, 1.0, layer, Anchor.C, cache_bar)
-        
-        obj = ProgressBar(
-            Transform(position, rotation, scale),
-            RectRenderer(dims, bg_style, cache), bar,
-            self._services, layer, anchor
-        )
+        bar = self.make_rect(Vec2(), Vec2(0, dims.y), bar_style, 0.0, 1.0, layer, Anchor.C, cache_bar)
+        obj = self._make_object(ProgressBar, position, rotation, scale, RectRenderer(dims, bg_style, cache), layer, anchor, bar)
         
         return obj
     
@@ -237,12 +206,7 @@ class ObjectFactory:
         line_style = LineStyle(bg_style.line_color, bg_style.line_width)
         
         line = self.make_line(Vec2(), [], line_style, 0.0, 1.0, layer, Anchor.C, cache_line)
-        
-        obj = GraphObject(
-            Transform(position, rotation, scale),
-            RectRenderer(dims, bg_style, cache), line,
-            self._services, layer, anchor
-        )
+        obj = self._make_object(GraphObject, position, rotation, scale, RectRenderer(dims, bg_style, cache), layer, anchor, line)
         
         return obj
     

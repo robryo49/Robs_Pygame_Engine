@@ -245,8 +245,12 @@ class PygameObject:
     def add_behavior(self, behavior: ObjectBehavior | list[ObjectBehavior] | BehaviorCollection):
         self.behaviors.add(behavior)
         
+        return self
+        
     def remove_behavior(self, behavior: ObjectBehavior | list[ObjectBehavior] | BehaviorCollection):
         self.behaviors.remove(behavior)
+        
+        return self
     
     # endregion
         

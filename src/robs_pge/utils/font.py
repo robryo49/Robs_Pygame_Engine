@@ -28,6 +28,14 @@ class Font:
     
     # endregion
     
+    def _with(self, **kwargs):
+        args = {"name": self.name, "size": self.size, "color": self.color, "bold": self.bold, "italic": self.italic, "line_spacing": self.line_spacing}
+        args.update(kwargs)
+        return Font(**args)
+    
+    def copy(self):
+        return Font(self.name, self.size, self.color, self.bold, self.italic, self.line_spacing)
+    
     def get_render_size(self, text):
         return Vec2(self._pg_font.size(text))
     

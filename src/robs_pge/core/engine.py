@@ -10,7 +10,7 @@ from ..objects import InteractionManager, DebugOverlay, ObjectFactory
 from ..resources import ResourceManager
 from ..rendering import RectStyle
 from ..states import StateManager
-from ..utils import Vec2, Font, Colors, Anchor, Color
+from ..utils import Vec2, Font, Colors, Anchor, Color, ColorPalette
 
 
 class Engine:
@@ -88,14 +88,42 @@ class Engine:
     
     # endregion
     
-    def init_resources(self) -> "Engine":
-        self.resources.set(Font, "debug_font_16", Font("dejavusansmono", size=16, color=Colors.WHITE))
+    def init_color_palettes(self):
+        self.resources.create_color_palette(
+            "default",
+            {"red": Colors.RED, "green": Colors.GREEN, "blue": Colors.BLUE, "grey": Colors.GREY},
+            {"light": 128, "dark": -128},
+            {"white": Colors.WHITE, "black": Colors.BLACK},
+        )
+    
+    def init_fonts(self):
+        palette: ColorPalette = self.resources.get_color_palette("default")
+        
+        colors = palette.all_colors
+        sizes = [10, 16, 20]
+        
+        for name, color in colors.items():
+            for size in sizes:
+                self.resources.set(Font, f"dejavu_{size}_{name}", Font("dejavusansmono", size=size, color=color))
+        
+    def init_textures(self):
+        pass
+    
+    def init_styles(self):
         self.resources.set(RectStyle, "debug_rect_style",   RectStyle(bg_color=Color(0, 0, 0, 160), bd_color=Color(0, 0, 0, 160), bd_radius=16))
+        
+    
+    def init_resources(self) -> "Engine":
+        self.init_color_palettes()
+        self.init_fonts()
+        self.init_styles()
+        self.init_textures()
+        
         return self
     
     def init_debug_layout_objects(self, factory: ObjectFactory, debug_overlay: DebugOverlay) -> "Engine":
         
-        font = self.resources.get(Font, "debug_font_16")
+        font = self.resources.get_font("dejavu_16_light_red")
         style = self.resources.get(RectStyle, "debug_rect_style")
         
         engine_debug_layout = factory.make_column_layout(Vec2(), style=style, invert_y=True).set_outer_padding(10)
