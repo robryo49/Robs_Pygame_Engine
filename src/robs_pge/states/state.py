@@ -133,7 +133,7 @@ class State:
         self.debug_overlay.set_constant_padding(10).invert_up_down().fix_width(self.engine.display.dims.x)
         self.engine.init_debug_layout_objects(self.factory, self.debug_overlay)
         
-        font = self.resources.get(Font, "dejavu_16_white")
+        font = self.resources.get(Font, "dejavu_white_14")
         style = self.resources.get(RectStyle, "debug_rect_style")
         
         camera = self.camera

@@ -1,4 +1,7 @@
+import sys
+
 import pygame as pg
+import logging
 
 from .camera import Camera
 from .clock import Clock
@@ -10,12 +13,13 @@ from ..objects import InteractionManager, DebugOverlay, ObjectFactory
 from ..resources import ResourceManager
 from ..rendering import RectStyle
 from ..states import StateManager
-from ..utils import Vec2, Font, Colors, Anchor, Color, ColorPalette
+from ..utils import Vec2, Colors, Anchor, Color
 
 
 class Engine:
     def __init__(self, name: str):
         self._name: str = name
+        logging.basicConfig(level=logging.INFO, stream=sys.stdout, format='%(name)s - %(levelname)s : %(message)s')
         
         self._display: Display = Display(Vec2(1920, 1080))
         
@@ -89,31 +93,52 @@ class Engine:
     # endregion
     
     def init_color_palettes(self):
+        logging.info("Initializing color palettes")
         self.resources.create_color_palette(
             "default",
-            {"red": Colors.RED, "green": Colors.GREEN, "blue": Colors.BLUE, "grey": Colors.GREY},
-            {"light": 128, "dark": -128},
-            {"white": Colors.WHITE, "black": Colors.BLACK},
+            single_colors=Colors.ALL
+        )
+        
+        self.resources.create_color_palette(
+            "debug",
+            single_colors={
+                "white": Colors.LIGHT_GRAY,
+                "gray": Colors.SLATE_BLUE,
+                "blue": Colors.BRIGHT_BLUE,
+                "yellow": Colors.AMBER,
+                "red": Colors.LIGHT_RED,
+                "teal": Colors.CARIBBEAN_GREEN,
+                "bg_blue_1": Colors.DARK_NAVY,
+                "bg_blue_2": Colors.MIDNIGHT
+            }
         )
     
     def init_fonts(self):
-        palette: ColorPalette = self.resources.get_color_palette("default")
+        logging.info("Initializing fonts")
         
-        colors = palette.all_colors
-        sizes = [10, 16, 20]
+        sizes = [10, 14, 18]
+        self.resources.create_fonts("dejavu", "dejavusansmono", sizes, ["white", "black"])
         
-        for name, color in colors.items():
-            for size in sizes:
-                self.resources.set(Font, f"dejavu_{size}_{name}", Font("dejavusansmono", size=size, color=color))
+        debug = self.resources.get_color_palette("debug")
+        self.resources.create_fonts("debug", "dejavusansmono", [("small", 10), ("text", 14), ("title", 20)], {
+            "white":  debug.white,
+            "gray":   debug.gray,
+            "blue":   debug.blue,
+            "yellow": debug.yellow,
+            "red":    debug.red,
+            "teal":   debug.teal,
+        })
         
     def init_textures(self):
-        pass
+        logging.info("Initializing textures")
     
     def init_styles(self):
+        logging.info("Initializing styles")
         self.resources.set(RectStyle, "debug_rect_style",   RectStyle(bg_color=Color(0, 0, 0, 160), bd_color=Color(0, 0, 0, 160), bd_radius=16))
         
     
     def init_resources(self) -> "Engine":
+        logging.info("Initializing resources")
         self.init_color_palettes()
         self.init_fonts()
         self.init_styles()
@@ -123,7 +148,7 @@ class Engine:
     
     def init_debug_layout_objects(self, factory: ObjectFactory, debug_overlay: DebugOverlay) -> "Engine":
         
-        font = self.resources.get_font("dejavu_16_light_red")
+        font = self.resources.get_font("debug_yellow_text")
         style = self.resources.get(RectStyle, "debug_rect_style")
         
         engine_debug_layout = factory.make_column_layout(Vec2(), style=style, invert_y=True).set_outer_padding(10)

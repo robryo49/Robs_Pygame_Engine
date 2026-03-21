@@ -4,7 +4,8 @@ import pygame as pg
 
 from .styles import CircleStyle, LineStyle, RectStyle
 from ..core.camera import Camera
-from ..resources import SurfaceCache, Texture
+from ..resources.texture import Texture
+from ..resources.surface_cache import SurfaceCache
 from ..utils import Font, Transform, Vec2, surface_pos_from_uv_pos
 
 
