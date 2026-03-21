@@ -9,7 +9,7 @@ from .display import Display
 from .renderer import Renderer
 from ..debug import FrameTimer
 from ..input import InputManager
-from ..objects import InteractionManager, DebugOverlay, ObjectFactory
+from ..objects import InteractionManager, DebugOverlay, ObjectFactory, ObjectFlags
 from ..resources import ResourceManager
 from ..rendering import RectStyle
 from ..states import StateManager
@@ -101,15 +101,24 @@ class Engine:
         
         self.resources.create_color_palette(
             "debug",
+            colors= {
+                "gray":     Colors.SLATE_BLUE,
+                "blue":     Colors.BRIGHT_BLUE,
+                "yellow":   Colors.AMBER,
+                "red":      Colors.LIGHT_RED,
+                "teal":     Colors.CARIBBEAN_GREEN,
+                "orange":   Colors.ORANGE,
+                "green":    Colors.GREEN,
+                "purple":   Colors.PURPLE,
+                "pink":     Colors.PINK,
+                "cyan":     Colors.CYAN,
+            },
+            shades = {
+                "light_{}": 50,
+                "dark_{}": -70
+            },
             single_colors={
-                "white": Colors.LIGHT_GRAY,
-                "gray": Colors.SLATE_BLUE,
-                "blue": Colors.BRIGHT_BLUE,
-                "yellow": Colors.AMBER,
-                "red": Colors.LIGHT_RED,
-                "teal": Colors.CARIBBEAN_GREEN,
-                "bg_blue_1": Colors.DARK_NAVY,
-                "bg_blue_2": Colors.MIDNIGHT
+                "white":    Colors.LIGHT_GRAY,
             }
         )
     
@@ -127,6 +136,11 @@ class Engine:
             "yellow": debug.yellow,
             "red":    debug.red,
             "teal":   debug.teal,
+            "orange": debug.orange,
+            "green":  debug.green,
+            "purple": debug.purple,
+            "pink":   debug.pink,
+            "cyan":   debug.cyan
         })
         
     def init_textures(self):
@@ -134,7 +148,13 @@ class Engine:
     
     def init_styles(self):
         logging.info("Initializing styles")
-        self.resources.set(RectStyle, "debug_rect_style",   RectStyle(bg_color=Color(0, 0, 0, 160), bd_color=Color(0, 0, 0, 160), bd_radius=16))
+        
+        debug_palette = self.resources.get_color_palette("debug")
+        debug_rect_style = RectStyle(bg_color=Colors.with_alpha(debug_palette.dark_gray, 200), bd_color=Colors.with_alpha(debug_palette.gray, 200), bd=1)
+        debug_red_header_style = RectStyle(bg_color=Colors.with_alpha(debug_palette.dark_red, 200), bd_color=Colors.with_alpha(debug_palette.gray, 200), bd=1)
+        
+        self.resources.set(RectStyle, "debug_rect_style", debug_rect_style)
+        self.resources.set(RectStyle, "debug_red_header_style", debug_red_header_style)
         
     
     def init_resources(self) -> "Engine":
@@ -148,36 +168,6 @@ class Engine:
     
     def init_debug_layout_objects(self, factory: ObjectFactory, debug_overlay: DebugOverlay) -> "Engine":
         
-        font = self.resources.get_font("debug_yellow_text")
-        style = self.resources.get(RectStyle, "debug_rect_style")
-        
-        engine_debug_layout = factory.make_column_layout(Vec2(), style=style, invert_y=True).set_outer_padding(10)
-        debug_fps = factory.make_dynamic_text(Vec2(), "FPS: {:.1f} | {:.0f} ms", lambda: (self.clock.fps, self.clock.dtime*1000), font, cache=False)
-        debug_renderer = factory.make_dynamic_text(Vec2(), "Draw Calls : World({}), UI({}), Debug({})", lambda: self.renderer.commands_count, font, cache=False)
-        debug_cache = factory.make_dynamic_text(
-            Vec2(), "Cache Size : {:.1f}Mb (Surface({}), Font({}))",
-            lambda: (self.renderer.surface_cache_memory_size, self.renderer.surface_cache_size, self.renderer.font_cache_size), font, cache=False
-        )
-        debug_cache_hits = factory.make_dynamic_text(
-            Vec2(), "Cache Hits : {} | Misses : {} | Skips : {}", lambda: (self.renderer.cache_hits, self.renderer.cache_misses, self.renderer.cache_skips), font, cache=False
-        )
-        
-        engine_debug_layout.stack_y(factory.make_text(Vec2(), "Engine :", font), anchor=Anchor.TL).set_cell_padding(5, (0, 0))
-        engine_debug_layout.stack_y(debug_fps, anchor=Anchor.TL)
-        engine_debug_layout.stack_y(debug_renderer, anchor=Anchor.TL)
-        engine_debug_layout.stack_y(debug_cache, anchor=Anchor.TL)
-        engine_debug_layout.stack_y(debug_cache_hits, anchor=Anchor.TL)
-        
-        debug_overlay.stack_y(engine_debug_layout, 0, 1, anchor=Anchor.TL)
-        
-        
-        timer_debug_layout = factory.make_column_layout(Vec2(), style=style, invert_y=True).set_outer_padding(10)
-        debug_timer = factory.make_dynamic_text(Vec2(), "{}", lambda: self.frame_timer.format(), font, cache=False)
-        
-        timer_debug_layout.stack_y(factory.make_text(Vec2(), "Timer :", font), anchor=Anchor.TL).set_cell_padding(5, (0, 0))
-        timer_debug_layout.stack_y(debug_timer, 0, 1, anchor=Anchor.TL)
-        
-        debug_overlay.stack_y(timer_debug_layout, 0, 1, anchor=Anchor.TL)
         
         return self
     

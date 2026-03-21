@@ -669,8 +669,31 @@ class LayoutObject(RectObject):
         self._fixed_height = None
         
         self._dirty = False
+        self._dirty_check = True
         
     # region PROPERITIES
+    
+    # region dirty_check
+    @property
+    def dirty_check(self):
+        return self._dirty_check
+    
+    @dirty_check.setter
+    def dirty_check(self, value):
+        self._dirty_check = value
+    
+    def enable_dirty_check(self):
+        self.dirty_check = True
+        
+    def disable_dirty_check(self):
+        self.dirty_check = False
+        self.check_if_dirty()
+    
+    def toggle_dirty_check(self):
+        self.dirty_check = not self.dirty_check
+        self.check_if_dirty()
+    
+    # endregion
     
     # region min_col
     @property
@@ -937,6 +960,7 @@ class LayoutObject(RectObject):
         self.add_object(obj, max_x, y, 1, span_y, anchor)
         return self
     
+    
     def check_if_dirty(self):
         for obj, grid_pos in self._grid_objects_grid_positions.items():
             grid_x, grid_y = grid_pos
@@ -1011,6 +1035,7 @@ class LayoutObject(RectObject):
                     self._row_heights[row_y] = self._row_heights.get(row_y, 0) + missing / len(free_rows)
         
         if self._fixed_width:
+            self.width = self._fixed_width
             free_columns = [col_x for col_x in self._col_widths if not self._fixed_cols.get(col_x, False)]
             target = self._fixed_width - self._outer_padding.x*2
             missing = target - sum(self._col_widths.values())
@@ -1021,6 +1046,7 @@ class LayoutObject(RectObject):
             self.width = sum(self._col_widths.values()) + self._outer_padding.x * 2
         
         if self._fixed_height:
+            self.height = self._fixed_height
             free_rows = [row_y for row_y in self._row_heights if not self._fixed_rows.get(row_y, False)]
             target = self._fixed_height - self._outer_padding.y*2
             missing = target - sum(self._row_heights.values())
@@ -1045,7 +1071,7 @@ class LayoutObject(RectObject):
     def _update_self(self, dt: float):
         self.behaviors.on_update(dt)
         
-        if self.check_if_dirty():
+        if self.dirty_check and self.check_if_dirty():
             self.update_grid()
             
         if self.renderer:

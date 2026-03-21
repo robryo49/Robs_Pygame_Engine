@@ -1,6 +1,6 @@
 import pygame as pg
 
-from ..utils import Color, Vec2, Vec2Like
+from ..utils import Color, Vec2, Vec2Like, Colors
 
 
 class Display:
@@ -10,7 +10,7 @@ class Display:
         
         self._surface: pg.Surface = pg.display.set_mode(self.dims, pg.SRCALPHA | pg.FULLSCREEN, vsync=True)
         
-        self._clear_color: Color = Color(20, 30, 50)
+        self._clear_color: Color = Colors.DARK_NAVY
         
     # region PROPERTIES
     

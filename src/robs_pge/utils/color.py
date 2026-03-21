@@ -48,8 +48,8 @@ class Colors:
     ROYAL_BLUE      = Color(65, 105, 225)
     DARK_BLUE       = Color(0, 0, 139)
     NAVY            = Color(0, 0, 128)
-    DARK_NAVY       = Color(20, 28, 45)
-    MIDNIGHT        = Color(16, 22, 35)
+    DARK_NAVY       = Color(30, 40, 70)
+    MIDNIGHT        = Color(12, 20, 40)
     SLATE_BLUE      = Color(87, 101, 126)
     BRIGHT_BLUE     = Color(80, 160, 255)
     
@@ -186,7 +186,7 @@ class ColorPalette:
         self.all_colors[name] = color
         
         for shade_name, amount in self.shades.items():
-            shaded_name = f"{shade_name}_{name}"
+            shaded_name = shade_name.format(name)
             shaded_color = Colors.lighten(color, amount)
             self.shaded_colors[shaded_name] = shaded_color
             self.all_colors[shaded_name] = shaded_color
@@ -204,7 +204,7 @@ class ColorPalette:
     
     def add_shade(self, name: str, amount: int) -> "ColorPalette":
         for color_name, color in self.primary_colors.items():
-            shaded_name = f"{name}_{color_name}"
+            shaded_name = name.format(color_name)
             shaded_color = Colors.lighten(color, amount)
             self.shaded_colors[shaded_name] = shaded_color
             self.all_colors[shaded_name] = shaded_color

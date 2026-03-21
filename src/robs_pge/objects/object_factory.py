@@ -111,7 +111,7 @@ class ObjectFactory:
     def make_grid_layout(
             self, position: Vec2, width: int = None, height: int = None, min_col=0, max_col=inf, min_row=0, max_row=inf, invert_x=False, invert_y=False, style: RectStyle = None,
             rotation: float = 0.0, scale: float = 1.0, layer: int = 0, anchor: Vec2 = Anchor.C, cache: bool=True
-    ):
+    ) -> LayoutObject:
         
         style = style or RectStyle()
         
@@ -137,7 +137,7 @@ class ObjectFactory:
     def make_column_layout(
             self, position: Vec2, width: int = None, height: int = None, min_row=0, max_row=inf, invert_y=False, style: RectStyle = None,
             rotation: float = 0.0, scale: float = 1.0, layer: int = 0, anchor: Vec2 = Anchor.C, cache: bool=True
-    ):
+    ) -> LayoutObject:
         return self.make_grid_layout(
             position, width, height, 0, 0, min_row, max_row, False, invert_y,
             style, rotation, scale, layer, anchor, cache
@@ -146,7 +146,7 @@ class ObjectFactory:
     def make_row_layout(
             self, position: Vec2, width: int = None, height: int = None, min_col=0, max_col=inf, invert_x=False, style: RectStyle = None,
             rotation: float = 0.0, scale: float = 1.0, layer: int = 0, anchor: Vec2 = Anchor.C, cache: bool=True
-    ):
+    ) -> LayoutObject:
         return self.make_grid_layout(
             position, width, height, min_col, max_col, 0, 0, invert_x, False,
             style, rotation, scale, layer, anchor, cache
@@ -155,7 +155,7 @@ class ObjectFactory:
     def make_debug_overlay(
             self, position: Vec2, width: int = None, height: int = None, min_col=0, max_col=inf, min_row=0, max_row=inf, invert_x=False, invert_y=False,
             rotation: float = 0.0, scale: float = 1.0, layer: int = 0, anchor: Vec2 = Anchor.C, cache: bool=True
-    ):
+    ) -> DebugOverlay:
         obj = DebugOverlay(
             Transform(position, rotation, scale),
             RectRenderer(Vec2(), None, cache),
