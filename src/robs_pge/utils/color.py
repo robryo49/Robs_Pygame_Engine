@@ -80,7 +80,7 @@ class Colors:
     }
     
     @staticmethod
-    def grey(value: int, alpha: int = 255) -> Color:
+    def gray(value: int, alpha: int = 255) -> Color:
         return Color(value, value, value, alpha)
     
     @staticmethod
@@ -185,9 +185,9 @@ class ColorPalette:
         self.primary_colors[name] = color
         self.all_colors[name] = color
         
-        for shade_name, amount in self.shades.items():
+        for shade_name, factor in self.shades.items():
             shaded_name = shade_name.format(name)
-            shaded_color = Colors.lighten(color, amount)
+            shaded_color = Colors.lighten(color, factor)
             self.shaded_colors[shaded_name] = shaded_color
             self.all_colors[shaded_name] = shaded_color
         
@@ -202,19 +202,19 @@ class ColorPalette:
     
     # region SHADES
     
-    def add_shade(self, name: str, amount: int) -> "ColorPalette":
+    def add_shade(self, name: str, factor: int) -> "ColorPalette":
         for color_name, color in self.primary_colors.items():
             shaded_name = name.format(color_name)
-            shaded_color = Colors.lighten(color, amount)
+            shaded_color = Colors.multiply(color, factor)
             self.shaded_colors[shaded_name] = shaded_color
             self.all_colors[shaded_name] = shaded_color
         
-        self.shades[name] = amount
+        self.shades[name] = factor
         return self
     
     def add_shades(self, shades: dict[str, int]) -> "ColorPalette":
-        for name, amount in shades.items():
-            self.add_shade(name, amount)
+        for name, factor in shades.items():
+            self.add_shade(name, factor)
         return self
     
     # endregion

@@ -379,6 +379,7 @@ dependencies = [
     { name = "matplotlib" },
     { name = "noise" },
     { name = "numpy" },
+    { name = "pygame" },
     { name = "pygame-ce" },
 ]
 
@@ -387,6 +388,7 @@ requires-dist = [
     { name = "matplotlib", specifier = ">=3.10.8" },
     { name = "noise", specifier = ">=1.2.2" },
     { name = "numpy", specifier = ">=2.4.2" },
+    { name = "pygame", specifier = ">=2.6.1" },
     { name = "pygame-ce", specifier = "==2.5.6" },
 ]
 

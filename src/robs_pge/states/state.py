@@ -1,18 +1,16 @@
-import logging
 from typing import Callable
 
 import pygame as pg
 
 from ..animation import AnimationManager
-from ..rendering import RectStyle
 from ..core.camera import Camera
 from ..debug import FrameTimer
 from ..input import InputManager, Keybind, KeybindsManager
-from ..objects import ObjectCollection, ObjectFactory, PygameObject, ObjectFlags
+from ..objects import ObjectCollection, ObjectFactory, PygameObject
 from ..particles.particle_system import ParticleSystem
+from ..rendering import RectStyle
 from ..resources import ResourceManager
-from ..utils import DictCollection, Vec2, Anchor, Font, Color, Colors
-
+from ..utils import Anchor, DictCollection, Vec2
 
 
 class State:
@@ -41,7 +39,7 @@ class State:
         self.init_resources()
         self.init_keybinds()
         self.init_services()
-        self.init_debug_layout_objects()
+        self.init_debug_overlay_objects()
     
     # region PROPERTIES
     
@@ -119,10 +117,10 @@ class State:
     
     # endregion
     
-    def init_debug_layout_objects(self) -> None:
+    def init_debug_overlay_objects(self) -> None:
         
         self.debug_overlay.set_constant_padding(10).invert_up_down().fix_width(self.engine.display.dims.x)
-        self.engine.init_debug_layout_objects(self.factory, self.debug_overlay)
+        self.engine.init_debug_overlay_objects(self.factory, self.debug_overlay)
         
         debug_rect_style = self.resources.get(RectStyle, "debug_rect_style")
         debug_red_header_style = self.resources.get(RectStyle, "debug_red_header_style")

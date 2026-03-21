@@ -1,4 +1,4 @@
-from typing import Any, Callable
+from typing import Any, Callable, Optional
 
 from .objects import ButtonObject, CircleObject, LayoutObject, ProgressBar, PygameObject, RectObject, TextObject, DebugOverlay, LineObject, LineRenderer, GraphObject
 from .behaviors import DynamicAttribute
@@ -28,7 +28,7 @@ class ObjectFactory:
         return object_type(Transform(position, rotation, scale), renderer, *args, self._services, layer, anchor)
     
     def make_rect(
-            self, position: Vec2, dims: Vec2, style: RectStyle = None,
+            self, position: Vec2, dims: Vec2, style: Optional[RectStyle] = None,
             rotation: float = 0.0, scale: float = 1.0, layer: int = 0, anchor: Vec2 = Anchor.C, cache: bool = True
     ):
         
@@ -37,7 +37,7 @@ class ObjectFactory:
         return obj
     
     def make_circle(
-            self, position: Vec2, radius: int, style: CircleStyle = None,
+            self, position: Vec2, radius: int, style: Optional[CircleStyle] = None,
             rotation: float = 0.0, scale: float = 1.0, layer: int = 0, anchor: Vec2 = Anchor.C, cache: bool = True
     ):
         obj = self._make_object(CircleObject, position, rotation, scale, CircleRenderer(radius, style, cache), layer, anchor)
@@ -45,7 +45,7 @@ class ObjectFactory:
         return obj
     
     def make_line(
-            self, position: Vec2, points: list[Vec2], style: LineStyle = None,
+            self, position: Vec2, points: list[Vec2], style: Optional[LineStyle] = None,
             rotation: float = 0.0, scale: float = 1.0, layer: int = 0, anchor: Vec2 = Anchor.C, cache: bool = True
     ):
         
@@ -71,7 +71,7 @@ class ObjectFactory:
     
     
     def make_text(
-            self, position: Vec2, text: str, font: Font = None,
+            self, position: Vec2, text: str, font: Optional[Font] = None,
             rotation: float = 0.0, scale: float = 1.0, layer: int = 0, anchor: Vec2 = Anchor.C, cache: bool = True
     ):
         obj = self._make_object(TextObject, position, rotation, scale, TextRenderer(text, font, cache), layer, anchor)
@@ -79,7 +79,7 @@ class ObjectFactory:
         return obj
     
     def make_dynamic_text(
-            self, position: Vec2, template: str, getter: Callable[[], Any | tuple[Any, ...]], font: Font = None,
+            self, position: Vec2, template: str, getter: Callable[[], Any | tuple[Any, ...]], font: Optional[Font] = None,
             rotation: float = 0.0, scale: float = 1.0, layer: int = 0, anchor: Vec2 = Anchor.C, cache: bool = True
     ):
         
@@ -91,7 +91,7 @@ class ObjectFactory:
     
     
     def make_button(
-            self, position: Vec2, text: str, action: Callable[[], None] | tuple[Callable[[], None]], dims: Vec2 = None, style: ButtonStyle = None,
+            self, position: Vec2, text: str, action: Callable[[], None] | tuple[Callable[[], None]], dims: Optional[Vec2] = None, style: Optional[ButtonStyle] = None,
             rotation: float = 0.0, scale: float = 1.0, layer: int = 0, anchor: Vec2 = Anchor.C, cache: bool = True
     ):
         style = style or ButtonStyle()
@@ -109,7 +109,7 @@ class ObjectFactory:
     # region Layouts
     
     def make_grid_layout(
-            self, position: Vec2, width: int = None, height: int = None, min_col=0, max_col=inf, min_row=0, max_row=inf, invert_x=False, invert_y=False, style: RectStyle = None,
+            self, position: Vec2, width: Optional[int] = None, height: Optional[int] = None, min_col=0, max_col=inf, min_row=0, max_row=inf, invert_x=False, invert_y=False, style: Optional[RectStyle] = None,
             rotation: float = 0.0, scale: float = 1.0, layer: int = 0, anchor: Vec2 = Anchor.C, cache: bool=True
     ) -> LayoutObject:
         
@@ -135,7 +135,7 @@ class ObjectFactory:
         return obj
     
     def make_column_layout(
-            self, position: Vec2, width: int = None, height: int = None, min_row=0, max_row=inf, invert_y=False, style: RectStyle = None,
+            self, position: Vec2, width: Optional[int] = None, height: Optional[int] = None, min_row=0, max_row=inf, invert_y=False, style: Optional[RectStyle] = None,
             rotation: float = 0.0, scale: float = 1.0, layer: int = 0, anchor: Vec2 = Anchor.C, cache: bool=True
     ) -> LayoutObject:
         return self.make_grid_layout(
@@ -144,7 +144,7 @@ class ObjectFactory:
         )
     
     def make_row_layout(
-            self, position: Vec2, width: int = None, height: int = None, min_col=0, max_col=inf, invert_x=False, style: RectStyle = None,
+            self, position: Vec2, width: Optional[int] = None, height: Optional[int] = None, min_col=0, max_col=inf, invert_x=False, style: Optional[RectStyle] = None,
             rotation: float = 0.0, scale: float = 1.0, layer: int = 0, anchor: Vec2 = Anchor.C, cache: bool=True
     ) -> LayoutObject:
         return self.make_grid_layout(
@@ -153,7 +153,7 @@ class ObjectFactory:
         )
     
     def make_debug_overlay(
-            self, position: Vec2, width: int = None, height: int = None, min_col=0, max_col=inf, min_row=0, max_row=inf, invert_x=False, invert_y=False,
+            self, position: Vec2, width: Optional[int] = None, height: Optional[int] = None, min_col=0, max_col=inf, min_row=0, max_row=inf, invert_x=False, invert_y=False,
             rotation: float = 0.0, scale: float = 1.0, layer: int = 0, anchor: Vec2 = Anchor.C, cache: bool=True
     ) -> DebugOverlay:
         obj = DebugOverlay(
@@ -185,7 +185,7 @@ class ObjectFactory:
     
     
     def make_progress_bar(
-            self, position: Vec2, dims: Vec2, style: ProgressBarStyle = None,
+            self, position: Vec2, dims: Vec2, style: Optional[ProgressBarStyle] = None,
             rotation: float = 0.0, scale: float = 1.0, layer: int = 0, anchor: Vec2 = Anchor.C, cache: bool = True, cache_bar: bool = False
     ):
         
@@ -198,7 +198,7 @@ class ObjectFactory:
         return obj
     
     def make_graph(
-            self, position: Vec2, dims: Vec2, style: GraphStyle = None,
+            self, position: Vec2, dims: Vec2, style: Optional[GraphStyle] = None,
             rotation: float = 0.0, scale: float = 1.0, layer: int = 0, anchor: Vec2 = Anchor.C, cache: bool = True, cache_line: bool = False
     ):
         

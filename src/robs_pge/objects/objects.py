@@ -892,7 +892,6 @@ class LayoutObject(RectObject):
     def get_row_height(self, grid_y: int, span: int = 0):
         return sum(self._row_heights.get(grid_y + offset, 0) for offset in range(span + 1))
     
-    
     def get_obj_pos(self, obj: PygameObject):
         grid_x, grid_y = grid_pos = self._grid_objects_grid_positions.get(obj, (0, 0))
         span_x, span_y = self._grid_objects_spanning.get(obj, (0, 0))

@@ -105,7 +105,7 @@ class Engine:
                 "gray":     Colors.SLATE_BLUE,
                 "blue":     Colors.BRIGHT_BLUE,
                 "yellow":   Colors.AMBER,
-                "red":      Colors.LIGHT_RED,
+                "red":      Colors.DARK_RED,
                 "teal":     Colors.CARIBBEAN_GREEN,
                 "orange":   Colors.ORANGE,
                 "green":    Colors.GREEN,
@@ -114,8 +114,8 @@ class Engine:
                 "cyan":     Colors.CYAN,
             },
             shades = {
-                "light_{}": 50,
-                "dark_{}": -70
+                "light_{}": 1.2,
+                "dark_{}": 0.2
             },
             single_colors={
                 "white":    Colors.LIGHT_GRAY,
@@ -151,7 +151,7 @@ class Engine:
         
         debug_palette = self.resources.get_color_palette("debug")
         debug_rect_style = RectStyle(bg_color=Colors.with_alpha(debug_palette.dark_gray, 200), bd_color=Colors.with_alpha(debug_palette.gray, 200), bd=1)
-        debug_red_header_style = RectStyle(bg_color=Colors.with_alpha(debug_palette.dark_red, 200), bd_color=Colors.with_alpha(debug_palette.gray, 200), bd=1)
+        debug_red_header_style = RectStyle(bg_color=Colors.with_alpha(debug_palette.dark_red, 200), bd_color=Colors.with_alpha(debug_palette.red, 200), bd=1)
         
         self.resources.set(RectStyle, "debug_rect_style", debug_rect_style)
         self.resources.set(RectStyle, "debug_red_header_style", debug_red_header_style)
@@ -166,7 +166,7 @@ class Engine:
         
         return self
     
-    def init_debug_layout_objects(self, factory: ObjectFactory, debug_overlay: DebugOverlay) -> "Engine":
+    def init_debug_overlay_objects(self, factory: ObjectFactory, debug_overlay: DebugOverlay) -> "Engine":
         
         
         return self
