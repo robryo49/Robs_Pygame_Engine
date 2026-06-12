@@ -5,9 +5,8 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
-    "matplotlib>=3.10.8",
+    "matplotlib==3.11.0",
     "noise>=1.2.2",
-    "numpy>=2.4.2",
-    "pygame>=2.6.1",
-    "pygame-ce==2.5.6",
+    "numpy==2.4.6",
+    "pygame-ce==2.5.7",
 ]
