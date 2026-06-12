@@ -127,6 +127,8 @@ class DrawCircle(DrawCommand):
         pg.draw.circle(surface, bg_color, (radius, radius), radius, 0)
         if bd:
             pg.draw.circle(surface, bg_color, (radius, radius), radius, bd)
+            
+        return surface
     
     def draw(self, blit_call_queue: list[tuple[pg.Surface, Vec2]], camera: Camera, surface_cache, font_cache):
         screen_pos, rotation, scale = self.get_composed_transform(camera)

@@ -3,7 +3,7 @@ from random import randrange
 
 import noise
 import numpy as np
-from matplotlib.cm import get_cmap
+#from matplotlib.cm import get_cmap
 from matplotlib.colors import Colormap
 from pygame import Vector2 as Vec2
 
@@ -16,7 +16,7 @@ def normalize_array(arr: np.ndarray, min_v: float, max_v:float):
 
 
 def colorize_array(arr: np.ndarray, cmap: str | Colormap="binary"):
-    return get_cmap(cmap)(arr) * 255
+    return None #get_cmap(cmap)(arr) * 255
 
 
 def noise_array(dims: Vec2, seed: int=None, scale: float=100, amplitude: float=1, offset: float=0, octaves: int=8, persistence: float=0.5, lacunarity: float=2.0):

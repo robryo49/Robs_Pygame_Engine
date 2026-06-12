@@ -34,7 +34,7 @@ class State:
         self._objects: ObjectCollection = ObjectCollection()
         self._ui_objects: ObjectCollection = ObjectCollection()
         
-        self._debug_overlay = self.factory.make_debug_overlay(Vec2(0, self.engine.display.dims.y), anchor=Anchor.TL)
+        self._debug_overlay = self.factory.make_debug_overlay(Vec2(0, self.engine.display.dims.y), width=self.engine.display.dims.x, invert_y=True, anchor=Anchor.TL).set_constant_padding(10)
         
         self.init_resources()
         self.init_keybinds()
@@ -118,17 +118,17 @@ class State:
     # endregion
     
     def init_debug_overlay_objects(self) -> None:
-        
-        self.debug_overlay.set_constant_padding(10).invert_up_down().fix_width(self.engine.display.dims.x)
         self.engine.init_debug_overlay_objects(self.factory, self.debug_overlay)
         
-        debug_rect_style = self.resources.get(RectStyle, "debug_rect_style")
-        debug_red_header_style = self.resources.get(RectStyle, "debug_red_header_style")
+        debug_rect_style = self.resources.get(RectStyle, "debug_panel_style")
+        debug_title_panel_style = self.resources.get(RectStyle, "debug_title_panel_style")
+        debug_header_style = self.resources.get(RectStyle, "debug_blue_header_style")
         
-        layout = self.factory.make_column_layout(Vec2(), 200, 200).skip_rendering()
+        layout = self.factory.make_column_layout(Vec2(), 200).skip_rendering()
         
         layout.stack_y(self.factory.make_rect(Vec2(), Vec2(300, 100), style=debug_rect_style))
-        layout.stack_y(self.factory.make_rect(Vec2(), Vec2(300, 100), style=debug_red_header_style))
+        layout.stack_y(self.factory.make_rect(Vec2(), Vec2(300, 30), style=debug_title_panel_style))
+        layout.stack_y(self.factory.make_rect(Vec2(), Vec2(300, 8), style=debug_header_style))
         
         self.debug_overlay.stack_y(layout, anchor=Anchor.TL)
     

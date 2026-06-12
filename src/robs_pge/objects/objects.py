@@ -784,7 +784,7 @@ class LayoutObject(RectObject):
     # endregion
     
     
-    def fix_col_width(self, col_x: int, width: int = None):
+    def fix_col_width(self, col_x: int, width: Optional[int | float] = None):
         if width is not None:
             self._col_widths[col_x] = width
         self._fixed_cols[col_x] = True
@@ -792,7 +792,7 @@ class LayoutObject(RectObject):
         self.mark_dirty()
         return self
     
-    def fix_row_height(self, row_y: int, height: int = None):
+    def fix_row_height(self, row_y: int, height: Optional[int | float] = None):
         if height is not None:
             self._row_heights[row_y] = height
         self._fixed_rows[row_y] = True
@@ -813,13 +813,13 @@ class LayoutObject(RectObject):
         return self
         
         
-    def fix_width(self, width: int = None):
+    def fix_width(self, width: Optional[int | float] = None):
         self._fixed_width = width or self.width
         
         self.mark_dirty()
         return self
         
-    def fix_height(self, height: int = None):
+    def fix_height(self, height: Optional[int | float] = None):
         self._fixed_height = height or self.height
         
         self.mark_dirty()
@@ -854,7 +854,7 @@ class LayoutObject(RectObject):
         self.set_outer_padding(padding / 2)
         return self
     
-    def set_cell_padding(self, padding: Vec2 | int, cell: Optional[tuple[int, int]] = None):
+    def set_cell_padding(self, padding: Vec2 | int | float, cell: Optional[tuple[int, int]] = None):
         if cell is not None:
             self._cells_padding[cell] = Vec2(padding)
         else:
@@ -872,7 +872,7 @@ class LayoutObject(RectObject):
         self.mark_dirty()
         return self
         
-    def set_outer_padding(self, padding: Vec2 | int):
+    def set_outer_padding(self, padding: Vec2 | int | float):
         padding = Vec2(padding)
         self._outer_padding = padding
         self.mark_dirty()
@@ -931,7 +931,7 @@ class LayoutObject(RectObject):
         
         self.mark_dirty()
         
-    def stack_y(self, obj: PygameObject, x: int = None, span_x: int = None, anchor: Vec2 = Anchor.C):
+    def stack_y(self, obj: PygameObject, x: Optional[int] = None, span_x: Optional[int] = None, anchor: Vec2 = Anchor.C):
         
         min_x = (min(pos[0] for pos in self._grid_objects_grid_positions.values()) + 1) if self._grid_objects_grid_positions else 0
         max_x = (max(pos[0] for pos in self._grid_objects_grid_positions.values()) + 1) if self._grid_objects_grid_positions else 0
@@ -945,7 +945,7 @@ class LayoutObject(RectObject):
         self.add_object(obj, x, max_y, span_x, 1, anchor)
         return self
         
-    def stack_x(self, obj: PygameObject, y: int = None, span_y: int = None, anchor: Vec2 = Anchor.C):
+    def stack_x(self, obj: PygameObject, y: Optional[int] = None, span_y: Optional[int] = None, anchor: Vec2 = Anchor.C):
         
         positions = list(pos for pos in self._grid_objects_grid_positions.values() if pos[1] == y or y is None)
         max_x = (max(pos[0] for pos in positions) + 1) if positions else 0
@@ -1090,8 +1090,7 @@ class DebugOverlay(LayoutObject):
     
     def __repr__(self):
         return f"DebugOverlay({id(self)})"
-        
-        
+    
 
 class ButtonObject(RectObject):
     def __init__(self, transform: Transform, background: RectRenderer, text: TextObject, action: Callable, services: DictCollection, layer: int = 0, anchor: Vec2 = Anchor.C):

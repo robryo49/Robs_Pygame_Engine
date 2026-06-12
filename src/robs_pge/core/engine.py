@@ -11,7 +11,7 @@ from ..debug import FrameTimer
 from ..input import InputManager
 from ..objects import InteractionManager, DebugOverlay, ObjectFactory, ObjectFlags
 from ..resources import ResourceManager
-from ..rendering import RectStyle
+from ..rendering import GraphStyle, ProgressBarStyle, RectStyle
 from ..states import StateManager
 from ..utils import Vec2, Colors, Anchor, Color
 
@@ -115,6 +115,7 @@ class Engine:
             },
             shades = {
                 "light_{}": 1.2,
+                "medium_{}": 0.6,
                 "dark_{}": 0.2
             },
             single_colors={
@@ -149,12 +150,52 @@ class Engine:
     def init_styles(self):
         logging.info("Initializing styles")
         
-        debug_palette = self.resources.get_color_palette("debug")
-        debug_rect_style = RectStyle(bg_color=Colors.with_alpha(debug_palette.dark_gray, 200), bd_color=Colors.with_alpha(debug_palette.gray, 200), bd=1)
-        debug_red_header_style = RectStyle(bg_color=Colors.with_alpha(debug_palette.dark_red, 200), bd_color=Colors.with_alpha(debug_palette.red, 200), bd=1)
+        self.init_debug_styles()
+    
+    def init_debug_styles(self) -> "Engine":
+        logging.info("Initializing debug styles")
+    
+        debug = self.resources.get_color_palette("debug")
         
-        self.resources.set(RectStyle, "debug_rect_style", debug_rect_style)
-        self.resources.set(RectStyle, "debug_red_header_style", debug_red_header_style)
+        self.resources.set(RectStyle, "debug_panel_style", RectStyle(bg_color=Colors.with_alpha(debug.dark_gray, 200), bd_color=Colors.with_alpha(debug.medium_gray, 200), bd=1))
+        self.resources.set(RectStyle, "debug_title_panel_style", RectStyle(bg_color=Colors.with_alpha(debug.medium_gray, 200)))
+        self.resources.set(RectStyle, "debug_bar_track_style", RectStyle(bg_color=Colors.with_alpha(debug.dark_gray, 150), bd=0))
+        
+        for name, color in {
+            "green":  debug.green,
+            "teal":   debug.teal,
+            "blue":   debug.blue,
+            "orange": debug.orange,
+            "red":    debug.red,
+            "yellow": debug.yellow,
+            "purple": debug.purple,
+            "pink":   debug.pink,
+            "cyan":   debug.cyan,
+            "gray":   debug.gray,
+        }.items():
+            self.resources.set(RectStyle, f"debug_{name}_header_style", RectStyle(bg_color=color, bd=0))
+        
+        for name, color in {
+            "teal":         debug.teal,
+            "green":        debug.green,
+            "blue":         debug.blue,
+            "orange":       debug.orange,
+            "dark_orange":  debug.dark_orange,
+            "yellow":       debug.yellow,
+            "red":          debug.red,
+            "gray":         debug.gray,
+        }.items():
+            self.resources.set(ProgressBarStyle, f"debug_{name}_progress_style", ProgressBarStyle(bg_color=Colors.with_alpha(debug.dark_gray, 150), color=color, bd=0, bd_radius=2))
+        
+        for name, color in {
+            "green": debug.green,
+            "blue":  debug.blue,
+            "teal":  debug.teal,
+            "red":   debug.red,
+        }.items():
+            self.resources.set(GraphStyle, f"debug_{name}_graph_style", GraphStyle(bg_color=Colors.with_alpha(debug.dark_gray, 100), bd=0, line_color=color, line_width=1))
+        
+        return self
         
     
     def init_resources(self) -> "Engine":
@@ -167,7 +208,6 @@ class Engine:
         return self
     
     def init_debug_overlay_objects(self, factory: ObjectFactory, debug_overlay: DebugOverlay) -> "Engine":
-        
         
         return self
     
