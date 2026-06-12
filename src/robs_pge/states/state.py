@@ -118,13 +118,29 @@ class State:
     # endregion
     
     def init_debug_overlay_objects(self) -> None:
-        self.engine.init_debug_overlay_objects(self.factory, self.debug_overlay)
         
-        style = self.resources.get(DebugPanelStyle, "debug_green_panel_style")
+        style = self.resources.get(DebugPanelStyle, "debug_teal_panel_style")
         
-        layout = self.factory.make_debug_panel(Vec2(), Vec2(300, 500), style, "DEBUG")
+        c1 = self.factory.make_column_layout(Vec2())
+        c2 = self.factory.make_column_layout(Vec2())
         
-        self.debug_overlay.stack_y(layout, anchor=Anchor.TL)
+        engine_pannel = self.factory.make_debug_panel(Vec2(), Vec2(400, 300), style, "ENGINE")
+        frame_pannel = self.factory.make_debug_panel(Vec2(), Vec2(400, 300), style, "FRAME TIMER")
+        
+        camera_pannel = self.factory.make_debug_panel(Vec2(), Vec2(300, 200), style, "CAMERA")
+        input_pannel = self.factory.make_debug_panel(Vec2(), Vec2(300, 200), style, "INPUT")
+        objects_pannel = self.factory.make_debug_panel(Vec2(), Vec2(300, 200), style, "OBJECTS")
+        
+        c1.stack_y(engine_pannel, anchor=Anchor.TL)
+        c1.stack_y(frame_pannel, anchor=Anchor.TL)
+        
+        c2.stack_y(camera_pannel, anchor=Anchor.TL)
+        c2.stack_y(input_pannel, anchor=Anchor.TL)
+        c2.stack_y(objects_pannel, anchor=Anchor.TL)
+        
+        self.debug_overlay.add_object(c1, 0, 0)
+        self.debug_overlay.add_object(c2, 1, 0)
+        
     
     def init_resources(self) -> None:
         pass

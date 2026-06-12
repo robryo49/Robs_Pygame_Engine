@@ -84,6 +84,10 @@ class Engine:
         return self.state_manager.state
     
     @property
+    def state_camera(self) -> Camera:
+        return self.state.camera
+    
+    @property
     def default_camera(self) -> Camera:
         return self._default_camera
     
@@ -92,6 +96,16 @@ class Engine:
         return self._running
     
     # endregion
+    
+    
+    def init_resources(self) -> "Engine":
+        logging.info("Initializing resources")
+        self.init_color_palettes()
+        self.init_fonts()
+        self.init_styles()
+        self.init_textures()
+        
+        return self
     
     def init_color_palettes(self):
         logging.info("Initializing color palettes")
@@ -148,6 +162,7 @@ class Engine:
     def init_textures(self):
         logging.info("Initializing textures")
     
+    
     def init_styles(self):
         logging.info("Initializing styles")
         
@@ -190,20 +205,7 @@ class Engine:
             self.resources.set(ProgressBarStyle, f"debug_{name}_progress_bar_style", ProgressBarStyle(bg_color=Colors.with_alpha(debug.dark_gray, 150), color=color, bd=0, bd_radius=2))
         
         return self
-        
     
-    def init_resources(self) -> "Engine":
-        logging.info("Initializing resources")
-        self.init_color_palettes()
-        self.init_fonts()
-        self.init_styles()
-        self.init_textures()
-        
-        return self
-    
-    def init_debug_overlay_objects(self, factory: ObjectFactory, debug_overlay: DebugOverlay) -> "Engine":
-        
-        return self
     
     def process_events(self) -> "Engine":
         events = pg.event.get()
@@ -225,7 +227,7 @@ class Engine:
     def render(self) -> "Engine":
         self.frame_timer.time("Rendering.Draw Calls",       self.state_manager.render)
         
-        self.frame_timer.time("Rendering.Drawing",          lambda: self.renderer.render(self.state.camera if self.state else None))
+        self.frame_timer.time("Rendering.Drawing",          lambda: self.renderer.render(self.state_camera))
         self.frame_timer.time("Rendering.Screen Update",    lambda: self.display.update(self.clock.dtime))
         return self
         

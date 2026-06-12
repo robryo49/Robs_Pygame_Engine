@@ -217,7 +217,7 @@ class ObjectFactory:
         
         width = round(dims.x)
         
-        header_height = 8
+        header_height = 4
         title_height = 30
         panel_height = round(dims.y - title_height - header_height)
         
@@ -227,7 +227,7 @@ class ObjectFactory:
         title_panel = self.make_rect(Vec2(), Vec2(width, title_height), style=style.title_panel_style)
         header = self.make_rect(Vec2(), Vec2(width, header_height), style=style.header_style)
         
-        title_panel.add_child(self.make_text(Vec2(), title, style.title_font))
+        title_panel.add_child(self.make_text(Vec2(8, -1), title.upper(), style.title_font, anchor=Anchor.L), anchor=Anchor.L)
         
         layout.stack_y(panel)
         layout.stack_y(title_panel)
