@@ -8,7 +8,7 @@ from ..debug import FrameTimer
 from ..input import InputManager, Keybind, KeybindsManager
 from ..objects import ObjectCollection, ObjectFactory, PygameObject
 from ..particles.particle_system import ParticleSystem
-from ..rendering import RectStyle
+from ..rendering import DebugPanelStyle, RectStyle, Font
 from ..resources import ResourceManager
 from ..utils import Anchor, DictCollection, Vec2
 
@@ -120,15 +120,9 @@ class State:
     def init_debug_overlay_objects(self) -> None:
         self.engine.init_debug_overlay_objects(self.factory, self.debug_overlay)
         
-        debug_rect_style = self.resources.get(RectStyle, "debug_panel_style")
-        debug_title_panel_style = self.resources.get(RectStyle, "debug_title_panel_style")
-        debug_header_style = self.resources.get(RectStyle, "debug_blue_header_style")
+        style = self.resources.get(DebugPanelStyle, "debug_green_panel_style")
         
-        layout = self.factory.make_column_layout(Vec2(), 200).skip_rendering()
-        
-        layout.stack_y(self.factory.make_rect(Vec2(), Vec2(300, 100), style=debug_rect_style))
-        layout.stack_y(self.factory.make_rect(Vec2(), Vec2(300, 30), style=debug_title_panel_style))
-        layout.stack_y(self.factory.make_rect(Vec2(), Vec2(300, 8), style=debug_header_style))
+        layout = self.factory.make_debug_panel(Vec2(), Vec2(300, 500), style, "DEBUG")
         
         self.debug_overlay.stack_y(layout, anchor=Anchor.TL)
     

@@ -82,4 +82,11 @@ class GraphStyle(RectStyle):
     
     def copy(self):
         return replace(self)
-    
+
+
+@dataclass
+class DebugPanelStyle:
+    header_style: RectStyle
+    title_panel_style: RectStyle
+    panel_style: RectStyle
+    title_font: Font

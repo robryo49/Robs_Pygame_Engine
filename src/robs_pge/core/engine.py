@@ -1,5 +1,6 @@
 import sys
 
+import numpy as np
 import pygame as pg
 import logging
 
@@ -11,9 +12,9 @@ from ..debug import FrameTimer
 from ..input import InputManager
 from ..objects import InteractionManager, DebugOverlay, ObjectFactory, ObjectFlags
 from ..resources import ResourceManager
-from ..rendering import GraphStyle, ProgressBarStyle, RectStyle
+from ..rendering import DebugPanelStyle, GraphStyle, ProgressBarStyle, RectStyle
 from ..states import StateManager
-from ..utils import Vec2, Colors, Anchor, Color
+from ..utils import Vec2, Colors, Anchor, Color, colorize_array
 
 
 class Engine:
@@ -154,14 +155,16 @@ class Engine:
     
     def init_debug_styles(self) -> "Engine":
         logging.info("Initializing debug styles")
-    
+        
         debug = self.resources.get_color_palette("debug")
         
-        self.resources.set(RectStyle, "debug_panel_style", RectStyle(bg_color=Colors.with_alpha(debug.dark_gray, 200), bd_color=Colors.with_alpha(debug.medium_gray, 200), bd=1))
-        self.resources.set(RectStyle, "debug_title_panel_style", RectStyle(bg_color=Colors.with_alpha(debug.medium_gray, 200)))
-        self.resources.set(RectStyle, "debug_bar_track_style", RectStyle(bg_color=Colors.with_alpha(debug.dark_gray, 150), bd=0))
+        panel_style = RectStyle(bg_color=Colors.with_alpha(debug.dark_gray, 200), bd_color=Colors.with_alpha(debug.medium_gray, 200), bd=1)
+        title_panel_style = RectStyle(bg_color=Colors.with_alpha(debug.medium_gray, 200))
         
-        for name, color in {
+        self.resources.set(RectStyle, "debug_panel_style", panel_style)
+        self.resources.set(RectStyle, "debug_title_panel_style", title_panel_style)
+        
+        colors = {
             "green":  debug.green,
             "teal":   debug.teal,
             "blue":   debug.blue,
@@ -172,28 +175,19 @@ class Engine:
             "pink":   debug.pink,
             "cyan":   debug.cyan,
             "gray":   debug.gray,
-        }.items():
-            self.resources.set(RectStyle, f"debug_{name}_header_style", RectStyle(bg_color=color, bd=0))
+        }
         
-        for name, color in {
-            "teal":         debug.teal,
-            "green":        debug.green,
-            "blue":         debug.blue,
-            "orange":       debug.orange,
-            "dark_orange":  debug.dark_orange,
-            "yellow":       debug.yellow,
-            "red":          debug.red,
-            "gray":         debug.gray,
-        }.items():
-            self.resources.set(ProgressBarStyle, f"debug_{name}_progress_style", ProgressBarStyle(bg_color=Colors.with_alpha(debug.dark_gray, 150), color=color, bd=0, bd_radius=2))
+        for name, color in colors.items():
+            header_style = RectStyle(bg_color=color)
+            font = self.resources.get_font(f"debug_{name}_title")
+            self.resources.set(RectStyle, f"debug_{name}_header_style", header_style)
+            self.resources.set(DebugPanelStyle, f"debug_{name}_panel_style", DebugPanelStyle(header_style, title_panel_style, panel_style, font))
         
-        for name, color in {
-            "green": debug.green,
-            "blue":  debug.blue,
-            "teal":  debug.teal,
-            "red":   debug.red,
-        }.items():
+        for name, color in colors.items():
             self.resources.set(GraphStyle, f"debug_{name}_graph_style", GraphStyle(bg_color=Colors.with_alpha(debug.dark_gray, 100), bd=0, line_color=color, line_width=1))
+        
+        for name, color in colors.items():
+            self.resources.set(ProgressBarStyle, f"debug_{name}_progress_bar_style", ProgressBarStyle(bg_color=Colors.with_alpha(debug.dark_gray, 150), color=color, bd=0, bd_radius=2))
         
         return self
         

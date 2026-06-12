@@ -1,8 +1,8 @@
 from typing import Any, Callable, Optional
 
-from .objects import ButtonObject, CircleObject, LayoutObject, ProgressBar, PygameObject, RectObject, TextObject, DebugOverlay, LineObject, LineRenderer, GraphObject
+from .objects import ButtonObject, CircleObject, LayoutObject, ProgressBarObject, PygameObject, RectObject, TextObject, DebugOverlay, LineObject, LineRenderer, GraphObject
 from .behaviors import DynamicAttribute
-from ..rendering import ButtonStyle, CircleRenderer, CircleStyle, LineStyle, ProgressBarStyle, RectRenderer, RectStyle, SpriteRenderer, TextRenderer, GraphStyle
+from ..rendering import ButtonStyle, CircleRenderer, CircleStyle, DebugPanelStyle, LineStyle, ProgressBarStyle, RectRenderer, RectStyle, SpriteRenderer, TextRenderer, GraphStyle
 from ..resources import Texture
 from ..utils import Anchor, DictCollection, Font, Transform, Vec2, inf
 
@@ -30,7 +30,7 @@ class ObjectFactory:
     def make_rect(
             self, position: Vec2, dims: Vec2, style: Optional[RectStyle] = None,
             rotation: float = 0.0, scale: float = 1.0, layer: int = 0, anchor: Vec2 = Anchor.C, cache: bool = True
-    ):
+    ) -> RectObject:
         
         obj = self._make_object(RectObject, position, rotation, scale, RectRenderer(dims, style, cache), layer, anchor)
         
@@ -39,7 +39,7 @@ class ObjectFactory:
     def make_circle(
             self, position: Vec2, radius: int, style: Optional[CircleStyle] = None,
             rotation: float = 0.0, scale: float = 1.0, layer: int = 0, anchor: Vec2 = Anchor.C, cache: bool = True
-    ):
+    ) -> CircleObject:
         obj = self._make_object(CircleObject, position, rotation, scale, CircleRenderer(radius, style, cache), layer, anchor)
         
         return obj
@@ -47,7 +47,7 @@ class ObjectFactory:
     def make_line(
             self, position: Vec2, points: list[Vec2], style: Optional[LineStyle] = None,
             rotation: float = 0.0, scale: float = 1.0, layer: int = 0, anchor: Vec2 = Anchor.C, cache: bool = True
-    ):
+    ) -> LineObject:
         
         style = style or LineStyle()
         
@@ -61,7 +61,7 @@ class ObjectFactory:
     def make_sprite(
             self, position: Vec2, texture: Texture,
             rotation: float = 0.0, scale: float = 1.0, layer: int = 1, anchor: Vec2 = Anchor.C, cache: bool = True
-    ):
+    ) -> PygameObject:
         
         obj = self._make_object(PygameObject, position, rotation, scale, SpriteRenderer(texture, cache), layer, anchor)
         
@@ -73,7 +73,7 @@ class ObjectFactory:
     def make_text(
             self, position: Vec2, text: str, font: Optional[Font] = None,
             rotation: float = 0.0, scale: float = 1.0, layer: int = 0, anchor: Vec2 = Anchor.C, cache: bool = True
-    ):
+    ) -> TextObject:
         obj = self._make_object(TextObject, position, rotation, scale, TextRenderer(text, font, cache), layer, anchor)
         
         return obj
@@ -81,7 +81,7 @@ class ObjectFactory:
     def make_dynamic_text(
             self, position: Vec2, template: str, getter: Callable[[], Any | tuple[Any, ...]], font: Optional[Font] = None,
             rotation: float = 0.0, scale: float = 1.0, layer: int = 0, anchor: Vec2 = Anchor.C, cache: bool = True
-    ):
+    ) -> TextObject:
         
         obj = self.make_text(position, "", font, rotation, scale, layer, anchor, cache).add_behavior(DynamicAttribute("text", getter, template))
         
@@ -89,11 +89,10 @@ class ObjectFactory:
     
     
     
-    
     def make_button(
             self, position: Vec2, text: str, action: Callable[[], None] | tuple[Callable[[], None]], dims: Optional[Vec2] = None, style: Optional[ButtonStyle] = None,
             rotation: float = 0.0, scale: float = 1.0, layer: int = 0, anchor: Vec2 = Anchor.C, cache: bool = True
-    ):
+    ) -> ButtonObject:
         style = style or ButtonStyle()
         margin = Vec2(style.margin)
         font = style.font
@@ -187,20 +186,20 @@ class ObjectFactory:
     def make_progress_bar(
             self, position: Vec2, dims: Vec2, style: Optional[ProgressBarStyle] = None,
             rotation: float = 0.0, scale: float = 1.0, layer: int = 0, anchor: Vec2 = Anchor.C, cache: bool = True, cache_bar: bool = False
-    ):
+    ) -> ProgressBarObject:
         
         bg_style = style or ProgressBarStyle()
         bar_style = RectStyle(bg_style.color, bd_radius=(bg_style.bd_radius-bg_style.bd) if bg_style.bd_radius > 0 else 0)
         
         bar = self.make_rect(Vec2(), Vec2(0, dims.y), bar_style, 0.0, 1.0, layer, Anchor.C, cache_bar)
-        obj = self._make_object(ProgressBar, position, rotation, scale, RectRenderer(dims, bg_style, cache), layer, anchor, bar)
+        obj = self._make_object(ProgressBarObject, position, rotation, scale, RectRenderer(dims, bg_style, cache), layer, anchor, bar)
         
         return obj
     
     def make_graph(
             self, position: Vec2, dims: Vec2, style: Optional[GraphStyle] = None,
             rotation: float = 0.0, scale: float = 1.0, layer: int = 0, anchor: Vec2 = Anchor.C, cache: bool = True, cache_line: bool = False
-    ):
+    ) -> GraphObject:
         
         bg_style = style or GraphStyle()
         line_style = LineStyle(bg_style.line_color, bg_style.line_width)
@@ -209,5 +208,29 @@ class ObjectFactory:
         obj = self._make_object(GraphObject, position, rotation, scale, RectRenderer(dims, bg_style, cache), layer, anchor, line)
         
         return obj
+    
+    
+    def make_debug_panel(
+            self, position: Vec2, dims: Vec2, style: DebugPanelStyle, title: str,
+            rotation: float = 0.0, scale: float = 1.0, layer: int = 0, anchor: Vec2 = Anchor.C, cache: bool = True
+    ) -> LayoutObject:
+        header_height = 8
+        title_height = 30
+        panel_height = dims.y - title_height - header_height
+        
+        layout = self.make_column_layout(position, width=round(dims.x), height=round(dims.y), rotation=rotation, scale=scale, layer=layer, anchor=anchor, cache=cache).skip_rendering()
+        
+        panel = self.make_rect(Vec2(), Vec2(dims.x, panel_height), style=style.panel_style)
+        title_panel = self.make_rect(Vec2(), Vec2(dims.x, title_height), style=style.title_panel_style)
+        header = self.make_rect(Vec2(), Vec2(dims.x, header_height), style=style.header_style)
+        
+        title_panel.add_child(self.make_text(Vec2(), title, style.title_font))
+        
+        layout.stack_y(panel)
+        layout.stack_y(title_panel)
+        layout.stack_y(header)
+        
+        
+        return layout
     
     

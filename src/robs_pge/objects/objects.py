@@ -1092,6 +1092,8 @@ class DebugOverlay(LayoutObject):
         return f"DebugOverlay({id(self)})"
     
 
+
+
 class ButtonObject(RectObject):
     def __init__(self, transform: Transform, background: RectRenderer, text: TextObject, action: Callable, services: DictCollection, layer: int = 0, anchor: Vec2 = Anchor.C):
         
@@ -1121,7 +1123,7 @@ class ButtonObject(RectObject):
 
 
 
-class ProgressBar(RectObject):
+class ProgressBarObject(RectObject):
     def __init__(self, transform: Transform, background: RectRenderer, bar: RectObject, services: DictCollection, layer: int = 0, anchor: Vec2 = Anchor.C):
         super().__init__(transform, background, services, layer, anchor)
         
