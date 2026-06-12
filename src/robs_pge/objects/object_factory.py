@@ -214,15 +214,18 @@ class ObjectFactory:
             self, position: Vec2, dims: Vec2, style: DebugPanelStyle, title: str,
             rotation: float = 0.0, scale: float = 1.0, layer: int = 0, anchor: Vec2 = Anchor.C, cache: bool = True
     ) -> LayoutObject:
+        
+        width = round(dims.x)
+        
         header_height = 8
         title_height = 30
-        panel_height = dims.y - title_height - header_height
+        panel_height = round(dims.y - title_height - header_height)
         
         layout = self.make_column_layout(position, width=round(dims.x), height=round(dims.y), rotation=rotation, scale=scale, layer=layer, anchor=anchor, cache=cache).skip_rendering()
         
-        panel = self.make_rect(Vec2(), Vec2(dims.x, panel_height), style=style.panel_style)
-        title_panel = self.make_rect(Vec2(), Vec2(dims.x, title_height), style=style.title_panel_style)
-        header = self.make_rect(Vec2(), Vec2(dims.x, header_height), style=style.header_style)
+        panel = self.make_grid_layout(Vec2(), width, panel_height, style=style.panel_style)
+        title_panel = self.make_rect(Vec2(), Vec2(width, title_height), style=style.title_panel_style)
+        header = self.make_rect(Vec2(), Vec2(width, header_height), style=style.header_style)
         
         title_panel.add_child(self.make_text(Vec2(), title, style.title_font))
         
