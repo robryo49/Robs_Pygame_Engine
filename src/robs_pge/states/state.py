@@ -3,15 +3,14 @@ from typing import Callable
 import pygame as pg
 
 from ..animation import AnimationManager
-from ..core.renderer import Renderer
 from ..core.camera import Camera
 from ..debug import FrameTimer
 from ..input import InputManager, Keybind, KeybindsManager
-from ..objects import ObjectCollection, ObjectFactory, PygameObject, ActionOnUpdateBehavior
+from ..objects import ObjectCollection, ObjectFactory, PygameObject
 from ..particles.particle_system import ParticleSystem
-from ..rendering import DebugPanelStyle, GraphStyle, RectStyle, Font
+from ..rendering import DebugPanelStyle, GraphStyle
 from ..resources import ResourceManager
-from ..utils import Anchor, DictCollection, Vec2, Colors
+from ..utils import Anchor, DictCollection, Vec2
 
 
 class State:
@@ -222,18 +221,18 @@ class State:
             stack_y(self.factory.make_text(Vec2(), "Cache Hits", font_gray), anchor=Anchor.TL).
             stack_y(self.factory.make_text(Vec2(), "Cache Skips", font_gray), anchor=Anchor.TL).
             stack_y(self.factory.make_text(Vec2(), "Cache Misses", font_gray), anchor=Anchor.TL).
-            stack_y(self.factory.make_text(Vec2(), "Debug Draw Commands", font_gray), anchor=Anchor.TL).
+            stack_y(self.factory.make_text(Vec2(), "World Draw Commands", font_gray), anchor=Anchor.TL).
             stack_y(self.factory.make_text(Vec2(), "UI Draw Commands", font_gray), anchor=Anchor.TL).
-            stack_y(self.factory.make_text(Vec2(), "World Draw Commands", font_gray), anchor=Anchor.TL)
+            stack_y(self.factory.make_text(Vec2(), "Debug Draw Commands", font_gray), anchor=Anchor.TL)
         ).stack_pannel_x(
             self.factory.make_column_layout(Vec2(), 180).skip_rendering().invert_up_down().
             stack_y(self.factory.make_dynamic_text(Vec2(), "{} ({}Mo)", lambda: (self.renderer.surface_cache_size, round(self.renderer.surface_cache_memory_size, 1)), font_white, cache=False), anchor=Anchor.TL).
             stack_y(self.factory.make_dynamic_text(Vec2(), "{}", lambda: self.renderer.cache_hits, font_white), anchor=Anchor.TL).
             stack_y(self.factory.make_dynamic_text(Vec2(), "{}", lambda: self.renderer.cache_skips, font_white), anchor=Anchor.TL).
             stack_y(self.factory.make_dynamic_text(Vec2(), "{}", lambda: self.renderer.cache_misses, font_white), anchor=Anchor.TL).
-            stack_y(self.factory.make_dynamic_text(Vec2(), "{}", lambda: self.renderer.debug_commands_count, font_white), anchor=Anchor.TL).
             stack_y(self.factory.make_dynamic_text(Vec2(), "{}", lambda: self.renderer.world_commands_count, font_white), anchor=Anchor.TL).
-            stack_y(self.factory.make_dynamic_text(Vec2(), "{}", lambda: self.renderer.ui_commands_count, font_white), anchor=Anchor.TL)
+            stack_y(self.factory.make_dynamic_text(Vec2(), "{}", lambda: self.renderer.ui_commands_count, font_white), anchor=Anchor.TL).
+            stack_y(self.factory.make_dynamic_text(Vec2(), "{}", lambda: self.renderer.debug_commands_count, font_white), anchor=Anchor.TL)
         )
         
         # endregion
