@@ -226,7 +226,6 @@ class Engine:
     
     def render(self) -> "Engine":
         self.frame_timer.time("Rendering.Draw Calls",       self.state_manager.render)
-        
         self.frame_timer.time("Rendering.Drawing",          lambda: self.renderer.render(self.state_camera))
         self.frame_timer.time("Rendering.Screen Update",    lambda: self.display.update(self.clock.dtime))
         return self

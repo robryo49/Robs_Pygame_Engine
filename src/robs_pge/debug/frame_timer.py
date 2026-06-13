@@ -51,3 +51,8 @@ class FrameTimer:
                 
         return "\n".join(txt)
     
+    def get_time(self, step):
+        return self.times.get(step, 0)
+    
+    def get_time_ms(self, step):
+        return round(self.times.get(step, 0)*1000, 2)

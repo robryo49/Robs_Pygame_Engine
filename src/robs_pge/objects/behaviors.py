@@ -36,9 +36,24 @@ class ObjectBehavior:
     
     def on_update(self, dt: float): pass
     
+    
+class ActionOnUpdateBehavior(ObjectBehavior):
+    def __init__(self, action: Callable | tuple[Callable, ...]):
+        super().__init__()
+        
+        self._action = action
+        
+    def on_update(self, dt: float):
+        if self._action is None: return
+        if isinstance(self._action, tuple):
+            for action in self._action:
+                action()
+        else:
+            self._action()
+    
 
 class ActionOnClickBehavior(ObjectBehavior):
-    def __init__(self, button: int, action: Callable | tuple[Callable]):
+    def __init__(self, button: int, action: Callable | tuple[Callable, ...]):
         super().__init__()
         
         self._button = button
@@ -56,6 +71,7 @@ class ActionOnClickBehavior(ObjectBehavior):
             else:
                 self._action()
 
+
 class ScaleOnHoverBehavior(ObjectBehavior):
     def __init__(self, scaling: float, duration: float, easing_function: Callable[[float], float]):
         super().__init__()
@@ -71,9 +87,11 @@ class ScaleOnHoverBehavior(ObjectBehavior):
         self.owner.add_flag(ObjectFlags.HOVERABLE)
     
     def on_hover_start(self):
+        if not self._animation_manager: return
         self._animation_manager.play(MultiplierAnimation(self._object, "scale", self._scaling, self._duration, self._easing_function))
     
     def on_hover_end(self):
+        if not self._animation_manager: return
         self._animation_manager.play(MultiplierAnimation(self._object, "scale", 1/self._scaling, self._duration, self._easing_function))
 
 
@@ -94,10 +112,12 @@ class ScaleOnClickBehavior(ObjectBehavior):
         self.owner.add_flag(ObjectFlags.CLICKABLE)
     
     def on_click(self, button: int, pos: Vec2):
+        if not self._animation_manager: return
         if button == self._button:
             self._animation_manager.play(MultiplierAnimation(self.owner, "scale", self._scaling, self._duration, self._easing_function))
     
     def on_release(self, button: int, pos: Vec2):
+        if not self._animation_manager: return
         if button == self._button:
             self._animation_manager.play(MultiplierAnimation(self.owner, "scale", 1 / self._scaling, self._duration, self._easing_function))
             

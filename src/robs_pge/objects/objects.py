@@ -939,7 +939,7 @@ class LayoutObject(RectObject):
         positions = list(pos for pos in self._grid_objects_grid_positions.values() if pos[0] == x or x is None)
         max_y = (max(pos[1] for pos in positions) + 1) if positions else 0
         
-        x = min_x if x is None else x
+        x = min_x - 1 if x is None else x
         span_x = (max_x - min_x + 1) if span_x is None else span_x
         
         self.add_object(obj, x, max_y, span_x, 1, anchor)
@@ -953,7 +953,7 @@ class LayoutObject(RectObject):
         min_y = (min(pos[1] for pos in self._grid_objects_grid_positions.values()) + 1) if self._grid_objects_grid_positions else 0
         max_y = (max(pos[1] for pos in self._grid_objects_grid_positions.values()) + 1) if self._grid_objects_grid_positions else 0
         
-        y = min_y if y is None else y
+        y = min_y - 1 if y is None else y
         span_y = (max_y - min_y + 1) if span_y is None else span_y
         
         self.add_object(obj, max_x, y, 1, span_y, anchor)
@@ -1090,9 +1090,60 @@ class DebugOverlay(LayoutObject):
     
     def __repr__(self):
         return f"DebugOverlay({id(self)})"
+
+
+class DebugPanelObject(LayoutObject):
+    def __init__(
+            self,
+            transform: Transform,
+            renderer: RectRenderer,
+            services: DictCollection,
+            panel: LayoutObject,
+            title_panel: RectObject,
+            header: RectObject,
+            title_text: TextObject,
+            layer: int = 0,
+            anchor: Vec2 = Anchor.C
+    ):
+        super().__init__(transform, renderer, services, layer, anchor)
+        
+        self._panel = panel
+        self._title_panel = title_panel
+        self._header = header
+        self._title_text = title_text
+        
+    # region PROPERTIES
     
-
-
+    @property
+    def panel(self):
+        return self._panel
+    
+    @property
+    def title_panel(self):
+        return self._title_panel
+    
+    @property
+    def header(self):
+        return self._header
+    
+    @property
+    def title_text(self):
+        return self._title_text
+    
+    # endregion
+    
+    def stack_pannel_x(self, obj: PygameObject, y: Optional[int] = None, span_y: Optional[int] = None, anchor: Vec2 = Anchor.C):
+        self.panel.stack_x(obj, y, span_y, anchor)
+        return self
+        
+    def stack_pannel_y(self, obj: PygameObject, x: Optional[int] = None, span_x: Optional[int] = None, anchor: Vec2 = Anchor.C):
+        self.panel.stack_y(obj, x, span_x, anchor)
+        return self
+    
+    def add_pannel_object(self, obj: PygameObject, x: int, y: int, span_x: int = 1, span_y: int = 1, anchor: Vec2 = Anchor.C):
+        self.panel.add_object(obj, x, y, span_x, span_y, anchor)
+        return self
+    
 
 class ButtonObject(RectObject):
     def __init__(self, transform: Transform, background: RectRenderer, text: TextObject, action: Callable, services: DictCollection, layer: int = 0, anchor: Vec2 = Anchor.C):
@@ -1222,12 +1273,12 @@ class GraphObject(RectObject):
         
         self._data_points = []
         self._max_data_points = None
+        self._max_data_x_range = None
         
         self._dirty = True
         
         self._line = line
-        self._line.anchor = Anchor.BL
-        self.add_child(line, Anchor.BL)
+        self.add_child(line, Vec2(0.5, -0.5))
     
     # region PROPERTIES
     
@@ -1241,9 +1292,89 @@ class GraphObject(RectObject):
         self._line.color = value
     # endregion
     
+    # region min_x
+    @property
+    def min_x(self):
+        return self._min_x
+    
+    @min_x.setter
+    def min_x(self, value):
+        self._min_x = value
     # endregion
     
-    def add_point(self, point: Vec2):
+    # region max_x
+    @property
+    def max_x(self):
+        return self._max_x
+    
+    @max_x.setter
+    def max_x(self, value):
+        self._max_x = value
+    # endregion
+    
+    # region min_y
+    @property
+    def min_y(self):
+        return self._min_y
+    
+    @min_y.setter
+    def min_y(self, value):
+        self._min_y = value
+    # endregion
+    
+    # region max_y
+    @property
+    def max_y(self):
+        return self._max_y
+    
+    @max_y.setter
+    def max_y(self, value):
+        self._max_y = value
+    # endregion
+    
+    # region pad_x
+    @property
+    def pad_x(self):
+        return self._pad_x
+    
+    @pad_x.setter
+    def pad_x(self, value):
+        self._pad_x = value
+    # endregion
+    
+    # region pad_y
+    @property
+    def pad_y(self):
+        return self._pad_y
+    
+    @pad_y.setter
+    def pad_y(self, value):
+        self._pad_y = value
+    # endregion
+    
+    # region max_data_points
+    @property
+    def max_data_points(self):
+        return self._max_data_points
+    
+    @max_data_points.setter
+    def max_data_points(self, value):
+        self._max_data_points = value
+    # endregion
+    
+    # region max_data_x_range
+    @property
+    def max_data_x_range(self):
+        return self._max_data_x_range
+    
+    @max_data_x_range.setter
+    def max_data_x_range(self, value):
+        self._max_data_x_range = value
+    # endregion
+    
+    # endregion
+    
+    def insert_point(self, point: Vec2):
         
         i = 0
         n = len(self._data_points)
@@ -1262,6 +1393,9 @@ class GraphObject(RectObject):
         
         self._min_data_y = min(self._min_data_y, point.y)
         self._max_data_y = max(self._max_data_y, point.y)
+        
+        if self._max_data_x_range and abs(self._max_data_x - self._min_data_x) > self._max_data_x_range:
+            self.remove_last()
         
         self.mark_dirty()
         

@@ -1,6 +1,6 @@
 from typing import Any, Callable, Optional
 
-from .objects import ButtonObject, CircleObject, LayoutObject, ProgressBarObject, PygameObject, RectObject, TextObject, DebugOverlay, LineObject, LineRenderer, GraphObject
+from .objects import ButtonObject, CircleObject, DebugPanelObject, LayoutObject, ProgressBarObject, PygameObject, RectObject, TextObject, DebugOverlay, LineObject, LineRenderer, GraphObject, ActionOnUpdateBehavior
 from .behaviors import DynamicAttribute
 from ..rendering import ButtonStyle, CircleRenderer, CircleStyle, DebugPanelStyle, LineStyle, ProgressBarStyle, RectRenderer, RectStyle, SpriteRenderer, TextRenderer, GraphStyle
 from ..resources import Texture
@@ -197,7 +197,7 @@ class ObjectFactory:
         return obj
     
     def make_graph(
-            self, position: Vec2, dims: Vec2, style: Optional[GraphStyle] = None,
+            self, position: Vec2, dims: Vec2, style: Optional[GraphStyle] = None, pad_x=0, pad_y=0, min_x=None, max_x=None, min_y=None, max_y=None, max_data_points=None, max_data_x_range=None, update_action=None,
             rotation: float = 0.0, scale: float = 1.0, layer: int = 0, anchor: Vec2 = Anchor.C, cache: bool = True, cache_line: bool = False
     ) -> GraphObject:
         
@@ -205,34 +205,80 @@ class ObjectFactory:
         line_style = LineStyle(bg_style.line_color, bg_style.line_width)
         
         line = self.make_line(Vec2(), [], line_style, 0.0, 1.0, layer, Anchor.C, cache_line)
-        obj = self._make_object(GraphObject, position, rotation, scale, RectRenderer(dims, bg_style, cache), layer, anchor, line)
+        obj: GraphObject = self._make_object(GraphObject, position, rotation, scale, RectRenderer(dims, bg_style, cache), layer, anchor, line)
+        
+        if pad_x: obj.pad_x = pad_x
+        if pad_y: obj.pad_y = pad_y
+        if min_x is not None: obj.min_x = min_x
+        if min_y is not None: obj.min_y = min_y
+        if max_x is not None: obj.max_x = max_x
+        if max_y is not None: obj.max_y = max_y
+        if max_data_points is not None: obj.max_data_points = max_data_points
+        if max_data_x_range is not None: obj.max_data_x_range = max_data_x_range
+        
+        if update_action is not None: obj.add_behavior(ActionOnUpdateBehavior(update_action))
         
         return obj
     
     
     def make_debug_panel(
             self, position: Vec2, dims: Vec2, style: DebugPanelStyle, title: str,
-            rotation: float = 0.0, scale: float = 1.0, layer: int = 0, anchor: Vec2 = Anchor.C, cache: bool = True
-    ) -> LayoutObject:
-        
+            rotation: float = 0.0, scale: float = 1.0, layer: int = 0,
+            anchor: Vec2 = Anchor.C, cache: bool = True
+    ) -> DebugPanelObject:
+    
         width = round(dims.x)
         
         header_height = 4
         title_height = 30
         panel_height = round(dims.y - title_height - header_height)
         
-        layout = self.make_column_layout(position, width=round(dims.x), height=round(dims.y), rotation=rotation, scale=scale, layer=layer, anchor=anchor, cache=cache).skip_rendering()
+        panel = self.make_grid_layout(
+            Vec2(),
+            width,
+            panel_height,
+            style=style.panel_style
+        )
         
-        panel = self.make_grid_layout(Vec2(), width, panel_height, style=style.panel_style)
-        title_panel = self.make_rect(Vec2(), Vec2(width, title_height), style=style.title_panel_style)
-        header = self.make_rect(Vec2(), Vec2(width, header_height), style=style.header_style)
+        title_panel = self.make_rect(
+            Vec2(),
+            Vec2(width, title_height),
+            style=style.title_panel_style
+        )
         
-        title_panel.add_child(self.make_text(Vec2(8, -1), title.upper(), style.title_font, anchor=Anchor.L), anchor=Anchor.L)
+        header = self.make_rect(
+            Vec2(),
+            Vec2(width, header_height),
+            style=style.header_style
+        )
+        
+        title_text = self.make_text(
+            Vec2(8, -1),
+            title.upper(),
+            style.title_font,
+            anchor=Anchor.L
+        )
+        
+        title_panel.add_child(title_text, Anchor.L)
+        
+        layout = DebugPanelObject(
+            Transform(position, rotation, scale),
+            RectRenderer(Vec2(), None, cache),
+            self._services,
+            panel,
+            title_panel,
+            header,
+            title_text,
+            layer,
+            anchor
+        ).skip_rendering()
+        
+        layout.fix_width(width)
+        layout.fix_height(round(dims.y))
         
         layout.stack_y(panel)
         layout.stack_y(title_panel)
         layout.stack_y(header)
-        
         
         return layout
     
