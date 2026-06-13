@@ -1,9 +1,9 @@
+import noise
+import numpy as np
+
 from math import cos, pi, sin
 from random import randrange
 from typing import Optional
-
-import noise
-import numpy as np
 from matplotlib import colormaps
 from matplotlib.colors import Colormap
 from pygame import Vector2 as Vec2
