@@ -1,11 +1,14 @@
-from typing import Optional
+from __future__ import annotations
+from typing import Optional, TYPE_CHECKING
 
-from core import Camera
 from utils import Vec2, Transform, Anchor
 from rendering import DrawTexture
 
 from .particle import Particle, FadingTypes
 from .particle_pool import ParticlePool
+
+if TYPE_CHECKING:
+    from core import Camera
 
 
 class ParticleSystem:

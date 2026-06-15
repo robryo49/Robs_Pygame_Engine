@@ -9,4 +9,5 @@ __all__ = [
     "Particle",
     "BurstEmitter",
     "ParticleEmitter",
+    "ParticleSystem",
 ]

@@ -1,7 +1,12 @@
+from __future__ import annotations
+from typing import TYPE_CHECKING
+
 import pygame as pg
 
-from core import Camera
 from utils import Transform, Vec2
+
+if TYPE_CHECKING:
+    from core import Camera
 
 
 class Mouse:

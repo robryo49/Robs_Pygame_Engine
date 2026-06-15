@@ -1,11 +1,16 @@
+from __future__ import annotations
 from dataclasses import dataclass
 
 import pygame as pg
 
 from .styles import CircleStyle, LineStyle, RectStyle
-from core import Camera
 from resources import Texture, SurfaceCache
 from utils import Font, Transform, Vec2, surface_pos_from_uv_pos
+
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from core import Camera
 
 
 @dataclass

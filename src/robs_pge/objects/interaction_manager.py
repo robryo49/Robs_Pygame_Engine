@@ -1,10 +1,14 @@
+from __future__ import annotations
+from typing import TYPE_CHECKING
 from typing import Optional
 
 from .object_collection import ObjectCollection
 from .objects import PygameObject
-from core import Camera
 from input import InputManager
 from utils import ObjectFlags, Vec2
+
+if TYPE_CHECKING:
+    from core import Camera
 
 
 class InteractionManager:
