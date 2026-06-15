@@ -1,5 +1,5 @@
 from .behaviors import ObjectBehavior
-from ..utils import Collection, Vec2
+from utils import Collection, Vec2
 
 
 class BehaviorCollection(Collection):

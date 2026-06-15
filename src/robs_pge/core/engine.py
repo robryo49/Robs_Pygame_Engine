@@ -7,13 +7,13 @@ from .camera import Camera
 from .clock import Clock
 from .display import Display
 from .renderer import Renderer
-from ..debug import FrameTimer
-from ..input import InputManager
-from ..objects import InteractionManager
-from ..rendering import DebugPanelStyle, GraphStyle, ProgressBarStyle, RectStyle
-from ..resources import ResourceManager
-from ..states import StateManager
-from ..utils import Colors, Vec2
+from debug import FrameTimer
+from input import InputManager
+from objects import InteractionManager
+from rendering import DebugPanelStyle, GraphStyle, ProgressBarStyle, RectStyle
+from resources import ResourceManager
+from states import StateManager
+from utils import Colors, Vec2
 
 
 class Engine:

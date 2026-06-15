@@ -1,10 +1,11 @@
 from typing import Optional
 
-from .particle import FadingTypes, Particle
+from core import Camera
+from utils import Vec2, Transform, Anchor
+from rendering import DrawTexture
+
+from .particle import Particle, FadingTypes
 from .particle_pool import ParticlePool
-from ..utils import Anchor, Transform, Vec2
-from ..core.camera import Camera
-from ..rendering import CircleStyle, DrawCircle, DrawTexture, Color
 
 
 class ParticleSystem:

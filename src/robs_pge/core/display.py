@@ -1,6 +1,6 @@
 import pygame as pg
 
-from ..utils import Color, Vec2, Vec2Like, Colors
+from utils import Vec2, Vec2Like, Color, Colors
 
 
 class Display:

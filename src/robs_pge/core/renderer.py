@@ -3,9 +3,9 @@ import pygame as pg
 
 from .camera import Camera
 from .display import Display
-from ..rendering import DrawCommand
-from ..resources import SurfaceCache
-from ..utils import Vec2
+from rendering import DrawCommand
+from resources import SurfaceCache
+from utils import Vec2
 
 
 class Renderer:

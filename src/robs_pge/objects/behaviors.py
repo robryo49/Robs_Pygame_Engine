@@ -1,8 +1,8 @@
 from copy import copy
 from typing import Any, Callable, Optional
 
-from ..animation import AnimationManager, MultiplierAnimation
-from ..utils import ObjectFlags, Vec2
+from animation import AnimationManager, MultiplierAnimation
+from utils import ObjectFlags, Vec2
 
 
 class ObjectBehavior:

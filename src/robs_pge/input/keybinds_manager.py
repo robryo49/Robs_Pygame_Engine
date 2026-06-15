@@ -1,6 +1,6 @@
 from .input_manager import InputManager
 from .keybind import Keybind
-from ..utils import KeybindFlags, Keybinds, DictCollection
+from utils import KeybindFlags, Keybinds, DictCollection
 
 
 class KeybindsManager:

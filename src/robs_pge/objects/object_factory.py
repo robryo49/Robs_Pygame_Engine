@@ -2,9 +2,9 @@ from typing import Any, Callable, Optional
 
 from .objects import ButtonObject, CircleObject, DebugPanelObject, LayoutObject, ProgressBarObject, PygameObject, RectObject, TextObject, DebugOverlay, LineObject, LineRenderer, GraphObject, ActionOnUpdateBehavior
 from .behaviors import DynamicAttribute
-from ..rendering import ButtonStyle, CircleRenderer, CircleStyle, DebugPanelStyle, LineStyle, ProgressBarStyle, RectRenderer, RectStyle, SpriteRenderer, TextRenderer, GraphStyle
-from ..resources import Texture
-from ..utils import Anchor, DictCollection, Font, Transform, Vec2, inf
+from rendering import ButtonStyle, CircleRenderer, CircleStyle, DebugPanelStyle, LineStyle, ProgressBarStyle, RectRenderer, RectStyle, SpriteRenderer, TextRenderer, GraphStyle
+from resources import Texture
+from utils import Anchor, DictCollection, Font, Transform, Vec2, inf
 
 
 class ObjectFactory:

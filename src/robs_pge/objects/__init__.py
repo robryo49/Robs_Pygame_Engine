@@ -1,6 +1,36 @@
-from .behaviors import *
+from .behaviors import (
+    ObjectBehavior,
+    ActionOnUpdateBehavior,
+    ActionOnClickBehavior,
+    ScaleOnHoverBehavior,
+    ScaleOnClickBehavior,
+    DynamicAttribute,
+)
+from .behavior_collection import BehaviorCollection
 from .interaction_manager import InteractionManager
 from .object_collection import ObjectCollection
 from .object_factory import ObjectFactory
-from .objects import *
+from .objects import (
+    PygameObject,
+    RectObject, CircleObject, TextObject, SpriteObject, LineObject,
+    LayoutObject, DebugOverlay, DebugPanelObject,
+    ButtonObject, ProgressBarObject, GraphObject,
+)
 
+__all__ = [
+    # behaviors
+    "ObjectBehavior",
+    "ActionOnUpdateBehavior", "ActionOnClickBehavior",
+    "ScaleOnHoverBehavior", "ScaleOnClickBehavior",
+    "DynamicAttribute",
+    "BehaviorCollection",
+    # core
+    "InteractionManager",
+    "ObjectCollection",
+    "ObjectFactory",
+    # objects
+    "PygameObject",
+    "RectObject", "CircleObject", "TextObject", "SpriteObject", "LineObject",
+    "LayoutObject", "DebugOverlay", "DebugPanelObject",
+    "ButtonObject", "ProgressBarObject", "GraphObject",
+]

@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from typing import Callable
 
-from ..utils import KeybindFlags
+from utils import KeybindFlags
 
 
 @dataclass

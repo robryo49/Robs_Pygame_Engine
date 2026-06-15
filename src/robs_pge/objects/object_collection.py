@@ -1,7 +1,7 @@
 from typing import Any, Optional
 
-from ..core.camera import Camera
-from ..utils import Collection, ObjectLike
+from core.camera import Camera
+from utils import Collection, ObjectLike
 
 
 class ObjectCollection(Collection):

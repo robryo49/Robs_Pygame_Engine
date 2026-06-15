@@ -3,10 +3,9 @@ from dataclasses import dataclass
 import pygame as pg
 
 from .styles import CircleStyle, LineStyle, RectStyle
-from ..core.camera import Camera
-from ..resources.texture import Texture
-from ..resources.surface_cache import SurfaceCache
-from ..utils import Font, Transform, Vec2, surface_pos_from_uv_pos
+from core import Camera
+from resources import Texture, SurfaceCache
+from utils import Font, Transform, Vec2, surface_pos_from_uv_pos
 
 
 @dataclass

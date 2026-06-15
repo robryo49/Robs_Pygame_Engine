@@ -6,8 +6,8 @@ import numpy as np
 from .particle import FadingTypes, Particle
 from .particle_pool import ParticlePool
 from .particle_system import ParticleSystem
-from ..resources import Texture
-from ..utils import Color, Transform, Vec2, random, Colors
+from resources import Texture
+from utils import Color, Transform, Vec2, random, Colors
 
 
 class ParticleEmitter:

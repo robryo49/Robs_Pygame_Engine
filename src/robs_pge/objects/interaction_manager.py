@@ -2,9 +2,9 @@ from typing import Optional
 
 from .object_collection import ObjectCollection
 from .objects import PygameObject
-from ..core.camera import Camera
-from ..input import InputManager
-from ..utils import ObjectFlags, Vec2
+from core import Camera
+from input import InputManager
+from utils import ObjectFlags, Vec2
 
 
 class InteractionManager:

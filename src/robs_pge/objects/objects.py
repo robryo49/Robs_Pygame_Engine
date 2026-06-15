@@ -3,10 +3,10 @@ from typing import cast
 from .behavior_collection import BehaviorCollection
 from .behaviors import *
 from .object_collection import ObjectCollection
-from ..core.camera import Camera
-from ..rendering import CircleRenderer, ObjectRenderer, RectRenderer, SpriteRenderer, TextRenderer
-from ..rendering.object_renderer import LineRenderer
-from ..utils import Anchor, Color, DictCollection, Easing, ObjectFlags, Rect, Transform, Vec2, clamp, inf, invert_y
+from core import Camera
+from rendering import CircleRenderer, ObjectRenderer, RectRenderer, SpriteRenderer, TextRenderer
+from rendering.object_renderer import LineRenderer
+from utils import Anchor, Color, DictCollection, Easing, ObjectFlags, Rect, Transform, Vec2, clamp, inf, invert_y
 
 
 class PygameObject:

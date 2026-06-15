@@ -1,7 +1,7 @@
 import pygame as pg
 
-from ..core.camera import Camera
-from ..utils import Transform, Vec2
+from core import Camera
+from utils import Transform, Vec2
 
 
 class Mouse:

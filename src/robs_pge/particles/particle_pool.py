@@ -4,8 +4,8 @@ from typing import Callable
 import numpy as np
 
 from .particle import FadingTypes
-from ..resources import Texture
-from ..utils import inf, Easing
+from resources import Texture
+from utils import inf, Easing
 
 
 @dataclass

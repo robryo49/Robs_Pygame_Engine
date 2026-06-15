@@ -1,9 +1,11 @@
 from pathlib import Path
-
+from typing import Optional
 from matplotlib.colors import Colormap
 
-from utils.array_tools.generation.noise import make_noise_array
-from ..utils import *
+import pygame as pg
+import numpy as np
+
+from utils import Vec2, Vec2Like, colorize_array, invert_uv_y, Color, make_noise_array, normalize_array
 
 
 class Texture:
@@ -42,7 +44,7 @@ class Texture:
             return Color(0, 0, 0, 0)
     
     @staticmethod
-    def _get_dims(surface, dims: Optional[Vec2]=None, width: Optional[int]=None, height: Optional[int]=None):
+    def _get_dims(surface, dims: Optional[Vec2Like]=None, width: Optional[int]=None, height: Optional[int]=None):
         w, h = dims or (None, None)
         w = width or w
         h = height or h
@@ -107,7 +109,7 @@ class Texture:
     def from_grayscale_array(cls, arr: np.ndarray, normalize: bool | tuple[float, float]=False, cmap: str | Colormap="binary", dims: Optional[Vec2]=None, width: Optional[int]=None, height: Optional[int]=None):
         if normalize:
             min_v, max_v = (arr.min(), arr.max()) if normalize is True else normalize
-            arr = processing.normalize_array(arr, min_v, max_v)
+            arr = normalize_array(arr, min_v, max_v)
         
         if not np.issubdtype(arr.dtype, np.integer):
             if arr.max() > 1.0:
@@ -118,7 +120,7 @@ class Texture:
         
         # 3. Apply colorization
         if cmap != "binary":
-            arr = processing.colorize_array(arr, cmap=cmap)
+            arr = colorize_array(arr, cmap=cmap)
         else:
             if not np.issubdtype(arr.dtype, np.integer):
                 arr = (arr * 255).astype(np.uint8)

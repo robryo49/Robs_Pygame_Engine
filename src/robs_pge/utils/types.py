@@ -4,9 +4,10 @@ import numpy as np
 
 from .math import Vec2, Vec3
 
+NumberLike = Union[int, float]
 
-Vec2Like = Union[Vec2, np.ndarray, tuple[int | float, int | float]]
-Vec3Like = Union[Vec3, np.ndarray, tuple[int | float, int | float, float | int]]
+Vec2Like = Union[Vec2, np.ndarray, tuple[NumberLike, NumberLike]]
+Vec3Like = Union[Vec3, np.ndarray, tuple[NumberLike, NumberLike, NumberLike]]
 
 class ObjectLike(Protocol):
     def render(self, submit, camera): pass

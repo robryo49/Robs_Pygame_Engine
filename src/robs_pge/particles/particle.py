@@ -2,8 +2,8 @@ from dataclasses import dataclass, field
 from enum import IntFlag, auto
 from typing import Callable
 
-from ..resources import Texture
-from ..utils import Vec2, Transform, inf, Easing
+from resources import Texture
+from utils import Vec2, Transform, inf, Easing
 
 
 class FadingTypes(IntFlag):

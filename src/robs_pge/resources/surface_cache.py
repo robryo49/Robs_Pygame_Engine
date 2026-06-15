@@ -1,7 +1,6 @@
 from collections import OrderedDict
-
-from collections import OrderedDict
 import pygame as pg
+
 
 class SurfaceCache:
     def __init__(self, max_bytes: int = 2048 * 1024 * 1024):

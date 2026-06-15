@@ -2,15 +2,15 @@ from typing import Callable
 
 import pygame as pg
 
-from ..animation import AnimationManager
-from ..core.camera import Camera
-from ..debug import FrameTimer
-from ..input import InputManager, Keybind, KeybindsManager
-from ..objects import ObjectCollection, ObjectFactory, PygameObject
-from ..particles.particle_system import ParticleSystem
-from ..rendering import DebugPanelStyle, GraphStyle
-from ..resources import ResourceManager
-from ..utils import Anchor, DictCollection, Vec2
+from animation import AnimationManager
+from core import Camera
+from debug import FrameTimer
+from input import InputManager, Keybind, KeybindsManager
+from objects import ObjectCollection, ObjectFactory, PygameObject
+from particles.particle_system import ParticleSystem
+from rendering import DebugPanelStyle, GraphStyle
+from resources import ResourceManager
+from utils import Anchor, DictCollection, Vec2
 
 
 class State:
