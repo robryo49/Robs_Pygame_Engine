@@ -25,11 +25,27 @@ def invert_uv_y(uv: Vec2):
 
 
 def invert_x(vec: Vec2):
-    return Vec2(vec.x, -vec.y)
+    return Vec2(-vec.x, vec.y)
 
 def invert_uv_x(uv: Vec2):
-    return Vec2(uv.x, 1-uv.y)
+    return Vec2(1-uv.x, uv.y)
 
+def rotated_surface_dims(dims: Vec2, rotation: float):
+    return Vec2(
+        abs(dims.x * cos(rotation*pi/180)) + abs(dims.y * sin(rotation*pi/180)),
+        abs(dims.y * cos(rotation*pi/180)) + abs(dims.x * sin(rotation*pi/180))
+    )
+
+
+def surface_pos_from_pixel_pos(pixel_pos: Vec2, dims: Vec2, rotation: float=0):
+    if rotation:
+        return ((pixel_pos - dims/2).rotate(-rotation) + rotated_surface_dims(dims, rotation) / 2).elementwise()
+    else:
+        return pixel_pos
+
+
+def surface_pos_from_uv_pos(uv: Vec2, dims: Vec2, rotation: float=0):
+    return surface_pos_from_pixel_pos(invert_uv_y(uv).elementwise() * dims, dims, rotation)
 
 def random(a, b):
     return rand() * (b - a) + a

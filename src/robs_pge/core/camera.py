@@ -71,12 +71,12 @@ class Camera:
     def zoom(self, value: float) -> None:
         self.transform.scale = 1/value
     
-    def zoom_in(self, fact: float, point: Optional[Vec2]) -> "Camera":
+    def zoom_in(self, fact: float, point: Optional[Vec2]=None) -> "Camera":
         if point is not None: self.pos = point - (point - self.pos) / fact
         self.zoom *= fact
         return self
     
-    def zoom_out(self, fact: float, point: Optional[Vec2]) -> "Camera":
+    def zoom_out(self, fact: float, point: Optional[Vec2]=None) -> "Camera":
         if point is not None: self.pos = point - (point - self.pos) * fact
         self.zoom /= fact
         return self

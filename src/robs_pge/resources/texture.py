@@ -1,11 +1,9 @@
 from pathlib import Path
-from typing import Optional
 
-import numpy as np
-import pygame as pg
 from matplotlib.colors import Colormap
 
-from ..utils import Color, Vec2, colorize_array, invert_uv_y, noise_array, normalize_array
+from utils.array_tools.generation.noise import make_noise_array
+from ..utils import *
 
 
 class Texture:
@@ -45,7 +43,7 @@ class Texture:
     
     @staticmethod
     def _get_dims(surface, dims: Optional[Vec2]=None, width: Optional[int]=None, height: Optional[int]=None):
-        w, h = dims or None, None
+        w, h = dims or (None, None)
         w = width or w
         h = height or h
         
@@ -63,32 +61,42 @@ class Texture:
             self._surface = pg.transform.scale(self.surface, dims)
         return self
     
-    def resized(self, dims: Vec2 = None, width: int = None, height: int = None):
+    def resized(self, dims: Optional[Vec2] = None, width: Optional[int] = None, height: Optional[int] = None):
         return self.copy().resize(dims, width, height)
             
     def copy(self):
         return self.from_surface(self.surface.copy())
     
     @classmethod
-    def from_surface(cls, surface, dims: Vec2=None, width: int=None, height: int=None):
+    def from_surface(cls, surface: pg.Surface, dims: Optional[Vec2]=None, width: Optional[int]=None, height: Optional[int]=None):
         texture = cls(surface.convert_alpha())
         texture.resize(dims, width, height)
         return texture
     
     @classmethod
-    def from_path(cls, path: Path, dims: Vec2 = None, width: int = None, height: int = None):
+    def from_path(cls, path: Path, dims: Optional[Vec2] = None, width: Optional[int] = None, height: Optional[int] = None):
         return cls.from_surface(pg.image.load(path), dims, width, height)
     
     @classmethod
     def from_color_array(cls, arr: np.ndarray, dims: Optional[Vec2]=None, width: Optional[int]=None, height: Optional[int]=None):
-        
-        if arr.dtype != np.uint8:
+        if not np.issubdtype(arr.dtype, np.integer):
+            if arr.max() <= 1.0 and arr.min() >= 0.0:
+                arr = arr * 255.0
             arr = np.clip(arr, 0, 255).astype(np.uint8)
+        elif arr.dtype != np.uint8:
+            arr = np.clip(arr, 0, 255).astype(np.uint8)
+        
+        if arr.ndim == 2:
+            arr = np.stack([arr] * 3, axis=-1)
+        
+        if arr.ndim == 3 and arr.shape[2] == 3:
+            alpha = np.full((arr.shape[0], arr.shape[1], 1), 255, dtype=np.uint8)
+            arr = np.concatenate([arr, alpha], axis=-1)
         
         h, w = arr.shape[:2]
         
         surface = pg.image.frombuffer(
-            arr.tobytes(),
+            np.ascontiguousarray(arr).tobytes(),
             (w, h),
             "RGBA"
         )
@@ -96,18 +104,35 @@ class Texture:
         return cls.from_surface(surface, dims, width, height)
     
     @classmethod
-    def from_grayscale_array(cls, arr: np.ndarray, normalize: bool | tuple[float, float]=False, cmap: str | Colormap="binary", dims: Vec2=None, width: int=None, height: int=None):
+    def from_grayscale_array(cls, arr: np.ndarray, normalize: bool | tuple[float, float]=False, cmap: str | Colormap="binary", dims: Optional[Vec2]=None, width: Optional[int]=None, height: Optional[int]=None):
         if normalize:
             min_v, max_v = (arr.min(), arr.max()) if normalize is True else normalize
-            arr = normalize_array(arr, min_v, max_v)
+            arr = processing.normalize_array(arr, min_v, max_v)
         
-        arr = colorize_array(arr, cmap)
+        if not np.issubdtype(arr.dtype, np.integer):
+            if arr.max() > 1.0:
+                arr = np.clip(arr / 255.0, 0.0, 1.0)
+        else:
+            if cmap != "binary":
+                arr = arr.astype(np.float32) / 255.0
         
-        if arr.dtype != np.uint8:
-            arr = np.clip(arr, 0, 255).astype(np.uint8)
+        # 3. Apply colorization
+        if cmap != "binary":
+            arr = processing.colorize_array(arr, cmap=cmap)
+        else:
+            if not np.issubdtype(arr.dtype, np.integer):
+                arr = (arr * 255).astype(np.uint8)
+            arr = np.stack([arr] * 3, axis=-1)
         
-        return Texture.from_color_array(arr, dims, width, height)
+        return cls.from_color_array(arr, dims, width, height)
     
     @classmethod
-    def from_noise(cls, dims: Vec2, seed: int=None, scale: float=100, amplitude: float=1, offset: float=0, octaves: int=8, persistence: float=0.5, lacunarity: float=2.0, cmap="binary"):
-        return cls.from_grayscale_array(noise_array(dims, seed, scale, amplitude, offset, octaves, persistence, lacunarity), cmap=cmap)
+    def from_array(cls, arr: np.ndarray, normalize: bool | tuple[float, float]=False, cmap: str | Colormap="binary", dims: Optional[Vec2]=None, width: Optional[int]=None, height: Optional[int]=None):
+        if len(arr.shape) == 3: return cls.from_color_array(arr, dims, width, height)
+        if len(arr.shape) == 2: return cls.from_grayscale_array(arr, normalize, cmap, dims, width, height)
+        raise ValueError("arr given isn't grayscale or color, shape :" + str(arr.shape))
+    
+    @classmethod
+    def from_noise(cls, dims: Vec2, seed: Optional[int]=None, scale: float=100, amplitude: float=1, offset: float=0, octaves: int=8, persistence: float=0.5, lacunarity: float=2.0, cmap="binary"):
+        return cls.from_grayscale_array(make_noise_array(dims, seed, scale, amplitude, offset, octaves, persistence, lacunarity), cmap=cmap)
+    
