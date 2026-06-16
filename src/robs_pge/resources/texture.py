@@ -10,32 +10,15 @@ from utils import Vec2, Vec2Like, colorize_array, invert_uv_y, Color, make_noise
 
 
 class Texture:
-    def __init__(self, surface: pg.Surface, generate_mipmaps: bool = True):
+    def __init__(self, surface: pg.Surface):
         self._surface = surface
-        
-        # CRITICAL: Index 0 MUST be the original full-sized surface!
-        self._mipmaps = [surface]
-        
-        if generate_mipmaps:
-            curr = surface
-            while curr.get_width() > 16 and curr.get_height() > 16:
-                new_w = curr.get_width() // 2
-                new_h = curr.get_height() // 2
-                if new_w <= 0 or new_h <= 0:
-                    break
-                curr = pg.transform.smoothscale(curr, (new_w, new_h))
-                self._mipmaps.append(curr)
+        self._mip_levels: list[pg.Surface] = [surface]
     
     # region PROPERTIES
     
     @property
     def surface(self):
         return self._surface
-    
-    @property
-    def mipmaps(self) -> list[pg.Surface]:
-        """Returns the complete list of generated mipmap sheets."""
-        return self._mipmaps
     
     @property
     def width(self):
@@ -49,18 +32,33 @@ class Texture:
     def dims(self):
         return Vec2(self.surface.get_size())
     
+    @property
+    def lod_levels(self) -> int:
+        return len(self._mip_levels)
+    
     # endregion
     
-    def get_lod_surface(self, scale: float) -> tuple[pg.Surface, float, int]:
-        if scale >= 1.0 or len(self._mipmaps) <= 1:
-            return self._surface, scale, 0
+    def _invalidate_lod(self):
+        self._mip_levels = [self._surface]
+    
+    def _extend_lod_to(self, level: int):
+        while len(self._mip_levels) <= level:
+            prev = self._mip_levels[-1]
+            w, h = prev.get_size()
+            if w <= 1 and h <= 1:
+                break  # can't shrink further
+            self._mip_levels.append(pg.transform.smoothscale(prev, (max(1, w // 2), max(1, h // 2))))
+    
+    def get_lod_surface(self, scale: float) -> tuple[pg.Surface, int]:
+        if scale <= 0 or scale >= 1:
+            return self._surface, 1
         
-        level = max(0, int(math.log2(1.0 / scale)))
-        level = min(level, len(self._mipmaps) - 1)
+        level = max(0, int(math.floor(math.log2(1.0 / scale))))
+        self._extend_lod_to(level)
+        level = min(level, len(self._mip_levels) - 1)
         
-        # Calculates the leftover scale factor to apply to this mipmap layer
-        effective_scale = scale * (2 ** level)
-        return self._mipmaps[level], effective_scale, level
+        return self._mip_levels[level], level
+    
     
     def get_at_uv(self, uv: Vec2):
         pos = self.dims.elementwise() * invert_uv_y(uv)
@@ -85,12 +83,12 @@ class Texture:
         h = (w / ratio) if not h and w else h
         
         return Vec2(w, h)
-        
     
-    def resize(self, dims: Optional[Vec2]=None, width: Optional[int]=None, height: Optional[int]=None):
+    def resize(self, dims=None, width=None, height=None):
         if dims or width or height:
             dims = self._get_dims(self.surface, dims, width, height)
             self._surface = pg.transform.scale(self.surface, dims)
+            self._invalidate_lod()
         return self
     
     def resized(self, dims: Optional[Vec2] = None, width: Optional[int] = None, height: Optional[int] = None):

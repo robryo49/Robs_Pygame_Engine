@@ -60,29 +60,48 @@ class DrawTexture(DrawCommand):
     texture: Texture
     
     def make_surface(self, key, *args):
-        texture_id, rotation, scale, target_w, target_h = key
+        texture_id, _, rotation, scale = key
         
-        if rotation == 0:
-            if target_w == self.texture.width and target_h == self.texture.height:
-                return self.texture.surface
-            return pg.transform.smoothscale(self.texture.surface, (target_w, target_h)).convert_alpha()
+        if not rotation and scale == 1:
+            return self.texture.surface
         
-        return pg.transform.rotozoom(self.texture.surface, rotation, scale).convert_alpha()
+        base_surface, _ = self.texture.get_lod_surface(scale)
+        
+        if scale != 1:
+            new_w = max(1, round(self.texture.width * scale))
+            new_h = max(1, round(self.texture.height * scale))
+            surface = pg.transform.scale(base_surface, (new_w, new_h))
+        else:
+            surface = base_surface
+        
+        if rotation:
+            surface = pg.transform.rotate(surface, rotation)
+        
+        return surface.convert_alpha()
     
-    def draw(self, blit_call_queue: list[tuple[pg.Surface, Vec2]], camera: Camera, surface_cache, font_cache):
+    def draw(
+            self,
+            blit_call_queue: list[tuple[pg.Surface, Vec2]],
+            camera,
+            surface_cache,
+            font_cache,
+    ):
         screen_pos, rotation, scale = self.get_composed_transform(camera)
         
-        dims = round(self.texture.dims * scale)
-        if dims[0] <= 0 or dims[1] <= 0:
+        if scale <= 0:
             return None
         
-        key = (id(self.texture.surface), rotation, scale, dims[0], dims[1])
+        lod_surface, lod_level = self.texture.get_lod_surface(scale)
         
-        surface, cached = self.get_surface(surface_cache, key)
+        target_w = max(1, round(self.texture.width * scale))
+        target_h = max(1, round(self.texture.height * scale))
+        base_dims = Vec2(target_w, target_h)
         
-        actual_dims = Vec2(surface.get_size())
+        key = (id(self.texture.surface), lod_level, rotation, scale)
+        surface, cached = self.get_surface(surface_cache, key, lod_surface, rotation, target_w, target_h)
+    
         
-        self.add_blit(blit_call_queue, surface, screen_pos, surface_pos_from_uv_pos(self.anchor, actual_dims, rotation))
+        self.add_blit(blit_call_queue, surface, screen_pos, surface_pos_from_uv_pos(self.anchor, base_dims, rotation))
         
         return cached
 
