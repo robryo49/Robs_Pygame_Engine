@@ -1,6 +1,6 @@
 from typing import Optional
 
-from .draw_commands import DrawCircle, DrawLine, DrawRect, DrawText, DrawTexture, DrawSubSurface
+from .draw_commands import DrawCircle, DrawLine, DrawRect, DrawText, DrawTexture, DrawSubSurface, DrawChunkedSprite
 from .styles import *
 from .object_renderer import ObjectRenderer
 from resources import Texture
@@ -476,3 +476,51 @@ class SubSurfaceRenderer(ObjectRenderer):
         submit(DrawSubSurface(
             transform, layer, anchor, self._cache, self.texture, self.sub_rect, self.target_dims
         ))
+
+
+class ChunkedSpriteRenderer(ObjectRenderer):
+    def __init__(self, texture: Texture, chunk_size: int = 256, cache=True):
+        super().__init__(cache)
+        self._texture = texture
+        self._chunk_size = chunk_size
+    
+    # region PROPERTIES
+    @property
+    def texture(self):
+        return self._texture
+    
+    @property
+    def chunk_size(self):
+        return self._chunk_size
+    
+    @chunk_size.setter
+    def chunk_size(self, value: int):
+        self._chunk_size = value
+    
+    # region dims
+    @property
+    def dims(self):
+        return self.texture.dims
+    
+    @property
+    def width(self):
+        return self.texture.width
+    
+    @property
+    def height(self):
+        return self.texture.height
+    # endregion
+    # endregion
+    
+    def get_aabb_size(self, rotation: float):
+        return Vec2(self.dims.length()) if rotation else self.dims
+    
+    def test_hit(self, local_pos: Vec2):
+        x, y = local_pos
+        if x < 0 or x >= self.width or y < 0 or y >= self.height:
+            return False
+        
+        return self.texture.get_at_pos(local_pos).a > 0
+    
+    def render(self, submit, transform: Transform, layer: int, anchor: Vec2):
+        submit(DrawChunkedSprite(transform, layer, anchor, self._cache, self.texture, self.chunk_size))

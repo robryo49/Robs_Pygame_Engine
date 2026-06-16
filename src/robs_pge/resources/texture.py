@@ -4,19 +4,38 @@ from matplotlib.colors import Colormap
 
 import pygame as pg
 import numpy as np
+import math
 
 from utils import Vec2, Vec2Like, colorize_array, invert_uv_y, Color, make_noise_array, normalize_array
 
 
 class Texture:
-    def __init__(self, surface: pg.Surface):
+    def __init__(self, surface: pg.Surface, generate_mipmaps: bool = True):
         self._surface = surface
         
+        # CRITICAL: Index 0 MUST be the original full-sized surface!
+        self._mipmaps = [surface]
+        
+        if generate_mipmaps:
+            curr = surface
+            while curr.get_width() > 16 and curr.get_height() > 16:
+                new_w = curr.get_width() // 2
+                new_h = curr.get_height() // 2
+                if new_w <= 0 or new_h <= 0:
+                    break
+                curr = pg.transform.smoothscale(curr, (new_w, new_h))
+                self._mipmaps.append(curr)
+    
     # region PROPERTIES
     
     @property
     def surface(self):
         return self._surface
+    
+    @property
+    def mipmaps(self) -> list[pg.Surface]:
+        """Returns the complete list of generated mipmap sheets."""
+        return self._mipmaps
     
     @property
     def width(self):
@@ -31,6 +50,17 @@ class Texture:
         return Vec2(self.surface.get_size())
     
     # endregion
+    
+    def get_lod_surface(self, scale: float) -> tuple[pg.Surface, float, int]:
+        if scale >= 1.0 or len(self._mipmaps) <= 1:
+            return self._surface, scale, 0
+        
+        level = max(0, int(math.log2(1.0 / scale)))
+        level = min(level, len(self._mipmaps) - 1)
+        
+        # Calculates the leftover scale factor to apply to this mipmap layer
+        effective_scale = scale * (2 ** level)
+        return self._mipmaps[level], effective_scale, level
     
     def get_at_uv(self, uv: Vec2):
         pos = self.dims.elementwise() * invert_uv_y(uv)

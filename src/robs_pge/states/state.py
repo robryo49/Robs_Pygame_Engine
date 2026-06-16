@@ -249,7 +249,7 @@ class State:
         
         # region RENDERING PANNEL
         
-        rendering_pannel = self.factory.make_debug_panel(Vec2(), Vec2(400, 166), blue_style, "RENDERING").stack_pannel_x(
+        rendering_pannel = self.factory.make_debug_panel(Vec2(), Vec2(400, 176), blue_style, "RENDERING").stack_pannel_x(
             self.factory.make_column_layout(Vec2(), 180).skip_rendering().invert_up_down().
             stack_y(self.factory.make_text(Vec2(), "Cache Size", font_gray), anchor=Anchor.TL).
             stack_y(self.factory.make_text(Vec2(), "Cache Hits", font_gray), anchor=Anchor.TL).
@@ -257,7 +257,8 @@ class State:
             stack_y(self.factory.make_text(Vec2(), "Cache Misses", font_gray), anchor=Anchor.TL).
             stack_y(self.factory.make_text(Vec2(), "World Draw Commands", font_gray), anchor=Anchor.TL).
             stack_y(self.factory.make_text(Vec2(), "UI Draw Commands", font_gray), anchor=Anchor.TL).
-            stack_y(self.factory.make_text(Vec2(), "Debug Draw Commands", font_gray), anchor=Anchor.TL)
+            stack_y(self.factory.make_text(Vec2(), "Debug Draw Commands", font_gray), anchor=Anchor.TL).
+            stack_y(self.factory.make_text(Vec2(), "Blits", font_gray), anchor=Anchor.TL)
         ).stack_pannel_x(
             self.factory.make_column_layout(Vec2(), 180).skip_rendering().invert_up_down().
             stack_y(self.factory.make_dynamic_text(Vec2(), "{} ({}Mo)", lambda: (self.renderer.surface_cache_size, round(self.renderer.surface_cache_memory_size, 1)), font_white, cache=False), anchor=Anchor.TL).
@@ -266,7 +267,8 @@ class State:
             stack_y(self.factory.make_dynamic_text(Vec2(), "{}", lambda: self.renderer.cache_misses, font_white), anchor=Anchor.TL).
             stack_y(self.factory.make_dynamic_text(Vec2(), "{}", lambda: self.renderer.world_commands_count, font_white), anchor=Anchor.TL).
             stack_y(self.factory.make_dynamic_text(Vec2(), "{}", lambda: self.renderer.ui_commands_count, font_white), anchor=Anchor.TL).
-            stack_y(self.factory.make_dynamic_text(Vec2(), "{}", lambda: self.renderer.debug_commands_count, font_white), anchor=Anchor.TL)
+            stack_y(self.factory.make_dynamic_text(Vec2(), "{}", lambda: self.renderer.debug_commands_count, font_white), anchor=Anchor.TL).
+            stack_y(self.factory.make_dynamic_text(Vec2(), "{}", lambda: self.renderer.blit_count, font_white), anchor=Anchor.TL)
         )
         
         # endregion

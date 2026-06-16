@@ -6,12 +6,12 @@ from .styles import (
 )
 from .draw_commands import (
     DrawCommand,
-    DrawRect, DrawCircle, DrawTexture, DrawText, DrawLine, DrawSubSurface
+    DrawRect, DrawCircle, DrawTexture, DrawText, DrawLine, DrawSubSurface, DrawChunkedSprite
 )
 from .object_renderer import ObjectRenderer
 from .object_renderers import (
     RectRenderer, CircleRenderer, LineRenderer,
-    SpriteRenderer, TextRenderer, SubSurfaceRenderer
+    SpriteRenderer, TextRenderer, SubSurfaceRenderer, ChunkedSpriteRenderer
 )
 
 __all__ = [
@@ -22,9 +22,9 @@ __all__ = [
     "GraphStyle", "DebugPanelStyle",
     # draw commands
     "DrawCommand",
-    "DrawRect", "DrawCircle", "DrawTexture", "DrawText", "DrawLine", "DrawSubSurface",
+    "DrawRect", "DrawCircle", "DrawTexture", "DrawText", "DrawLine", "DrawSubSurface", "DrawChunkedSprite",
     # renderers
     "ObjectRenderer",
     "RectRenderer", "CircleRenderer", "LineRenderer",
-    "SpriteRenderer", "TextRenderer", "SubSurfaceRenderer",
+    "SpriteRenderer", "TextRenderer", "SubSurfaceRenderer", "ChunkedSpriteRenderer"
 ]

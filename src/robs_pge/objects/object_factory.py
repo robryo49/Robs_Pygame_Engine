@@ -1,9 +1,10 @@
 from typing import Any, Callable, Optional
 
 from .objects import ButtonObject, CircleObject, DebugPanelObject, LayoutObject, ProgressBarObject, RectObject, SubSurfaceObject, TextObject, DebugOverlay, LineObject, LineRenderer, GraphObject, \
-    ActionOnUpdateBehavior, SpriteObject
+    ActionOnUpdateBehavior, SpriteObject, ChunkedSpriteObject
 from .behaviors import DynamicAttribute
-from rendering import ButtonStyle, CircleRenderer, CircleStyle, DebugPanelStyle, LineStyle, ProgressBarStyle, RectRenderer, RectStyle, SpriteRenderer, SubSurfaceRenderer, TextRenderer, GraphStyle
+from rendering import ButtonStyle, ChunkedSpriteRenderer, CircleRenderer, CircleStyle, DebugPanelStyle, LineStyle, ProgressBarStyle, RectRenderer, RectStyle, SpriteRenderer, SubSurfaceRenderer, \
+    TextRenderer, GraphStyle
 from resources import Texture
 from utils import Anchor, DictCollection, Font, Transform, Vec2, inf, Rect
 
@@ -81,6 +82,14 @@ class ObjectFactory:
         
         return obj
     
+    def make_chunked_sprite(
+            self, position: Vec2, texture: Texture, chunk_size: int = 256,
+            rotation: float = 0.0, scale: float = 1.0, layer: int = 1, anchor: Vec2 = Anchor.C, cache: bool = True
+    ) -> ChunkedSpriteObject:
+        
+        obj = self._make_object(ChunkedSpriteObject, position, rotation, scale, ChunkedSpriteRenderer(texture, chunk_size, cache), layer, anchor)
+        
+        return obj
     
     
     

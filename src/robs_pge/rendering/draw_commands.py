@@ -2,6 +2,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 import pygame as pg
+import math
 
 from .styles import CircleStyle, LineStyle, RectStyle
 from resources import Texture, SurfaceCache
@@ -59,38 +60,29 @@ class DrawTexture(DrawCommand):
     texture: Texture
     
     def make_surface(self, key, *args):
-        texture_id, rotation, scale = key
+        texture_id, rotation, scale, target_w, target_h = key
         
-        # If no transformations are needed, return the raw texture
-        if not rotation and scale == 1:
-            return self.texture.surface
+        if rotation == 0:
+            if target_w == self.texture.width and target_h == self.texture.height:
+                return self.texture.surface
+            return pg.transform.smoothscale(self.texture.surface, (target_w, target_h)).convert_alpha()
         
-        surface = self.texture.surface
-        
-        # 1. Apply crisp nearest-neighbor scaling first
-        if scale != 1:
-            new_w = max(1, round(surface.get_width() * scale))
-            new_h = max(1, round(surface.get_height() * scale))
-            surface = pg.transform.scale(surface, (new_w, new_h))
-        
-        # 2. Apply the rotation to the already-scaled crisp surface
-        if rotation:
-            surface = pg.transform.rotate(surface, rotation)
-        
-        return surface.convert_alpha()
+        return pg.transform.rotozoom(self.texture.surface, rotation, scale).convert_alpha()
     
     def draw(self, blit_call_queue: list[tuple[pg.Surface, Vec2]], camera: Camera, surface_cache, font_cache):
         screen_pos, rotation, scale = self.get_composed_transform(camera)
         
-        dims =      round(self.texture.dims * scale)
-        key =       (id(self.texture.surface), rotation, scale)
-        
+        dims = round(self.texture.dims * scale)
         if dims[0] <= 0 or dims[1] <= 0:
             return None
         
+        key = (id(self.texture.surface), rotation, scale, dims[0], dims[1])
+        
         surface, cached = self.get_surface(surface_cache, key)
         
-        self.add_blit(blit_call_queue, surface, screen_pos, surface_pos_from_uv_pos(self.anchor, dims, rotation))
+        actual_dims = Vec2(surface.get_size())
+        
+        self.add_blit(blit_call_queue, surface, screen_pos, surface_pos_from_uv_pos(self.anchor, actual_dims, rotation))
         
         return cached
 
@@ -352,3 +344,127 @@ class DrawSubSurface(DrawCommand):
         self.add_blit(blit_call_queue, final_surf, screen_pos, offset)
         
         return cached
+
+
+@dataclass
+class DrawChunkedSprite(DrawCommand):
+    texture: Texture
+    chunk_size: int = 256
+    
+    def make_surface(self, key, *args):
+        texture_id, cx, cy, cw, ch, rotation, scale = key
+        
+        sub_surf = self.texture.surface.subsurface(Rect(cx, cy, cw, ch))
+        
+        if scale != 1:
+            new_w = max(1, math.ceil(cw * scale) + 1)
+            new_h = max(1, math.ceil(ch * scale) + 1)
+            sub_surf = pg.transform.scale(sub_surf, (new_w, new_h))
+        
+        if rotation:
+            sub_surf = pg.transform.rotate(sub_surf, rotation)
+        
+        return sub_surf.convert_alpha()
+    
+    def draw(self, blit_call_queue: list[tuple[pg.Surface, Vec2]], camera: Camera, surface_cache, font_cache):
+        screen_pos, rotation, scale = self.get_composed_transform(camera)
+        
+        base_w = self.texture.width
+        base_h = self.texture.height
+        cw = self.chunk_size
+        ch = self.chunk_size
+        
+        # Get screen dimensions
+        display_surf = pg.display.get_surface()
+        screen_w = display_surf.get_width() if display_surf else 1920
+        screen_h = display_surf.get_height() if display_surf else 1080
+        
+        anchor_offset_x = self.anchor.x * base_w
+        anchor_offset_y = self.anchor.y * base_h
+        
+        cached_all = True
+        
+        # =====================================================================
+        # FAST PATH: NO ROTATION (O(Visible Chunks) via Direct Index Lookup)
+        # =====================================================================
+        if not rotation:
+            # 1. Project screen edges back into texture local pixel space
+            local_screen_left   = anchor_offset_x - (screen_pos.x / scale)
+            local_screen_right  = anchor_offset_x + ((screen_w - screen_pos.x) / scale)
+            local_screen_top    = anchor_offset_y - (screen_pos.y / scale)
+            local_screen_bottom = anchor_offset_y + ((screen_h - screen_pos.y) / scale)
+            
+            # 2. Convert local pixel positions to chunk indices
+            start_chunk_x = max(0, int(local_screen_left // cw))
+            end_chunk_x   = min(math.ceil(base_w / cw), int(math.ceil(local_screen_right / cw)))
+            
+            start_chunk_y = max(0, int(local_screen_top // ch))
+            end_chunk_y   = min(math.ceil(base_h / ch), int(math.ceil(local_screen_bottom / ch)))
+            
+            # 3. Loop ONLY through chunks that are guaranteed to be visible
+            for chk_y in range(start_chunk_y, end_chunk_y):
+                y = chk_y * ch
+                chunk_h = min(ch, base_h - y)
+                
+                for chk_x in range(start_chunk_x, end_chunk_x):
+                    x = chk_x * cw
+                    chunk_w = min(cw, base_w - x)
+                    
+                    # Pre-calculate center positions directly without vector math
+                    cx_local = (x + chunk_w / 2.0) - anchor_offset_x
+                    cy_local = (y + chunk_h / 2.0) - anchor_offset_y
+                    
+                    chunk_center_x = screen_pos.x + cx_local * scale
+                    chunk_center_y = screen_pos.y + cy_local * scale
+                    
+                    # Fetch surface slice and build draw call
+                    key = (id(self.texture.surface), x, y, chunk_w, chunk_h, 0.0, scale)
+                    surface, cached = self.get_surface(surface_cache, key)
+                    if not cached:
+                        cached_all = False
+                    
+                    final_dims = surface.get_size()
+                    blit_x = round(chunk_center_x - final_dims[0] / 2.0)
+                    blit_y = round(chunk_center_y - final_dims[1] / 2.0)
+                    
+                    blit_call_queue.append((surface, Vec2(blit_x, blit_y)))
+            
+            return cached_all
+        
+        # =====================================================================
+        # FALLBACK PATH: WITH ROTATION (O(N) Bounding Circle Checking)
+        # =====================================================================
+        for y in range(0, base_h, ch):
+            chunk_h = min(ch, base_h - y)
+            for x in range(0, base_w, cw):
+                chunk_w = min(cw, base_w - x)
+                
+                cx_local = (x + chunk_w / 2.0) - anchor_offset_x
+                cy_local = (y + chunk_h / 2.0) - anchor_offset_y
+                
+                # Rotate local offsets around anchor pivot
+                vec = pg.math.Vector2(cx_local * scale, cy_local * scale).rotate(-rotation)
+                
+                chunk_center_x = screen_pos.x + vec.x
+                chunk_center_y = screen_pos.y + vec.y
+                
+                # Loose radial culling for rotated positions
+                chunk_radius = math.hypot(chunk_w, chunk_h) * 0.5 * scale
+                if (chunk_center_x + chunk_radius < 0 or
+                        chunk_center_x - chunk_radius > screen_w or
+                        chunk_center_y + chunk_radius < 0 or
+                        chunk_center_y - chunk_radius > screen_h):
+                    continue
+                
+                key = (id(self.texture.surface), x, y, chunk_w, chunk_h, rotation, scale)
+                surface, cached = self.get_surface(surface_cache, key)
+                if not cached:
+                    cached_all = False
+                
+                final_dims = surface.get_size()
+                blit_x = round(chunk_center_x - final_dims[0] / 2.0)
+                blit_y = round(chunk_center_y - final_dims[1] / 2.0)
+                
+                blit_call_queue.append((surface, Vec2(blit_x, blit_y)))
+        
+        return cached_all

@@ -12,6 +12,7 @@ from .object_collection import ObjectCollection
 from .object_factory import ObjectFactory
 from .objects import (
     RectObject, CircleObject, TextObject, SpriteObject, LineObject,
+    SubSurfaceObject, ChunkedSpriteObject,
     LayoutObject, DebugOverlay, DebugPanelObject,
     ButtonObject, ProgressBarObject, GraphObject,
 )
@@ -31,6 +32,7 @@ __all__ = [
     # objects
     "PygameObject",
     "RectObject", "CircleObject", "TextObject", "SpriteObject", "LineObject",
+    "SubSurfaceObject", "ChunkedSpriteObject",
     "LayoutObject", "DebugOverlay", "DebugPanelObject",
     "ButtonObject", "ProgressBarObject", "GraphObject",
 ]

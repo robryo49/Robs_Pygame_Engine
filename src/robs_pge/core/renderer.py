@@ -29,8 +29,9 @@ class Renderer:
         self._ui_commands_count: int = 0
         self._debug_commands_count: int = 0
         self._commands_count = (0, 0, 0)
+        self._blit_count: int = 0
         
-        self.blit_calls: list[tuple[pg.Surface, Vec2]] = []
+        self._blit_calls: list[tuple[pg.Surface, Vec2]] = []
     
     # region PROPERTIES
     
@@ -61,6 +62,10 @@ class Renderer:
     @property
     def debug_commands_count(self) -> int:
         return self._debug_commands_count
+    
+    @property
+    def blit_count(self):
+        return self._blit_count
     
     @property
     def cache_hits(self):
@@ -119,22 +124,23 @@ class Renderer:
         for cmd in sorted(self.debug_commands, key=lambda c: c.layer):
             self._execute_command(cmd, self._default_camera)
         
-        self.display.surface.blits(self.blit_calls)
+        self.display.surface.blits(self._blit_calls)
         
         self._world_commands_count = len(self._world_commands)
         self._ui_commands_count = len(self._ui_commands)
         self._debug_commands_count = len(self._debug_commands)
         self._commands_count = (self._world_commands_count, self._ui_commands_count, self._debug_commands_count)
+        self._blit_count = len(self._blit_calls)
         
         self.world_commands.clear()
         self.ui_commands.clear()
         self.debug_commands.clear()
-        self.blit_calls.clear()
+        self._blit_calls.clear()
         
         return self
     
     def _execute_command(self, cmd: DrawCommand, camera: Camera) -> "Renderer":
-        cache_hit = cmd.draw(self.blit_calls, camera, self._surface_cache, self._font_cache)
+        cache_hit = cmd.draw(self._blit_calls, camera, self._surface_cache, self._font_cache)
         
         if cache_hit is None:
             self._cache_skips += 1
