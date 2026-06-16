@@ -5,9 +5,9 @@ import pygame as pg
 
 from .styles import CircleStyle, LineStyle, RectStyle
 from resources import Texture, SurfaceCache
-from utils import Font, Transform, Vec2, surface_pos_from_uv_pos
+from utils import Font, Transform, Vec2, surface_pos_from_uv_pos, Rect
 
-from typing import TYPE_CHECKING
+from typing import Optional, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from core import Camera
@@ -32,7 +32,7 @@ class DrawCommand:
         raise NotImplementedError("Draw command doesnt have a defined draw method")
     
     @staticmethod
-    def add_blit(blit_call_queue: list[tuple[pg.Surface, Vec2]], surface: pg.Surface, screen_pos: Vec2, offset: Vec2 = None):
+    def add_blit(blit_call_queue: list[tuple[pg.Surface, Vec2]], surface: pg.Surface, screen_pos: Vec2, offset: Optional[Vec2] = None):
         blit_call_queue.append((surface, screen_pos - (offset or Vec2())))
     
     @staticmethod
@@ -52,7 +52,7 @@ class DrawCommand:
             surface_cache.add(key, surface)
             return surface, False
         return surface, True
-        
+
 
 @dataclass
 class DrawTexture(DrawCommand):
@@ -61,8 +61,23 @@ class DrawTexture(DrawCommand):
     def make_surface(self, key, *args):
         texture_id, rotation, scale = key
         
-        surface = pg.transform.rotozoom(self.texture.surface, rotation, scale).convert_alpha() if rotation or scale != 1 else self.texture.surface
-        return surface
+        # If no transformations are needed, return the raw texture
+        if not rotation and scale == 1:
+            return self.texture.surface
+        
+        surface = self.texture.surface
+        
+        # 1. Apply crisp nearest-neighbor scaling first
+        if scale != 1:
+            new_w = max(1, round(surface.get_width() * scale))
+            new_h = max(1, round(surface.get_height() * scale))
+            surface = pg.transform.scale(surface, (new_w, new_h))
+        
+        # 2. Apply the rotation to the already-scaled crisp surface
+        if rotation:
+            surface = pg.transform.rotate(surface, rotation)
+        
+        return surface.convert_alpha()
     
     def draw(self, blit_call_queue: list[tuple[pg.Surface, Vec2]], camera: Camera, surface_cache, font_cache):
         screen_pos, rotation, scale = self.get_composed_transform(camera)
@@ -262,5 +277,78 @@ class DrawLine(DrawCommand):
         surface, cached = self.get_surface(surface_cache, key, screen_points)
         
         self.add_blit(blit_call_queue, surface, Vec2(min_x - pad, min_y - pad))
+        
+        return cached
+
+
+@dataclass
+class DrawSubSurface(DrawCommand):
+    texture: Texture
+    sub_rect: Rect
+    target_dims: Vec2
+    
+    def make_surface(self, key, *args):
+        # key format: (texture_id, "subsurf_upright", sx, sy, sw, sh, view_w, view_h)
+        _, _, sx, sy, sw, sh, view_w, view_h = key
+        
+        # 1. Allocate a clean, isolated transparent canvas ONLY on a cache miss
+        surface = pg.Surface((view_w, view_h), pg.SRCALPHA)
+        
+        texture_rect = self.texture.surface.get_rect()
+        sub_rect = Rect(sx, sy, sw, sh)
+        
+        # 2. Extract and scale the source pixels safely into position
+        if sub_rect.colliderect(texture_rect):
+            safe_sub_rect = sub_rect.clip(texture_rect)
+            
+            x_ratio = view_w / sw
+            y_ratio = view_h / sh
+            
+            dest_x = int((safe_sub_rect.x - sx) * x_ratio)
+            dest_y = int((safe_sub_rect.y - sy) * y_ratio)
+            dest_w = int(safe_sub_rect.w * x_ratio)
+            dest_h = int(safe_sub_rect.h * y_ratio)
+            
+            if dest_w > 0 and dest_h > 0:
+                # Zero-allocation pointer slice of master sheet
+                sub_surf = self.texture.surface.subsurface(safe_sub_rect)
+                # Stream directly into our fresh buffer window
+                pg.transform.scale(sub_surf, (dest_w, dest_h), surface.subsurface(Rect(dest_x, dest_y, dest_w, dest_h)))
+        
+        return surface
+    
+    def draw(self, blit_call_queue: list[tuple[pg.Surface, Vec2]], camera: Camera, surface_cache, font_cache):
+        screen_pos, rotation, scale = self.get_composed_transform(camera)
+        
+        # Dynamic unrotated canvas target measurements matching camera scale
+        view_w = max(1, round(self.target_dims.x * scale))
+        view_h = max(1, round(self.target_dims.y * scale))
+        base_dims = Vec2(view_w, view_h)
+        
+        # Unique configuration key tracking texture identity, crop source, and destination resolution
+        key = (
+            id(self.texture.surface),
+            "subsurf_upright",
+            self.sub_rect.x,
+            self.sub_rect.y,
+            self.sub_rect.w,
+            self.sub_rect.h,
+            view_w,
+            view_h
+        )
+        
+        # 3. Retrieve surface. If True, make_surface() is completely bypassed!
+        surface, cached = self.get_surface(surface_cache, key)
+        
+        # 4. Spin the upright cached surface frame-by-frame if rotation is active
+        if rotation:
+            final_surf = pg.transform.rotate(surface, rotation)
+        else:
+            final_surf = surface
+        
+        # Compute exact pivot placement vector based on the unrotated base dimensions
+        offset = surface_pos_from_uv_pos(self.anchor, base_dims, rotation)
+        
+        self.add_blit(blit_call_queue, final_surf, screen_pos, offset)
         
         return cached

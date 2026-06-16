@@ -1,4 +1,5 @@
 from .behaviors import ObjectBehavior
+from events import Event
 from utils import Collection, Vec2
 
 
@@ -62,4 +63,8 @@ class BehaviorCollection(Collection):
     def on_update(self, dt: float):
         for behavior in self._elements:
             behavior.on_update(dt)
+            
+    def on_event(self, event: Event):
+        for behavior in self._elements:
+            behavior.on_event(event)
         

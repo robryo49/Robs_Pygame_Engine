@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import TYPE_CHECKING
+from typing import Optional, TYPE_CHECKING
 
 from utils import Collection, ObjectLike
 
@@ -8,7 +8,7 @@ if TYPE_CHECKING:
 
 
 class ObjectCollection(Collection):
-    def __init__(self, objects: list[ObjectLike] = None):
+    def __init__(self, objects: Optional[list[ObjectLike]] = None):
         super().__init__(objects)
         
         self._to_remove: list[ObjectLike] = []

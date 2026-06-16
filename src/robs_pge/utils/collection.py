@@ -1,8 +1,8 @@
-from typing import Any
+from typing import Any, Optional
 
 
 class Collection:
-    def __init__(self, elements: list[Any] = None):
+    def __init__(self, elements: Optional[list[Any]] = None):
         self._elements: list[Any] = elements or []
     
     @property
@@ -46,7 +46,7 @@ class Collection:
         
 
 class DictCollection:
-    def __init__(self, elements: dict = None):
+    def __init__(self, elements: Optional[dict[Any, Any]] = None):
         self._elements: dict = elements or {}
     
     @property

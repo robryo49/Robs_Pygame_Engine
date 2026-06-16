@@ -1,5 +1,5 @@
+from .behavior import ObjectBehavior
 from .behaviors import (
-    ObjectBehavior,
     ActionOnUpdateBehavior,
     ActionOnClickBehavior,
     ScaleOnHoverBehavior,
@@ -11,11 +11,11 @@ from .interaction_manager import InteractionManager
 from .object_collection import ObjectCollection
 from .object_factory import ObjectFactory
 from .objects import (
-    PygameObject,
     RectObject, CircleObject, TextObject, SpriteObject, LineObject,
     LayoutObject, DebugOverlay, DebugPanelObject,
     ButtonObject, ProgressBarObject, GraphObject,
 )
+from .object import PygameObject
 
 __all__ = [
     # behaviors

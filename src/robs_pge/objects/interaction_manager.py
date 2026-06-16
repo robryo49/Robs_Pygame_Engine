@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING
 from typing import Optional
 
 from .object_collection import ObjectCollection
-from .objects import PygameObject
+from .object import PygameObject
 from input import InputManager
 from utils import ObjectFlags, Vec2
 

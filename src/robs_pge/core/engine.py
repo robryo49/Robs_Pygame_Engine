@@ -3,18 +3,17 @@ import sys
 
 import pygame as pg
 
-from .camera import Camera
-from .clock import Clock
-from .display import Display
-from .renderer import Renderer
 from debug import FrameTimer
 from input import InputManager
 from objects import InteractionManager
 from rendering import DebugPanelStyle, GraphStyle, ProgressBarStyle, RectStyle
 from resources import ResourceManager
 from states import StateManager
-from utils import Colors, Vec2
-
+from utils import Colors, Vec2, Vec2Like
+from .camera import Camera
+from .clock import Clock
+from .display import Display
+from .renderer import Renderer
 
 
 class Engine:
@@ -22,20 +21,20 @@ class Engine:
         self._name: str = name
         logging.basicConfig(level=logging.INFO, stream=sys.stdout, format='%(name)s - %(levelname)s : %(message)s')
         
-        self._display: Display = Display(Vec2(1920, 1080))
+        self._display: Display = self.create_display(Vec2(1920, 1080))
         
-        self._clock: Clock = Clock()
-        self._input: InputManager = InputManager()
-        self._interaction_manager: InteractionManager = InteractionManager(self.input)
+        self._clock: Clock = self.create_clock()
+        self._input: InputManager = self.create_input_manager()
+        self._interaction_manager: InteractionManager = self.create_interaction_manager(self.input)
         
-        self._resources: ResourceManager = ResourceManager()
+        self._resources: ResourceManager = self.create_resource_manager()
         
-        self._frame_timer: FrameTimer = FrameTimer()
+        self._frame_timer: FrameTimer = self.create_frame_timer()
         
         self._default_camera: Camera = Camera(self._display).move(self._display.dims*0.5).update(self.clock.dtime)
         
-        self._state_manager: StateManager = StateManager()
-        self._renderer: Renderer = Renderer(self.display, self._default_camera, 2048 * 1024*1024)
+        self._state_manager: StateManager = self.create_state_manager()
+        self._renderer: Renderer = self.create_renderer(self.display, self._default_camera)
         
         self._running: bool = True
         
@@ -97,6 +96,42 @@ class Engine:
     
     # endregion
     
+    # region SERVICES CREATION
+    
+    @staticmethod
+    def create_display(dims: Vec2Like):
+        return Display(dims)
+    
+    @staticmethod
+    def create_clock():
+        return Clock()
+    
+    @staticmethod
+    def create_input_manager():
+        return InputManager()
+    
+    @staticmethod
+    def create_interaction_manager(input_manager: InputManager):
+        return InteractionManager(input_manager)
+    
+    @staticmethod
+    def create_resource_manager():
+        return ResourceManager()
+    
+    @staticmethod
+    def create_frame_timer():
+        return FrameTimer()
+    
+    @staticmethod
+    def create_state_manager():
+        return StateManager()
+    
+    @staticmethod
+    def create_renderer(display: Display, default_camera: Camera, max_cache_size: int = 2048*1024*1024):
+        return Renderer(display, default_camera, max_cache_size)
+    
+    
+    # endregion
     
     def init_resources(self) -> "Engine":
         logging.info("Initializing resources")

@@ -11,7 +11,7 @@ from .objects import (
     ObjectFactory, ObjectCollection, ObjectBehavior,
 )
 from .utils import (
-    Vec2, Vec3, Transform, Easing, Anchor,
+    Vec2, Vec3, Transform, Easing, Anchor, Rect,
     Color, Colors,
     Font,
     Keybinds, ObjectFlags, KeybindFlags,
@@ -36,7 +36,7 @@ __all__ = [
     "ButtonObject", "ProgressBarObject", "GraphObject",
     "ObjectFactory", "ObjectCollection", "ObjectBehavior",
     # utils (commonly needed at top level)
-    "Vec2", "Vec3", "Transform", "Easing", "Anchor",
+    "Vec2", "Vec3", "Transform", "Easing", "Anchor", "Rect",
     "Color", "Colors",
     "Font",
     "Keybinds", "ObjectFlags", "KeybindFlags",

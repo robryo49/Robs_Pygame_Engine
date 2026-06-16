@@ -1,41 +1,40 @@
 from copy import copy
 from typing import Any, Callable, Optional
 
+from events import Event
 from animation import AnimationManager, MultiplierAnimation
 from utils import ObjectFlags, Vec2
+from .behavior import ObjectBehavior
 
 
-class ObjectBehavior:
-    def __init__(self):
-        self._object = None
-    
-    # region PROPERTIES
-    
-    # region object
-    @property
-    def owner(self):
-        return self._object
-    
-    @owner.setter
-    def owner(self, value):
-        self._object = value
-    # endregion
-    
-    # endregion
-    
-    def on_click(self, button: int, pos: Vec2): pass
-    def on_hold(self, button: int, pos: Vec2): pass
-    def on_release(self, button: int, pos: Vec2): pass
+
+class ActionOnEventBehavior(ObjectBehavior):
+    def __init__(self, event: str | Event | tuple[str | Event, ...], action: Callable | tuple[Callable, ...]):
+        super().__init__()
         
-    def on_hover_start(self): pass
-    def on_hover(self): pass
-    def on_hover_end(self): pass
+        self._event = event
         
-    def on_attach(self): pass
-    def on_detach(self): pass
+        self._action = action
     
-    def on_update(self, dt: float): pass
-    
+    def on_event(self, event: str | Event):
+        
+        if isinstance(self._event, tuple):
+            found = False
+            for e in self._event:
+                if Event.are_equal(e, event):
+                    found = True
+                    break
+            if not found: return
+        elif Event.are_equal(self._event, event): return
+        elif self._action is None: return
+        
+        if isinstance(self._action, tuple):
+            for action in self._action:
+                action()
+        else:
+            self._action()
+        
+
     
 class ActionOnUpdateBehavior(ObjectBehavior):
     def __init__(self, action: Callable | tuple[Callable, ...]):
@@ -70,6 +69,7 @@ class ActionOnClickBehavior(ObjectBehavior):
                     action()
             else:
                 self._action()
+
 
 
 class ScaleOnHoverBehavior(ObjectBehavior):
@@ -120,6 +120,7 @@ class ScaleOnClickBehavior(ObjectBehavior):
         if not self._animation_manager: return
         if button == self._button:
             self._animation_manager.play(MultiplierAnimation(self.owner, "scale", 1 / self._scaling, self._duration, self._easing_function))
+            
             
 
 class DynamicAttribute(ObjectBehavior):

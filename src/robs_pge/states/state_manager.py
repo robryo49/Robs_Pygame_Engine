@@ -25,7 +25,7 @@ class StateManager:
         self.states[state.id] = state
     
     def set_state(self, state: str | State):
-        self._state_request = state.id if isinstance(state, State) else state
+        self._state_request = state if isinstance(state, str) else state.id
         
     def update(self, dt: float):
         if self._state_request:

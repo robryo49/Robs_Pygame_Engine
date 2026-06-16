@@ -1,20 +1,25 @@
-from typing import Callable
+from __future__ import annotations
+from typing import Any, TYPE_CHECKING, Callable
 
 import pygame as pg
 
 from animation import AnimationManager
 from debug import FrameTimer
+from events import Event, EventManager
 from input import InputManager, Keybind, KeybindsManager
-from objects import ObjectCollection, ObjectFactory, PygameObject
+from objects import InteractionManager, ObjectCollection, ObjectFactory, PygameObject
 from particles import ParticleSystem
 from rendering import DebugPanelStyle, GraphStyle
 from resources import ResourceManager
 from utils import Anchor, DictCollection, Vec2
-from core import Camera
 
+if TYPE_CHECKING:
+    from core import Camera, Engine
+    
 
 class State:
-    def __init__(self, engine, state_id: str):
+    def __init__(self, engine: Engine, state_id: str):
+        from core import Camera
         
         self._id = state_id
         self._engine = engine
@@ -23,10 +28,11 @@ class State:
         
         self._camera = Camera(self.engine.display)
         
-        self._animation_manager = AnimationManager()
-        self._keybinds_manager = KeybindsManager(self.input)
-        self._factory = ObjectFactory()
-        self._particle_system = ParticleSystem()
+        self._event_manager = self.create_event_manager()
+        self._animation_manager = self.create_animation_manager()
+        self._keybinds_manager = self.create_keybinds_manager(self.input)
+        self._factory = self.create_object_factory()
+        self._particle_system = self.create_particle_system()
         
         self._services: DictCollection = DictCollection()
         self._factory.services = self._services
@@ -92,8 +98,12 @@ class State:
         return self._animation_manager
     
     @property
-    def interaction_manager(self):
+    def interaction_manager(self) -> InteractionManager:
         return self.engine.interaction_manager
+    
+    @property
+    def event_manager(self) -> EventManager:
+        return self._event_manager
     
     @property
     def particle_system(self) -> ParticleSystem:
@@ -114,6 +124,30 @@ class State:
     @property
     def ui_objects(self) -> ObjectCollection:
         return self._ui_objects
+    
+    # endregion
+    
+    # region SEVICES CREATION
+    
+    @staticmethod
+    def create_event_manager() -> EventManager:
+        return EventManager()
+    
+    @staticmethod
+    def create_animation_manager() -> AnimationManager:
+        return AnimationManager()
+    
+    @staticmethod
+    def create_keybinds_manager(input_manager: InputManager) -> KeybindsManager:
+        return KeybindsManager(input_manager)
+    
+    @staticmethod
+    def create_object_factory() -> ObjectFactory:
+        return ObjectFactory()
+    
+    @staticmethod
+    def create_particle_system() -> ParticleSystem:
+        return ParticleSystem()
     
     # endregion
     
@@ -246,7 +280,6 @@ class State:
         self.debug_overlay.stack_x(c1, anchor=Anchor.TL)
         
         self.debug_overlay.fix_col_width(0, 420)
-        
     
     def init_resources(self) -> None:
         pass
@@ -256,18 +289,26 @@ class State:
         self._services.set(InputManager, self.input)
         self._services.set(ParticleSystem, self.particle_system)
         self._services.set(ObjectFactory, self.factory)
+        self._services.set(EventManager, self.event_manager)
         
     
     def init_keybinds(self) -> None:
-        self.add_keybind(pg.K_F3, lambda: self.debug_overlay.toggle_visible())
-        self.add_keybind(pg.K_F4, lambda: self.debug_overlay.toggle_freeze())
+        self.register_keybind(pg.K_F3, lambda: self.debug_overlay.toggle_visible())
+        self.register_keybind(pg.K_F4, lambda: self.debug_overlay.toggle_freeze())
     
-    def add_keybind(self, key: int | tuple[int, ...], action: Callable, *args) -> None:
+    def register_keybind(self, key: int | tuple[int, ...], action: Callable, *args) -> None:
         self.keybinds.add(Keybind(key, action, *args))
+    
+    def register_event_callback(self, event_type: str, callback: Callable[[Event], Any]) -> None:
+        self.event_manager.register_listener(event_type, callback)
+        
+    def trigger_event(self, event: Event) -> None:
+        self.event_manager.trigger(event)
     
     def update(self, dt: float) -> None:
         self.animation_manager.update(dt)
         self.keybinds.update()
+        self.event_manager.update()
         
         self.frame_timer.time("Update.State.Interactions", lambda: self.interaction_manager.update(self.objects, self.ui_objects, self.camera))
         self.frame_timer.time("Update.State.UI Objects", lambda: self.ui_objects.update(dt))
