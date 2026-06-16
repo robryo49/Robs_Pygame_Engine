@@ -299,16 +299,13 @@ class DrawSubSurface(DrawCommand):
     target_dims: Vec2
     
     def make_surface(self, key, *args):
-        # key format: (texture_id, "subsurf_upright", sx, sy, sw, sh, view_w, view_h)
         _, _, sx, sy, sw, sh, view_w, view_h = key
         
-        # 1. Allocate a clean, isolated transparent canvas ONLY on a cache miss
         surface = pg.Surface((view_w, view_h), pg.SRCALPHA)
         
         texture_rect = self.texture.surface.get_rect()
         sub_rect = Rect(sx, sy, sw, sh)
         
-        # 2. Extract and scale the source pixels safely into position
         if sub_rect.colliderect(texture_rect):
             safe_sub_rect = sub_rect.clip(texture_rect)
             
@@ -321,9 +318,7 @@ class DrawSubSurface(DrawCommand):
             dest_h = int(safe_sub_rect.h * y_ratio)
             
             if dest_w > 0 and dest_h > 0:
-                # Zero-allocation pointer slice of master sheet
                 sub_surf = self.texture.surface.subsurface(safe_sub_rect)
-                # Stream directly into our fresh buffer window
                 pg.transform.scale(sub_surf, (dest_w, dest_h), surface.subsurface(Rect(dest_x, dest_y, dest_w, dest_h)))
         
         return surface
@@ -331,33 +326,19 @@ class DrawSubSurface(DrawCommand):
     def draw(self, blit_call_queue: list[tuple[pg.Surface, Vec2]], camera: Camera, surface_cache, font_cache):
         screen_pos, rotation, scale = self.get_composed_transform(camera)
         
-        # Dynamic unrotated canvas target measurements matching camera scale
         view_w = max(1, round(self.target_dims.x * scale))
         view_h = max(1, round(self.target_dims.y * scale))
         base_dims = Vec2(view_w, view_h)
         
-        # Unique configuration key tracking texture identity, crop source, and destination resolution
-        key = (
-            id(self.texture.surface),
-            "subsurf_upright",
-            self.sub_rect.x,
-            self.sub_rect.y,
-            self.sub_rect.w,
-            self.sub_rect.h,
-            view_w,
-            view_h
-        )
+        key = (id(self.texture.surface), "subsurf_upright", self.sub_rect.x, self.sub_rect.y, self.sub_rect.w, self.sub_rect.h, view_w, view_h)
         
-        # 3. Retrieve surface. If True, make_surface() is completely bypassed!
         surface, cached = self.get_surface(surface_cache, key)
         
-        # 4. Spin the upright cached surface frame-by-frame if rotation is active
         if rotation:
             final_surf = pg.transform.rotate(surface, rotation)
         else:
             final_surf = surface
         
-        # Compute exact pivot placement vector based on the unrotated base dimensions
         offset = surface_pos_from_uv_pos(self.anchor, base_dims, rotation)
         
         self.add_blit(blit_call_queue, final_surf, screen_pos, offset)
@@ -371,13 +352,29 @@ class DrawChunkedSprite(DrawCommand):
     chunk_size: int = 256
     
     def make_surface(self, key, *args):
-        texture_id, cx, cy, cw, ch, rotation, scale = key
+        texture_id, cx, cy, cw, ch, rotation, scale, lod_level = key
+        lod_surface: pg.Surface = args[0]
         
-        sub_surf = self.texture.surface.subsurface(Rect(cx, cy, cw, ch))
+        if lod_level == 0:
+            sub_surf = self.texture.surface.subsurface(Rect(cx, cy, cw, ch))
+        else:
+            w_ratio = lod_surface.get_width() / self.texture.width
+            h_ratio = lod_surface.get_height() / self.texture.height
+            
+            lod_x = int(cx * w_ratio)
+            lod_y = int(cy * h_ratio)
+            
+            lod_w = max(1, int((cx + cw) * w_ratio) - lod_x)
+            lod_h = max(1, int((cy + ch) * h_ratio) - lod_y)
+            
+            lod_w = min(lod_w, lod_surface.get_width() - lod_x)
+            lod_h = min(lod_h, lod_surface.get_height() - lod_y)
+            
+            sub_surf = lod_surface.subsurface(Rect(lod_x, lod_y, lod_w, lod_h))
         
         if scale != 1:
-            new_w = max(1, math.ceil(cw * scale) + 1)
-            new_h = max(1, math.ceil(ch * scale) + 1)
+            new_w = max(1, math.ceil(cw * scale) + (1 if cx < self.texture.width - self.chunk_size else 0))
+            new_h = max(1, math.ceil(ch * scale) + (1 if cy < self.texture.height - self.chunk_size else 0))
             sub_surf = pg.transform.scale(sub_surf, (new_w, new_h))
         
         if rotation:
@@ -388,12 +385,16 @@ class DrawChunkedSprite(DrawCommand):
     def draw(self, blit_call_queue: list[tuple[pg.Surface, Vec2]], camera: Camera, surface_cache, font_cache):
         screen_pos, rotation, scale = self.get_composed_transform(camera)
         
+        if scale <= 0:
+            return None
+        
+        lod_surface, lod_level = self.texture.get_lod_surface(scale)
+        
         base_w = self.texture.width
         base_h = self.texture.height
         cw = self.chunk_size
         ch = self.chunk_size
         
-        # Get screen dimensions
         display_surf = pg.display.get_surface()
         screen_w = display_surf.get_width() if display_surf else 1920
         screen_h = display_surf.get_height() if display_surf else 1080
@@ -403,24 +404,18 @@ class DrawChunkedSprite(DrawCommand):
         
         cached_all = True
         
-        # =====================================================================
-        # FAST PATH: NO ROTATION (O(Visible Chunks) via Direct Index Lookup)
-        # =====================================================================
         if not rotation:
-            # 1. Project screen edges back into texture local pixel space
             local_screen_left   = anchor_offset_x - (screen_pos.x / scale)
             local_screen_right  = anchor_offset_x + ((screen_w - screen_pos.x) / scale)
             local_screen_top    = anchor_offset_y - (screen_pos.y / scale)
             local_screen_bottom = anchor_offset_y + ((screen_h - screen_pos.y) / scale)
             
-            # 2. Convert local pixel positions to chunk indices
             start_chunk_x = max(0, int(local_screen_left // cw))
             end_chunk_x   = min(math.ceil(base_w / cw), int(math.ceil(local_screen_right / cw)))
             
             start_chunk_y = max(0, int(local_screen_top // ch))
             end_chunk_y   = min(math.ceil(base_h / ch), int(math.ceil(local_screen_bottom / ch)))
             
-            # 3. Loop ONLY through chunks that are guaranteed to be visible
             for chk_y in range(start_chunk_y, end_chunk_y):
                 y = chk_y * ch
                 chunk_h = min(ch, base_h - y)
@@ -429,16 +424,14 @@ class DrawChunkedSprite(DrawCommand):
                     x = chk_x * cw
                     chunk_w = min(cw, base_w - x)
                     
-                    # Pre-calculate center positions directly without vector math
                     cx_local = (x + chunk_w / 2.0) - anchor_offset_x
                     cy_local = (y + chunk_h / 2.0) - anchor_offset_y
                     
                     chunk_center_x = screen_pos.x + cx_local * scale
                     chunk_center_y = screen_pos.y + cy_local * scale
                     
-                    # Fetch surface slice and build draw call
-                    key = (id(self.texture.surface), x, y, chunk_w, chunk_h, 0.0, scale)
-                    surface, cached = self.get_surface(surface_cache, key)
+                    key = (id(self.texture.surface), x, y, chunk_w, chunk_h, 0.0, scale, lod_level)
+                    surface, cached = self.get_surface(surface_cache, key, lod_surface)
                     if not cached:
                         cached_all = False
                     
@@ -450,9 +443,6 @@ class DrawChunkedSprite(DrawCommand):
             
             return cached_all
         
-        # =====================================================================
-        # FALLBACK PATH: WITH ROTATION (O(N) Bounding Circle Checking)
-        # =====================================================================
         for y in range(0, base_h, ch):
             chunk_h = min(ch, base_h - y)
             for x in range(0, base_w, cw):
@@ -461,13 +451,11 @@ class DrawChunkedSprite(DrawCommand):
                 cx_local = (x + chunk_w / 2.0) - anchor_offset_x
                 cy_local = (y + chunk_h / 2.0) - anchor_offset_y
                 
-                # Rotate local offsets around anchor pivot
                 vec = pg.math.Vector2(cx_local * scale, cy_local * scale).rotate(-rotation)
                 
                 chunk_center_x = screen_pos.x + vec.x
                 chunk_center_y = screen_pos.y + vec.y
                 
-                # Loose radial culling for rotated positions
                 chunk_radius = math.hypot(chunk_w, chunk_h) * 0.5 * scale
                 if (chunk_center_x + chunk_radius < 0 or
                         chunk_center_x - chunk_radius > screen_w or
@@ -475,8 +463,8 @@ class DrawChunkedSprite(DrawCommand):
                         chunk_center_y - chunk_radius > screen_h):
                     continue
                 
-                key = (id(self.texture.surface), x, y, chunk_w, chunk_h, rotation, scale)
-                surface, cached = self.get_surface(surface_cache, key)
+                key = (id(self.texture.surface), x, y, chunk_w, chunk_h, rotation, scale, lod_level)
+                surface, cached = self.get_surface(surface_cache, key, lod_surface)
                 if not cached:
                     cached_all = False
                 

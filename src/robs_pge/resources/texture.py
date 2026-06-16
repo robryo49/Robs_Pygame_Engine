@@ -46,7 +46,7 @@ class Texture:
             prev = self._mip_levels[-1]
             w, h = prev.get_size()
             if w <= 1 and h <= 1:
-                break  # can't shrink further
+                break
             self._mip_levels.append(pg.transform.smoothscale(prev, (max(1, w // 2), max(1, h // 2))))
     
     def get_lod_surface(self, scale: float) -> tuple[pg.Surface, int]:
@@ -146,7 +146,6 @@ class Texture:
             if cmap != "binary":
                 arr = arr.astype(np.float32) / 255.0
         
-        # 3. Apply colorization
         if cmap != "binary":
             arr = colorize_array(arr, cmap=cmap)
         else:
