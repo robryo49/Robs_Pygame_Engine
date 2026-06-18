@@ -5,7 +5,7 @@ import numpy as np
 
 from .particle import FadingTypes
 from resources import Texture
-from utils import inf, Easing
+from utils import inf, Easing, Color
 
 
 @dataclass
@@ -19,6 +19,7 @@ class ParticlePool:
     lifetimes: np.ndarray
     
     texture: Texture
+    color: Color = None
     
     fade_duration: float = 0
     fade_easing: Callable[[float], float] = Easing.EASE_IN_QUAD

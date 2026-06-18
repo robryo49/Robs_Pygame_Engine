@@ -76,5 +76,6 @@ class BurstEmitter(ParticleEmitter):
         velocities = np.stack([np.cos(angles), np.sin(angles)], axis=0).transpose() * np.array([speeds]).transpose()
         lifetimes = self._get_floats(self.lifetime, count)
         
-        particle_system.emit_pool(positions, velocities, np.array(self.gravity), rotations, angular_speeds, sizes, lifetimes, self.texture)
+        particle_system.emit_pool(positions, velocities, np.array(self.gravity), rotations, angular_speeds, sizes, lifetimes, self.texture, self.color)
+
     

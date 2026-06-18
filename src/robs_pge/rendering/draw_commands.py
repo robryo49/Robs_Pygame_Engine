@@ -156,7 +156,7 @@ class DrawCircle(DrawCommand):
         surface = pg.Surface((radius*2, radius*2), pg.SRCALPHA)
         pg.draw.circle(surface, bg_color, (radius, radius), radius, 0)
         if bd:
-            pg.draw.circle(surface, bg_color, (radius, radius), radius, bd)
+            pg.draw.circle(surface, bd_color, (radius, radius), radius, bd)
             
         return surface
     
@@ -299,26 +299,33 @@ class DrawSubSurface(DrawCommand):
     target_dims: Vec2
     
     def make_surface(self, key, *args):
-        _, _, sx, sy, sw, sh, view_w, view_h = key
+        _, _, lod_level, sx, sy, sw, sh, view_w, view_h = key
+        lod_surface: pg.Surface = args[0]
         
         surface = pg.Surface((view_w, view_h), pg.SRCALPHA)
         
-        texture_rect = self.texture.surface.get_rect()
-        sub_rect = Rect(sx, sy, sw, sh)
+        w_ratio = lod_surface.get_width() / self.texture.width
+        h_ratio = lod_surface.get_height() / self.texture.height
         
-        if sub_rect.colliderect(texture_rect):
-            safe_sub_rect = sub_rect.clip(texture_rect)
+        lod_sub_rect = Rect(
+            round(sx * w_ratio), round(sy * h_ratio),
+            max(1, round(sw * w_ratio)), max(1, round(sh * h_ratio))
+        )
+        lod_texture_rect = lod_surface.get_rect()
+        
+        if lod_sub_rect.colliderect(lod_texture_rect):
+            safe_sub_rect = lod_sub_rect.clip(lod_texture_rect)
             
-            x_ratio = view_w / sw
-            y_ratio = view_h / sh
+            x_ratio = view_w / lod_sub_rect.w
+            y_ratio = view_h / lod_sub_rect.h
             
-            dest_x = int((safe_sub_rect.x - sx) * x_ratio)
-            dest_y = int((safe_sub_rect.y - sy) * y_ratio)
+            dest_x = int((safe_sub_rect.x - lod_sub_rect.x) * x_ratio)
+            dest_y = int((safe_sub_rect.y - lod_sub_rect.y) * y_ratio)
             dest_w = int(safe_sub_rect.w * x_ratio)
             dest_h = int(safe_sub_rect.h * y_ratio)
             
             if dest_w > 0 and dest_h > 0:
-                sub_surf = self.texture.surface.subsurface(safe_sub_rect)
+                sub_surf = lod_surface.subsurface(safe_sub_rect)
                 pg.transform.scale(sub_surf, (dest_w, dest_h), surface.subsurface(Rect(dest_x, dest_y, dest_w, dest_h)))
         
         return surface
@@ -330,9 +337,11 @@ class DrawSubSurface(DrawCommand):
         view_h = max(1, round(self.target_dims.y * scale))
         base_dims = Vec2(view_w, view_h)
         
-        key = (id(self.texture.surface), "subsurf_upright", self.sub_rect.x, self.sub_rect.y, self.sub_rect.w, self.sub_rect.h, view_w, view_h)
+        lod_surface, lod_level = self.texture.get_lod_surface(scale)
         
-        surface, cached = self.get_surface(surface_cache, key)
+        key = (id(self.texture.surface), "subsurf_upright", lod_level, self.sub_rect.x, self.sub_rect.y, self.sub_rect.w, self.sub_rect.h, view_w, view_h)
+        
+        surface, cached = self.get_surface(surface_cache, key, lod_surface)
         
         if rotation:
             final_surf = pg.transform.rotate(surface, rotation)

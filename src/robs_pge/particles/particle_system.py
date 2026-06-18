@@ -1,8 +1,8 @@
 from __future__ import annotations
 from typing import Optional, TYPE_CHECKING
 
-from utils import Vec2, Transform, Anchor
-from rendering import DrawTexture
+from utils import Vec2, Transform, Anchor, Colors
+from rendering import CircleStyle, DrawCircle, DrawTexture
 
 from .particle import Particle, FadingTypes
 from .particle_pool import ParticlePool
@@ -27,7 +27,7 @@ class ParticleSystem:
     
     # endregion
     
-    def emit_pool(self, positions, velocities, gravity, rotations, angular_speeds, sizes, lifetimes, texture):
+    def emit_pool(self, positions, velocities, gravity, rotations, angular_speeds, sizes, lifetimes, texture, color):
         pool = ParticlePool(
             positions=positions,
             velocities=velocities,
@@ -36,7 +36,8 @@ class ParticleSystem:
             angular_speeds=angular_speeds,
             sizes=sizes,
             lifetimes=lifetimes,
-            texture=texture
+            texture=texture,
+            color=color
         )
         
         self._particle_pools.append(pool)
@@ -68,25 +69,39 @@ class ParticleSystem:
     def update(self, dt):
         self.update_particles(dt)
         self.update_pools(dt)
-        
-        
+    
+    
     def render(self, submit, camera: Optional[Camera] = None):
         self.count = 0
-        
+    
         for p in self.particles:
             self.count += 1
-            
             transform = Transform(p.transform.pos, p.transform.rotation, p.transform.scale)
             
             if p.fade_type is not FadingTypes.NONE and p.fade_duration > 0 and p.life < p.fade_duration:
                 factor = 1 - p.fade_easing(1 - p.life / p.fade_duration) if p.life < p.fade_duration else 1
-                
                 if p.fade_type & FadingTypes.SCALE:
                     transform.scale *= factor
-                    
-            submit(DrawTexture(p.texture, transform, p.layer, Anchor.C))
-
+            
+            if p.texture is not None:
+                submit(DrawTexture(transform, p.layer, Anchor.C, False, p.texture))
+            else:
+                submit(DrawCircle(
+                    Transform(transform.pos, transform.rotation, 1),
+                    p.layer, Anchor.C, False,
+                    round(4*transform.scale),
+                    CircleStyle(bg_color=p.color or Colors.WHITE)
+                ))
+        
         for pool in self._particle_pools:
             for i, pos in enumerate(pool.positions):
-                submit(DrawTexture(pool.texture, Transform(Vec2(pos), pool.rotations[i], pool.sizes[i]), pool.layer, Anchor.C))
                 self.count += 1
+                if pool.texture is not None:
+                    submit(DrawTexture(Transform(Vec2(pos), pool.rotations[i], pool.sizes[i]), pool.layer, Anchor.C, False, pool.texture))
+                else:
+                    submit(DrawCircle(
+                        Transform(Vec2(pos), pool.rotations[i], 1),
+                        pool.layer, Anchor.C, False,
+                        pool.sizes[i],
+                        CircleStyle(bg_color=pool.color or Colors.WHITE)
+                    ))

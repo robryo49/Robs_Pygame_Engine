@@ -3,7 +3,7 @@ from enum import IntFlag, auto
 from typing import Callable
 
 from resources import Texture
-from utils import Vec2, Transform, inf, Easing
+from utils import Vec2, Transform, inf, Easing, Color
 
 
 class FadingTypes(IntFlag):
@@ -22,6 +22,7 @@ class Particle:
     life: float
     
     texture: Texture = None
+    color: Color = None
     
     fade_duration: float = 0
     fade_easing: Callable[[float], float] = Easing.EASE_IN_QUAD

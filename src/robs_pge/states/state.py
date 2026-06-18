@@ -315,11 +315,13 @@ class State:
         self.frame_timer.time("Update.State.Interactions", lambda: self.interaction_manager.update(self.objects, self.ui_objects, self.camera))
         self.frame_timer.time("Update.State.UI Objects", lambda: self.ui_objects.update(dt))
         self.frame_timer.time("Update.State.World Objects", lambda: self.objects.update(dt))
+        self.frame_timer.time("Update.State.Particles", lambda: self.particle_system.update(dt))
         self.frame_timer.time("Update.State.Camera", lambda: self.camera.update(dt))
         self.frame_timer.time("Update.State.Debug Overlay", lambda: self.debug_overlay.update(dt))
     
     def render(self) -> None:
         self.draw_world(self.objects)
+        self.draw_particles(self.particle_system)
         self.draw_ui(self.ui_objects)
         self.draw_debug(self.debug_overlay)
     
@@ -331,3 +333,6 @@ class State:
     
     def draw_debug(self, obj: PygameObject | ObjectCollection) -> None:
         obj.render(self.renderer.draw_debug, self.engine.default_camera)
+    
+    def draw_particles(self, particle_system) -> None:
+        particle_system.render(self.renderer.draw_world, self.camera)

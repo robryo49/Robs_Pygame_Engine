@@ -418,7 +418,7 @@ class LayoutObject(RectObject):
     def min_col(self, value):
         self._min_col = value
         
-        for obj, pos in self._grid_objects_grid_positions:
+        for obj, pos in self._grid_objects_grid_positions.items():
             new = (max(value, self._grid_objects_grid_positions[obj][0]), self._grid_objects_grid_positions[obj][1])
             if new != self._grid_objects_grid_positions[obj]:
                 self._grid_objects_grid_positions[obj] = new
@@ -434,7 +434,7 @@ class LayoutObject(RectObject):
     def max_col(self, value):
         self._max_col = value
         
-        for obj, pos in self._grid_objects_grid_positions:
+        for obj, pos in self._grid_objects_grid_positions.items():
             new = (min(value, self._grid_objects_grid_positions[obj][0]), self._grid_objects_grid_positions[obj][1])
             if new != self._grid_objects_grid_positions[obj]:
                 self._grid_objects_grid_positions[obj] = new
@@ -450,7 +450,7 @@ class LayoutObject(RectObject):
     def min_row(self, value):
         self._min_row = value
         
-        for obj, pos in self._grid_objects_grid_positions:
+        for obj, pos in self._grid_objects_grid_positions.items():
             new = (self._grid_objects_grid_positions[obj][0], max(value, self._grid_objects_grid_positions[obj][1]))
             if new != self._grid_objects_grid_positions[obj]:
                 self._grid_objects_grid_positions[obj] = new
@@ -466,7 +466,7 @@ class LayoutObject(RectObject):
     def max_row(self, value):
         self._max_row = value
         
-        for obj, pos in self._grid_objects_grid_positions:
+        for obj, pos in self._grid_objects_grid_positions.items():
             new = (self._grid_objects_grid_positions[obj][0], min(value, self._grid_objects_grid_positions[obj][1]))
             if new != self._grid_objects_grid_positions[obj]:
                 self._grid_objects_grid_positions[obj] = new
