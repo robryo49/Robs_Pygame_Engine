@@ -4,13 +4,13 @@ from utils import Vec2, Vec2Like, Color, Colors
 
 
 class Display:
-    def __init__(self, dims: Vec2Like):
+    def __init__(self, dims: Vec2Like, fullscreen: bool = True, vsync: bool = True, clear_color: Color = Colors.DARK_NAVY):
         
         self._dims: Vec2 = Vec2(dims)
         
-        self._surface: pg.Surface = pg.display.set_mode(self.dims, pg.SRCALPHA | pg.FULLSCREEN, vsync=True)
+        self._surface: pg.Surface = pg.display.set_mode(self.dims, (pg.SRCALPHA | pg.FULLSCREEN) if fullscreen else pg.SRCALPHA, vsync=vsync)
         
-        self._clear_color: Color = Colors.DARK_NAVY
+        self._clear_color: Color = clear_color
         
     # region PROPERTIES
     

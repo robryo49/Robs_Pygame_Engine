@@ -6,8 +6,8 @@ from .math import Vec2, Vec3
 
 NumberLike = Union[int, float]
 
-Vec2Like = Union[Vec2, np.ndarray, tuple[NumberLike, NumberLike]]
-Vec3Like = Union[Vec3, np.ndarray, tuple[NumberLike, NumberLike, NumberLike]]
+Vec2Like = Union[Vec2, np.ndarray[tuple[int, int]], tuple[NumberLike, NumberLike]]
+Vec3Like = Union[Vec3, np.ndarray[tuple[int, int]], tuple[NumberLike, NumberLike, NumberLike]]
 
 class ObjectLike(Protocol):
     def render(self, submit, camera): pass

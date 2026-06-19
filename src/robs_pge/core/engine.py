@@ -17,11 +17,11 @@ from .renderer import Renderer
 
 
 class Engine:
-    def __init__(self, name: str):
+    def __init__(self, name: str, resolution: Vec2Like = Vec2(1920, 1080), fullscreen: bool = True):
         self._name: str = name
         logging.basicConfig(level=logging.INFO, stream=sys.stdout, format='%(name)s - %(levelname)s : %(message)s')
         
-        self._display: Display = self.create_display(Vec2(1920, 1080))
+        self._display: Display = self.create_display(resolution, fullscreen)
         
         self._clock: Clock = self.create_clock()
         self._input: InputManager = self.create_input_manager()
@@ -99,35 +99,35 @@ class Engine:
     # region SERVICES CREATION
     
     @staticmethod
-    def create_display(dims: Vec2Like):
-        return Display(dims)
+    def create_display(dims: Vec2Like, fullscreen: bool = True) -> Display:
+        return Display(dims, fullscreen, True, Colors.DARK_NAVY)
     
     @staticmethod
-    def create_clock():
+    def create_clock() -> Clock:
         return Clock()
     
     @staticmethod
-    def create_input_manager():
+    def create_input_manager() -> InputManager:
         return InputManager()
     
     @staticmethod
-    def create_interaction_manager(input_manager: InputManager):
+    def create_interaction_manager(input_manager: InputManager) -> InteractionManager:
         return InteractionManager(input_manager)
     
     @staticmethod
-    def create_resource_manager():
+    def create_resource_manager() -> ResourceManager:
         return ResourceManager()
     
     @staticmethod
-    def create_frame_timer():
+    def create_frame_timer() -> FrameTimer:
         return FrameTimer()
     
     @staticmethod
-    def create_state_manager():
+    def create_state_manager() -> StateManager:
         return StateManager()
     
     @staticmethod
-    def create_renderer(display: Display, default_camera: Camera, max_cache_size: int = 2048*1024*1024):
+    def create_renderer(display: Display, default_camera: Camera, max_cache_size: int = 2048*1024*1024) -> Renderer:
         return Renderer(display, default_camera, max_cache_size)
     
     

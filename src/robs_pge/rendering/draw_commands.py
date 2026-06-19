@@ -403,11 +403,9 @@ class DrawChunkedSprite(DrawCommand):
         base_h = self.texture.height
         cw = self.chunk_size
         ch = self.chunk_size
-        
-        display_surf = pg.display.get_surface()
-        screen_w = display_surf.get_width() if display_surf else 1920
-        screen_h = display_surf.get_height() if display_surf else 1080
-        
+
+        screen_w, screen_h = camera.display_dims
+
         anchor_offset_x = self.anchor.x * base_w
         anchor_offset_y = self.anchor.y * base_h
         
