@@ -2,8 +2,8 @@ import logging
 from pathlib import Path
 from typing import Any
 
-from resources import Texture
-from utils import Vec2, DictCollection, Font, ColorPalette, Color
+from ..resources import Texture
+from ..utils import Vec2, DictCollection, Font, ColorPalette, Color
 
 
 class ResourceManager:

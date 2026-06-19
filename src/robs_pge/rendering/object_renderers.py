@@ -3,8 +3,8 @@ from typing import Optional
 from .draw_commands import DrawCircle, DrawLine, DrawRect, DrawText, DrawTexture, DrawSubSurface, DrawChunkedSprite
 from .styles import *
 from .object_renderer import ObjectRenderer
-from resources import Texture
-from utils import Anchor, Color, Font, Transform, Vec2, Rect
+from ..resources import Texture
+from ..utils import Anchor, Color, Font, Transform, Vec2, Rect
 
 
 class RectRenderer(ObjectRenderer):

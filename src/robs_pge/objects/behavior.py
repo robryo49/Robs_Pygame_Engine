@@ -1,5 +1,5 @@
-from utils import Vec2
-from events import Event
+from ..utils import Vec2
+from ..events import Event
 
 
 class ObjectBehavior:

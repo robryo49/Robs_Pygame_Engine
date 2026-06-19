@@ -1,11 +1,13 @@
-
+from __future__ import annotations
 import pygame as pg
 
-from .camera import Camera
-from .display import Display
-from rendering import DrawCommand
-from resources import SurfaceCache
-from utils import Vec2
+from typing import TYPE_CHECKING
+from ..rendering import DrawCommand
+from ..resources import SurfaceCache
+from ..utils import Vec2
+
+if TYPE_CHECKING:
+    from ..core import Camera, Display
 
 
 class Renderer:

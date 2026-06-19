@@ -2,16 +2,16 @@ from __future__ import annotations
 
 from typing import Any, Callable, TYPE_CHECKING, Optional
 
-from events import Event, EventManager
-from rendering import ObjectRenderer
+from ..events import Event, EventManager
+from ..rendering import ObjectRenderer
 
-from utils import Anchor, DictCollection, Transform, Vec2, ObjectFlags, Rect
+from ..utils import Anchor, DictCollection, Transform, Vec2, ObjectFlags, Rect
 from .behavior_collection import BehaviorCollection
 from .behaviors import ObjectBehavior
 from .object_collection import ObjectCollection
 
 if TYPE_CHECKING:
-    from core import Camera
+    from ..core import Camera
     
 
 class PygameObject:

@@ -1,6 +1,6 @@
 from typing import Callable
 
-from utils import Easing, clamp
+from ..utils import Easing, clamp
 
 
 class Tween:

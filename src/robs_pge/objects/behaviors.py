@@ -1,9 +1,9 @@
 from copy import copy
 from typing import Any, Callable, Optional
 
-from events import Event
-from animation import AnimationManager, MultiplierAnimation
-from utils import ObjectFlags, Vec2
+from ..events import Event
+from ..animation import AnimationManager, MultiplierAnimation
+from ..utils import ObjectFlags, Vec2
 from .behavior import ObjectBehavior
 
 

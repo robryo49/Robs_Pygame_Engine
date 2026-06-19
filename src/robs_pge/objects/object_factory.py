@@ -3,10 +3,10 @@ from typing import Any, Callable, Optional
 from .objects import ButtonObject, CircleObject, DebugPanelObject, LayoutObject, ProgressBarObject, RectObject, SubSurfaceObject, TextObject, DebugOverlay, LineObject, LineRenderer, GraphObject, \
     ActionOnUpdateBehavior, SpriteObject, ChunkedSpriteObject
 from .behaviors import DynamicAttribute
-from rendering import ButtonStyle, ChunkedSpriteRenderer, CircleRenderer, CircleStyle, DebugPanelStyle, LineStyle, ProgressBarStyle, RectRenderer, RectStyle, SpriteRenderer, SubSurfaceRenderer, \
+from ..rendering import ButtonStyle, ChunkedSpriteRenderer, CircleRenderer, CircleStyle, DebugPanelStyle, LineStyle, ProgressBarStyle, RectRenderer, RectStyle, SpriteRenderer, SubSurfaceRenderer, \
     TextRenderer, GraphStyle
-from resources import Texture
-from utils import Anchor, DictCollection, Font, Transform, Vec2, inf, Rect
+from ..resources import Texture
+from ..utils import Anchor, DictCollection, Font, Transform, Vec2, inf, Rect
 
 
 class ObjectFactory:

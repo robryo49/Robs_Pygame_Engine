@@ -1,6 +1,6 @@
 from dataclasses import dataclass, field, replace
 
-from utils import Color, Font
+from ..utils import Color, Font
 
 
 @dataclass

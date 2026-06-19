@@ -13,6 +13,7 @@ from .object_renderers import (
     RectRenderer, CircleRenderer, LineRenderer,
     SpriteRenderer, TextRenderer, SubSurfaceRenderer, ChunkedSpriteRenderer
 )
+from .renderer import Renderer
 
 __all__ = [
     # styles
@@ -26,5 +27,7 @@ __all__ = [
     # renderers
     "ObjectRenderer",
     "RectRenderer", "CircleRenderer", "LineRenderer",
-    "SpriteRenderer", "TextRenderer", "SubSurfaceRenderer", "ChunkedSpriteRenderer"
+    "SpriteRenderer", "TextRenderer", "SubSurfaceRenderer", "ChunkedSpriteRenderer",
+    
+    "Renderer",
 ]

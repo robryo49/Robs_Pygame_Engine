@@ -1,7 +1,7 @@
 from typing import Callable
 
 from .tween import Tween
-from utils import Easing
+from ..utils import Easing
 
 
 class Animation:

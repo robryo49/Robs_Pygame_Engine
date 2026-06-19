@@ -3,10 +3,10 @@ from typing import TYPE_CHECKING
 
 import pygame as pg
 
-from utils import Transform, Vec2
+from ..utils import Transform, Vec2
 
 if TYPE_CHECKING:
-    from core import Camera
+    from ..core import Camera
 
 
 class Mouse:

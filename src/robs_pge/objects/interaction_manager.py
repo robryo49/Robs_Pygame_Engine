@@ -4,11 +4,11 @@ from typing import Optional
 
 from .object_collection import ObjectCollection
 from .object import PygameObject
-from input import InputManager
-from utils import ObjectFlags, Vec2
+from ..input import InputManager
+from ..utils import ObjectFlags, Vec2
 
 if TYPE_CHECKING:
-    from core import Camera
+    from ..core import Camera
 
 
 class InteractionManager:

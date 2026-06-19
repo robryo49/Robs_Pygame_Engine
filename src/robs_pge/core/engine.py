@@ -3,17 +3,16 @@ import sys
 
 import pygame as pg
 
-from debug import FrameTimer
-from input import InputManager
-from objects import InteractionManager
-from rendering import DebugPanelStyle, GraphStyle, ProgressBarStyle, RectStyle
-from resources import ResourceManager
-from states import StateManager
-from utils import Colors, Vec2, Vec2Like
+from ..debug import FrameTimer
+from ..input import InputManager
+from ..objects import InteractionManager
+from ..rendering import DebugPanelStyle, GraphStyle, ProgressBarStyle, RectStyle, Renderer
+from ..resources import ResourceManager
+from ..utils import Colors, Vec2, Vec2Like, Color
 from .camera import Camera
 from .clock import Clock
 from .display import Display
-from .renderer import Renderer
+from .states import StateManager
 
 
 class Engine:
@@ -100,7 +99,7 @@ class Engine:
     
     @staticmethod
     def create_display(dims: Vec2Like, fullscreen: bool = True) -> Display:
-        return Display(dims, fullscreen, True, Colors.DARK_NAVY)
+        return Display(dims, fullscreen, True, Color(20, 26, 40))
     
     @staticmethod
     def create_clock() -> Clock:

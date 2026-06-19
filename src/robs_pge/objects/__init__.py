@@ -18,6 +18,12 @@ from .objects import (
 )
 from .object import PygameObject
 
+from .particles import (
+    Particle, ParticlePool,
+    ParticleEmitter, BurstParticleEmitter,
+    ParticleSystem
+)
+
 __all__ = [
     # behaviors
     "ObjectBehavior",
@@ -35,4 +41,7 @@ __all__ = [
     "SubSurfaceObject", "ChunkedSpriteObject",
     "LayoutObject", "DebugOverlay", "DebugPanelObject",
     "ButtonObject", "ProgressBarObject", "GraphObject",
+    # particles
+    "Particle", "ParticleEmitter", "BurstParticleEmitter",
+    "ParticleSystem", "ParticlePool"
 ]

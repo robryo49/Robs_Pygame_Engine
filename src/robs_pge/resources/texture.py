@@ -6,7 +6,7 @@ import pygame as pg
 import numpy as np
 import math
 
-from utils import Vec2, Vec2Like, colorize_array, invert_uv_y, Color, make_noise_array, normalize_array
+from ..utils import Vec2, Vec2Like, colorize_array, invert_uv_y, Color, make_noise_array, normalize_array
 
 
 class Texture:

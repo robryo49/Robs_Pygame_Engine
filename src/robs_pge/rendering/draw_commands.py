@@ -5,13 +5,13 @@ import pygame as pg
 import math
 
 from .styles import CircleStyle, LineStyle, RectStyle
-from resources import Texture, SurfaceCache
-from utils import Font, Transform, Vec2, surface_pos_from_uv_pos, Rect
+from ..resources import Texture, SurfaceCache
+from ..utils import Font, Transform, Vec2, surface_pos_from_uv_pos, Rect
 
 from typing import Optional, TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from core import Camera
+    from ..core import Camera
 
 
 @dataclass

@@ -3,23 +3,22 @@ from typing import Any, TYPE_CHECKING, Callable
 
 import pygame as pg
 
-from animation import AnimationManager
-from debug import FrameTimer
-from events import Event, EventManager
-from input import InputManager, Keybind, KeybindsManager
-from objects import InteractionManager, ObjectCollection, ObjectFactory, PygameObject
-from particles import ParticleSystem
-from rendering import DebugPanelStyle, GraphStyle
-from resources import ResourceManager
-from utils import Anchor, DictCollection, Vec2
+from ...animation import AnimationManager
+from ...debug import FrameTimer
+from ...events import Event, EventManager
+from ...input import InputManager, Keybind, KeybindsManager
+from ...objects import InteractionManager, ObjectCollection, ObjectFactory, PygameObject, ParticleSystem
+from ...rendering import DebugPanelStyle, GraphStyle
+from ...resources import ResourceManager
+from ...utils import Anchor, DictCollection, Vec2
+from ..camera import Camera
 
 if TYPE_CHECKING:
-    from core import Camera, Engine
+    from ..engine import Engine
     
 
 class State:
     def __init__(self, engine: Engine, state_id: str):
-        from core import Camera
         
         self._id = state_id
         self._engine = engine

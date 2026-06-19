@@ -3,18 +3,18 @@ from typing import Callable, Optional
 
 import numpy as np
 
-from .particle import FadingTypes, Particle
-from .particle_pool import ParticlePool
+from ...resources import Texture
+from ...utils import Color, Colors, Vec2, random
+from .particle import FadingTypes
 from .particle_system import ParticleSystem
-from resources import Texture
-from utils import Color, Transform, Vec2, random, Colors
 
 
 class ParticleEmitter:
     def emit(self, particle_system: ParticleSystem):
         raise NotImplementedError()
     
-class BurstEmitter(ParticleEmitter):
+    
+class BurstParticleEmitter(ParticleEmitter):
     def __init__(
             self,
             position: Vec2,

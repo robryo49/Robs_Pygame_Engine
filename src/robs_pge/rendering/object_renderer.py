@@ -1,4 +1,4 @@
-from utils import Transform, Vec2
+from ..utils import Transform, Vec2
 
 
 class ObjectRenderer:

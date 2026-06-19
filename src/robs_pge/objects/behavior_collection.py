@@ -1,6 +1,6 @@
 from .behaviors import ObjectBehavior
-from events import Event
-from utils import Collection, Vec2
+from ..events import Event
+from ..utils import Collection, Vec2
 
 
 class BehaviorCollection(Collection):

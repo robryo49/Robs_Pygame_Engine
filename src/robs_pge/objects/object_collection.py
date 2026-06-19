@@ -1,10 +1,10 @@
 from __future__ import annotations
 from typing import Optional, TYPE_CHECKING
 
-from utils import Collection, ObjectLike
+from ..utils import Collection, ObjectLike
 
 if TYPE_CHECKING:
-    from core import Camera
+    from ..core import Camera
 
 
 class ObjectCollection(Collection):

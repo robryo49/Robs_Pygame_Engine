@@ -1,5 +1,4 @@
-from .core import Engine, Camera, Clock
-from .states import State
+from .core import Engine, Camera, Clock, State
 from .resources import Texture, ResourceManager, SurfaceCache
 from .animation import Animation, AdderAnimation, SetterAnimation, MultiplierAnimation, AnimationManager
 from .input import Keybind, KeybindsManager

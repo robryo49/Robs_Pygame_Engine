@@ -1,7 +1,7 @@
 import pygame as pg
 
 from .mouse import Mouse
-from utils import Vec2
+from ..utils import Vec2
 
 
 class InputManager:

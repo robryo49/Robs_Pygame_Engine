@@ -4,8 +4,8 @@ from typing import cast
 
 from .object import PygameObject
 from .behaviors import *
-from rendering import CircleRenderer, RectRenderer, SpriteRenderer, TextRenderer, SubSurfaceRenderer, LineRenderer, ChunkedSpriteRenderer
-from utils import Anchor, Color, DictCollection, Easing, Transform, Vec2, clamp, inf, invert_y, Rect
+from ..rendering import CircleRenderer, RectRenderer, SpriteRenderer, TextRenderer, SubSurfaceRenderer, LineRenderer, ChunkedSpriteRenderer
+from ..utils import Anchor, Color, DictCollection, Easing, Transform, Vec2, clamp, inf, invert_y, Rect
 
 if TYPE_CHECKING:
     pass

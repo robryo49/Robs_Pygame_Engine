@@ -2,7 +2,7 @@ from .camera import Camera
 from .clock import Clock
 from .display import Display
 from .engine import Engine
-from .renderer import Renderer
+from .states import State
 
 
 __all__ = [
@@ -10,6 +10,6 @@ __all__ = [
     "Clock",
     "Display",
     "Engine",
-    "Renderer",
+    "State"
 ]
 
