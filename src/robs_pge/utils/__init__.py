@@ -12,6 +12,8 @@ from .keys import Keybinds
 from .collection import Collection, DictCollection
 from .types import Vec2Like, Vec3Like, ObjectLike
 from .array_tools import *
+from .async_tools import AsyncProcessManager, AsyncProcess
+from .collision import CollisionBox, CircleCollisionBox, RectCollisionBox, test_collision_circle_circle, test_collision_rect_circle, test_collision_rect_rect, test_collision_box_overlap
 
 __all__ = [
     # math
@@ -41,4 +43,8 @@ __all__ = [
     "get_label_centers", "majority_filter", "find_edges",
     "skeletonize_mask", "remove_small_objects",
     "make_noise_array", "make_voronoi_array", "make_bfs_voronoi_array",
+    # async
+    "AsyncProcessManager", "AsyncProcess",
+    # collision
+    "CollisionBox", "CircleCollisionBox", "RectCollisionBox", "test_collision_circle_circle", "test_collision_rect_circle", "test_collision_rect_rect", "test_collision_box_overlap"
 ]

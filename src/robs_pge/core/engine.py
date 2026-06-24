@@ -12,7 +12,7 @@ from ..utils import Colors, Vec2, Vec2Like, Color
 from .camera import Camera
 from .clock import Clock
 from .display import Display
-from .states import StateManager
+from .states import StateManager, State
 
 
 class Engine:
@@ -20,20 +20,20 @@ class Engine:
         self._name: str = name
         logging.basicConfig(level=logging.INFO, stream=sys.stdout, format='%(name)s - %(levelname)s : %(message)s')
         
-        self._display: Display = self.create_display(resolution, fullscreen)
+        self._display: Display = self._create_display(resolution, fullscreen)
         
-        self._clock: Clock = self.create_clock()
-        self._input: InputManager = self.create_input_manager()
-        self._interaction_manager: InteractionManager = self.create_interaction_manager(self.input)
+        self._clock: Clock = self._create_clock()
+        self._input: InputManager = self._create_input_manager()
+        self._interaction_manager: InteractionManager = self._create_interaction_manager(self.input)
         
-        self._resources: ResourceManager = self.create_resource_manager()
+        self._resources: ResourceManager = self._create_resource_manager()
         
-        self._frame_timer: FrameTimer = self.create_frame_timer()
+        self._frame_timer: FrameTimer = self._create_frame_timer()
         
         self._default_camera: Camera = Camera(self._display).move(self._display.dims*0.5).update(self.clock.dtime)
         
-        self._state_manager: StateManager = self.create_state_manager()
-        self._renderer: Renderer = self.create_renderer(self.display, self._default_camera)
+        self._state_manager: StateManager = self._create_state_manager()
+        self._renderer: Renderer = self._create_renderer(self.display, self._default_camera)
         
         self._running: bool = True
         
@@ -98,35 +98,35 @@ class Engine:
     # region SERVICES CREATION
     
     @staticmethod
-    def create_display(dims: Vec2Like, fullscreen: bool = True) -> Display:
+    def _create_display(dims: Vec2Like, fullscreen: bool = True) -> Display:
         return Display(dims, fullscreen, True, Color(20, 26, 40))
     
     @staticmethod
-    def create_clock() -> Clock:
+    def _create_clock() -> Clock:
         return Clock()
     
     @staticmethod
-    def create_input_manager() -> InputManager:
+    def _create_input_manager() -> InputManager:
         return InputManager()
     
     @staticmethod
-    def create_interaction_manager(input_manager: InputManager) -> InteractionManager:
+    def _create_interaction_manager(input_manager: InputManager) -> InteractionManager:
         return InteractionManager(input_manager)
     
     @staticmethod
-    def create_resource_manager() -> ResourceManager:
+    def _create_resource_manager() -> ResourceManager:
         return ResourceManager()
     
     @staticmethod
-    def create_frame_timer() -> FrameTimer:
+    def _create_frame_timer() -> FrameTimer:
         return FrameTimer()
     
     @staticmethod
-    def create_state_manager() -> StateManager:
+    def _create_state_manager() -> StateManager:
         return StateManager()
     
     @staticmethod
-    def create_renderer(display: Display, default_camera: Camera, max_cache_size: int = 2048*1024*1024) -> Renderer:
+    def _create_renderer(display: Display, default_camera: Camera, max_cache_size: int = 2048*1024*1024) -> Renderer:
         return Renderer(display, default_camera, max_cache_size)
     
     
@@ -239,6 +239,10 @@ class Engine:
             self.resources.set(ProgressBarStyle, f"debug_{name}_progress_bar_style", ProgressBarStyle(bg_color=Colors.with_alpha(debug.dark_gray, 150), color=color, bd=0, bd_radius=2))
         
         return self
+    
+    
+    def set_state(self, state: str | State):
+        self.state_manager.set_state(state)
     
     
     def process_events(self) -> "Engine":

@@ -10,7 +10,7 @@ from ...input import InputManager, Keybind, KeybindsManager
 from ...objects import InteractionManager, ObjectCollection, ObjectFactory, PygameObject, ParticleSystem
 from ...rendering import DebugPanelStyle, GraphStyle
 from ...resources import ResourceManager
-from ...utils import Anchor, DictCollection, Vec2
+from ...utils import Anchor, DictCollection, Vec2, AsyncProcessManager
 from ..camera import Camera
 
 if TYPE_CHECKING:
@@ -27,11 +27,14 @@ class State:
         
         self._camera = Camera(self.engine.display)
         
-        self._event_manager = self.create_event_manager()
-        self._animation_manager = self.create_animation_manager()
-        self._keybinds_manager = self.create_keybinds_manager(self.input)
-        self._factory = self.create_object_factory()
-        self._particle_system = self.create_particle_system()
+        self._event_manager = self._create_event_manager()
+        self._animation_manager = self._create_animation_manager()
+        self._keybinds_manager = self._create_keybinds_manager(self.input)
+        self._particle_system = self._create_particle_system()
+        self._async_process_manager = self._create_async_process_manager()
+        
+        self._factory = self._create_object_factory()
+        
         
         self._services: DictCollection = DictCollection()
         self._factory.services = self._services
@@ -109,6 +112,10 @@ class State:
         return self._particle_system
     
     @property
+    def async_process_manager(self) -> AsyncProcessManager:
+        return self._async_process_manager
+    
+    @property
     def factory(self) -> ObjectFactory:
         return self._factory
     
@@ -129,24 +136,28 @@ class State:
     # region SEVICES CREATION
     
     @staticmethod
-    def create_event_manager() -> EventManager:
+    def _create_event_manager() -> EventManager:
         return EventManager()
     
     @staticmethod
-    def create_animation_manager() -> AnimationManager:
+    def _create_animation_manager() -> AnimationManager:
         return AnimationManager()
     
     @staticmethod
-    def create_keybinds_manager(input_manager: InputManager) -> KeybindsManager:
+    def _create_keybinds_manager(input_manager: InputManager) -> KeybindsManager:
         return KeybindsManager(input_manager)
     
     @staticmethod
-    def create_object_factory() -> ObjectFactory:
+    def _create_object_factory() -> ObjectFactory:
         return ObjectFactory()
     
     @staticmethod
-    def create_particle_system() -> ParticleSystem:
+    def _create_particle_system() -> ParticleSystem:
         return ParticleSystem()
+    
+    @staticmethod
+    def _create_async_process_manager() -> AsyncProcessManager:
+        return AsyncProcessManager()
     
     # endregion
     
@@ -291,11 +302,12 @@ class State:
         self._services.set(ParticleSystem, self.particle_system)
         self._services.set(ObjectFactory, self.factory)
         self._services.set(EventManager, self.event_manager)
-        
+        self._services.set(AsyncProcessManager, self.async_process_manager)
     
     def init_keybinds(self) -> None:
         self.register_keybind(pg.K_F3, lambda: self.debug_overlay.toggle_visible())
         self.register_keybind(pg.K_F4, lambda: self.debug_overlay.toggle_freeze())
+    
     
     def register_keybind(self, key: int | tuple[int, ...], action: Callable, *args) -> None:
         self.keybinds.add(Keybind(key, action, *args))
@@ -306,12 +318,23 @@ class State:
     def trigger_event(self, event: Event) -> None:
         self.event_manager.trigger(event)
     
+    def start_async_process(self, fn: Callable, *args, **kwargs) -> None:
+        self.async_process_manager.submit(fn, *args, **kwargs)
+        
+    def add_object(self, obj: PygameObject | list[PygameObject]) -> None:
+        self.objects.add(obj)
+        
+    def add_ui_object(self, obj: PygameObject | list[PygameObject]) -> None:
+        self.ui_objects.add(obj)
+        
+    
     def update(self, dt: float) -> None:
         self.animation_manager.update(dt)
         self.keybinds.update()
         self.event_manager.update()
         
         self.frame_timer.time("Update.State.Interactions", lambda: self.interaction_manager.update(self.objects, self.ui_objects, self.camera))
+        self.frame_timer.time("Update.State.Async Generation", self.async_process_manager.update)
         self.frame_timer.time("Update.State.UI Objects", lambda: self.ui_objects.update(dt))
         self.frame_timer.time("Update.State.World Objects", lambda: self.objects.update(dt))
         self.frame_timer.time("Update.State.Particles", lambda: self.particle_system.update(dt))

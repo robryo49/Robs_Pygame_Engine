@@ -1,6 +1,8 @@
 from __future__ import annotations
 from typing import Optional, TYPE_CHECKING
 
+import numpy as np
+
 from ...utils import Vec2, Transform, Anchor, Colors
 from ...rendering import CircleStyle, DrawCircle, DrawTexture
 
@@ -94,14 +96,22 @@ class ParticleSystem:
                 ))
         
         for pool in self._particle_pools:
+            scale_factors = np.ones(len(pool.positions), dtype=np.float32)
+            
+            if pool.fade_type is not FadingTypes.NONE and pool.fade_duration > 0:
+                fading = pool.lifetimes < pool.fade_duration
+                if np.any(fading):
+                    progress = 1 - pool.lifetimes[fading] / pool.fade_duration
+                    eased = np.vectorize(pool.fade_easing)(progress)
+                    factor = 1 - eased
+                    
+                    if pool.fade_type & FadingTypes.SCALE:
+                        scale_factors[fading] = factor
+            
             for i, pos in enumerate(pool.positions):
+                submit(DrawTexture(
+                    Transform(Vec2(pos), pool.rotations[i], pool.sizes[i] * scale_factors[i]),
+                    pool.layer, Anchor.C, True,
+                    pool.texture
+                ))
                 self.count += 1
-                if pool.texture is not None:
-                    submit(DrawTexture(Transform(Vec2(pos), pool.rotations[i], pool.sizes[i]), pool.layer, Anchor.C, False, pool.texture))
-                else:
-                    submit(DrawCircle(
-                        Transform(Vec2(pos), pool.rotations[i], 1),
-                        pool.layer, Anchor.C, False,
-                        pool.sizes[i],
-                        CircleStyle(bg_color=pool.color or Colors.WHITE)
-                    ))

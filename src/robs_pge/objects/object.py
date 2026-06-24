@@ -1,11 +1,11 @@
 from __future__ import annotations
 
-from typing import Any, Callable, TYPE_CHECKING, Optional
+from typing import Any, Callable, TYPE_CHECKING, Optional, Union, cast
 
 from ..events import Event, EventManager
-from ..rendering import ObjectRenderer
+from ..rendering import CircleRenderer, ObjectRenderer
 
-from ..utils import Anchor, DictCollection, Transform, Vec2, ObjectFlags, Rect
+from ..utils import Anchor, DictCollection, Transform, Vec2, ObjectFlags, Rect, CollisionBox, RectCollisionBox, CircleCollisionBox, test_collision_box_overlap
 from .behavior_collection import BehaviorCollection
 from .behaviors import ObjectBehavior
 from .object_collection import ObjectCollection
@@ -27,6 +27,7 @@ class PygameObject:
         self._services = services
         
         self._renderer = renderer
+        self._collision_box = None
         
         self._children = ObjectCollection()
         
@@ -268,6 +269,46 @@ class PygameObject:
     def trigger_event(self, event: Event):
         self.get_service(EventManager).trigger_event(event)
     
+    # region collision
+    @property
+    def collision_box(self) -> Optional[CollisionBox]:
+            return self._collision_box
+
+    def add_collision_box(
+                    self,
+                    kind: Optional[str] = None,
+                    dims: Optional[Vec2] = None,
+                    radius: Optional[float] = None,
+                    rotation_offset: float = 0.0
+            ) -> "PygameObject":
+        if kind is None:
+                kind = "circle" if isinstance(self.renderer, CircleRenderer) else "rect"
+
+        if kind == "circle":
+            if radius is None:
+                radius = cast(CircleRenderer, self.renderer).radius if isinstance(self.renderer, CircleRenderer) else max(self.dims) / 2
+            self._collision_box = CollisionBox("circle", radius=radius, rotation_offset=rotation_offset)
+        else:
+            half_extents = (dims / 2) if dims is not None else (self.dims / 2)
+            self._collision_box = CollisionBox("rect", half_extents=half_extents, rotation_offset=rotation_offset)
+
+        return self
+
+    def remove_collision_box(self) -> "PygameObject":
+        self._collision_box = None
+        return self
+
+    def get_world_collision_shape(self) -> Optional[Union[RectCollisionBox, CircleCollisionBox]]:
+        if self._collision_box is None:
+            return None
+        wt = self.world_transform
+        return self._collision_box.to_world_shape(wt.pos, wt.rotation, wt.scale)
+
+    def test_object_collision(self, other: "PygameObject") -> bool:
+        if self._collision_box is None or other.collision_box is None:
+            return False
+        return test_collision_box_overlap(self._collision_box, self.world_transform, cast(CollisionBox, other.collision_box), other.world_transform)
+    # endregion
     
     # region METHODS
     
@@ -348,12 +389,16 @@ class PygameObject:
     def test_uv_hit(self, uv: Vec2):
         return self.test_local_hit(self.uv_to_local(uv))
     
+    def test_aabb_object_hit(self, other: "PygameObject") -> bool:
+        return self.get_world_aabb().colliderect(other.get_world_aabb())
+    
     # endregion
     
     def get_world_aabb(self):
         w, h = self.aabb_dims
         x, y = self.uv_to_world(Anchor.C)
         return Rect(x - w*0.5, y - h*0.5, w, h)
+    
     
     # endregion
     
