@@ -8,6 +8,8 @@ class AsyncProcess:
         
         self._done = False
         self._result: Any = None
+        self._used: bool = False
+        
         self._exception: Optional[BaseException] = None
         
         self._on_complete: Optional[Callable[[Any], None]] = None
@@ -21,6 +23,10 @@ class AsyncProcess:
     @property
     def done(self) -> bool:
         return self._done
+    
+    @property
+    def used(self):
+        return self._used
     
     @property
     def result(self) -> Any:
@@ -50,4 +56,8 @@ class AsyncProcess:
         
         if self._exception is None and self._on_complete is not None:
             self._on_complete(self._result)
+            
+    def use_result(self):
+        self._used = True
+        return self.result
 

@@ -36,4 +36,4 @@ def make_noise_array(
                 lacunarity=lacunarity,
             )
     
-    return arr * amplitude + (value_offset + 0.5)
+    return arr * amplitude*0.5 + (value_offset + 0.5)

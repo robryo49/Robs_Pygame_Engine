@@ -10,7 +10,7 @@ from ...input import InputManager, Keybind, KeybindsManager
 from ...objects import InteractionManager, ObjectCollection, ObjectFactory, PygameObject, ParticleSystem
 from ...rendering import DebugPanelStyle, GraphStyle
 from ...resources import ResourceManager
-from ...utils import Anchor, DictCollection, Vec2, AsyncProcessManager
+from ...utils import Anchor, DictCollection, Vec2, AsyncProcessManager, AsyncProcess
 from ..camera import Camera
 
 if TYPE_CHECKING:
@@ -318,8 +318,8 @@ class State:
     def trigger_event(self, event: Event) -> None:
         self.event_manager.trigger(event)
     
-    def start_async_process(self, fn: Callable, *args, **kwargs) -> None:
-        self.async_process_manager.submit(fn, *args, **kwargs)
+    def start_async_process(self, fn: Callable, *args, **kwargs) -> AsyncProcess:
+        return self.async_process_manager.submit(fn, *args, **kwargs)
         
     def add_object(self, obj: PygameObject | list[PygameObject]) -> None:
         self.objects.add(obj)

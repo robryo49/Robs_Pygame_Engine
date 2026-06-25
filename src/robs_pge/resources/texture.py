@@ -135,6 +135,7 @@ class Texture:
     
     @classmethod
     def from_grayscale_array(cls, arr: np.ndarray, normalize: bool | tuple[float, float]=False, cmap: str | Colormap="binary", dims: Optional[Vec2]=None, width: Optional[int]=None, height: Optional[int]=None):
+        
         if normalize:
             min_v, max_v = (arr.min(), arr.max()) if normalize is True else normalize
             arr = normalize_array(arr, min_v, max_v)
@@ -150,6 +151,7 @@ class Texture:
             arr = colorize_array(arr, cmap=cmap)
         else:
             if not np.issubdtype(arr.dtype, np.integer):
+                arr = np.clip(arr, 0.0, 1.0)
                 arr = (arr * 255).astype(np.uint8)
             arr = np.stack([arr] * 3, axis=-1)
         
@@ -162,6 +164,6 @@ class Texture:
         raise ValueError("arr given isn't grayscale or color, shape :" + str(arr.shape))
     
     @classmethod
-    def from_noise(cls, dims: Vec2, seed: Optional[int]=None, scale: float=100, amplitude: float=1, offset: float=0, octaves: int=8, persistence: float=0.5, lacunarity: float=2.0, cmap="binary"):
-        return cls.from_grayscale_array(make_noise_array(dims, seed, scale, amplitude, offset, octaves, persistence, lacunarity), cmap=cmap)
+    def from_noise(cls, dims: Vec2 | tuple[int, int], noise_offset: Vec2 | tuple[int, int] = (0, 0), seed: Optional[int] = None, scale: float = 1, amplitude: float = 1, value_offset: float = 0, octaves: int = 8, persistence: float = 0.5, lacunarity: float = 2.0, cmap="binary"):
+        return cls.from_grayscale_array(make_noise_array(dims, noise_offset, seed, scale, amplitude, value_offset, octaves, persistence, lacunarity), cmap=cmap)
     

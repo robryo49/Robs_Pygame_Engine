@@ -10,9 +10,9 @@ from .behavior_collection import BehaviorCollection
 from .interaction_manager import InteractionManager
 from .object_collection import ObjectCollection
 from .object_factory import ObjectFactory
-from .objects import (
+from .custom import (
     RectObject, CircleObject, TextObject, SpriteObject, LineObject,
-    SubSurfaceObject, ChunkedSpriteObject,
+    SubSurfaceSpriteObject, ChunkedSpriteObject,
     LayoutObject, DebugOverlay, DebugPanelObject,
     ButtonObject, ProgressBarObject, GraphObject,
 )
@@ -38,7 +38,7 @@ __all__ = [
     # objects
     "PygameObject",
     "RectObject", "CircleObject", "TextObject", "SpriteObject", "LineObject",
-    "SubSurfaceObject", "ChunkedSpriteObject",
+    "SubSurfaceSpriteObject", "ChunkedSpriteObject",
     "LayoutObject", "DebugOverlay", "DebugPanelObject",
     "ButtonObject", "ProgressBarObject", "GraphObject",
     # particles

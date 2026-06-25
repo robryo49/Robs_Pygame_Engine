@@ -382,8 +382,8 @@ class DrawChunkedSprite(DrawCommand):
             sub_surf = lod_surface.subsurface(Rect(lod_x, lod_y, lod_w, lod_h))
         
         if scale != 1:
-            new_w = max(1, math.ceil(cw * scale) + (1 if cx < self.texture.width - self.chunk_size else 0))
-            new_h = max(1, math.ceil(ch * scale) + (1 if cy < self.texture.height - self.chunk_size else 0))
+            new_w = max(1, math.ceil(cw * scale))
+            new_h = max(1, math.ceil(ch * scale))
             sub_surf = pg.transform.scale(sub_surf, (new_w, new_h))
         
         if rotation:

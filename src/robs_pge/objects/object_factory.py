@@ -1,12 +1,11 @@
 from typing import Any, Callable, Optional
 
-from .objects import ButtonObject, CircleObject, DebugPanelObject, LayoutObject, ProgressBarObject, RectObject, SubSurfaceObject, TextObject, DebugOverlay, LineObject, LineRenderer, GraphObject, \
-    ActionOnUpdateBehavior, SpriteObject, ChunkedSpriteObject
+from .custom import ButtonObject, CircleObject, DebugPanelObject, LayoutObject, ProgressBarObject, RectObject, SubSurfaceSpriteObject, TextObject, DebugOverlay, LineObject, GraphObject, SpriteObject, ChunkedSpriteObject
 from .behaviors import DynamicAttribute
-from ..rendering import ButtonStyle, ChunkedSpriteRenderer, CircleRenderer, CircleStyle, DebugPanelStyle, LineStyle, ProgressBarStyle, RectRenderer, RectStyle, SpriteRenderer, SubSurfaceRenderer, \
-    TextRenderer, GraphStyle
+from ..rendering import ButtonStyle, ChunkedSpriteRenderer, CircleRenderer, CircleStyle, DebugPanelStyle, LineStyle, ProgressBarStyle, RectRenderer, RectStyle, SpriteRenderer, SubSurfaceRenderer, LineRenderer, TextRenderer, GraphStyle
 from ..resources import Texture
 from ..utils import Anchor, DictCollection, Font, Transform, Vec2, inf, Rect
+from .behaviors import ActionOnUpdateBehavior
 
 
 class ObjectFactory:
@@ -73,12 +72,12 @@ class ObjectFactory:
     def make_subsurface_sprite(
             self, position: Vec2, texture: Texture, sub_rect: Optional[Rect] = None, target_dims: Optional[Vec2] = None,
             rotation: float = 0.0, scale: float = 1.0, layer: int = 1, anchor: Vec2 = Anchor.C, cache: bool = True
-    ) -> SubSurfaceObject:
+    ) -> SubSurfaceSpriteObject:
         
         if target_dims is None: target_dims = Vec2(texture.dims)
         if sub_rect is None: sub_rect = Rect(0, 0, target_dims.x, target_dims.y)
         
-        obj = self._make_object(SubSurfaceObject, position, rotation, scale, SubSurfaceRenderer(texture, sub_rect, target_dims, cache), layer, anchor)
+        obj = self._make_object(SubSurfaceSpriteObject, position, rotation, scale, SubSurfaceRenderer(texture, sub_rect, target_dims, cache), layer, anchor)
         
         return obj
     
