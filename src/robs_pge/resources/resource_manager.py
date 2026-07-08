@@ -1,9 +1,13 @@
+from __future__ import annotations
 import logging
 from pathlib import Path
-from typing import Any
+from typing import Any, Optional, TYPE_CHECKING
 
 from ..resources import Texture
 from ..utils import Vec2, DictCollection, Font, ColorPalette, Color
+
+if TYPE_CHECKING:
+    from ..core import Camera
 
 
 class ResourceManager:
@@ -53,9 +57,24 @@ class ResourceManager:
     
     # region TEXTURES
     
-    def load_texture(self, name: str, path: str, folder: str, dims: Vec2 = None, width: int = None, height: int = None) -> Texture:
+    def load_texture(self, name: str, path: str, folder: str, dims: Optional[Vec2] = None, width: Optional[int] = None, height: Optional[int] = None) -> Texture:
         full_path = self.get_path(folder).joinpath(path)
         texture = Texture.from_path(full_path, dims, width, height)
+        self.set_texture(name, texture)
+        return texture
+    
+    def load_lod_texture(self, name: str, path: str, folder: str, dims: Optional[Vec2] = None, width: Optional[int] = None, height: Optional[int] = None,
+                         min_scale: Optional[float] = None, lod_factor: Optional[float] = None, camera: Optional[Camera] = None) -> Texture:
+        full_path = self.get_path(folder).joinpath(path)
+        texture = Texture.from_path(full_path, dims, width, height)
+        
+        if lod_factor:
+            texture.lod_factor = lod_factor
+        if min_scale:
+            texture.pregenerate_lods(min_scale)
+        if camera and camera.min_zoom:
+            texture.pregenerate_lods(camera.min_zoom)
+        
         self.set_texture(name, texture)
         return texture
     
@@ -69,7 +88,7 @@ class ResourceManager:
     
     # region COLOR PALETTES
     
-    def create_color_palette(self, name: str, colors: dict[str, Color] = None, shades: dict[str, float] = None, single_colors: dict[str, Color] = None) -> ColorPalette:
+    def create_color_palette(self, name: str, colors: Optional[dict[str, Color]] = None, shades: Optional[dict[str, float]] = None, single_colors: Optional[dict[str, Color]] = None) -> ColorPalette:
         palette = ColorPalette(colors, shades, single_colors)
         self.set_color_palette(name, palette)
         return palette
@@ -111,13 +130,13 @@ class ResourceManager:
         return value
     
     def create_font(self, name: str, font: str = "dejavusansmono", size: _SizeArg = 14,
-                    color: _ColorArg = None, bold: bool = False, italic: bool = False, line_spacing: int = 0):
+                    color: Optional[_ColorArg] = None, bold: bool = False, italic: bool = False, line_spacing: int = 0):
         _, resolved_size = self._resolve_size(size)
         _, resolved_color = self._resolve_color(color) if color is not None else (None, None)
         self.set_font(name, Font(font, resolved_size, resolved_color, bold, italic, line_spacing))
     
     def create_font_sizes(self, name: str, font: str = "dejavusansmono", sizes: _SizeArg | list[_SizeArg] = 14,
-                          color: _ColorArg = None, bold: bool = False, italic: bool = False, line_spacing: int = 0):
+                          color: Optional[_ColorArg] = None, bold: bool = False, italic: bool = False, line_spacing: int = 0):
         for size in self._normalize_list(sizes):
             size_name, resolved_size = self._resolve_size(size)
             _, resolved_color = self._resolve_color(color) if color is not None else (None, None)
@@ -125,7 +144,7 @@ class ResourceManager:
     
     def create_fonts(self, name: str, font: str = "dejavusansmono",
                      sizes: _SizeArg | list[_SizeArg] = 14,
-                     colors: _ColorArg | list[_ColorArg] | dict[str, Color] = None,
+                     colors: Optional[_ColorArg | list[_ColorArg] | dict[str, Color]] = None,
                      bold: bool = False, italic: bool = False, line_spacing: int = 0):
         sizes = self._normalize_list(sizes)
         colors = self._normalize_list(colors)

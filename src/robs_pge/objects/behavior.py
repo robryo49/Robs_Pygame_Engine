@@ -1,21 +1,27 @@
+from __future__ import annotations
+from typing import Optional, TYPE_CHECKING
+
 from ..utils import Vec2
 from ..events import Event
+
+if TYPE_CHECKING:
+    from ..objects import PygameObject
 
 
 class ObjectBehavior:
     def __init__(self):
-        self._object = None
+        self._owner: Optional[PygameObject] = None
     
     # region PROPERTIES
     
     # region object
     @property
     def owner(self):
-        return self._object
+        return self._owner
     
     @owner.setter
     def owner(self, value):
-        self._object = value
+        self._owner = value
     # endregion
     
     # endregion

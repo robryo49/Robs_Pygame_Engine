@@ -12,7 +12,9 @@ from ..utils import Vec2, Vec2Like, colorize_array, invert_uv_y, Color, make_noi
 class Texture:
     def __init__(self, surface: pg.Surface):
         self._surface = surface
-        self._mip_levels: list[pg.Surface] = [surface]
+        
+        self._lod_surfaces: list[pg.Surface] = [surface]
+        self._lod_factor = 2
     
     # region PROPERTIES
     
@@ -34,30 +36,46 @@ class Texture:
     
     @property
     def lod_levels(self) -> int:
-        return len(self._mip_levels)
+        return len(self._lod_surfaces)
+    
+    # region lod_factor
+    @property
+    def lod_factor(self):
+        return self._lod_factor
+    
+    @lod_factor.setter
+    def lod_factor(self, value: float):
+        self._lod_factor = value
+        self._invalidate_lod()
+    # endregion
     
     # endregion
     
     def _invalidate_lod(self):
-        self._mip_levels = [self._surface]
+        self._lod_surfaces = [self._surface]
     
     def _extend_lod_to(self, level: int):
-        while len(self._mip_levels) <= level:
-            prev = self._mip_levels[-1]
+        while len(self._lod_surfaces) <= level:
+            prev = self._lod_surfaces[-1]
             w, h = prev.get_size()
             if w <= 1 and h <= 1:
                 break
-            self._mip_levels.append(pg.transform.smoothscale(prev, (max(1, w // 2), max(1, h // 2))))
+            self._lod_surfaces.append(pg.transform.smoothscale(prev, (max(1, w // self.lod_factor), max(1, h // self.lod_factor))))
     
     def get_lod_surface(self, scale: float) -> tuple[pg.Surface, int]:
+        
         if scale <= 0 or scale >= 1:
             return self._surface, 1
         
-        level = max(0, int(math.floor(math.log2(1.0 / scale))))
-        self._extend_lod_to(level)
-        level = min(level, len(self._mip_levels) - 1)
+        level = max(0, int(math.floor(round(math.log(1.0 / scale, self.lod_factor), 2))))
         
-        return self._mip_levels[level], level
+        self._extend_lod_to(level)
+        level = min(level, len(self._lod_surfaces) - 1)
+        
+        return self._lod_surfaces[level], level
+    
+    def pregenerate_lods(self, scale):
+        self.get_lod_surface(scale)
     
     
     def get_at_uv(self, uv: Vec2):

@@ -1,10 +1,14 @@
+from __future__ import annotations
 from copy import copy
-from typing import Any, Callable, Optional
+from typing import Any, Callable, Optional, TYPE_CHECKING
 
 from ..events import Event
 from ..animation import AnimationManager, MultiplierAnimation
 from ..utils import ObjectFlags, Vec2
 from .behavior import ObjectBehavior
+
+if TYPE_CHECKING:
+    from ..core import Camera
 
 
 
@@ -88,11 +92,11 @@ class ScaleOnHoverBehavior(ObjectBehavior):
     
     def on_hover_start(self):
         if not self._animation_manager: return
-        self._animation_manager.play(MultiplierAnimation(self._object, "scale", self._scaling, self._duration, self._easing_function))
+        self._animation_manager.play(MultiplierAnimation(self._owner, "scale", self._scaling, self._duration, self._easing_function))
     
     def on_hover_end(self):
         if not self._animation_manager: return
-        self._animation_manager.play(MultiplierAnimation(self._object, "scale", 1/self._scaling, self._duration, self._easing_function))
+        self._animation_manager.play(MultiplierAnimation(self._owner, "scale", 1 / self._scaling, self._duration, self._easing_function))
 
 
 class ScaleOnClickBehavior(ObjectBehavior):
@@ -120,7 +124,31 @@ class ScaleOnClickBehavior(ObjectBehavior):
         if not self._animation_manager: return
         if button == self._button:
             self._animation_manager.play(MultiplierAnimation(self.owner, "scale", 1 / self._scaling, self._duration, self._easing_function))
-            
+
+
+
+class HideOnCameraZoomBehavior(ObjectBehavior):
+    def __init__(self, camera: Camera, min_zoom: Optional[float] = None, max_zoom: Optional[float] = None):
+        super().__init__()
+        
+        self._min_zoom = min_zoom
+        self._max_zoom = max_zoom
+        
+        self._camera = camera
+    
+    def on_update(self, dt: float):
+        hide = False
+        if self._max_zoom is not None:
+            if self._max_zoom < self._camera.zoom:
+                hide = True
+        if self._min_zoom is not None:
+            if self._min_zoom > self._camera.zoom:
+                hide = True
+                
+        if hide:
+            self.owner.add_flag(ObjectFlags.HIDDEN)
+        else:
+            self.owner.remove_flag(ObjectFlags.HIDDEN)
             
 
 class DynamicAttribute(ObjectBehavior):

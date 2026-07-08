@@ -1,3 +1,5 @@
+from typing import Optional
+
 from pygame import Color
 
 
@@ -148,13 +150,13 @@ class Colors:
 class ColorPalette:
     def __init__(
             self,
-            colors: dict[str, Color] = None,
-            shades: dict[str, int] = None,
-            single_colors: dict[str, Color] = None
+            colors: Optional[dict[str, Color]] = None,
+            shades: Optional[dict[str, float]] = None,
+            single_colors: Optional[dict[str, Color]] = None
     ):
         self.primary_colors: dict[str, Color] = {}
         self.single_colors: dict[str, Color] = {}
-        self.shades: dict[str, int] = {}
+        self.shades: dict[str, float] = {}
         self.shaded_colors: dict[str, Color] = {}
         self.all_colors: dict[str, Color] = {}
         
@@ -202,7 +204,7 @@ class ColorPalette:
     
     # region SHADES
     
-    def add_shade(self, name: str, factor: int) -> "ColorPalette":
+    def add_shade(self, name: str, factor: float) -> "ColorPalette":
         for color_name, color in self.primary_colors.items():
             shaded_name = name.format(color_name)
             shaded_color = Colors.multiply(color, factor)
@@ -212,7 +214,7 @@ class ColorPalette:
         self.shades[name] = factor
         return self
     
-    def add_shades(self, shades: dict[str, int]) -> "ColorPalette":
+    def add_shades(self, shades: dict[str, float]) -> "ColorPalette":
         for name, factor in shades.items():
             self.add_shade(name, factor)
         return self
