@@ -1,4 +1,5 @@
-from typing import Optional
+import math
+from typing import Optional, cast
 
 from .display import Display
 from ..utils import FRect, Transform, Vec2, invert_y, Vec2Like
@@ -15,6 +16,9 @@ class Camera:
         self._transform: Transform = Transform()
         
         self._world_aabb: FRect = self._get_world_aabb()
+        
+        self._min_zoom: Optional[float] = None
+        self._max_zoom: Optional[float] = None
 
     # region PROPERTIES
     
@@ -69,17 +73,45 @@ class Camera:
     
     @zoom.setter
     def zoom(self, value: float) -> None:
+        if self.max_zoom is not None and value > cast(float, self.max_zoom):
+            value = self.max_zoom
+        if self.min_zoom is not None and value < cast(float, self.min_zoom):
+            value = self.min_zoom
         self.transform.scale = 1/value
     
     def zoom_in(self, fact: float, point: Optional[Vec2]=None) -> "Camera":
-        if point is not None: self.pos = point - (point - self.pos) / fact
+        prev = self.zoom
         self.zoom *= fact
+        fact = prev / self.zoom
+        if point is not None: self.pos = point - (point - self.pos) * fact
         return self
     
     def zoom_out(self, fact: float, point: Optional[Vec2]=None) -> "Camera":
-        if point is not None: self.pos = point - (point - self.pos) * fact
+        prev = self.zoom
         self.zoom /= fact
+        fact = prev / self.zoom
+        if point is not None: self.pos = point - (point - self.pos) * fact
         return self
+    # endregion
+    
+    # region min_zoom
+    @property
+    def min_zoom(self):
+        return self._min_zoom
+    
+    @min_zoom.setter
+    def min_zoom(self, value):
+        self._min_zoom = value
+    # endregion
+    
+    # region max_zoom
+    @property
+    def max_zoom(self):
+        return self._max_zoom
+    
+    @max_zoom.setter
+    def max_zoom(self, value):
+        self._max_zoom = value
     # endregion
 
     @property
