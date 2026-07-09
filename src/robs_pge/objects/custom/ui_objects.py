@@ -29,7 +29,7 @@ class TextObject(PygameObject):
 
 
 class ButtonObject(RectObject):
-    def __init__(self, transform: Transform, background: RectRenderer, text: TextObject, action: Callable, services: DictCollection, layer: int = 0, anchor: Vec2 = Anchor.C):
+    def __init__(self, transform: Transform, background: RectRenderer, text: TextObject, action: Optional[Callable | tuple[Callable, ...]], services: DictCollection, layer: int = 0, anchor: Vec2 = Anchor.C):
         
         super().__init__(transform, background, services, layer, anchor)
         
@@ -38,10 +38,12 @@ class ButtonObject(RectObject):
         self.add_child(self._text, Anchor.C)
         
         self.add_behavior([
-            ScaleOnHoverBehavior(1.2, 0.1, Easing.EASE_OUT_QUAD),
-            ScaleOnClickBehavior(1, 0.9, 0.1, Easing.EASE_OUT_QUAD),
-            ActionOnClickBehavior(1, action)
+            ScaleOnHoverBehavior(1.1, 0.1, Easing.EASE_OUT_QUAD),
+            ScaleOnClickBehavior(1, 0.9, 0.1, Easing.EASE_OUT_QUAD)
         ])
+        
+        if action is not None:
+            self.add_behavior(ActionOnClickBehavior(1, action))
     
     # region PROPERTIES
     
@@ -54,7 +56,60 @@ class ButtonObject(RectObject):
         self._text.text = value
     
     # endregion
+    
 
+class ValueSwitchingButtonObject(ButtonObject):
+    def __init__(self, transform: Transform, background: RectRenderer, text: TextObject, texts: tuple[str, ...], values: tuple[Any, ...], callback: Optional[Callable | tuple[Callable, ...]], services: DictCollection, layer: int = 0, anchor: Vec2 = Anchor.C):
+        super().__init__(transform, background, text, None, services, layer, anchor)
+        
+        self._texts = texts
+        self._values = values
+        
+        self._index = 0
+        
+        self.add_behavior([
+            ActionOnClickBehavior(1, self.cycle_forward),
+            ScaleOnClickBehavior(3, 0.9, 0.1, Easing.EASE_OUT_QUAD),
+            ActionOnClickBehavior(3, self.cycle_backward)
+        ])
+        
+        if callback is not None:
+            self.add_behavior(ActionOnClickBehavior(1, callback))
+        
+    # region PROPERTIES
+    
+    @property
+    def texts(self):
+        return self._texts
+    
+    @property
+    def values(self):
+        return self._values
+    
+    @property
+    def value(self):
+        return self._values[self._index]
+    
+    # region index
+    @property
+    def index(self):
+        return self._index
+    
+    @index.setter
+    def index(self, value: int):
+        self._index = value % len(self._texts)
+        self.text = self.texts[self._index]
+        
+    def cycle_forward(self, amount: int = 1):
+        self.index += amount
+        
+    def cycle_backward(self, amount: int = 1):
+        self.index -= amount
+    
+    # endregion
+    
+    # endregion
+    
 
 
 class ProgressBarObject(RectObject):

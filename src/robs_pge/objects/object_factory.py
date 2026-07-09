@@ -1,9 +1,9 @@
 from typing import Any, Callable, Optional
 
-from .custom import ButtonObject, CircleObject, DebugPanelObject, LayoutObject, ProgressBarObject, RectObject, SubSurfaceSpriteObject, TextObject, DebugOverlay, LineObject, GraphObject, SpriteObject, ChunkedSpriteObject
+from .custom import *
 from .behaviors import DynamicAttribute
 from ..rendering import ButtonStyle, ChunkedSpriteRenderer, CircleRenderer, CircleStyle, DebugPanelStyle, LineStyle, ProgressBarStyle, RectRenderer, RectStyle, SpriteRenderer, SubSurfaceRenderer, LineRenderer, TextRenderer, GraphStyle
-from ..resources import Texture
+from ..resources import Texture, ResourceManager
 from ..utils import Anchor, DictCollection, Font, Transform, Vec2, inf, Rect
 from .behaviors import ActionOnUpdateBehavior
 
@@ -24,34 +24,43 @@ class ObjectFactory:
     
     # endregion
     
+    def _get_resource[T](self, resource: Optional[str | Any], style_type: type[T]) -> T:
+        if isinstance(resource, str):
+            return self._services.get(ResourceManager).get(style_type, resource)
+        elif resource is not None:
+            return resource
+        else:
+            return style_type()
     
-    def _make_object(self, object_type: type, position, rotation, scale, renderer, layer, anchor, *args):
+    def _make_object[T](self, object_type: type[T], position, rotation, scale, renderer, layer, anchor, *args) -> T:
         return object_type(Transform(position, rotation, scale), renderer, *args, self._services, layer, anchor)
     
     def make_rect(
-            self, position: Vec2, dims: Vec2, style: Optional[RectStyle] = None,
+            self, position: Vec2, dims: Vec2, style: Optional[RectStyle | str] = None,
             rotation: float = 0.0, scale: float = 1.0, layer: int = 0, anchor: Vec2 = Anchor.C, cache: bool = True
     ) -> RectObject:
         
+        style = self._get_resource(style, RectStyle)
         obj = self._make_object(RectObject, position, rotation, scale, RectRenderer(dims, style, cache), layer, anchor)
         
         return obj
     
     def make_circle(
-            self, position: Vec2, radius: int, style: Optional[CircleStyle] = None,
+            self, position: Vec2, radius: int, style: Optional[CircleStyle | str] = None,
             rotation: float = 0.0, scale: float = 1.0, layer: int = 0, anchor: Vec2 = Anchor.C, cache: bool = True
     ) -> CircleObject:
+        
+        style = self._get_resource(style, CircleStyle)
         obj = self._make_object(CircleObject, position, rotation, scale, CircleRenderer(radius, style, cache), layer, anchor)
         
         return obj
     
     def make_line(
-            self, position: Vec2, points: list[Vec2], style: Optional[LineStyle] = None,
+            self, position: Vec2, points: list[Vec2], style: Optional[LineStyle | str] = None,
             rotation: float = 0.0, scale: float = 1.0, layer: int = 0, anchor: Vec2 = Anchor.C, cache: bool = True
     ) -> LineObject:
         
-        style = style or LineStyle()
-        
+        style = self._get_resource(style, LineStyle)
         obj = self._make_object(LineObject, position, rotation, scale, LineRenderer(points, style, cache), layer, anchor)
         
         return obj
@@ -60,20 +69,22 @@ class ObjectFactory:
     
     
     def make_sprite(
-            self, position: Vec2, texture: Texture,
+            self, position: Vec2, texture: Texture | str,
             rotation: float = 0.0, scale: float = 1.0, layer: int = 1, anchor: Vec2 = Anchor.C, cache: bool = True
     ) -> SpriteObject:
         
+        texture = self._get_resource(texture, Texture)
         obj = self._make_object(SpriteObject, position, rotation, scale, SpriteRenderer(texture, cache), layer, anchor)
         
         return obj
     
     
     def make_subsurface_sprite(
-            self, position: Vec2, texture: Texture, sub_rect: Optional[Rect] = None, target_dims: Optional[Vec2] = None,
+            self, position: Vec2, texture: Texture | str, sub_rect: Optional[Rect] = None, target_dims: Optional[Vec2] = None,
             rotation: float = 0.0, scale: float = 1.0, layer: int = 1, anchor: Vec2 = Anchor.C, cache: bool = True
     ) -> SubSurfaceSpriteObject:
         
+        texture = self._get_resource(texture, Texture)
         if target_dims is None: target_dims = Vec2(texture.dims)
         if sub_rect is None: sub_rect = Rect(0, 0, target_dims.x, target_dims.y)
         
@@ -82,10 +93,11 @@ class ObjectFactory:
         return obj
     
     def make_chunked_sprite(
-            self, position: Vec2, texture: Texture, chunk_size: int = 256,
+            self, position: Vec2, texture: Texture | str, chunk_size: int = 256,
             rotation: float = 0.0, scale: float = 1.0, layer: int = 1, anchor: Vec2 = Anchor.C, cache: bool = True
     ) -> ChunkedSpriteObject:
         
+        texture = self._get_resource(texture, Texture)
         obj = self._make_object(ChunkedSpriteObject, position, rotation, scale, ChunkedSpriteRenderer(texture, chunk_size, cache), layer, anchor)
         
         return obj
@@ -93,9 +105,11 @@ class ObjectFactory:
     
     
     def make_text(
-            self, position: Vec2, text: str, font: Optional[Font] = None,
+            self, position: Vec2, text: str, font: Optional[Font | str] = None,
             rotation: float = 0.0, scale: float = 1.0, layer: int = 0, anchor: Vec2 = Anchor.C, cache: bool = True
     ) -> TextObject:
+        
+        font = self._get_resource(font, Font)
         obj = self._make_object(TextObject, position, rotation, scale, TextRenderer(text, font, cache), layer, anchor)
         
         return obj
@@ -105,6 +119,7 @@ class ObjectFactory:
             rotation: float = 0.0, scale: float = 1.0, layer: int = 0, anchor: Vec2 = Anchor.C, cache: bool = True
     ) -> TextObject:
         
+        font = self._get_resource(font, Font)
         obj = self.make_text(position, "", font, rotation, scale, layer, anchor, cache).add_behavior(DynamicAttribute("text", getter, template))
         
         return obj
@@ -112,10 +127,12 @@ class ObjectFactory:
     
     
     def make_button(
-            self, position: Vec2, text: str, action: Callable[[], None] | tuple[Callable[[], None]], dims: Optional[Vec2] = None, style: Optional[ButtonStyle] = None,
+            self, position: Vec2, text: str, action: Optional[Callable | tuple[Callable, ...]] = None, dims: Optional[Vec2] = None, style: Optional[ButtonStyle | str] = None,
             rotation: float = 0.0, scale: float = 1.0, layer: int = 0, anchor: Vec2 = Anchor.C, cache: bool = True
     ) -> ButtonObject:
-        style = style or ButtonStyle()
+        
+        
+        style = self._get_resource(style, ButtonStyle)
         margin = Vec2(style.margin)
         font = style.font
         dims = dims or font.get_render_size(text) + Vec2(margin*2)
@@ -126,16 +143,37 @@ class ObjectFactory:
         
         return obj
     
+    def make_value_switching_button(
+            self, position: Vec2, texts: tuple[str, ...], values: Optional[tuple[Any, ...]] = None, default_index: int = 0, callback: Optional[Callable | tuple[Callable, ...]] = None, dims: Optional[Vec2] = None, style: Optional[ButtonStyle | str] = None,
+            rotation: float = 0.0, scale: float = 1.0, layer: int = 0, anchor: Vec2 = Anchor.C, cache: bool = True
+    ) -> ValueSwitchingButtonObject:
+        
+        if values is None:
+            values = texts
+            
+        text = texts[default_index]
+        
+        style = self._get_resource(style, ButtonStyle)
+        margin = Vec2(style.margin)
+        font = style.font
+        text_dims = [font.get_render_size(t) for t in texts]
+        dims = dims or Vec2(max(d[0] for d in text_dims), max(d[1] for d in text_dims)) + Vec2(margin*2)
+        
+        obj = self._make_object(ValueSwitchingButtonObject, position, rotation, scale, RectRenderer(dims, style, cache), layer, anchor,
+                                self.make_text(Vec2(), text, font, 0.0, 1.0, layer, Anchor.C, cache), texts, values, callback
+                                )
+        
+        return obj
+    
     
     # region Layouts
     
     def make_grid_layout(
-            self, position: Vec2, width: Optional[int | float] = None, height: Optional[int | float] = None, min_col=0, max_col=inf, min_row=0, max_row=inf, invert_x=False, invert_y=False, style: Optional[RectStyle] = None,
+            self, position: Vec2, width: Optional[int | float] = None, height: Optional[int | float] = None, min_col=0, max_col=inf, min_row=0, max_row=inf, invert_x=False, invert_y=False, style: Optional[RectStyle | str] = None,
             rotation: float = 0.0, scale: float = 1.0, layer: int = 0, anchor: Vec2 = Anchor.C, cache: bool=True
     ) -> LayoutObject:
         
-        style = style or RectStyle()
-        
+        style = self._get_resource(style, RectStyle)
         obj = self._make_object(LayoutObject, position, rotation, scale, RectRenderer(Vec2(), style, cache), layer, anchor)
         
         obj.min_col = min_col
@@ -155,8 +193,8 @@ class ObjectFactory:
         
         return obj
     
-    def make_column_layout(
-            self, position: Vec2, width: Optional[int | float] = None, height: Optional[int | float] = None, min_row=0, max_row=inf, invert_y=False, style: Optional[RectStyle] = None,
+    def make_vertical_layout(
+            self, position: Vec2, width: Optional[int | float] = None, height: Optional[int | float] = None, min_row=0, max_row=inf, invert_y=False, style: Optional[RectStyle | str] = None,
             rotation: float = 0.0, scale: float = 1.0, layer: int = 0, anchor: Vec2 = Anchor.C, cache: bool=True
     ) -> LayoutObject:
         return self.make_grid_layout(
@@ -164,8 +202,8 @@ class ObjectFactory:
             style, rotation, scale, layer, anchor, cache
         )
     
-    def make_row_layout(
-            self, position: Vec2, width: Optional[int | float] = None, height: Optional[int | float] = None, min_col=0, max_col=inf, invert_x=False, style: Optional[RectStyle] = None,
+    def make_horizontal_layout(
+            self, position: Vec2, width: Optional[int | float] = None, height: Optional[int | float] = None, min_col=0, max_col=inf, invert_x=False, style: Optional[RectStyle | str] = None,
             rotation: float = 0.0, scale: float = 1.0, layer: int = 0, anchor: Vec2 = Anchor.C, cache: bool=True
     ) -> LayoutObject:
         return self.make_grid_layout(
@@ -200,17 +238,17 @@ class ObjectFactory:
         
         return obj
     
+        
+    
     # endregion
     
     
-    
-    
     def make_progress_bar(
-            self, position: Vec2, dims: Vec2, style: Optional[ProgressBarStyle] = None,
+            self, position: Vec2, dims: Vec2, style: Optional[ProgressBarStyle | str] = None,
             rotation: float = 0.0, scale: float = 1.0, layer: int = 0, anchor: Vec2 = Anchor.C, cache: bool = True, cache_bar: bool = False
     ) -> ProgressBarObject:
         
-        bg_style = style or ProgressBarStyle()
+        bg_style = self._get_resource(style, ProgressBarStyle)
         bar_style = RectStyle(bg_style.color, bd_radius=(bg_style.bd_radius-bg_style.bd) if bg_style.bd_radius > 0 else 0)
         
         bar = self.make_rect(Vec2(), Vec2(0, dims.y), bar_style, 0.0, 1.0, layer, Anchor.C, cache_bar)
@@ -219,11 +257,11 @@ class ObjectFactory:
         return obj
     
     def make_graph(
-            self, position: Vec2, dims: Vec2, style: Optional[GraphStyle] = None, pad_x=0, pad_y=0, min_x=None, max_x=None, min_y=None, max_y=None, max_data_points=None, max_data_x_range=None, update_action=None,
+            self, position: Vec2, dims: Vec2, style: Optional[GraphStyle | str] = None, pad_x=0, pad_y=0, min_x=None, max_x=None, min_y=None, max_y=None, max_data_points=None, max_data_x_range=None, update_action=None,
             rotation: float = 0.0, scale: float = 1.0, layer: int = 0, anchor: Vec2 = Anchor.C, cache: bool = True, cache_line: bool = False
     ) -> GraphObject:
         
-        bg_style = style or GraphStyle()
+        bg_style = self._get_resource(style, GraphStyle)
         line_style = LineStyle(bg_style.line_color, bg_style.line_width)
         
         line = self.make_line(Vec2(), [], line_style, 0.0, 1.0, layer, Anchor.C, cache_line)
@@ -244,10 +282,12 @@ class ObjectFactory:
     
     
     def make_debug_panel(
-            self, position: Vec2, dims: Vec2, style: DebugPanelStyle, title: str,
+            self, position: Vec2, dims: Vec2, style: DebugPanelStyle | str, title: str,
             rotation: float = 0.0, scale: float = 1.0, layer: int = 0,
             anchor: Vec2 = Anchor.C, cache: bool = True
     ) -> DebugPanelObject:
+        
+        style = self._get_resource(style, DebugPanelStyle)
     
         width = round(dims.x)
         

@@ -56,7 +56,7 @@ class ActionOnUpdateBehavior(ObjectBehavior):
     
 
 class ActionOnClickBehavior(ObjectBehavior):
-    def __init__(self, button: int, action: Callable | tuple[Callable, ...]):
+    def __init__(self, button: int, action: Optional[Callable | tuple[Callable, ...]]):
         super().__init__()
         
         self._button = button
@@ -70,8 +70,8 @@ class ActionOnClickBehavior(ObjectBehavior):
         if button == self._button:
             if isinstance(self._action, tuple):
                 for action in self._action:
-                    action()
-            else:
+                    if action is not None: action()
+            elif self._action is not None:
                 self._action()
 
 

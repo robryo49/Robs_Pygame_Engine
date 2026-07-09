@@ -7,6 +7,8 @@ from .object import PygameObject
 from ..input import InputManager
 from ..utils import ObjectFlags, Vec2
 
+import pygame as pg
+
 if TYPE_CHECKING:
     from ..core import Camera
 
@@ -51,7 +53,7 @@ class InteractionManager:
             if isinstance(obj, ObjectCollection):
                 objects.extend(self._collect_objects(obj))
             elif isinstance(obj, PygameObject):
-                objects.append(obj)
+                if obj.visible: objects.append(obj)
                 objects.extend(self._collect_objects(obj.children))
             
         return objects
@@ -63,12 +65,12 @@ class InteractionManager:
             else self._hovered_world[0] if self._hovered_world and self._hovered_world[0].has_flag(ObjectFlags.HOVERABLE) else None
         
         if previous_hovered is self.hovered:
-            if self.hovered:
+            if self.hovered is not None:
                 self.hovered.while_hovered()
         else:
             if previous_hovered:
                 previous_hovered.on_hover_end()
-            if self.hovered:
+            if self.hovered is not None:
                 self.hovered.on_hover_start()
     
     def _handle_button(self, button: int):
@@ -100,4 +102,6 @@ class InteractionManager:
         self._handle_button(1)
         self._handle_button(2)
         self._handle_button(3)
-            
+        
+        if self.hovered is not None and self.hovered.has_flag(ObjectFlags.CLICKABLE): pg.mouse.set_cursor(pg.SYSTEM_CURSOR_HAND)
+        else: pg.mouse.set_cursor(pg.SYSTEM_CURSOR_ARROW)

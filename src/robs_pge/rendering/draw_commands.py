@@ -187,7 +187,7 @@ class DrawText(DrawCommand):
     font: Font
     
     def make_surface(self, key, *args):
-        text, font_key, color, spacing, rotation, scale = key
+        text, font_key, color, spacing, rotation = key
         pg_font: pg.font.Font = args[0]
         
         lines = []
@@ -207,7 +207,7 @@ class DrawText(DrawCommand):
             y += surf.get_height() + spacing
         
         if rotation:
-            surface = pg.transform.rotozoom(surface, rotation, 1).convert_alpha()
+            surface = pg.transform.rotozoom(surface, rotation, 1.0).convert_alpha()
         
         return surface
     
@@ -217,22 +217,32 @@ class DrawText(DrawCommand):
         
         screen_pos, rotation, scale = self.get_composed_transform(camera)
         
-        font_size = round(self.font.size * scale)
-        color     = tuple(self.font.color)
-        spacing   = round(self.font.line_spacing * scale)
-        font_key  = (self.font.key, font_size)
+        base_font_size = round(self.font.size)
+        color          = tuple(self.font.color)
+        base_spacing   = round(self.font.line_spacing)
+        font_key       = (self.font.key, base_font_size)
         
         if font_key not in font_cache:
-            font_cache[font_key] = pg.font.SysFont(self.font.name, font_size, self.font.bold, self.font.italic)
+            font_cache[font_key] = pg.font.SysFont(self.font.name, base_font_size, self.font.bold, self.font.italic)
         pg_font = font_cache[font_key]
         
-        key     = (self.text, font_key, color, spacing, rotation, scale)
+        key = (self.text, font_key, color, base_spacing, rotation)
         surface, cached = self.get_surface(surface_cache, key, pg_font)
         
-        self.add_blit(blit_call_queue, surface, screen_pos, surface_pos_from_uv_pos(self.anchor, Vec2(surface.get_width(), surface.get_height()), rotation))
+        if scale != 1.0:
+            new_w = round(surface.get_width() * scale)
+            new_h = round(surface.get_height() * scale)
+            if new_w > 0 and new_h > 0:
+                surface = pg.transform.smoothscale(surface, (new_w, new_h))
+        
+        self.add_blit(
+            blit_call_queue,
+            surface,
+            screen_pos,
+            surface_pos_from_uv_pos(self.anchor, Vec2(surface.get_width(), surface.get_height()), rotation)
+        )
         
         return cached
-        
 
 @dataclass
 class DrawLine(DrawCommand):

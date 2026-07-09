@@ -5,7 +5,7 @@ from typing import Any, Callable, TYPE_CHECKING, Optional, Union, cast
 from ..events import Event, EventManager
 from ..rendering import CircleRenderer, ObjectRenderer
 
-from ..utils import Anchor, DictCollection, Transform, Vec2, ObjectFlags, Rect, CollisionBox, RectCollisionBox, CircleCollisionBox, test_collision_box_overlap
+from ..utils import Anchor, DictCollection, Transform, Vec2, ObjectFlags, Rect, CollisionBox, RectCollisionBox, CircleCollisionBox, test_collision_box_overlap, inf, clamp
 from .behavior_collection import BehaviorCollection
 from .behaviors import ObjectBehavior
 from .object_collection import ObjectCollection
@@ -35,6 +35,10 @@ class PygameObject:
         self._parent_anchor = Anchor.C
         
         self._culled = False
+        
+        self._position_limits = (Vec2(-inf), Vec2(+inf))
+        self._fixed_x: Optional[float] = None
+        self._fixed_y: Optional[float] = None
 
     # region PROPERTIES
     
@@ -78,15 +82,132 @@ class PygameObject:
     @pos.setter
     def pos(self, value: Vec2):
         self.transform.pos = value
+    
+    @property
+    def x_pos(self):
+        return self.transform.pos.x
+    
+    @x_pos.setter
+    def x_pos(self, value: float):
+        self.transform.pos.x = clamp(value, self.min_x, self.max_x) if self._fixed_x is None else self._fixed_x
+    
+    @property
+    def y_pos(self):
+        return self.transform.pos.x
+    
+    @y_pos.setter
+    def y_pos(self, value: float):
+        self.transform.pos.y = clamp(value, self.min_y, self.max_y) if self._fixed_y is None else self._fixed_y
         
     def move(self, vec: Vec2):
         self.pos += vec
         
     def move_x(self, dx):
-        self.pos.x += dx
+        self.x_pos += dx
         
     def move_y(self, dy):
-        self.pos.y += dy
+        self.y_pos += dy
+        
+    # region fixed_x
+    @property
+    def fixed_x(self):
+        return self._fixed_x
+    
+    @fixed_x.setter
+    def fixed_x(self, value: float | bool | None):
+        if isinstance(value, bool):
+            self._fixed_x = self.x_pos if value else None
+        else:
+            self._fixed_x = value
+        
+        if self._fixed_x is not None:
+            self.x_pos = self._fixed_x
+            
+    def fix_x(self, value: Optional[float] = None):
+        self.fixed_x = value if value is not None else True
+        
+    def unfix_x(self):
+        self.fixed_x = False
+        
+    def toggle_fixed_x(self, value: Optional[float] = None):
+        if self.fixed_x is None: self.fix_x(value)
+        else: self.unfix_x()
+    # endregion
+    
+    # region fixed_y
+    @property
+    def fixed_y(self):
+        return self._fixed_y
+    
+    @fixed_y.setter
+    def fixed_y(self, value: float | bool | None):
+        if isinstance(value, bool):
+            self._fixed_y = self.y_pos if value else None
+        else:
+            self._fixed_y = value
+        
+        if self._fixed_y is not None:
+            self.y_pos = self._fixed_y
+    
+    def fix_y(self, value: Optional[float] = None):
+        self._fixed_y = value if value is not None else True
+    
+    def unfix_y(self):
+        self._fixed_y = False
+        
+    def toggle_fixed_y(self, value: Optional[float] = None):
+        if self.fixed_y is None: self.fix_y(value)
+        else: self.unfix_y()
+    # endregion
+    
+    # region Position Limits
+    
+    @property
+    def min_x(self):
+        return self._position_limits[0].x
+    
+    @min_x.setter
+    def min_x(self, value):
+        self._position_limits[0].x = value
+        self.pos.x = max(value, self.pos.x)
+    
+    @property
+    def min_y(self):
+        return self._position_limits[0].y
+    
+    @min_y.setter
+    def min_y(self, value):
+        self._position_limits[0].y = value
+        self.pos.y = max(value, self.pos.y)
+    
+    @property
+    def max_x(self):
+        return self._position_limits[1].x
+    
+    @max_x.setter
+    def max_x(self, value):
+        self._position_limits[1].x = value
+        self.pos.x = min(value, self.pos.x)
+    
+    @property
+    def max_y(self):
+        return self._position_limits[1].y
+    
+    @max_y.setter
+    def max_y(self, value):
+        self._position_limits[1].y = value
+        self.pos.y = min(value, self.pos.y)
+    
+    def limit_x(self, min_x: Optional[float] = None, max_x: Optional[float] = None):
+        if min_x is not None: self.min_x = min_x
+        if max_x is not None: self.max_x = max_x
+    
+    def limit_y(self, min_y: Optional[float] = None, max_y: Optional[float] = None):
+        if min_y is not None: self.min_y = min_y
+        if max_y is not None: self.max_y = max_y
+    
+    # endregion
+    
     # endregion
     
     # region rotation
@@ -173,6 +294,16 @@ class PygameObject:
     @visible.setter
     def visible(self, value: bool):
         self.show() if value else self.hide()
+        
+    # region hidden
+    @property
+    def hidden(self):
+        return not self.visible
+    
+    @hidden.setter
+    def hidden(self, value):
+        self.visible = value
+    # endregion
     
     def show(self):
         if self.has_flag(ObjectFlags.HIDDEN):
@@ -257,6 +388,7 @@ class PygameObject:
         self.behaviors.remove(behavior)
         
         return self
+    
     
     # endregion
     

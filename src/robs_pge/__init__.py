@@ -4,7 +4,7 @@ from .animation import Animation, AdderAnimation, SetterAnimation, MultiplierAni
 from .input import Keybind, KeybindsManager
 from .objects import (
     PygameObject,
-    RectObject, CircleObject, TextObject, SpriteObject, LineObject,
+    RectObject, CircleObject, TextObject, SpriteObject, LineObject, ValueSwitchingButtonObject,
     LayoutObject, DebugOverlay, DebugPanelObject,
     ButtonObject, ProgressBarObject, GraphObject,
     ObjectFactory, ObjectCollection, ObjectBehavior,
@@ -16,6 +16,7 @@ from .utils import (
     Keybinds, ObjectFlags, KeybindFlags,
     clamp, lerp, inf,
 )
+from .rendering import Style, RectStyle, LineStyle, ButtonStyle, CircleStyle, ShapeStyle, GraphStyle, PolygonStyle, ProgressBarStyle, DebugPanelStyle
 
 __all__ = [
     # core
@@ -30,7 +31,7 @@ __all__ = [
     "Keybind", "KeybindsManager",
     # objects
     "PygameObject",
-    "RectObject", "CircleObject", "TextObject", "SpriteObject", "LineObject",
+    "RectObject", "CircleObject", "TextObject", "SpriteObject", "LineObject", "ValueSwitchingButtonObject",
     "LayoutObject", "DebugOverlay", "DebugPanelObject",
     "ButtonObject", "ProgressBarObject", "GraphObject",
     "ObjectFactory", "ObjectCollection", "ObjectBehavior",
@@ -40,4 +41,7 @@ __all__ = [
     "Font",
     "Keybinds", "ObjectFlags", "KeybindFlags",
     "clamp", "lerp", "inf",
+    # styles
+    "Style", "RectStyle", "LineStyle", "ButtonStyle", "CircleStyle",
+    "ShapeStyle", "GraphStyle", "PolygonStyle", "ProgressBarStyle", "DebugPanelStyle"
 ]

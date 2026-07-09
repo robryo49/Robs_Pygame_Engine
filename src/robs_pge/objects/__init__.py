@@ -11,7 +11,7 @@ from .interaction_manager import InteractionManager
 from .object_collection import ObjectCollection
 from .object_factory import ObjectFactory
 from .custom import (
-    RectObject, CircleObject, TextObject, SpriteObject, LineObject,
+    RectObject, CircleObject, TextObject, SpriteObject, LineObject, ValueSwitchingButtonObject,
     SubSurfaceSpriteObject, ChunkedSpriteObject,
     LayoutObject, DebugOverlay, DebugPanelObject,
     ButtonObject, ProgressBarObject, GraphObject,
@@ -37,7 +37,7 @@ __all__ = [
     "ObjectFactory",
     # objects
     "PygameObject",
-    "RectObject", "CircleObject", "TextObject", "SpriteObject", "LineObject",
+    "RectObject", "CircleObject", "TextObject", "SpriteObject", "LineObject", "ValueSwitchingButtonObject",
     "SubSurfaceSpriteObject", "ChunkedSpriteObject",
     "LayoutObject", "DebugOverlay", "DebugPanelObject",
     "ButtonObject", "ProgressBarObject", "GraphObject",

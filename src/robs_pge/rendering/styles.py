@@ -60,7 +60,7 @@ class LineStyle(Style):
 
 @dataclass
 class ButtonStyle(RectStyle):
-    margin: int = 10
+    margin: int = 50
     font: Font = field(default_factory=lambda: Font())
     
     def copy(self):
