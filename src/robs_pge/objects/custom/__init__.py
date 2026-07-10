@@ -1,7 +1,7 @@
 from .primitive_objects import RectObject, CircleObject, LineObject, TextObject
 from .sprite_objects import SpriteObject, ChunkedSpriteObject, SubSurfaceSpriteObject
 from .layout_objects import LayoutObject, DebugPanelObject, DebugOverlay
-from .ui_objects import SliderObject, ButtonObject, GraphObject, ProgressBarObject, ValueSwitchingButtonObject
+from .ui_objects import SliderObject, ButtonObject, GraphObject, ProgressBarObject, ValueSwitchingButtonObject, SpriteButtonObject
 
 __all__ = [
     "RectObject",
@@ -19,4 +19,5 @@ __all__ = [
     "ProgressBarObject",
     "ValueSwitchingButtonObject",
     "SliderObject",
+    "SpriteButtonObject",
 ]

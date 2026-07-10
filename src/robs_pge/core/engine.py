@@ -3,6 +3,7 @@ import sys
 
 import pygame as pg
 
+
 from ..debug import FrameTimer
 from ..input import InputManager
 from ..objects import InteractionManager
@@ -134,12 +135,16 @@ class Engine:
     
     def init_resources(self) -> "Engine":
         logging.info("Initializing resources")
+        self.init_folders()
         self.init_color_palettes()
         self.init_fonts()
         self.init_styles()
         self.init_textures()
         
         return self
+    
+    def init_folders(self):
+        pass
     
     def init_color_palettes(self):
         logging.info("Initializing color palettes")

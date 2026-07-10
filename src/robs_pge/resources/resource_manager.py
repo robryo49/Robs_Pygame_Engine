@@ -1,10 +1,11 @@
 from __future__ import annotations
+
 import logging
 from pathlib import Path
 from typing import Any, Optional, TYPE_CHECKING
 
 from ..resources import Texture
-from ..utils import Vec2, DictCollection, Font, ColorPalette, Color
+from ..utils import Color, ColorPalette, DictCollection, Font, Vec2
 
 if TYPE_CHECKING:
     from ..core import Camera

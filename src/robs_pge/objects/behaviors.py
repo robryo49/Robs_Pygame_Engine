@@ -216,6 +216,7 @@ class AttributeValueSnappingBehavior(ObjectBehavior):
             key=lambda x: abs(x - (getattr(self.owner, self._attribute) + self._offset))
         ))
 
+
 class AttributeGridSnappingBehavior(ObjectBehavior):
     def __init__(self, attribute: str, step: float, offset: float = 0):
         super().__init__()

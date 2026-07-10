@@ -1,6 +1,6 @@
 from dataclasses import dataclass, field, replace
 
-from ..utils import Color, Font
+from ..utils import Color, Font, Vec2
 
 
 @dataclass
@@ -55,7 +55,6 @@ class LineStyle(Style):
     
     def copy(self):
         return replace(self)
-    
 
 
 @dataclass
@@ -65,8 +64,24 @@ class ButtonStyle(RectStyle):
     
     def copy(self):
         return replace(self)
+    
+    
+@dataclass
+class SpriteButtonStyle(RectStyle):
+    margin: int = 10
+    
+    def copy(self):
+        return replace(self)
+    
+@dataclass
+class IconButtonStyle(SpriteButtonStyle):
+    icon_color: Color = field(default_factory=lambda: Color(255, 255, 255))
+    
+    def copy(self):
+        return replace(self)
 
-
+    
+    
 @dataclass
 class ProgressBarStyle(RectStyle):
     color: Color = field(default_factory=lambda: Color(255, 255, 255))
@@ -87,10 +102,15 @@ class GraphStyle(RectStyle):
 @dataclass
 class SliderStyle(RectStyle):
     bar_style: RectStyle = field(default_factory=lambda: RectStyle())
+    bar_width: int = 10
     handle_style: RectStyle | CircleStyle = field(default_factory=lambda: CircleStyle())
+    handle_size: int | Vec2 = 10
     font: Font = field(default_factory=lambda: Font())
     text_position: str = "right"
-
+    hide_bg: bool = False
+    
+    def copy(self):
+        return replace(self)
 
 
 @dataclass
@@ -99,3 +119,6 @@ class DebugPanelStyle:
     title_panel_style: RectStyle
     panel_style: RectStyle
     title_font: Font
+    
+    def copy(self):
+        return replace(self)

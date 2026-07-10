@@ -3,6 +3,7 @@ from typing import Any, Callable, Optional
 from .custom import *
 from .behaviors import DynamicAttributeBehavior
 from ..rendering import *
+from ..rendering.styles import SpriteButtonStyle
 from ..resources import Texture, ResourceManager
 from ..utils import Anchor, DictCollection, Font, Transform, Vec2, inf, Rect
 from .behaviors import ActionOnUpdateBehavior
@@ -66,8 +67,6 @@ class ObjectFactory:
         return obj
     
     
-    
-    
     def make_sprite(
             self, position: Vec2, texture: Texture | str,
             rotation: float = 0.0, scale: float = 1.0, layer: int = 1, anchor: Vec2 = Anchor.C, cache: bool = True
@@ -101,6 +100,8 @@ class ObjectFactory:
         obj = self._make_object(ChunkedSpriteObject, position, rotation, scale, ChunkedSpriteRenderer(texture, chunk_size, cache), layer, anchor)
         
         return obj
+    
+    
     
     
     
@@ -164,6 +165,32 @@ class ObjectFactory:
                                 )
         
         return obj
+    
+    def make_sprite_button(
+            self, position: Vec2, texture: Texture, action: Optional[Callable | tuple[Callable, ...]] = None, dims: Optional[Vec2] = None, style: Optional[SpriteButtonStyle | str] = None,
+            rotation: float = 0.0, scale: float = 1.0, layer: int = 0, anchor: Vec2 = Anchor.C, cache: bool = True
+    ) -> SpriteButtonObject:
+        
+        style = self._get_resource(style, SpriteButtonStyle)
+        margin = Vec2(style.margin)
+        
+        sprite = self.make_sprite(Vec2(), texture)
+        
+        dims = dims or texture.dims + Vec2(margin*2)
+        
+        obj = self._make_object(SpriteButtonObject, position, rotation, scale, RectRenderer(dims, style, cache), layer, anchor, sprite, action)
+        
+        return obj
+    
+    def make_icon_button(
+            self, position: Vec2, icon: str, icon_size: int, action: Optional[Callable | tuple[Callable, ...]] = None, dims: Optional[Vec2] = None, style: Optional[IconButtonStyle | str] = None,
+            rotation: float = 0.0, scale: float = 1.0, layer: int = 0, anchor: Vec2 = Anchor.C, cache: bool = True
+    ) -> SpriteButtonObject:
+        
+        style = self._get_resource(style, IconButtonStyle)
+        button_style = SpriteButtonStyle(style.bg_color, style.bd, style.bd_color, style.bd_radius, style.margin)
+        
+        return self.make_sprite_button(position, Texture.icon_from_svg(icon, icon_size, style.icon_color), action, dims, button_style, rotation, scale, layer, anchor)
     
     
     # region Layouts
@@ -244,7 +271,7 @@ class ObjectFactory:
     
     
     def make_slider(
-            self, position: Vec2, dims: Vec2, bar_width: int, handle_size: int | Vec2, min_value: float, max_value: float, step: Optional[float] = None, start_value=None, style: Optional[SliderStyle | str] = None,
+            self, position: Vec2, dims: Vec2, min_value: float, max_value: float, step: Optional[float] = None, start_value=None, style: Optional[SliderStyle | str] = None,
             rotation: float = 0.0, scale: float = 1.0, layer: int = 0, anchor: Vec2 = Anchor.C, cache: bool = True
     ) -> SliderObject:
         
@@ -254,10 +281,12 @@ class ObjectFactory:
         font = bg_style.font
         
         max_text_width = font.get_render_size(str(max_value))[0]
+        bar_width = bg_style.bar_width
+        handle_size = bg_style.handle_size
         
         bar = self.make_rect(Vec2(), Vec2(dims.x - (dims.y - bar_width) - max_text_width, bar_width), bar_style)
         if isinstance(handle_style, RectStyle):
-            handle_size: Vec2 = Vec2(handle_size) if isinstance(handle_size, int) else handle_size
+            handle_size: Vec2 = Vec2(handle_size)
             handle = self.make_rect(Vec2(), Vec2(handle_size), handle_style)
         else:
             handle_size: int = handle_size if isinstance(handle_size, int) else round(handle_size.magnitude())
@@ -270,8 +299,17 @@ class ObjectFactory:
         obj.fix_width(dims.x).fix_height(dims.y)
         obj.set_constant_padding(round((dims.y - bar_width)*0.5))
         obj.fix_col_width(1, max_text_width)
-        obj.add_object(bar, 0, 0, anchor=Anchor.C)
-        obj.add_object(text, 1, 0, anchor=Anchor.C)
+        
+        obj.add_object(bar, 1 if bg_style.text_position.lower() in ["left", "l"] else 0, 0, anchor=Anchor.C)
+        obj.add_object(text, 0 if bg_style.text_position.lower() in ["left", "l"] else 1, 0, anchor=Anchor.C)
+        
+        if bg_style.hide_bg:
+            obj.skip_rendering()
+            
+        if start_value is not None:
+            obj.value = start_value
+        else:
+            obj.value = min_value
         
         return obj
     

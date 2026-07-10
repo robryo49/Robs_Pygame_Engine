@@ -1,4 +1,5 @@
 from .primitive_objects import LineObject, RectObject, CircleObject, TextObject
+from .sprite_objects import SpriteObject
 from .layout_objects import LayoutObject
 from ..behaviors import *
 from ...rendering import RectRenderer
@@ -33,7 +34,33 @@ class ButtonObject(RectObject):
         self._text.text = value
     
     # endregion
+
+
+class SpriteButtonObject(RectObject):
+    def __init__(self, transform: Transform, background: RectRenderer, sprite: SpriteObject, action: Optional[Callable | tuple[Callable, ...]], services: DictCollection, layer: int = 0, anchor: Vec2 = Anchor.C):
+        
+        super().__init__(transform, background, services, layer, anchor)
+        
+        self._sprite = sprite
+        
+        self.add_child(self._sprite, Anchor.C)
+        
+        self.add_behavior([
+            ScaleOnHoverBehavior(1.1, 0.1, Easing.EASE_OUT_QUAD),
+            ScaleOnClickBehavior(1, 0.9, 0.1, Easing.EASE_OUT_QUAD)
+        ])
+        
+        if action is not None:
+            self.add_behavior(ActionOnClickBehavior(1, action))
     
+    # region PROPERTIES
+    
+    @property
+    def sprite(self):
+        return self._sprite
+    
+    # endregion
+
 
 class ValueSwitchingButtonObject(ButtonObject):
     def __init__(self, transform: Transform, background: RectRenderer, text: TextObject, texts: tuple[str, ...], values: tuple[Any, ...], callback: Optional[Callable | tuple[Callable, ...]], services: DictCollection, layer: int = 0, anchor: Vec2 = Anchor.C):
@@ -110,7 +137,7 @@ class SliderObject(LayoutObject):
         self._handle.add_behavior(AttributeFixingBehavior("y_pos"))
         self._handle.add_behavior(AttributeClampingBehavior("x_pos", -self._handle_movement_range*0.5, self._handle_movement_range*0.5))
         if step is not None:
-            self._handle.add_behavior(AttributeGridSnappingBehavior("x_pos", step))
+            self._handle.add_behavior(AttributeGridSnappingBehavior("x_pos", step, self._handle_movement_range*0.5))
         
         self._text.add_behavior(DynamicAttributeBehavior("text", lambda: str(self.value)))
         
@@ -140,11 +167,19 @@ class SliderObject(LayoutObject):
     
     @property
     def value(self):
-        return round(self.min_value + self.normalized_value * self.value_range)
+        return round(self.min_value + self.normalized_value * self.value_range, 2)
+    
+    @value.setter
+    def value(self, value):
+        value = clamp(value, self.min_value, self.max_value)
+        normalized_value = (value - self.min_value) / self.value_range
+        self._handle.x_pos = (normalized_value - 0.5) * self._handle_movement_range
         
     
     # endregion
     
+    def _update_self(self, dt: float):
+        super()._update_self(dt)
 
 
 class ProgressBarObject(RectObject):

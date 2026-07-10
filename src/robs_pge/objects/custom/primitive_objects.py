@@ -223,3 +223,4 @@ class TextObject(PygameObject):
         self.renderer.text = value
     
     # endregion
+
