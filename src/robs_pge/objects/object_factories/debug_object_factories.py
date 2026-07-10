@@ -1,12 +1,9 @@
-from typing import Callable, Any, Optional
+from typing import Optional
 
 from .sub_factory import SubObjectFactory
-
 from ..custom import *
-
 from ...rendering import *
-from ...utils import Vec2, Anchor, Transform, inf
-
+from ...utils import Anchor, Transform, Vec2, inf
 
 
 class DebugObjectFactory(SubObjectFactory):
@@ -26,12 +23,9 @@ class DebugObjectFactory(SubObjectFactory):
         panel_height = round(dims.y - title_height - header_height)
         
         panel = self.factory.ui.layouts.make_grid_layout(Vec2(), width, panel_height, style=style.panel_style)
-        
         title_panel = self.factory.shape.make_rect(Vec2(), Vec2(width, title_height), style=style.title_panel_style)
-        
         header = self.factory.shape.make_rect(Vec2(), Vec2(width, header_height), style=style.header_style)
-        
-        title_text = self.factory.shape.make_rect(Vec2(8, -1), title.upper(), style.title_font, anchor=Anchor.L)
+        title_text = self.factory.text.make_text(Vec2(8, -1), title.upper(), style.title_font, anchor=Anchor.L)
         
         title_panel.add_child(title_text, Anchor.L)
         

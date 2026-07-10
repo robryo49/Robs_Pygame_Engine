@@ -4,9 +4,9 @@ from .animation import Animation, AdderAnimation, SetterAnimation, MultiplierAni
 from .input import Keybind, KeybindsManager
 from .objects import (
     PygameObject,
-    RectObject, CircleObject, SpriteObject, LineObject, ValueSwitchingButtonObject,
+    RectObject, CircleObject, SpriteObject, LineObject, CycleButtonObject,
     LayoutObject, DebugOverlay, DebugPanelObject,
-    ButtonObject, ProgressBarObject, GraphObject,
+    ButtonObject, ProgressBarObject, LineChartObject,
     ObjectFactory, ObjectCollection, ObjectBehavior,
 )
 from .objects.custom import TextObject
@@ -17,7 +17,7 @@ from .utils import (
     Keybinds, ObjectFlags, KeybindFlags,
     clamp, lerp, inf,
 )
-from .rendering import Style, RectStyle, LineStyle, ButtonStyle, CircleStyle, ShapeStyle, GraphStyle, PolygonStyle, ProgressBarStyle, DebugPanelStyle, SliderStyle, IconButtonStyle
+from .rendering import Style, RectStyle, LineStyle, ButtonStyle, CircleStyle, ShapeStyle, LineChartStyle, PolygonStyle, ProgressBarStyle, DebugPanelStyle, SliderStyle, IconButtonStyle
 
 __all__ = [
     # core
@@ -32,9 +32,9 @@ __all__ = [
     "Keybind", "KeybindsManager",
     # objects
     "PygameObject",
-    "RectObject", "CircleObject", "TextObject", "SpriteObject", "LineObject", "ValueSwitchingButtonObject",
+    "RectObject", "CircleObject", "TextObject", "SpriteObject", "LineObject", "CycleButtonObject",
     "LayoutObject", "DebugOverlay", "DebugPanelObject",
-    "ButtonObject", "ProgressBarObject", "GraphObject",
+    "ButtonObject", "ProgressBarObject", "LineChartObject",
     "ObjectFactory", "ObjectCollection", "ObjectBehavior",
     # utils (commonly needed at top level)
     "Vec2", "Vec3", "Transform", "Easing", "Anchor", "Rect",
@@ -44,5 +44,5 @@ __all__ = [
     "clamp", "lerp", "inf",
     # styles
     "Style", "RectStyle", "LineStyle", "ButtonStyle", "CircleStyle",
-    "ShapeStyle", "GraphStyle", "PolygonStyle", "ProgressBarStyle", "DebugPanelStyle", "SliderStyle", "IconButtonStyle"
+    "ShapeStyle", "LineChartStyle", "PolygonStyle", "ProgressBarStyle", "DebugPanelStyle", "SliderStyle", "IconButtonStyle"
 ]

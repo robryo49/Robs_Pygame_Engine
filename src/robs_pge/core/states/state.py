@@ -8,7 +8,7 @@ from ...debug import FrameTimer
 from ...events import Event, EventManager
 from ...input import InputManager, Keybind, KeybindsManager
 from ...objects import InteractionManager, ObjectCollection, ObjectFactory, PygameObject, ParticleSystem
-from ...rendering import DebugPanelStyle, GraphStyle
+from ...rendering import DebugPanelStyle, LineChartStyle
 from ...resources import ResourceManager
 from ...utils import Anchor, DictCollection, Vec2, AsyncProcessManager, AsyncProcess
 from ..camera import Camera
@@ -167,7 +167,7 @@ class State:
         blue_style = self.resources.get(DebugPanelStyle, "debug_blue_panel_style")
         yellow_style = self.resources.get(DebugPanelStyle, "debug_yellow_panel_style")
         
-        blue_graph_style = self.resources.get(GraphStyle, "debug_blue_graph_style")
+        blue_line_chart_style = self.resources.get(LineChartStyle, "debug_blue_line_chart_style")
         
         font_blue_title = self.resources.get_font("debug_blue_title")
         
@@ -183,9 +183,9 @@ class State:
         
         engine_c1 = self.factory.ui.layouts.make_vertical_layout(Vec2(), 400).skip_rendering().invert_up_down().set_constant_padding(10)
         engine_c1.stack_y(self.factory.text.make_dynamic_text(Vec2(), "{} FPS    |    {} ms", lambda: (round(self.clock.fps), round(self.clock.dtime*1000, 1)), font_blue_title, cache=False), anchor=Anchor.T)
-        fps_graph = self.factory.ui.make_graph(Vec2(), Vec2(380, 100), blue_graph_style, 10, 10, None, None, 0, 120, None, 5,
-                                            update_action=lambda: fps_graph.insert_point(Vec2(self.clock.time, self.clock.fps)))
-        engine_c1.stack_y(fps_graph, anchor=Anchor.TL)
+        fps_line_chart = self.factory.ui.make_line_chart(Vec2(), Vec2(380, 100), blue_line_chart_style, 10, 10, None, None, 0, 120, None, 5,
+                                            update_action=lambda: fps_line_chart.insert_point(Vec2(self.clock.time, self.clock.fps)))
+        engine_c1.stack_y(fps_line_chart, anchor=Anchor.TL)
         
         engine_pannel.panel.stack_x(engine_c1)
         

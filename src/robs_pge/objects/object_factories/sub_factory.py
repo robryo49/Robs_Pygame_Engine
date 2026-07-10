@@ -2,7 +2,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Optional, Any
 
 if TYPE_CHECKING:
-    from robs_pge.objects.object_factory_new import ObjectFactory
+    from robs_pge.objects.object_factory import ObjectFactory
 
 
 

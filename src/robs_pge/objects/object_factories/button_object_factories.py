@@ -28,10 +28,10 @@ class ButtonObjectFactory(SubObjectFactory):
         
         return obj
     
-    def make_value_switching_button(
+    def make_cycle_button(
             self, position: Vec2, texts: tuple[str, ...], values: Optional[tuple[Any, ...]] = None, default_index: int = 0, callback: Optional[Callable | tuple[Callable, ...]] = None, dims: Optional[Vec2] = None, style: Optional[ButtonStyle | str] = None,
             rotation: float = 0.0, scale: float = 1.0, layer: int = 0, anchor: Vec2 = Anchor.C, cache: bool = True
-    ) -> ValueSwitchingButtonObject:
+    ) -> CycleButtonObject:
         
         if values is None:
             values = texts
@@ -45,7 +45,7 @@ class ButtonObjectFactory(SubObjectFactory):
         text_dims = [font.get_render_size(t) for t in texts]
         dims = dims or Vec2(max(d[0] for d in text_dims), max(d[1] for d in text_dims)) + Vec2(margin*2)
         
-        obj = self._make_object(ValueSwitchingButtonObject, position, rotation, scale, RectRenderer(dims, bg_style, cache), layer, anchor,
+        obj = self._make_object(CycleButtonObject, position, rotation, scale, RectRenderer(dims, bg_style, cache), layer, anchor,
                                 self.factory.text.make_text(Vec2(), text, font, 0.0, 1.0, layer, Anchor.C, cache), texts, values, callback
                                 )
         

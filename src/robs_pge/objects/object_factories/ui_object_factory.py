@@ -5,8 +5,8 @@ from .debug_object_factories import DebugObjectFactory
 from .layout_object_factory import LayoutObjectFactory
 from .sub_factory import SubObjectFactory
 from ..behaviors import ActionOnUpdateBehavior
-from ..custom import GraphObject, ProgressBarObject, SliderObject
-from ...rendering import RectRenderer, RectStyle, SliderStyle, CircleStyle, ProgressBarStyle, GraphStyle, LineStyle
+from ..custom import LineChartObject, ProgressBarObject, SliderObject
+from ...rendering import RectRenderer, RectStyle, SliderStyle, CircleStyle, ProgressBarStyle, LineChartStyle, LineStyle
 from ...utils import Anchor, Vec2
 
 
@@ -77,17 +77,17 @@ class UIObjectFactory(SubObjectFactory):
         
         return obj
     
-    def make_graph(
-            self, position: Vec2, dims: Vec2, style: Optional[GraphStyle | str] = None, pad_x=0, pad_y=0, min_x=None, max_x=None, min_y=None, max_y=None, max_data_points=None, max_data_x_range=None, update_action=None,
+    def make_line_chart(
+            self, position: Vec2, dims: Vec2, style: Optional[LineChartStyle | str] = None, pad_x=0, pad_y=0, min_x=None, max_x=None, min_y=None, max_y=None, max_data_points=None, max_data_x_range=None, update_action=None,
             rotation: float = 0.0, scale: float = 1.0, layer: int = 0, anchor: Vec2 = Anchor.C, cache: bool = True, cache_line: bool = False
-    ) -> GraphObject:
+    ) -> LineChartObject:
         
-        graph_style = self._get_resource(style, GraphStyle)
-        bg_style = graph_style.bg_style
-        line_style = LineStyle(graph_style.line_color, graph_style.line_width)
+        line_chart_style = self._get_resource(style, LineChartStyle)
+        bg_style = line_chart_style.bg_style
+        line_style = LineStyle(line_chart_style.line_color, line_chart_style.line_width)
         
         line = self.factory.shape.make_line(Vec2(), [], line_style, 0.0, 1.0, layer, Anchor.C, cache_line)
-        obj: GraphObject = self._make_object(GraphObject, position, rotation, scale, RectRenderer(dims, bg_style, cache), layer, anchor, line)
+        obj: LineChartObject = self._make_object(LineChartObject, position, rotation, scale, RectRenderer(dims, bg_style, cache), layer, anchor, line)
         
         if pad_x: obj.pad_x = pad_x
         if pad_y: obj.pad_y = pad_y

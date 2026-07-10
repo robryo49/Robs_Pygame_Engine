@@ -16,10 +16,10 @@ from .interaction_manager import InteractionManager
 from .object_collection import ObjectCollection
 from .object_factory import ObjectFactory
 from .custom import (
-    RectObject, CircleObject, SpriteObject, LineObject, ValueSwitchingButtonObject,
+    RectObject, CircleObject, SpriteObject, LineObject, CycleButtonObject,
     SubSurfaceSpriteObject, ChunkedSpriteObject,
     LayoutObject, DebugOverlay, DebugPanelObject,
-    ButtonObject, ProgressBarObject, GraphObject, TextObject
+    ButtonObject, ProgressBarObject, LineChartObject, TextObject
 )
 from .object import PygameObject
 
@@ -42,10 +42,10 @@ __all__ = [
     "ObjectFactory",
     # objects
     "PygameObject",
-    "RectObject", "CircleObject", "TextObject", "SpriteObject", "LineObject", "ValueSwitchingButtonObject",
+    "RectObject", "CircleObject", "TextObject", "SpriteObject", "LineObject", "CycleButtonObject",
     "SubSurfaceSpriteObject", "ChunkedSpriteObject",
     "LayoutObject", "DebugOverlay", "DebugPanelObject",
-    "ButtonObject", "ProgressBarObject", "GraphObject",
+    "ButtonObject", "ProgressBarObject", "LineChartObject",
     # particles
     "Particle", "ParticleEmitter", "BurstParticleEmitter",
     "ParticleSystem", "ParticlePool"

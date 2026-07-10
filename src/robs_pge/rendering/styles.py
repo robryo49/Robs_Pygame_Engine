@@ -71,7 +71,7 @@ class ProgressBarStyle(Style):
 
 
 @dataclass
-class GraphStyle(Style):
+class LineChartStyle(Style):
     bg_style: RectStyle = field(default_factory=RectStyle)
     line_color: Color = field(default_factory=lambda: Color(255, 255, 255))
     line_width: int = 1

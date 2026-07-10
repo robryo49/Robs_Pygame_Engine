@@ -62,7 +62,7 @@ class SpriteButtonObject(RectObject):
     # endregion
 
 
-class ValueSwitchingButtonObject(ButtonObject):
+class CycleButtonObject(ButtonObject):
     def __init__(self, transform: Transform, background: RectRenderer, text: TextObject, texts: tuple[str, ...], values: tuple[Any, ...], callback: Optional[Callable | tuple[Callable, ...]], services: DictCollection, layer: int = 0, anchor: Vec2 = Anchor.C):
         super().__init__(transform, background, text, None, services, layer, anchor)
         
@@ -260,7 +260,7 @@ class ProgressBarObject(RectObject):
             self._dirty = False
 
 
-class GraphObject(RectObject):
+class LineChartObject(RectObject):
     def __init__(self, transform: Transform, background: RectRenderer, line: LineObject, services: DictCollection, layer: int = 0, anchor: Vec2 = Anchor.C):
         super().__init__(transform, background, services, layer, anchor)
         
