@@ -1,8 +1,8 @@
 from typing import Any, Callable, Optional
 
 from .custom import *
-from .behaviors import DynamicAttribute
-from ..rendering import ButtonStyle, ChunkedSpriteRenderer, CircleRenderer, CircleStyle, DebugPanelStyle, LineStyle, ProgressBarStyle, RectRenderer, RectStyle, SpriteRenderer, SubSurfaceRenderer, LineRenderer, TextRenderer, GraphStyle
+from .behaviors import DynamicAttributeBehavior
+from ..rendering import *
 from ..resources import Texture, ResourceManager
 from ..utils import Anchor, DictCollection, Font, Transform, Vec2, inf, Rect
 from .behaviors import ActionOnUpdateBehavior
@@ -120,7 +120,7 @@ class ObjectFactory:
     ) -> TextObject:
         
         font = self._get_resource(font, Font)
-        obj = self.make_text(position, "", font, rotation, scale, layer, anchor, cache).add_behavior(DynamicAttribute("text", getter, template))
+        obj = self.make_text(position, "", font, rotation, scale, layer, anchor, cache).add_behavior(DynamicAttributeBehavior("text", getter, template))
         
         return obj
     
@@ -243,6 +243,39 @@ class ObjectFactory:
     # endregion
     
     
+    def make_slider(
+            self, position: Vec2, dims: Vec2, bar_width: int, handle_size: int | Vec2, min_value: float, max_value: float, step: Optional[float] = None, start_value=None, style: Optional[SliderStyle | str] = None,
+            rotation: float = 0.0, scale: float = 1.0, layer: int = 0, anchor: Vec2 = Anchor.C, cache: bool = True
+    ) -> SliderObject:
+        
+        bg_style = self._get_resource(style, SliderStyle)
+        bar_style = bg_style.bar_style
+        handle_style: RectStyle | CircleStyle = bg_style.handle_style
+        font = bg_style.font
+        
+        max_text_width = font.get_render_size(str(max_value))[0]
+        
+        bar = self.make_rect(Vec2(), Vec2(dims.x - (dims.y - bar_width) - max_text_width, bar_width), bar_style)
+        if isinstance(handle_style, RectStyle):
+            handle_size: Vec2 = Vec2(handle_size) if isinstance(handle_size, int) else handle_size
+            handle = self.make_rect(Vec2(), Vec2(handle_size), handle_style)
+        else:
+            handle_size: int = handle_size if isinstance(handle_size, int) else round(handle_size.magnitude())
+            handle = self.make_circle(Vec2(), handle_size, handle_style)
+        
+        start_value = start_value if start_value is not None else min_value
+        text = self.make_text(Vec2(), str(start_value), font)
+        
+        obj = self._make_object(SliderObject, position, rotation, scale, RectRenderer(dims, bg_style, cache), layer, anchor, bar, handle, text, min_value, max_value, step)
+        obj.fix_width(dims.x).fix_height(dims.y)
+        obj.set_constant_padding(round((dims.y - bar_width)*0.5))
+        obj.fix_col_width(1, max_text_width)
+        obj.add_object(bar, 0, 0, anchor=Anchor.C)
+        obj.add_object(text, 1, 0, anchor=Anchor.C)
+        
+        return obj
+    
+    
     def make_progress_bar(
             self, position: Vec2, dims: Vec2, style: Optional[ProgressBarStyle | str] = None,
             rotation: float = 0.0, scale: float = 1.0, layer: int = 0, anchor: Vec2 = Anchor.C, cache: bool = True, cache_bar: bool = False
@@ -269,10 +302,10 @@ class ObjectFactory:
         
         if pad_x: obj.pad_x = pad_x
         if pad_y: obj.pad_y = pad_y
-        if min_x is not None: obj.min_x = min_x
-        if min_y is not None: obj.min_y = min_y
-        if max_x is not None: obj.max_x = max_x
-        if max_y is not None: obj.max_y = max_y
+        if min_x is not None: obj.min_x_value = min_x
+        if min_y is not None: obj.min_y_value = min_y
+        if max_x is not None: obj.max_x_value = max_x
+        if max_y is not None: obj.max_y_value = max_y
         if max_data_points is not None: obj.max_data_points = max_data_points
         if max_data_x_range is not None: obj.max_data_x_range = max_data_x_range
         

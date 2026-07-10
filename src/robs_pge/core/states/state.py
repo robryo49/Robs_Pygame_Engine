@@ -43,8 +43,7 @@ class State:
         self._ui_objects: ObjectCollection = ObjectCollection()
         
         self._debug_overlay = self.factory.make_debug_overlay(Vec2(0, self.engine.display.dims.y), width=self.engine.display.dims.x, invert_y=True, anchor=Anchor.TL).set_constant_padding(10)
-        self._debug_overlay.toggle_visible()
-        
+
         self.init_resources()
         self.init_keybinds()
         self.init_services()
@@ -309,7 +308,6 @@ class State:
     def init_keybinds(self) -> None:
         self.register_keybind(pg.K_F3, lambda: self.debug_overlay.toggle_visible())
         self.register_keybind(pg.K_F4, lambda: self.debug_overlay.toggle_freeze())
-    
     
     def register_keybind(self, key: int | tuple[int, ...], action: Callable, *args) -> None:
         self.keybinds.add(Keybind(key, action, *args))

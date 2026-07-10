@@ -70,7 +70,7 @@ class KeybindsManager:
         held = keybind.has_flag(KeybindFlags.HOLD) and self.input_manager.held(key)
         released = keybind.has_flag(KeybindFlags.RELEASE) and self.input_manager.released(key)
         
-        return valid and (pressed or held or released or scroll)
+        return bool(valid and (pressed or held or released or scroll))
     
     def update(self) -> "KeybindsManager":
         for keybinds in self._keybinds.elements.values():

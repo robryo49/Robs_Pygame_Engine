@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import cast
 
 from ..object import PygameObject
-from ...rendering import CircleRenderer, LineRenderer, RectRenderer
+from ...rendering import CircleRenderer, LineRenderer, RectRenderer, TextRenderer
 from ...utils import Anchor, Color, DictCollection, Transform, Vec2
 
 
@@ -202,5 +202,24 @@ class LineObject(PygameObject):
         self.renderer.color = value
     
     # endregion
+
+
+class TextObject(PygameObject):
+    def __init__(self, transform: Transform, renderer: TextRenderer, services: DictCollection, layer: int = 0, anchor: Vec2 = Anchor.C):
+        super().__init__(transform, renderer, services, layer, anchor)
     
+    # region PROPERTIES
     
+    @property
+    def renderer(self) -> TextRenderer:
+        return cast(TextRenderer, self._renderer)
+    
+    @property
+    def text(self):
+        return self.renderer.text
+    
+    @text.setter
+    def text(self, value: str):
+        self.renderer.text = value
+    
+    # endregion

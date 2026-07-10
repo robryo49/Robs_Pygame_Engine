@@ -1,31 +1,8 @@
-from typing import cast
-
-from .primitive_objects import LineObject, RectObject
+from .primitive_objects import LineObject, RectObject, CircleObject, TextObject
+from .layout_objects import LayoutObject
 from ..behaviors import *
-from ..object import PygameObject
-from ...rendering import RectRenderer, TextRenderer
+from ...rendering import RectRenderer
 from ...utils import Anchor, DictCollection, Easing, Transform, Vec2, clamp, inf, invert_y
-
-
-class TextObject(PygameObject):
-    def __init__(self, transform: Transform, renderer: TextRenderer, services: DictCollection, layer: int = 0, anchor: Vec2 = Anchor.C):
-        super().__init__(transform, renderer, services, layer, anchor)
-    
-    # region PROPERTIES
-    
-    @property
-    def renderer(self) -> TextRenderer:
-        return cast(TextRenderer, self._renderer)
-    
-    @property
-    def text(self):
-        return self.renderer.text
-    
-    @text.setter
-    def text(self, value: str):
-        self.renderer.text = value
-    
-    # endregion
 
 
 class ButtonObject(RectObject):
@@ -107,6 +84,64 @@ class ValueSwitchingButtonObject(ButtonObject):
         self.index -= amount
     
     # endregion
+    
+    # endregion
+    
+
+class SliderObject(LayoutObject):
+    def __init__(self, transform: Transform, background: RectRenderer, bar: RectObject, handle: RectObject | CircleObject, text: TextObject, min_value: float, max_value: float, step: Optional[float],
+                 services: DictCollection, layer: int = 0, anchor: Vec2 = Anchor.C):
+        super().__init__(transform, background, services, layer, anchor)
+        
+        self._min_value = min_value
+        self._max_value = max_value
+        self._step = step
+        
+        self._bar = bar
+        self._handle = handle
+        self._text = text
+        
+        self._handle_movement_range = self._bar.width - self._bar.height
+        
+        if step is not None:
+            step = self._handle_movement_range * step / (max_value - min_value)
+        
+        self._handle.add_behavior(DraggableBehavior(1))
+        self._handle.add_behavior(AttributeFixingBehavior("y_pos"))
+        self._handle.add_behavior(AttributeClampingBehavior("x_pos", -self._handle_movement_range*0.5, self._handle_movement_range*0.5))
+        if step is not None:
+            self._handle.add_behavior(AttributeGridSnappingBehavior("x_pos", step))
+        
+        self._text.add_behavior(DynamicAttributeBehavior("text", lambda: str(self.value)))
+        
+        self._bar.add_child(self._handle, Anchor.C)
+        
+    # region PROPERTIES
+    
+    @property
+    def min_value(self):
+        return self._min_value
+    
+    @property
+    def max_value(self):
+        return self._max_value
+    
+    @property
+    def step(self):
+        return self._step
+    
+    @property
+    def value_range(self):
+        return self.max_value - self.min_value
+    
+    @property
+    def normalized_value(self):
+        return (self._handle.x_pos+self._handle_movement_range*0.5) / self._handle_movement_range
+    
+    @property
+    def value(self):
+        return round(self.min_value + self.normalized_value * self.value_range)
+        
     
     # endregion
     
@@ -197,11 +232,11 @@ class GraphObject(RectObject):
         self._pad_x = 0
         self._pad_y = 0
         
-        self._min_x = None
-        self._max_x = None
+        self._min_x_value = None
+        self._max_x_value = None
         
-        self._min_y = None
-        self._max_y = None
+        self._min_y_value = None
+        self._max_y_value = None
         
         self._min_data_x = inf
         self._max_data_x = 0.0
@@ -230,44 +265,44 @@ class GraphObject(RectObject):
         self._line.color = value
     # endregion
     
-    # region min_x
+    # region min_x_value
     @property
-    def min_x(self):
-        return self._min_x
+    def min_x_value(self):
+        return self._min_x_value
     
-    @min_x.setter
-    def min_x(self, value):
-        self._min_x = value
+    @min_x_value.setter
+    def min_x_value(self, value):
+        self._min_x_value = value
     # endregion
     
-    # region max_x
+    # region max_x_value
     @property
-    def max_x(self):
-        return self._max_x
+    def max_x_value(self):
+        return self._max_x_value
     
-    @max_x.setter
-    def max_x(self, value):
-        self._max_x = value
+    @max_x_value.setter
+    def max_x_value(self, value):
+        self._max_x_value = value
     # endregion
     
-    # region min_y
+    # region min_y_value
     @property
-    def min_y(self):
-        return self._min_y
+    def min_y_value(self):
+        return self._min_y_value
     
-    @min_y.setter
-    def min_y(self, value):
-        self._min_y = value
+    @min_y_value.setter
+    def min_y_value(self, value):
+        self._min_y_value = value
     # endregion
     
-    # region max_y
+    # region max_y_value
     @property
-    def max_y(self):
-        return self._max_y
+    def max_y_value(self):
+        return self._max_y_value
     
-    @max_y.setter
-    def max_y(self, value):
-        self._max_y = value
+    @max_y_value.setter
+    def max_y_value(self, value):
+        self._max_y_value = value
     # endregion
     
     # region pad_x
@@ -371,20 +406,20 @@ class GraphObject(RectObject):
             points = []
             
             if self._data_points:
-                min_x = self._min_x if self._min_x is not None else self._min_data_x
-                max_x = self._max_x if self._max_x is not None else self._max_data_x
-                min_y = self._min_y if self._min_y is not None else self._min_data_y
-                max_y = self._max_y if self._max_y is not None else self._max_data_y
+                min_x_value = self._min_x_value if self._min_x_value is not None else self._min_data_x
+                max_x_value = self._max_x_value if self._max_x_value is not None else self._max_data_x
+                min_y_value = self._min_y_value if self._min_y_value is not None else self._min_data_y
+                max_y_value = self._max_y_value if self._max_y_value is not None else self._max_data_y
                 
-                width = max_x - min_x
-                height = max_y - min_y
+                width = max_x_value - min_x_value
+                height = max_y_value - min_y_value
                 
                 x_fac = (self.width - 2*self._pad_x)/width if width else 0
                 y_fac = (self.height - 2*self._pad_y)/height if height else 0
                 
                 for point in self._data_points:
-                    if min_x <= point.x <= max_x and min_y <= point.y <= max_y:
-                        points.append(Vec2(self._pad_x + (point.x - min_x)*x_fac, self._pad_y + (point.y - min_y)*y_fac))
+                    if min_x_value <= point.x <= max_x_value and min_y_value <= point.y <= max_y_value:
+                        points.append(Vec2(self._pad_x + (point.x - min_x_value)*x_fac, self._pad_y + (point.y - min_y_value)*y_fac))
             
             self._line.points = points
             

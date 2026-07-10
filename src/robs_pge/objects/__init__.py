@@ -4,17 +4,22 @@ from .behaviors import (
     ActionOnClickBehavior,
     ScaleOnHoverBehavior,
     ScaleOnClickBehavior,
-    DynamicAttribute,
+    DynamicAttributeBehavior,
+    DraggableBehavior,
+    AttributeGridSnappingBehavior,
+    AttributeValueSnappingBehavior,
+    AttributeClampingBehavior,
+    AttributeFixingBehavior
 )
 from .behavior_collection import BehaviorCollection
 from .interaction_manager import InteractionManager
 from .object_collection import ObjectCollection
 from .object_factory import ObjectFactory
 from .custom import (
-    RectObject, CircleObject, TextObject, SpriteObject, LineObject, ValueSwitchingButtonObject,
+    RectObject, CircleObject, SpriteObject, LineObject, ValueSwitchingButtonObject,
     SubSurfaceSpriteObject, ChunkedSpriteObject,
     LayoutObject, DebugOverlay, DebugPanelObject,
-    ButtonObject, ProgressBarObject, GraphObject,
+    ButtonObject, ProgressBarObject, GraphObject, TextObject
 )
 from .object import PygameObject
 
@@ -29,7 +34,7 @@ __all__ = [
     "ObjectBehavior",
     "ActionOnUpdateBehavior", "ActionOnClickBehavior",
     "ScaleOnHoverBehavior", "ScaleOnClickBehavior",
-    "DynamicAttribute",
+    "DynamicAttributeBehavior", "DraggableBehavior", "AttributeClampingBehavior", "AttributeGridSnappingBehavior", "AttributeValueSnappingBehavior", "AttributeFixingBehavior",
     "BehaviorCollection",
     # core
     "InteractionManager",

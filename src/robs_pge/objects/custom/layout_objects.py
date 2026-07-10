@@ -1,5 +1,4 @@
-from .primitive_objects import RectObject
-from .ui_objects import TextObject
+from .primitive_objects import RectObject, TextObject
 from ..behaviors import *
 from ..object import PygameObject
 from ...rendering import RectRenderer

@@ -4,11 +4,12 @@ from .animation import Animation, AdderAnimation, SetterAnimation, MultiplierAni
 from .input import Keybind, KeybindsManager
 from .objects import (
     PygameObject,
-    RectObject, CircleObject, TextObject, SpriteObject, LineObject, ValueSwitchingButtonObject,
+    RectObject, CircleObject, SpriteObject, LineObject, ValueSwitchingButtonObject,
     LayoutObject, DebugOverlay, DebugPanelObject,
     ButtonObject, ProgressBarObject, GraphObject,
     ObjectFactory, ObjectCollection, ObjectBehavior,
 )
+from .objects.custom import TextObject
 from .utils import (
     Vec2, Vec3, Transform, Easing, Anchor, Rect,
     Color, Colors,

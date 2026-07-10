@@ -82,6 +82,15 @@ class GraphStyle(RectStyle):
     
     def copy(self):
         return replace(self)
+    
+
+@dataclass
+class SliderStyle(RectStyle):
+    bar_style: RectStyle = field(default_factory=lambda: RectStyle())
+    handle_style: RectStyle | CircleStyle = field(default_factory=lambda: CircleStyle())
+    font: Font = field(default_factory=lambda: Font())
+    text_position: str = "right"
+
 
 
 @dataclass

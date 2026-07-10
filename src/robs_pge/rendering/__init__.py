@@ -2,7 +2,7 @@ from .styles import (
     Style, ShapeStyle,
     RectStyle, CircleStyle, PolygonStyle,
     LineStyle, ButtonStyle, ProgressBarStyle,
-    GraphStyle, DebugPanelStyle,
+    GraphStyle, DebugPanelStyle, SliderStyle
 )
 from .draw_commands import (
     DrawCommand,
@@ -20,7 +20,7 @@ __all__ = [
     "Style", "ShapeStyle",
     "RectStyle", "CircleStyle", "PolygonStyle",
     "LineStyle", "ButtonStyle", "ProgressBarStyle",
-    "GraphStyle", "DebugPanelStyle",
+    "GraphStyle", "DebugPanelStyle", "SliderStyle",
     # draw commands
     "DrawCommand",
     "DrawRect", "DrawCircle", "DrawTexture", "DrawText", "DrawLine", "DrawSubSurface", "DrawChunkedSprite",
