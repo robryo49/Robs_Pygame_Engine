@@ -55,7 +55,7 @@ class PygameObject:
     
     @property
     def aabb_dims(self):
-        return Vec2(self.renderer.get_aabb_size(self.world_transform.rotation) * self.scale) if self.renderer else Vec2()
+        return Vec2(self.renderer.get_aabb_size(self.world_transform.rotation)) * self.scale if self.renderer else Vec2()
     
     @property
     def culled(self):

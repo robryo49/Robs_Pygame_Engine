@@ -2,7 +2,6 @@ from dataclasses import dataclass, field, replace
 
 from ..utils import Color, Font, Vec2
 
-
 @dataclass
 class Style:
     def with_(self, **kwargs):
@@ -10,6 +9,9 @@ class Style:
     
     def copy(self):
         return replace(self)
+    
+
+# region PRIMITIVES
 
 
 @dataclass
@@ -17,108 +19,80 @@ class ShapeStyle(Style):
     bg_color: Color = field(default_factory=lambda: Color(255, 255, 255))
     bd: int = 0
     bd_color: Color = field(default_factory=lambda: Color(0, 0, 0))
-    
-    def with_(self, **kwargs):
-        return replace(self, **kwargs)
-    
-    def copy(self):
-        return replace(self)
+
 
 @dataclass
 class RectStyle(ShapeStyle):
     bd_radius: int = 0
-    
-    def copy(self):
-        return replace(self)
 
 
 @dataclass
 class CircleStyle(ShapeStyle):
     pass
-    
-    def copy(self):
-        return replace(self)
 
 
 @dataclass
 class PolygonStyle(ShapeStyle):
     pass
-    
-    def copy(self):
-        return replace(self)
 
 
 @dataclass
 class LineStyle(Style):
     color: Color = field(default_factory=lambda: Color(255, 255, 255))
     width: int = 1
-    
-    def copy(self):
-        return replace(self)
+
+
+# endregion
 
 
 @dataclass
-class ButtonStyle(RectStyle):
+class ButtonStyle(Style):
+    bg_style: RectStyle = field(default_factory=RectStyle)
     margin: int = 50
-    font: Font = field(default_factory=lambda: Font())
-    
-    def copy(self):
-        return replace(self)
-    
-    
+    font: Font = field(default_factory=Font)
+
+
 @dataclass
-class SpriteButtonStyle(RectStyle):
+class SpriteButtonStyle(Style):
+    bg_style: RectStyle = field(default_factory=RectStyle)
     margin: int = 10
-    
-    def copy(self):
-        return replace(self)
-    
+
+
 @dataclass
-class IconButtonStyle(SpriteButtonStyle):
+class IconButtonStyle(Style):
+    button_style: SpriteButtonStyle = field(default_factory=SpriteButtonStyle)
     icon_color: Color = field(default_factory=lambda: Color(255, 255, 255))
-    
-    def copy(self):
-        return replace(self)
 
-    
-    
+
 @dataclass
-class ProgressBarStyle(RectStyle):
+class ProgressBarStyle(Style):
+    bg_style: RectStyle = field(default_factory=RectStyle)
     color: Color = field(default_factory=lambda: Color(255, 255, 255))
-    
-    def copy(self):
-        return replace(self)
-    
+
 
 @dataclass
-class GraphStyle(RectStyle):
+class GraphStyle(Style):
+    bg_style: RectStyle = field(default_factory=RectStyle)
     line_color: Color = field(default_factory=lambda: Color(255, 255, 255))
     line_width: int = 1
-    
-    def copy(self):
-        return replace(self)
-    
+
 
 @dataclass
-class SliderStyle(RectStyle):
-    bar_style: RectStyle = field(default_factory=lambda: RectStyle())
+class SliderStyle(Style):
+    bg_style: RectStyle = field(default_factory=RectStyle)
+    bar_style: RectStyle = field(default_factory=RectStyle)
     bar_width: int = 10
-    handle_style: RectStyle | CircleStyle = field(default_factory=lambda: CircleStyle())
+    handle_style: RectStyle | CircleStyle = field(default_factory=CircleStyle)
     handle_size: int | Vec2 = 10
-    font: Font = field(default_factory=lambda: Font())
+    font: Font = field(default_factory=Font)
     text_position: str = "right"
     hide_bg: bool = False
-    
-    def copy(self):
-        return replace(self)
 
 
 @dataclass
-class DebugPanelStyle:
+class DebugPanelStyle(Style):
     header_style: RectStyle
     title_panel_style: RectStyle
     panel_style: RectStyle
     title_font: Font
-    
-    def copy(self):
-        return replace(self)
+

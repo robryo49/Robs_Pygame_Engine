@@ -238,10 +238,10 @@ class Engine:
             self.resources.set(DebugPanelStyle, f"debug_{name}_panel_style", DebugPanelStyle(header_style, title_panel_style, panel_style, font))
         
         for name, color in colors.items():
-            self.resources.set(GraphStyle, f"debug_{name}_graph_style", GraphStyle(bg_color=Colors.with_alpha(debug.dark_gray, 100), bd=0, line_color=color, line_width=1))
+            self.resources.set(GraphStyle, f"debug_{name}_graph_style", GraphStyle(RectStyle(Colors.with_alpha(debug.dark_gray, 100), bd=0), line_color=color, line_width=1))
         
         for name, color in colors.items():
-            self.resources.set(ProgressBarStyle, f"debug_{name}_progress_bar_style", ProgressBarStyle(bg_color=Colors.with_alpha(debug.dark_gray, 150), color=color, bd=0, bd_radius=2))
+            self.resources.set(ProgressBarStyle, f"debug_{name}_progress_bar_style", ProgressBarStyle(RectStyle(Colors.with_alpha(debug.dark_gray, 150), bd=0, bd_radius=2), color=color))
         
         return self
     
