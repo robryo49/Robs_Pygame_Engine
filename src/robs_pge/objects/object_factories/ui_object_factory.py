@@ -101,5 +101,5 @@ class UIObjectFactory(SubObjectFactory):
         if update_action is not None: obj.add_behavior(ActionOnUpdateBehavior(update_action))
         
         return obj
-
-
+    
+    

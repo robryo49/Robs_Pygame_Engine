@@ -1,9 +1,10 @@
 from .primitive_objects import LineObject, RectObject, CircleObject, TextObject
-from .sprite_objects import SpriteObject
+from .sprite_objects import SpriteObject, IconObject
 from .layout_objects import LayoutObject
 from ..behaviors import *
 from ...rendering import RectRenderer
 from ...utils import Anchor, DictCollection, Easing, Transform, Vec2, clamp, inf, invert_y
+from ...animation import SetterAnimation
 
 
 class ButtonObject(RectObject):
@@ -63,7 +64,7 @@ class SpriteButtonObject(RectObject):
 
 
 class CycleButtonObject(ButtonObject):
-    def __init__(self, transform: Transform, background: RectRenderer, text: TextObject, texts: tuple[str, ...], values: tuple[Any, ...], callback: Optional[Callable | tuple[Callable, ...]], services: DictCollection, layer: int = 0, anchor: Vec2 = Anchor.C):
+    def __init__(self, transform: Transform, background: RectRenderer, text: TextObject, texts: tuple[str, ...], values: tuple[Any, ...], callback: Optional[Callable[[Any], Any] | tuple[Callable[[Any], Any], ...]], services: DictCollection, layer: int = 0, anchor: Vec2 = Anchor.C):
         super().__init__(transform, background, text, None, services, layer, anchor)
         
         self._texts = texts
@@ -77,8 +78,7 @@ class CycleButtonObject(ButtonObject):
             ActionOnClickBehavior(3, self.cycle_backward)
         ])
         
-        if callback is not None:
-            self.add_behavior(ActionOnClickBehavior(1, callback))
+        if callback is not None: self.add_behavior(ActionOnClickBehavior(1, lambda: callback(self.value)))
         
     # region PROPERTIES
     
@@ -459,4 +459,101 @@ class LineChartObject(RectObject):
             self._line.points = points
             
             self._dirty = False
+            
+
+class CheckBoxObject(RectObject):
+    def __init__(self, transform: Transform, background: RectRenderer, checked_icon: IconObject, callback: Optional[Callable[[bool], Any] | tuple[Callable[[bool], Any], ...]],
+                 services: DictCollection, layer: int = 0, anchor: Vec2 = Anchor.C):
+        super().__init__(transform, background, services, layer, anchor)
+        
+        self._checked_icon = checked_icon
+        
+        self.add_child(checked_icon)
+        
+        self._checked_icon.hide()
+        
+        self.add_behavior(ActionOnClickBehavior(1, self.toggle))
+        if callback is not None: self.add_behavior(ActionOnClickBehavior(1, lambda: callback(self.checked)))
+        
+    # region PROPERTIES
+    
+    @property
+    def checked(self):
+        return self._checked_icon.visible
+    
+    @property
+    def unchecked(self):
+        return not self.checked
+    
+    # endregion
+    
+    def toggle(self):
+        self._checked_icon.toggle_visible()
+        
+    def check(self):
+        self._checked_icon.show()
+        
+    def uncheck(self):
+        self._checked_icon.hide()
+        
+        
+class RadioButtonObject(CircleObject):
+    pass # TODO RadioButtonObject
+
+
+class ToggleButtonObject(RectObject):
+    def __init__(self, transform: Transform, background: RectRenderer, toggle: RectObject, toggle_background: RectObject, toggle_movement_range: tuple[int, int], callback: Optional[Callable[[bool], Any] | tuple[Callable[[bool], Any], ...]],
+                 services: DictCollection, layer: int = 0, anchor: Vec2 = Anchor.C):
+        super().__init__(transform, background, services, layer, anchor)
+        
+        self._toggle_min_x = toggle_movement_range[0]
+        self._toggle_max_x = toggle_movement_range[1]
+        self._toggle_movement_range = self._toggle_max_x - self._toggle_min_x
+        
+        self._toggle = toggle
+        self._toggle_background = toggle_background
+        
+        self._enabled = False
+        
+        self.add_child(toggle_background, Anchor.L)
+        self.add_child(toggle, Anchor.L)
+        
+        toggle.anchor = Anchor.L
+        toggle_background.anchor = Anchor.L
+        
+        self.add_behavior(ActionOnClickBehavior(1, self.toggle))
+        
+        self._toggle_background.add_behavior(DynamicAttributeBehavior("width", lambda: self._toggle.x_pos + self._toggle.width * 0.5))
+        
+        if callback is not None: self.add_behavior(ActionOnClickBehavior(1, lambda: callback(self.enabled)))
+    
+    # region PROPERTIES
+    
+    @property
+    def enabled(self):
+        return self._enabled
+    
+    @property
+    def disabled(self):
+        return not self.enabled
+    
+    # endregion
+    
+    def toggle(self):
+        if self._enabled:
+            self.disable()
+        else:
+            self.enable()
+    
+    def enable(self):
+        self._enabled = True
+        self._toggle.play_animation(
+            SetterAnimation(self._toggle, "x_pos", self._toggle_max_x, 0.07, Easing.EASE_IN_QUAD, start_value=self._toggle_min_x)
+        )
+        
+    def disable(self):
+        self._enabled = False
+        self._toggle.play_animation(
+            SetterAnimation(self._toggle, "x_pos", self._toggle_min_x, 0.07, Easing.EASE_IN_QUAD, start_value=self._toggle_max_x)
+        )
 

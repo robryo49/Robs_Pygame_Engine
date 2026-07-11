@@ -1,6 +1,6 @@
 from dataclasses import dataclass, field, replace
 
-from ..utils import Color, Font, Vec2
+from ..utils import Color, Font, Vec2, Colors
 
 @dataclass
 class Style:
@@ -62,6 +62,12 @@ class SpriteButtonStyle(Style):
 class IconButtonStyle(Style):
     button_style: SpriteButtonStyle = field(default_factory=SpriteButtonStyle)
     icon_color: Color = field(default_factory=lambda: Color(255, 255, 255))
+
+@dataclass
+class ToggleButtonStyle:
+    bg_style: RectStyle = field(default_factory=RectStyle)
+    toggle_style: RectStyle = field(default_factory=RectStyle)
+    toggle_bg_color: Color = field(default_factory=lambda: Color(0, 0, 0))
 
 
 @dataclass

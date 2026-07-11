@@ -321,11 +321,13 @@ class State:
     def start_async_process(self, fn: Callable, *args, **kwargs) -> AsyncProcess:
         return self.async_process_manager.submit(fn, *args, **kwargs)
         
-    def add_object(self, obj: PygameObject | list[PygameObject]) -> None:
-        self.objects.add(obj)
+    def add_object(self, *obj: PygameObject | list[PygameObject]) -> None:
+        for o in obj:
+            self.objects.add(o)
         
-    def add_ui_object(self, obj: PygameObject | list[PygameObject]) -> None:
-        self.ui_objects.add(obj)
+    def add_ui_object(self, *obj: PygameObject | list[PygameObject]) -> None:
+        for o in obj:
+            self.ui_objects.add(o)
         
     
     def update(self, dt: float) -> None:

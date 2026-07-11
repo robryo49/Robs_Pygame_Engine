@@ -2,10 +2,11 @@ from __future__ import annotations
 
 from typing import Any, Callable, TYPE_CHECKING, Optional, Union, cast
 
+from ..animation import Animation, AnimationManager
 from ..events import Event, EventManager
 from ..rendering import CircleRenderer, ObjectRenderer
 
-from ..utils import Anchor, DictCollection, Transform, Vec2, ObjectFlags, Rect, CollisionBox, RectCollisionBox, CircleCollisionBox, test_collision_box_overlap, inf, clamp
+from ..utils import Anchor, DictCollection, Transform, Vec2, ObjectFlags, Rect, CollisionBox, RectCollisionBox, CircleCollisionBox, test_collision_box_overlap
 from .behavior_collection import BehaviorCollection
 from .behaviors import ObjectBehavior
 from .object_collection import ObjectCollection
@@ -288,14 +289,17 @@ class PygameObject:
     
     # endregion
     
-    def get_service(self, cls: type):
+    def get_service[T](self, cls: type[T]) -> T:
         return self._services.get(cls)
     
     def register_event_callback(self, event_type: str, callback: Callable[[Event], Any]):
         self.get_service(EventManager).register_listener(event_type, callback)
         
     def trigger_event(self, event: Event):
-        self.get_service(EventManager).trigger_event(event)
+        self.get_service(EventManager).trigger(event)
+        
+    def play_animation(self, animation: Animation):
+        self.get_service(AnimationManager).play(animation)
     
     # region collision
     @property

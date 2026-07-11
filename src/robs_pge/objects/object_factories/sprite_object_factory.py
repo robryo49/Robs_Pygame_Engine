@@ -1,10 +1,10 @@
 from typing import Optional
 
 from .sub_factory import SubObjectFactory
-from ..custom import SpriteObject, SubSurfaceSpriteObject, ChunkedSpriteObject
-from ...rendering import ChunkedSpriteRenderer, SpriteRenderer, SubSurfaceRenderer
+from ..custom import SpriteObject, SubSurfaceSpriteObject, ChunkedSpriteObject, IconObject
+from ...rendering import ChunkedSpriteRenderer, SpriteRenderer, SubSurfaceRenderer, IconRenderer
 from ...resources import Texture
-from ...utils import Anchor, Rect, Vec2
+from ...utils import Anchor, Rect, Vec2, Color, Colors
 
 
 class SpriteObjectFactory(SubObjectFactory):
@@ -40,6 +40,15 @@ class SpriteObjectFactory(SubObjectFactory):
         
         texture = self._get_resource(texture, Texture)
         obj = self._make_object(ChunkedSpriteObject, position, rotation, scale, ChunkedSpriteRenderer(texture, chunk_size, cache), layer, anchor)
+        
+        return obj
+    
+    def make_icon_object(
+        self, position: Vec2, icon: str, icon_size: int, icon_color: Color = Colors.WHITE,
+        rotation: float = 0.0, scale: float = 1.0, layer: int = 1, anchor: Vec2 = Anchor.C, cache: bool = True
+    ) -> IconObject:
+        
+        obj = self._make_object(IconObject, position, rotation, scale, IconRenderer(icon, icon_size, icon_color, cache), layer, anchor)
         
         return obj
 

@@ -18,7 +18,7 @@ class ResourceManager:
     
     # region CORE
     
-    def set(self, resource_type: type, resource_name: str, resource: Any):
+    def set[T](self, resource_type: type[T], resource_name: str, resource: T):
         if not isinstance(resource, resource_type):
             raise TypeError(f"Resource '{resource_name}' is not of type '{resource_type.__name__}' but of type '{type(resource).__name__}'")
         

@@ -3,7 +3,7 @@ from .styles import (
     RectStyle, CircleStyle, PolygonStyle,
     LineStyle, ButtonStyle, ProgressBarStyle,
     LineChartStyle, DebugPanelStyle, SliderStyle,
-    IconButtonStyle, SpriteButtonStyle
+    IconButtonStyle, SpriteButtonStyle, ToggleButtonStyle
 )
 from .draw_commands import (
     DrawCommand,
@@ -12,7 +12,7 @@ from .draw_commands import (
 from .object_renderer import ObjectRenderer
 from .object_renderers import (
     RectRenderer, CircleRenderer, LineRenderer,
-    SpriteRenderer, TextRenderer, SubSurfaceRenderer, ChunkedSpriteRenderer
+    SpriteRenderer, TextRenderer, SubSurfaceRenderer, ChunkedSpriteRenderer, IconRenderer
 )
 from .renderer import Renderer
 
@@ -21,14 +21,14 @@ __all__ = [
     "Style", "ShapeStyle",
     "RectStyle", "CircleStyle", "PolygonStyle",
     "LineStyle", "ButtonStyle", "ProgressBarStyle",
-    "LineChartStyle", "DebugPanelStyle", "SliderStyle", "IconButtonStyle", "SpriteButtonStyle",
+    "LineChartStyle", "DebugPanelStyle", "SliderStyle", "IconButtonStyle", "SpriteButtonStyle", "ToggleButtonStyle",
     # draw commands
     "DrawCommand",
     "DrawRect", "DrawCircle", "DrawTexture", "DrawText", "DrawLine", "DrawSubSurface", "DrawChunkedSprite",
     # renderers
     "ObjectRenderer",
     "RectRenderer", "CircleRenderer", "LineRenderer",
-    "SpriteRenderer", "TextRenderer", "SubSurfaceRenderer", "ChunkedSpriteRenderer",
+    "SpriteRenderer", "TextRenderer", "SubSurfaceRenderer", "ChunkedSpriteRenderer", "IconRenderer",
     
     "Renderer",
 ]

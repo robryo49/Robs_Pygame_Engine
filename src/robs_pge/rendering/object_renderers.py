@@ -3,7 +3,7 @@ from typing import Optional
 from .draw_commands import DrawCircle, DrawLine, DrawRect, DrawText, DrawTexture, DrawSubSurface, DrawChunkedSprite
 from .styles import *
 from .object_renderer import ObjectRenderer
-from ..resources import Texture
+from ..resources import Icons, Texture
 from ..utils import Anchor, Color, Font, Transform, Vec2, Rect
 
 
@@ -337,6 +337,55 @@ class SpriteRenderer(ObjectRenderer):
     def render(self, submit, transform: Transform, layer: int, anchor: Vec2):
         submit(DrawTexture(transform, layer, anchor, self._cache, self.texture))
 
+
+class IconRenderer(SpriteRenderer):
+    def __init__(self, icon: str, icon_size: int, icon_color, cache=True):
+        super().__init__(Icons.get(icon, icon_size, icon_color), cache)
+        
+        self._icon = icon
+        self._icon_size = icon_size
+        self._icon_color = icon_color
+        
+    # region PROPERTIES
+    
+    # region icon
+    @property
+    def icon(self):
+        return self._icon
+    
+    @icon.setter
+    def icon(self, value: str):
+        self._icon = value
+        self._update_icon()
+    # endregion
+    
+    # region icon_size
+    @property
+    def icon_size(self):
+        return self._icon_size
+    
+    @icon_size.setter
+    def icon_size(self, value: int):
+        self._icon_size = value
+        self._update_icon()
+    # endregion
+    
+    # region icon_color
+    @property
+    def icon_color(self):
+        return self._icon_color
+    
+    @icon_color.setter
+    def icon_color(self, value):
+        self._icon_color = value
+        self._update_icon()
+    # endregion
+    
+    # endregion
+    
+    def _update_icon(self):
+        self._texture = Icons.get(self._icon, self._icon_size, self._icon_color)
+        
 
 class TextRenderer(ObjectRenderer):
     def __init__(self, text: str, font: Optional[Font]=None, cache=True):

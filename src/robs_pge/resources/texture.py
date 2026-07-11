@@ -1,4 +1,3 @@
-import io
 from pathlib import Path
 from typing import Optional
 from matplotlib.colors import Colormap
@@ -7,7 +6,6 @@ import pygame as pg
 import numpy as np
 import math
 
-from resvg_py import svg_to_bytes
 
 from ..utils import Vec2, Vec2Like, colorize_array, invert_uv_y, Color, make_noise_array, normalize_array
 
@@ -187,23 +185,5 @@ class Texture:
     @classmethod
     def from_noise(cls, dims: Vec2 | tuple[int, int], noise_offset: Vec2 | tuple[int, int] = (0, 0), seed: Optional[int] = None, scale: float = 1, amplitude: float = 1, value_offset: float = 0, octaves: int = 8, persistence: float = 0.5, lacunarity: float = 2.0, cmap="binary"):
         return cls.from_grayscale_array(make_noise_array(dims, noise_offset, seed, scale, amplitude, value_offset, octaves, persistence, lacunarity), cmap=cmap)
-    
-    @classmethod
-    def icon_from_svg(cls, svg_string: str, size: Vec2Like | int, color: Color):
-        
-        size = Vec2(size)
-        width, height = round(size.x), round(size.y)
-        
-        color = color.hex
-        
-        if not color.startswith("#"):
-            color = f"#{color}"
-        
-        custom_svg = svg_string.strip().replace('fill="currentColor"', f'fill="{color}"')
-        
-        png_bytes = bytes(svg_to_bytes(svg_string=custom_svg, width=width, height=height))
-        
-        surface = pg.image.load(io.BytesIO(png_bytes)).convert_alpha()
-        return cls.from_surface(surface)
     
     

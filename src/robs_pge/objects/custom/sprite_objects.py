@@ -3,8 +3,8 @@ from __future__ import annotations
 from typing import cast
 
 from ..object import PygameObject
-from ...rendering import ChunkedSpriteRenderer, SpriteRenderer, SubSurfaceRenderer
-from ...utils import Anchor, DictCollection, Rect, Transform, Vec2
+from ...rendering import ChunkedSpriteRenderer, SpriteRenderer, SubSurfaceRenderer, IconRenderer
+from ...utils import Anchor, DictCollection, Rect, Transform, Vec2, Color
 
 
 class SpriteObject(PygameObject):
@@ -118,3 +118,47 @@ class ChunkedSpriteObject(PygameObject):
     def height(self):
         return self.renderer.height
     # endregion
+    
+    
+class IconObject(SpriteObject):
+    def __init__(self, transform: Transform, renderer: IconRenderer, services: DictCollection, layer: int = 0, anchor: Vec2 = Anchor.C):
+        super().__init__(transform, renderer, services, layer, anchor)
+    
+    # region PROPERTIES
+    
+    @property
+    def renderer(self) -> IconRenderer:
+        return cast(IconRenderer, self._renderer)
+    
+    # region icon
+    @property
+    def icon(self):
+        return self.renderer.icon
+    
+    @icon.setter
+    def icon(self, value: str):
+        self.renderer.icon = value
+    # endregion
+    
+    # region icon_size
+    @property
+    def icon_size(self):
+        return self.renderer.icon_size
+    
+    @icon_size.setter
+    def icon_size(self, value):
+        self.renderer.icon_size = value
+    # endregion
+    
+    # region icon_color
+    @property
+    def icon_color(self):
+        return self.renderer.icon_color
+    
+    @icon_color.setter
+    def icon_color(self, value: Color):
+        self.renderer.icon_color = value
+    # endregion
+    
+    # endregion
+    

@@ -1,4 +1,4 @@
-from typing import Callable
+from typing import Callable, Optional
 
 from .tween import Tween
 from ..utils import Easing
@@ -104,10 +104,11 @@ class AdderAnimation(Animation):
         
 
 class SetterAnimation(AdderAnimation):
-    def __init__(self, obj: object, attr: str, value, duration: float, easing_function: Callable[[float], float] = Easing.LINEAR):
+    def __init__(self, obj: object, attr: str, value, duration: float, easing_function: Callable[[float], float] = Easing.LINEAR, start_value: Optional[float] = None):
         super().__init__(obj, attr, value - getattr(obj, attr), duration, easing_function)
         
         self._target = value
+        self._forced_start_value = start_value
         
     # region PROPERTIES
     
@@ -121,7 +122,7 @@ class SetterAnimation(AdderAnimation):
         return f"SetterAnimation({str(self.obj)}.{self.attr}, {round(self.tween.time, 2)}/{round(self.duration, 2)})"
     
     def start(self):
-        self._adder = self.target - self.get_attr()
+        self._adder = self.target - (self.get_attr() if self._forced_start_value is None else self._forced_start_value)
         super().start()
     
         
