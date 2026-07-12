@@ -22,7 +22,7 @@ from .custom import (
     ButtonObject, ProgressBarObject, LineChartObject, TextObject
 )
 from .object import PygameObject
-
+from .window_manager import WindowManager
 from .particles import (
     Particle, ParticlePool,
     ParticleEmitter, BurstParticleEmitter,
@@ -40,6 +40,7 @@ __all__ = [
     "InteractionManager",
     "ObjectCollection",
     "ObjectFactory",
+    "WindowManager",
     # objects
     "PygameObject",
     "RectObject", "CircleObject", "TextObject", "SpriteObject", "LineObject", "CycleButtonObject",

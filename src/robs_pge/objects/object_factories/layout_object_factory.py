@@ -154,7 +154,7 @@ class LayoutObjectFactory(SubObjectFactory):
             
             return layout
         
-        else:  # align_columns only
+        else:
             layout = self.make_horizontal_layout(position, width, height, 0, inf, invert_x, style, rotation, scale, layer, anchor, cache)
             
             num_cols = max((len(r) for r in objects), default=0)

@@ -296,7 +296,7 @@ class PygameObject:
         return self._services.get(cls)
     
     def register_event_callback(self, event_type: str, callback: Callable[[Event], Any]):
-        self.get_service(EventManager).register_listener(event_type, callback)
+        self.get_service(EventManager).register(event_type, callback)
         
     def trigger_event(self, event: Event):
         self.get_service(EventManager).trigger(event)

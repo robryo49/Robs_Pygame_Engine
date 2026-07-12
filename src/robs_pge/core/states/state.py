@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import Any, TYPE_CHECKING, Callable
+from typing import Any, Optional, TYPE_CHECKING, Callable
 
 import pygame as pg
 
@@ -7,7 +7,7 @@ from ...animation import AnimationManager
 from ...debug import FrameTimer
 from ...events import Event, EventManager
 from ...input import InputManager, Keybind, KeybindsManager
-from ...objects import InteractionManager, ObjectCollection, ObjectFactory, PygameObject, ParticleSystem
+from ...objects import InteractionManager, ObjectCollection, ObjectFactory, PygameObject, ParticleSystem, WindowManager
 from ...rendering import DebugPanelStyle, LineChartStyle
 from ...resources import ResourceManager
 from ...utils import Anchor, DictCollection, Vec2, AsyncProcessManager, AsyncProcess
@@ -32,6 +32,7 @@ class State:
         self._keybinds_manager = self._create_keybinds_manager(self.input)
         self._particle_system = self._create_particle_system()
         self._async_process_manager = self._create_async_process_manager()
+        self._window_manager = self._create_window_manager(self.event_manager)
         
         self._factory = self._create_object_factory()
         
@@ -131,6 +132,10 @@ class State:
     def ui_objects(self) -> ObjectCollection:
         return self._ui_objects
     
+    @property
+    def windows(self):
+        return self._window_manager
+    
     # endregion
     
     # region SEVICES CREATION
@@ -158,6 +163,10 @@ class State:
     @staticmethod
     def _create_async_process_manager() -> AsyncProcessManager:
         return AsyncProcessManager()
+    
+    @staticmethod
+    def _create_window_manager(event_manager) -> WindowManager:
+        return WindowManager(event_manager)
     
     # endregion
     
@@ -308,12 +317,15 @@ class State:
     def init_keybinds(self) -> None:
         self.register_keybind(pg.K_F3, lambda: self.debug_overlay.toggle_visible())
         self.register_keybind(pg.K_F4, lambda: self.debug_overlay.toggle_freeze())
+        
+    def init_events(self):
+        pass
     
     def register_keybind(self, key: int | tuple[int, ...], action: Callable, *args) -> None:
         self.keybinds.add(Keybind(key, action, *args))
     
-    def register_event_callback(self, event_type: str, callback: Callable[[Event], Any]) -> None:
-        self.event_manager.register_listener(event_type, callback)
+    def register_event_callback(self, event_type: str, callback: Callable[[Event], Any], condition: Optional[Callable[[Event], bool]] = None) -> None:
+        self.event_manager.register(event_type, callback, condition)
         
     def trigger_event(self, event: Event) -> None:
         self.event_manager.trigger(event)
@@ -328,6 +340,15 @@ class State:
     def add_ui_object(self, *obj: PygameObject | list[PygameObject]) -> None:
         for o in obj:
             self.ui_objects.add(o)
+            
+    def add_window(self, window_id: str, window: PygameObject, group: str = "main"):
+        self.windows.register(window_id, window, group)
+        
+    def open_window(self, window_id: str) -> None:
+        self.windows.open(window_id)
+        
+    def close_window(self, window_id: str) -> None:
+        self.windows.close(window_id)
         
     
     def update(self, dt: float) -> None:

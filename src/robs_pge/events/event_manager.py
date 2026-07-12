@@ -1,22 +1,18 @@
-from typing import Any, Callable, Dict, List
+from typing import Any, Callable, Dict, List, Optional
 
 from .event import Event
 
 
 class EventManager:
     def __init__(self):
-        self._listeners: Dict[str, List[Callable[[Event], Any]]] = {}
+        self._listeners: Dict[str, List[tuple[Callable[[Event], Any], Optional[Callable[[Event], bool]]]]] = {}
         self._queue: List[Event] = []
     
-    def register_listener(self, event_type: str, callback: Callable[[Event], Any]):
+    def register(self, event_type: str, callback: Callable[[Event], Any], condition: Optional[Callable[[Event], bool]] = None):
         if event_type not in self._listeners:
             self._listeners[event_type] = []
         if callback not in self._listeners[event_type]:
-            self._listeners[event_type].append(callback)
-    
-    def remover_listener(self, event_type: str, callback: Callable[[Event], Any]):
-        if event_type in self._listeners and callback in self._listeners[event_type]:
-            self._listeners[event_type].remove(callback)
+            self._listeners[event_type].append((callback, condition))
     
     def trigger(self, event: Event):
         self._queue.append(event)
@@ -27,6 +23,7 @@ class EventManager:
         
         for event in current_queue:
             if event.type in self._listeners:
-                for callback in self._listeners[event.type]:
-                    callback(event)
+                for callback, condition in self._listeners[event.type]:
+                    if condition is None or condition(event):
+                        callback(event)
     
