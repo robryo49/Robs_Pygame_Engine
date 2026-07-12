@@ -7,13 +7,13 @@ requires-python = ">=3.13"
 dependencies = [
     "matplotlib==3.11.0",
     "noise>=1.2.2",
-    "numpy==2.4.6",
+    "numpy==2.5.1",
     "opensimplex>=0.4.5.1",
     "pygame-ce==2.5.7",
     "resvg>=0.2.0",
     "resvg-py>=0.3.3",
     "scikit-image>=0.26.0",
-    "scipy>=1.17.1",
-    "scipy-stubs~=1.17.1",
+    "scipy==1.18.0",
+    "scipy-stubs==1.18.0.0",
     "svglib>=2.0.2",
 ]
