@@ -1,3 +1,5 @@
+from typing import Optional
+
 import pygame as pg
 
 from .color import Color
@@ -5,7 +7,7 @@ from .math import Vec2
 
 
 class Font:
-    def __init__(self, name="dejavusansmono", size=24, color: Color = None, bold=False, italic=False, line_spacing=0):
+    def __init__(self, name="dejavusansmono", size=24, color: Optional[Color] = None, bold=False, italic=False, line_spacing=0):
         
         self.name = name
         self.size = size

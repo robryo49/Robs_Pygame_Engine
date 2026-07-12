@@ -64,26 +64,28 @@ class InteractionManager:
         self._hovered = self._hovered_ui[0] if self.hovered_ui and self._hovered_ui[0].has_flag(ObjectFlags.HOVERABLE) \
             else self._hovered_world[0] if self._hovered_world and self._hovered_world[0].has_flag(ObjectFlags.HOVERABLE) else None
         
+        hovered = self.hovered
         if previous_hovered is self.hovered:
-            if self.hovered is not None:
-                self.hovered.while_hovered()
+            if hovered is not None:
+                hovered.while_hovered()
         else:
             if previous_hovered:
                 previous_hovered.on_hover_end()
-            if self.hovered is not None:
-                self.hovered.on_hover_start()
+            if hovered is not None:
+                hovered.on_hover_start()
     
     def _handle_button(self, button: int):
         if self.input.pressed_button(button):
-            self._active[button] = self.hovered
-            if self._active[button] and self._active[button].has_flag(ObjectFlags.CLICKABLE):
-                self._active[button].on_click(button, self._mouse_pos)
-                
-        if self.input.held_button(button) and self._active[button] and self._active[button].has_flag(ObjectFlags.CLICKABLE):
-            self._active[button].on_hold(button, self._mouse_pos)
+            active = self._active[button] = self.hovered
+            if active and active.has_flag(ObjectFlags.CLICKABLE):
+                active.on_click(button, self._mouse_pos)
+        
+        active = self._active[button]
+        if self.input.held_button(button) and active and active.has_flag(ObjectFlags.CLICKABLE):
+            active.on_hold(button, self._mouse_pos)
             
-        if self.input.released_button(button) and self._active[button] and self._active[button].has_flag(ObjectFlags.CLICKABLE):
-            self._active[button].on_release(button, self._mouse_pos)
+        if self.input.released_button(button) and active and active.has_flag(ObjectFlags.CLICKABLE):
+            active.on_release(button, self._mouse_pos)
             self._active[button] = None
     
     def get_hovered_objects(self, objects: ObjectCollection, camera: Optional[Camera] = None):
@@ -103,5 +105,8 @@ class InteractionManager:
         self._handle_button(2)
         self._handle_button(3)
         
-        if self.hovered is not None and self.hovered.has_flag(ObjectFlags.CLICKABLE): pg.mouse.set_cursor(pg.SYSTEM_CURSOR_HAND)
-        else: pg.mouse.set_cursor(pg.SYSTEM_CURSOR_ARROW)
+        hovered = self.hovered
+        if hovered and hovered.has_flag(ObjectFlags.CLICKABLE):
+            pg.mouse.set_cursor(pg.SYSTEM_CURSOR_HAND)
+        else:
+            pg.mouse.set_cursor(pg.SYSTEM_CURSOR_ARROW)

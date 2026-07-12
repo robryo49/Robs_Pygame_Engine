@@ -189,7 +189,7 @@ class ColorPalette:
         
         for shade_name, factor in self.shades.items():
             shaded_name = shade_name.format(name)
-            shaded_color = Colors.lighten(color, factor)
+            shaded_color = Colors.lighten(color, round(color.a * factor))
             self.shaded_colors[shaded_name] = shaded_color
             self.all_colors[shaded_name] = shaded_color
         

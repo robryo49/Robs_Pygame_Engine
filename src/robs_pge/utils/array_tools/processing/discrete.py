@@ -1,3 +1,5 @@
+from typing import Any
+
 import numpy as np
 import skimage.filters
 import skimage.morphology
@@ -65,8 +67,8 @@ def label_array_random(arr: np.ndarray, background: int = -1) -> np.ndarray:
     
     return lookup_table[labeled]
 
-def find_edges(mask: np.ndarray, mode: str = "outter") -> np.ndarray:
-    return skimage.segmentation.find_boundaries(mask, mode=mode)
+def find_edges(mask:  np.typing.NDArray[Any], mode: str = "outter") -> np.ndarray:
+    return skimage.segmentation.find_boundaries(mask, mode=mode) # type: ignore[arg-type]
 
 def generate_distance_map(mask: np.ndarray, sampling=None) -> np.ndarray:
     return distance_transform_edt(mask == 0, sampling=sampling).astype(np.float32)

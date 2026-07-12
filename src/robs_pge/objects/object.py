@@ -72,7 +72,8 @@ class PygameObject:
     
     @property
     def world_transform(self):
-        return (self.parent.world_transform * (self.transform + Transform(self.parent.get_anchor_offset(self._parent_anchor - Vec2(0.5))))) if self.parent is not None else self.transform
+        parent = self.parent
+        return (parent.world_transform * (self.transform + Transform(parent.get_anchor_offset(self._parent_anchor - Vec2(0.5))))) if parent is not None else self.transform
     
     # region pos
     @property
@@ -189,7 +190,8 @@ class PygameObject:
     
     @property
     def visible(self):
-        return not self.has_flag(ObjectFlags.HIDDEN) and (self.parent is None or self.parent.visible)
+        parent = self.parent
+        return not self.has_flag(ObjectFlags.HIDDEN) and (parent is None or parent.visible)
     
     @visible.setter
     def visible(self, value: bool):
@@ -227,7 +229,8 @@ class PygameObject:
     
     @property
     def frozen(self):
-        return self.has_flag(ObjectFlags.FROZEN) and (self.parent is None or self.parent.frozen)
+        parent = self.parent
+        return self.has_flag(ObjectFlags.FROZEN) and (parent is None or parent.frozen)
     
     @frozen.setter
     def frozen(self, value: bool):

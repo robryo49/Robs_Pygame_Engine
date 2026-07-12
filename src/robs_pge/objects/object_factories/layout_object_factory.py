@@ -1,9 +1,8 @@
-import inspect
 from typing import Any, Callable, Optional, cast
 
 from .sub_factory import SubObjectFactory
-from ..object import PygameObject
 from ..custom import LayoutObject
+from ..object import PygameObject
 from ...rendering import RectRenderer, RectStyle
 from ...utils import Anchor, Vec2, inf, validate_signature
 

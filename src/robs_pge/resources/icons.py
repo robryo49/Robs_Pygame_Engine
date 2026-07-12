@@ -1,10 +1,10 @@
 import io
-import pygame as pg
 
+import pygame as pg
 from resvg_py import svg_to_bytes
 
 from .texture import Texture
-from ..utils import Color, Vec2, Vec2Like
+from ..utils import Color, Vec2
 
 
 class Icons:

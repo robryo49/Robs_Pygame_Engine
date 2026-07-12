@@ -1,8 +1,7 @@
-import math
-from typing import Optional, cast
+from typing import Optional
 
 from .display import Display
-from ..utils import FRect, Transform, Vec2, invert_y, Vec2Like
+from ..utils import FRect, Transform, Vec2, Vec2Like, invert_y
 
 
 class Camera:
@@ -72,12 +71,14 @@ class Camera:
         return 1/self.transform.scale
     
     @zoom.setter
-    def zoom(self, value: float) -> None:
-        if self.max_zoom is not None and value > cast(float, self.max_zoom):
-            value = self.max_zoom
-        if self.min_zoom is not None and value < cast(float, self.min_zoom):
-            value = self.min_zoom
-        self.transform.scale = 1/value
+    def zoom(self, value: float | int) -> None:
+        max_zoom = self.max_zoom
+        min_zoom = self.min_zoom
+        if max_zoom is not None and value > max_zoom:
+            value = max_zoom
+        if min_zoom is not None and value < min_zoom:
+            value = min_zoom
+        self.transform.scale = 1 / value
     
     def zoom_in(self, fact: float, point: Optional[Vec2]=None) -> "Camera":
         prev = self.zoom

@@ -167,7 +167,7 @@ class Texture:
                 arr = arr.astype(np.float32) / 255.0
         
         if cmap != "binary":
-            arr = colorize_array(arr, cmap=cmap)
+            arr = colorize_array(arr, cmap=cmap) # type: ignore[arg-type]
         else:
             if not np.issubdtype(arr.dtype, np.integer):
                 arr = np.clip(arr, 0.0, 1.0)
