@@ -9,6 +9,26 @@ from ...utils import Anchor, Vec2, inf, validate_signature
 
 
 class LayoutObjectFactory(SubObjectFactory):
+    
+    @staticmethod
+    def _unpack_stack_item(item: PygameObject | tuple[PygameObject, int]) -> tuple[PygameObject, int]:
+        if isinstance(item, tuple):
+            if len(item) == 2:
+                return item[0], item[1]
+            raise ValueError(f"Object definition must be Obj or (Obj, span). Got {len(item)} elements")
+        return item, 1
+    
+    @staticmethod
+    def _unpack_grid_item(item: PygameObject | tuple[PygameObject, int] | tuple[PygameObject, int, int]) -> tuple[PygameObject, int, int]:
+        if isinstance(item, tuple):
+            if len(item) == 2:
+                return cast(PygameObject, item[0]), cast(int, item[1]), 1
+            if len(item) == 3:
+                return cast(PygameObject, item[0]), cast(int, item[1]), cast(int, item[2])
+            raise ValueError(f"Object definition must be Obj, (Obj, span_x), or (Obj, span_x, span_y). Got {len(item)} elements")
+        return item, 1, 1
+    
+    
     def make_grid_layout(
             self, position: Vec2, width: Optional[int | float] = None, height: Optional[int | float] = None, min_col=0, max_col=inf, min_row=0, max_row=inf, invert_x=False, invert_y=False, style: Optional[RectStyle | str] = None,
             rotation: float = 0.0, scale: float = 1.0, layer: int = 0, anchor: Vec2 = Anchor.C, cache: bool=True
@@ -91,24 +111,6 @@ class LayoutObjectFactory(SubObjectFactory):
         
         return layout
     
-    @staticmethod
-    def _unpack_stack_item(item: PygameObject | tuple[PygameObject, int]) -> tuple[PygameObject, int]:
-        if isinstance(item, tuple):
-            if len(item) == 2:
-                return item[0], item[1]
-            raise ValueError(f"Object definition must be Obj or (Obj, span). Got {len(item)} elements")
-        return item, 1
-    
-    @staticmethod
-    def _unpack_grid_item(item: PygameObject | tuple[PygameObject, int] | tuple[PygameObject, int, int]) -> tuple[PygameObject, int, int]:
-        if isinstance(item, tuple):
-            if len(item) == 2:
-                return cast(PygameObject, item[0]), cast(int, item[1]), 1
-            if len(item) == 3:
-                return cast(PygameObject, item[0]), cast(int, item[1]), cast(int, item[2])
-            raise ValueError(f"Object definition must be Obj, (Obj, span_x), or (Obj, span_x, span_y). Got {len(item)} elements")
-        return item, 1, 1
-    
     def stack_objects_in_grid(
             self, position: Vec2, objects: list[list[PygameObject | tuple[PygameObject, int] | tuple[PygameObject, int, int]]],
             align_columns: bool = True, align_rows: bool = True, cell_anchor: Vec2 = Anchor.C,
@@ -173,31 +175,43 @@ class LayoutObjectFactory(SubObjectFactory):
     
     def stack_objects_vertical(
             self, position: Vec2, objects: list[PygameObject | tuple[PygameObject, int]],
-            cell_anchor: Vec2 = Anchor.C, width: Optional[int | float] = None, height: Optional[int | float] = None,
-            min_col: int = 0, max_col=inf, invert_y: bool = True, style: Optional[RectStyle | str] = None,
+            cell_anchor: Vec2 = Anchor.C, width: Optional[int | float] = None, height: Optional[int | float] = None, spacing: int = 10, margin: Optional[int] = None, invert_y: bool = True, style: Optional[RectStyle | str] = None,
             rotation: float = 0.0, scale: float = 1.0, layer: int = 0, anchor: Vec2 = Anchor.C, cache: bool = True
     ) -> LayoutObject:
         
-        layout = self.make_vertical_layout(position, width, height, min_col, max_col, invert_y, style, rotation, scale, layer, anchor, cache)
+        layout = self.make_vertical_layout(position, width, height, 0, inf, invert_y, style, rotation, scale, layer, anchor, cache)
         
         for item in objects:
             obj, span_x = self._unpack_stack_item(item)
             layout.stack_y(obj, span_x=span_x, anchor=cell_anchor)
+            
+        if margin is None:
+            layout.set_constant_padding(spacing)
+        else:
+            layout.set_cell_padding(spacing/2)
+            if margin-spacing/2 > 0:
+                layout.set_outer_padding(margin-spacing/2)
         
         return layout
     
     def stack_objects_horizontal(
             self, position: Vec2, objects: list[PygameObject | tuple[PygameObject, int]],
-            cell_anchor: Vec2 = Anchor.C, width: Optional[int | float] = None, height: Optional[int | float] = None,
-            min_row: int = 0, max_row=inf, invert_x: bool = True, style: Optional[RectStyle | str] = None,
+            cell_anchor: Vec2 = Anchor.C, width: Optional[int | float] = None, height: Optional[int | float] = None, spacing: int = 10, margin: Optional[int] = None, invert_x: bool = True, style: Optional[RectStyle | str] = None,
             rotation: float = 0.0, scale: float = 1.0, layer: int = 0, anchor: Vec2 = Anchor.C, cache: bool = True
     ) -> LayoutObject:
         
-        layout = self.make_horizontal_layout(position, width, height, min_row, max_row, invert_x, style, rotation, scale, layer, anchor, cache)
+        layout = self.make_horizontal_layout(position, width, height, 0, inf, invert_x, style, rotation, scale, layer, anchor, cache)
         
         for item in objects:
             obj, span_y = self._unpack_stack_item(item)
             layout.stack_x(obj, span_y=span_y, anchor=cell_anchor)
+            
+        if margin is None:
+            layout.set_constant_padding(spacing)
+        else:
+            layout.set_cell_padding(spacing/2)
+            if margin-spacing/2 > 0:
+                layout.set_outer_padding(margin-spacing/2)
         
         return layout
     
