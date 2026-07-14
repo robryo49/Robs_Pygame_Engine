@@ -21,8 +21,7 @@ class ButtonObject(RectObject):
             ScaleOnClickBehavior(1, 0.9, 0.1, Easing.EASE_OUT_QUAD)
         ])
         
-        if action is not None:
-            self.add_behavior(ActionOnClickBehavior(1, action))
+        self.do_on_click(1, action)
     
     # region PROPERTIES
     
@@ -50,9 +49,7 @@ class SpriteButtonObject(RectObject):
             ScaleOnHoverBehavior(1.1, 0.1, Easing.EASE_OUT_QUAD),
             ScaleOnClickBehavior(1, 0.9, 0.1, Easing.EASE_OUT_QUAD)
         ])
-        
-        if action is not None:
-            self.add_behavior(ActionOnClickBehavior(1, action))
+        self.do_on_click(1, action)
     
     # region PROPERTIES
     
@@ -72,14 +69,13 @@ class CycleButtonObject(ButtonObject):
         
         self._index = 0
         
-        self.add_behavior([
-            ActionOnClickBehavior(1, lambda o: o.cycle_forward()),
-            ScaleOnClickBehavior(3, 0.9, 0.1, Easing.EASE_OUT_QUAD),
-            ActionOnClickBehavior(3, lambda o: o.cycle_backward())
-        ])
+        self.do_on_click(1, self.cycle_forward)
+        self.do_on_click(3, self.cycle_backward)
         
-        if callback is not None: self.add_behavior(ActionOnClickBehavior(1, lambda o: callback(o.value)))
-        
+        self.add_behavior(ScaleOnClickBehavior(3, 0.9, 0.1, Easing.EASE_OUT_QUAD))
+        if callback is not None: self.do_on_click(1, lambda: callback(self.value))
+    
+    
     # region PROPERTIES
     
     @property
@@ -133,13 +129,13 @@ class SliderObject(LayoutObject):
         if step is not None:
             step = self._handle_movement_range * step / (max_value - min_value)
         
-        self._handle.add_behavior(DraggableBehavior(1))
-        self._handle.add_behavior(AttributeFixingBehavior("y_pos"))
-        self._handle.add_behavior(AttributeClampingBehavior("x_pos", -self._handle_movement_range*0.5, self._handle_movement_range*0.5))
+        self._handle.make_draggable(1)
+        self._handle.make_attribute_fixed("y_pos")
+        self._handle.make_attribute_clamped("x_pos", -self._handle_movement_range*0.5, self._handle_movement_range*0.5)
         if step is not None:
-            self._handle.add_behavior(AttributeGridSnappingBehavior("x_pos", step, self._handle_movement_range*0.5))
+            self._handle.make_attribute_snap_on_grid("x_pos", step, self._handle_movement_range*0.5)
         
-        self._text.add_behavior(DynamicAttributeBehavior("text", lambda: str(self.value)))
+        self._text.make_attribute_dynamic("text", lambda: str(self.value))
         
         self._bar.add_child(self._handle, Anchor.C)
         
@@ -472,8 +468,9 @@ class CheckBoxObject(RectObject):
         
         self._checked_icon.hide()
         
-        self.add_behavior(ActionOnClickBehavior(1, lambda o: self.toggle()))
-        if callback is not None: self.add_behavior(ActionOnClickBehavior(1, lambda o: callback(self.checked)))
+        self.do_on_click(1, self.toggle)
+        self.do_on_click(1, callback)
+        
         
     # region PROPERTIES
     
@@ -521,11 +518,10 @@ class ToggleButtonObject(RectObject):
         toggle.anchor = Anchor.L
         toggle_background.anchor = Anchor.L
         
-        self.add_behavior(ActionOnClickBehavior(1, lambda o: self.toggle()))
+        self.do_on_click(1, self.toggle)
         
-        self._toggle_background.add_behavior(DynamicAttributeBehavior("width", lambda: self._toggle.x_pos + self._toggle.width * 0.5))
-        
-        if callback is not None: self.add_behavior(ActionOnClickBehavior(1, lambda o: callback(self.enabled)))
+        self._toggle_background.make_attribute_dynamic("width", lambda: self._toggle.x_pos + self._toggle.width * 0.5)
+        self.do_on_click(1, lambda: callback(self.enabled))
     
     # region PROPERTIES
     

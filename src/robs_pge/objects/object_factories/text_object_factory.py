@@ -3,7 +3,6 @@ from typing import Callable, Any, Optional
 from .sub_factory import SubObjectFactory
 
 from ..custom import *
-from ..behaviors import DynamicAttributeBehavior
 
 from ...rendering import *
 from ...utils import Vec2, Anchor, Font
@@ -28,7 +27,7 @@ class TextObjectFactory(SubObjectFactory):
         
         font = self._get_resource(font, Font)
         obj = self.make_text(position, "", font, rotation, scale, layer, anchor, cache)
-        obj.add_behavior(DynamicAttributeBehavior("text", getter, template))
+        obj.make_attribute_dynamic("text", getter, template)
         
         return obj
 

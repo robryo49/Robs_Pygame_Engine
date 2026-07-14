@@ -1,23 +1,19 @@
 from __future__ import annotations
-from typing import Any, Callable, Protocol, TYPE_CHECKING
+
+import inspect
+from typing import Any, Callable
 
 import numpy as np
-import inspect
 
 from .math import Vec2, Vec3
 
-
 NumberLike = int | float
 
-Vec2Like = Vec2 | np.ndarray[tuple[int, int]] | tuple[NumberLike, NumberLike]
-Vec3Like = Vec3 | np.ndarray[tuple[int, int]] | tuple[NumberLike, NumberLike, NumberLike]
-
-class ObjectLike(Protocol):
-    def render(self, submit, camera): pass
-    def update(self, dt: float): pass
+Vec2Like = Vec2 | np.ndarray | tuple[NumberLike, NumberLike]
+Vec3Like = Vec3 | np.ndarray | tuple[NumberLike, NumberLike, NumberLike]
 
 
-ObjectCallbackLike = Callable[[ObjectLike], Any] | tuple[Callable[[ObjectLike], Any], ...] | None
+CallbackLike = Callable | tuple[Callable, ...] | None
 
 
 def validate_signature(method: Callable[..., Any], *args: Any, **kwargs: Any) -> None:

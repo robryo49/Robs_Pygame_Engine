@@ -512,6 +512,26 @@ class DebugPanelObject(LayoutObject):
     
     # endregion
     
+    def unfix_width(self):
+        super().unfix_width()
+        self.panel.unfix_width()
+        
+    def unfix_height(self):
+        super().unfix_height()
+        self.panel.unfix_height()
+        
+    def fix_height(self, height: Optional[int | float] = None):
+        if height:
+            super().fix_height(height)
+            self.panel.fix_height(round(height - self.title_panel.height - self.header.height))
+    
+    def fix_width(self, width: Optional[int | float] = None):
+        super().fix_width(width)
+        self.panel.fix_width(width)
+        self.title_panel.width = width
+        self.header.width = width
+    
+    
     def stack_pannel_x(self, obj: PygameObject, y: Optional[int] = None, span_y: Optional[int] = None, anchor: Vec2 = Anchor.C):
         self.panel.stack_x(obj, y, span_y, anchor)
         return self

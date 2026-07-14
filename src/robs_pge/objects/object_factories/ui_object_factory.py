@@ -100,7 +100,7 @@ class UIObjectFactory(SubObjectFactory):
         if max_data_points is not None: obj.max_data_points = max_data_points
         if max_data_x_range is not None: obj.max_data_x_range = max_data_x_range
         
-        if update_action is not None: obj.add_behavior(ActionOnUpdateBehavior(lambda o: update_action(o)))
+        if update_action is not None: obj.do_on_update(update_action)
         
         return obj
     

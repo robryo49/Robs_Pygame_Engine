@@ -1,18 +1,20 @@
 from __future__ import annotations
 
-from typing import Any, Callable, TYPE_CHECKING, Optional, Union, cast
+from typing import Any, Callable, Optional, TYPE_CHECKING, Union, cast
 
+from .behavior_collection import BehaviorCollection
+from .behaviors import ActionOnClickBehavior, ActionOnHoverBehavior, ActionOnUpdateBehavior, AttributeClampingBehavior, AttributeFixingBehavior, AttributeGridSnappingBehavior, AttributeValueSnappingBehavior, DraggableBehavior, DynamicAttributeBehavior, ObjectBehavior
+from .object_collection import ObjectCollection
 from ..animation import Animation, AnimationManager
+from ..debug import QuickDebugManager
 from ..events import Event, EventManager
 from ..rendering import CircleRenderer, ObjectRenderer
-
-from ..utils import Anchor, DictCollection, Transform, Vec2, ObjectFlags, Rect, CollisionBox, RectCollisionBox, CircleCollisionBox, test_collision_box_overlap
-from .behavior_collection import BehaviorCollection
-from .behaviors import ObjectBehavior
-from .object_collection import ObjectCollection
+from ..utils import Anchor, CircleCollisionBox, CollisionBox, DictCollection, ObjectFlags, Rect, RectCollisionBox, Transform, Vec2, test_collision_box_overlap
 
 if TYPE_CHECKING:
     from ..core import Camera
+    from ..objects import PygameObject
+    ObjectCallBackType = Optional[Callable[[PygameObject], Any] | tuple[Callable[[PygameObject], Any], ...] | Callable | tuple[Callable, ...]]
     
 
 class PygameObject:
@@ -300,20 +302,47 @@ class PygameObject:
     
     # endregion
     
+    def get_service[T](self, cls: type[T]) -> T:
+        return self._services.get(cls)
+    
     # region REGISTRATION METHODS
     
     def register_event_callback(self, event_type: str, callback: Callable[[Event], Any]):
         self.get_service(EventManager).register(event_type, callback)
         
-    def do_on_hover(self, start: Optional[Callable] = None, during: Optional[Callable] = None, end: Optional[Callable] = None):
-        if start:
-            pass
-            #self.add_behavior(ActionOnHoverBehavior())
+    def add_quick_debug(self, getter: Callable, template: str = "{}"):
+        self.get_service(QuickDebugManager).add_listener(getter, template)
+        
+    def do_on_update(self, action: ObjectCallBackType):
+        self.add_behavior(ActionOnUpdateBehavior(action))
+        
+    def do_on_click(self, button: int, on_click: Optional[ObjectCallBackType] = None, on_hold: Optional[ObjectCallBackType] = None, on_release: Optional[ObjectCallBackType] = None):
+        if on_click or on_hold or on_release:
+            self.add_behavior(ActionOnClickBehavior(button, on_click, on_hold, on_release))
+            
+    def do_on_hover(self, hover_start: ObjectCallBackType = None, while_hovered: ObjectCallBackType = None, hover_end: ObjectCallBackType = None):
+        if hover_start or while_hovered or hover_end:
+            self.add_behavior(ActionOnHoverBehavior(hover_start, while_hovered, hover_end))
+            
+    def make_attribute_dynamic(self, attribute: str, getter: Callable[[], Any | tuple[Any, ...]], template: Optional[str] = None):
+        self.add_behavior(DynamicAttributeBehavior(attribute, getter, template))
+        
+    def make_attribute_fixed(self, attribute: str):
+        self.add_behavior(AttributeFixingBehavior(attribute))
+        
+    def make_attribute_clamped(self, attribute: str, min_value: Optional[float] = None, max_value: Optional[float] = None):
+        self.add_behavior(AttributeClampingBehavior(attribute, min_value, max_value))
+        
+    def make_attribute_snap(self, attribute: str, values: list[float], offset: float = 0):
+        self.add_behavior(AttributeValueSnappingBehavior(attribute, values, offset))
+        
+    def make_attribute_snap_on_grid(self, attribute: str, step: float, offset: float = 0):
+        self.add_behavior(AttributeGridSnappingBehavior(attribute, step, offset))
+        
+    def make_draggable(self, button: int = 1):
+        self.add_behavior(DraggableBehavior(button))
     
     # endregion
-    
-    def get_service[T](self, cls: type[T]) -> T:
-        return self._services.get(cls)
     
     # region COLLISION METHODS
 
@@ -438,8 +467,10 @@ class PygameObject:
     def play_animation(self, animation: Animation):
         self.get_service(AnimationManager).play(animation)
     
-    # endregion
+    def quick_debug(self, *infos: Any) -> None:
+        self.get_service(QuickDebugManager).quick_debug(infos)
     
+    # endregion
     
     def _render_self(self, submit, camera: Camera):
         self.renderer.render(submit, self.world_transform, self.layer, self.anchor)

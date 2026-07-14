@@ -4,25 +4,26 @@ from typing import Any, Callable, Optional, TYPE_CHECKING
 
 from ..events import Event
 from ..animation import AnimationManager, MultiplierAnimation, Animation
-from ..utils import ObjectFlags, Vec2, clamp, inf, ObjectCallbackLike
+from ..utils import ObjectFlags, Vec2, clamp, inf
 from .behavior import ObjectBehavior
 
 if TYPE_CHECKING:
     from ..core import Camera
     from ..objects import PygameObject
+    
+    ObjectCallBackType = Optional[Callable[[PygameObject], Any] | tuple[Callable[[PygameObject], Any], ...] | Callable | tuple[Callable, ...]]
 
 
-    _ACTION_WITH_OBJECT_ARG = Optional[Callable[[PygameObject], Any] | tuple[Callable[[PygameObject], Any], ...]]
-
+# region ACTION BEHAVIORS
 
 
 class ActionOnEventBehavior(ObjectBehavior):
-    def __init__(self, event: str | Event | tuple[str | Event, ...], action: ObjectCallbackLike):
+    def __init__(self, event: str | Event | tuple[str | Event, ...], action: ObjectCallBackType):
         super().__init__()
         
         self._event = event
         
-        self._action = action
+        self._action = self._normalize_action(action) # type: ignore
     
     def on_event(self, event: str | Event):
         
@@ -39,26 +40,24 @@ class ActionOnEventBehavior(ObjectBehavior):
         
 
 class ActionOnUpdateBehavior(ObjectBehavior):
-    def __init__(self, action: ObjectCallbackLike):
+    def __init__(self, action: ObjectCallBackType):
         super().__init__()
         
-        self._action = action
+        self._action = self._normalize_action(action) # type: ignore
         
     def on_update(self, dt: float):
         self._exec(self._action, self.owner)
     
 
 class ActionOnClickBehavior(ObjectBehavior):
-    def __init__(self, button: int, on_click: _ACTION_WITH_OBJECT_ARG = None,
-                 on_hold: _ACTION_WITH_OBJECT_ARG = None,
-                 on_release: _ACTION_WITH_OBJECT_ARG = None):
+    def __init__(self, button: int, on_click: ObjectCallBackType = None, on_hold: ObjectCallBackType = None, on_release: ObjectCallBackType = None):
         super().__init__()
         
         self._button = button
         
-        self._on_click = on_click
-        self._on_hold = on_hold
-        self._on_release = on_release
+        self._on_click = self._normalize_action(on_click) # type: ignore
+        self._on_hold = self._normalize_action(on_hold) # type: ignore
+        self._on_release = self._normalize_action(on_release) # type: ignore
         
     def on_attach(self):
         self.owner.add_flag(ObjectFlags.CLICKABLE)
@@ -74,14 +73,12 @@ class ActionOnClickBehavior(ObjectBehavior):
         
                 
 class ActionOnHoverBehavior(ObjectBehavior):
-    def __init__(self, hover_start: _ACTION_WITH_OBJECT_ARG = None,
-                 while_hovered: _ACTION_WITH_OBJECT_ARG = None,
-                 hover_end: _ACTION_WITH_OBJECT_ARG = None):
+    def __init__(self, hover_start: ObjectCallBackType = None, while_hovered: ObjectCallBackType = None, hover_end: ObjectCallBackType = None):
         super().__init__()
         
-        self._on_hover_start = hover_start
-        self._on_hover = while_hovered
-        self._on_hover_end = hover_end
+        self._on_hover_start = self._normalize_action(hover_start) # type: ignore
+        self._on_hover = self._normalize_action(while_hovered) # type: ignore
+        self._on_hover_end = self._normalize_action(hover_end) # type: ignore
         
     def on_attach(self):
         self.owner.add_flag(ObjectFlags.HOVERABLE)
@@ -94,6 +91,12 @@ class ActionOnHoverBehavior(ObjectBehavior):
         
     def on_hover_end(self):
         self._exec(self._on_hover_end, self.owner)
+
+
+# endregion
+
+
+# region ANIMATION BEHAVIORS
 
 
 class AnimationOnClickBehavior(ObjectBehavior):
@@ -156,32 +159,13 @@ class ScaleOnClickBehavior(AnimationOnClickBehavior):
     def __init__(self, button: int, scaling: float, duration: float, easing_function: Callable[[float], float]):
         super().__init__(button, lambda: MultiplierAnimation(self.owner, "scale", scaling, duration, easing_function),
                          lambda: MultiplierAnimation(self.owner, "scale", 1 / scaling, duration, easing_function))
-
-
-
-class HideOnCameraZoomBehavior(ObjectBehavior):
-    def __init__(self, camera: Camera, min_zoom: Optional[float] = None, max_zoom: Optional[float] = None):
-        super().__init__()
         
-        self._min_zoom = min_zoom
-        self._max_zoom = max_zoom
-        
-        self._camera = camera
-    
-    def on_update(self, dt: float):
-        hide = False
-        if self._max_zoom is not None:
-            if self._max_zoom < self._camera.zoom:
-                hide = True
-        if self._min_zoom is not None:
-            if self._min_zoom > self._camera.zoom:
-                hide = True
-                
-        if hide:
-            self.owner.add_flag(ObjectFlags.HIDDEN)
-        else:
-            self.owner.remove_flag(ObjectFlags.HIDDEN)
-            
+
+# endregion
+
+
+# region ATTRIBUTE BEHAVIORS
+
 
 class DynamicAttributeBehavior(ObjectBehavior):
     def __init__(self, attribute: str, getter: Callable[[], Any | tuple[Any, ...]], template: Optional[str] = None):
@@ -192,8 +176,8 @@ class DynamicAttributeBehavior(ObjectBehavior):
         self._template = template
         
         self._value = None
-        
-        
+    
+    
     def on_update(self, dt: float):
         if not self.owner:
             return
@@ -206,32 +190,8 @@ class DynamicAttributeBehavior(ObjectBehavior):
         
         if self._template is not None:
             value = self._template.format(*value if isinstance(value, tuple) else (value, ))
-            
+        
         setattr(self.owner, self._attribute, value)
-
-
-class DraggableBehavior(ObjectBehavior):
-    def __init__(self, button: int = 1):
-        super().__init__()
-        self._button = button
-        self._dragging = False
-        self._offset = Vec2(0, 0)
-    
-    def on_attach(self):
-        self.owner.add_flag(ObjectFlags.DRAGGABLE)
-    
-    def on_click(self, button: int, pos: Vec2):
-        if button == self._button:
-            self._dragging = True
-            self._offset = self.owner.pos - pos
-    
-    def on_hold(self, button: int, pos: Vec2):
-        if self._dragging and button == self._button:
-            self.owner.pos = pos + self._offset
-    
-    def on_release(self, button: int, pos: Vec2):
-        if button == self._button:
-            self._dragging = False
 
 
 class AttributeValueSnappingBehavior(ObjectBehavior):
@@ -256,7 +216,7 @@ class AttributeGridSnappingBehavior(ObjectBehavior):
         
         self._step = step
         self._offset = offset
-        
+    
     def on_update(self, dt: float):
         setattr(self.owner, self._attribute, round((getattr(self.owner, self._attribute)-self._offset) / self._step)*self._step+self._offset)
 
@@ -283,5 +243,56 @@ class AttributeFixingBehavior(ObjectBehavior):
     
     def on_update(self, dt: float):
         setattr(self.owner, self._attribute, self._value)
+
+
+# endregion
+
+
+class HideOnCameraZoomBehavior(ObjectBehavior):
+    def __init__(self, camera: Camera, min_zoom: Optional[float] = None, max_zoom: Optional[float] = None):
+        super().__init__()
+        
+        self._min_zoom = min_zoom
+        self._max_zoom = max_zoom
+        
+        self._camera = camera
+    
+    def on_update(self, dt: float):
+        hide = False
+        if self._max_zoom is not None:
+            if self._max_zoom < self._camera.zoom:
+                hide = True
+        if self._min_zoom is not None:
+            if self._min_zoom > self._camera.zoom:
+                hide = True
+        
+        if hide:
+            self.owner.add_flag(ObjectFlags.HIDDEN)
+        else:
+            self.owner.remove_flag(ObjectFlags.HIDDEN)
+
+
+class DraggableBehavior(ObjectBehavior):
+    def __init__(self, button: int = 1):
+        super().__init__()
+        self._button = button
+        self._dragging = False
+        self._offset = Vec2(0, 0)
+    
+    def on_attach(self):
+        self.owner.add_flag(ObjectFlags.DRAGGABLE)
+    
+    def on_click(self, button: int, pos: Vec2):
+        if button == self._button:
+            self._dragging = True
+            self._offset = self.owner.pos - pos
+    
+    def on_hold(self, button: int, pos: Vec2):
+        if self._dragging and button == self._button:
+            self.owner.pos = pos + self._offset
+    
+    def on_release(self, button: int, pos: Vec2):
+        if button == self._button:
+            self._dragging = False
     
     

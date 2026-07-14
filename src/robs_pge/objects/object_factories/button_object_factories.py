@@ -1,16 +1,19 @@
-from typing import Any, Optional
+from typing import Any, Callable, Optional
 
 from .sub_factory import SubObjectFactory
+from ..object import PygameObject
 from ..custom import *
-from ..custom.ui_objects import ToggleButtonObject
 from ...rendering import ButtonStyle, IconButtonStyle, RectRenderer, SpriteButtonStyle, ToggleButtonStyle
 from ...resources import Icons, Texture
-from ...utils import Anchor, ObjectCallbackLike, Vec2
+from ...utils import Anchor, Vec2
+
+
+ObjectCallBackType = Optional[Callable[[PygameObject], Any] | tuple[Callable[[PygameObject], Any], ...] | Callable | tuple[Callable, ...]]
 
 
 class ButtonObjectFactory(SubObjectFactory):
     def make_button(
-            self, position: Vec2, text: str, action: ObjectCallbackLike = None, dims: Optional[Vec2] = None, style: Optional[ButtonStyle | str] = None,
+            self, position: Vec2, text: str, action: ObjectCallBackType = None, dims: Optional[Vec2] = None, style: Optional[ButtonStyle | str] = None,
             rotation: float = 0.0, scale: float = 1.0, layer: int = 0, anchor: Vec2 = Anchor.C, cache: bool = True
     ) -> ButtonObject:
         
@@ -27,7 +30,7 @@ class ButtonObjectFactory(SubObjectFactory):
         return obj
     
     def make_cycle_button(
-            self, position: Vec2, texts: tuple[str, ...], values: Optional[tuple[Any, ...]] = None, default_index: int = 0, callback: ObjectCallbackLike = None, dims: Optional[Vec2] = None, style: Optional[ButtonStyle | str] = None,
+            self, position: Vec2, texts: tuple[str, ...], values: Optional[tuple[Any, ...]] = None, default_index: int = 0, callback: ObjectCallBackType = None, dims: Optional[Vec2] = None, style: Optional[ButtonStyle | str] = None,
             rotation: float = 0.0, scale: float = 1.0, layer: int = 0, anchor: Vec2 = Anchor.C, cache: bool = True
     ) -> CycleButtonObject:
         
@@ -50,7 +53,7 @@ class ButtonObjectFactory(SubObjectFactory):
         return obj
     
     def make_sprite_button(
-            self, position: Vec2, texture: Texture, action: ObjectCallbackLike = None, dims: Optional[Vec2] = None, style: Optional[SpriteButtonStyle | str] = None,
+            self, position: Vec2, texture: Texture, action: ObjectCallBackType = None, dims: Optional[Vec2] = None, style: Optional[SpriteButtonStyle | str] = None,
             rotation: float = 0.0, scale: float = 1.0, layer: int = 0, anchor: Vec2 = Anchor.C, cache: bool = True
     ) -> SpriteButtonObject:
         
@@ -67,7 +70,7 @@ class ButtonObjectFactory(SubObjectFactory):
         return obj
     
     def make_icon_button(
-            self, position: Vec2, icon: str, icon_size: int, action: ObjectCallbackLike = None, dims: Optional[Vec2] = None, style: Optional[IconButtonStyle | str] = None,
+            self, position: Vec2, icon: str, icon_size: int, action: ObjectCallBackType = None, dims: Optional[Vec2] = None, style: Optional[IconButtonStyle | str] = None,
             rotation: float = 0.0, scale: float = 1.0, layer: int = 0, anchor: Vec2 = Anchor.C, cache: bool = True
     ) -> SpriteButtonObject:
         
@@ -79,7 +82,7 @@ class ButtonObjectFactory(SubObjectFactory):
         return self.make_sprite_button(position, icon, action, dims, button_style, rotation, scale, layer, anchor, cache)
     
     def make_checkbox(
-            self, position: Vec2, icon_size, callback: ObjectCallbackLike = None, dims: Optional[Vec2] = None, checked_icon: str = Icons.CHECK, checked=False, style: Optional[IconButtonStyle | str] = None,
+            self, position: Vec2, icon_size, callback: ObjectCallBackType = None, dims: Optional[Vec2] = None, checked_icon: str = Icons.CHECK, checked=False, style: Optional[IconButtonStyle | str] = None,
             rotation: float = 0.0, scale: float = 1.0, layer: int = 0, anchor: Vec2 = Anchor.C, cache: bool = True
     ) -> CheckBoxObject:
         
@@ -101,7 +104,7 @@ class ButtonObjectFactory(SubObjectFactory):
         return obj
     
     def make_toggle_button(
-            self, position: Vec2, dims: Vec2, toggle_width: Optional[int] = None, enabled=False, callback: ObjectCallbackLike = None, style: Optional[ToggleButtonStyle | str] = None,
+            self, position: Vec2, dims: Vec2, toggle_width: Optional[int] = None, enabled=False, callback: Optional[Callable[[PygameObject], Any] | tuple[Callable[[PygameObject], Any], ...]] = None, style: Optional[ToggleButtonStyle | str] = None,
             rotation: float = 0.0, scale: float = 1.0, layer: int = 0, anchor: Vec2 = Anchor.C, cache: bool = True
     ) -> ToggleButtonObject:
         

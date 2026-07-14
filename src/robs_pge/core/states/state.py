@@ -4,7 +4,7 @@ from typing import Any, Optional, TYPE_CHECKING, Callable
 import pygame as pg
 
 from ...animation import AnimationManager
-from ...debug import FrameTimer
+from ...debug import FrameTimer, QuickDebugManager
 from ...events import Event, EventManager
 from ...input import InputManager, Keybind, KeybindsManager
 from ...objects import InteractionManager, ObjectCollection, ObjectFactory, PygameObject, ParticleSystem, WindowManager
@@ -33,9 +33,9 @@ class State:
         self._particle_system = self._create_particle_system()
         self._async_process_manager = self._create_async_process_manager()
         self._window_manager = self._create_window_manager(self.event_manager)
+        self._quick_debug_manager = self._create_quick_debug_manager()
         
         self._factory = self._create_object_factory()
-        
         
         self._services: DictCollection = DictCollection()
         self._factory.services = self._services
@@ -44,7 +44,9 @@ class State:
         self._ui_objects: ObjectCollection = ObjectCollection()
         
         self._debug_overlay = self.factory.ui.debug.make_debug_overlay(Vec2(0, self.engine.display.dims.y), width=self.engine.display.dims.x, invert_y=True, anchor=Anchor.TL).set_constant_padding(10)
-        self._quick_debug_queue = []
+        
+        self._quick_debug_getters: list[tuple[str, Callable | tuple[Callable, ...]]] = []
+        self._quick_debug_queue: list[str] = []
 
         self.init_resources()
         self.init_keybinds()
@@ -118,6 +120,10 @@ class State:
         return self._async_process_manager
     
     @property
+    def quick_debug_manager(self):
+        return self._quick_debug_manager
+    
+    @property
     def factory(self) -> ObjectFactory:
         return self._factory
     
@@ -168,6 +174,10 @@ class State:
     @staticmethod
     def _create_window_manager(event_manager) -> WindowManager:
         return WindowManager(event_manager)
+    
+    @staticmethod
+    def _create_quick_debug_manager():
+        return QuickDebugManager()
     
     # endregion
     
@@ -300,8 +310,10 @@ class State:
         
         quick_debug_pannel = self.factory.ui.debug.make_debug_panel(Vec2(), Vec2(400, 200), yellow_style, "QUICK DEBUG").stack_pannel_x(
             self.factory.ui.layouts.make_vertical_layout(Vec2(), 180).skip_rendering().invert_up_down().stack_y(
-                self.factory.text.make_dynamic_text(Vec2(), "{}", lambda: ("\n".join(self._quick_debug_queue)) if self._quick_debug_queue else "Nothing to show", font_white), anchor=Anchor.TL
+                self.factory.text.make_dynamic_text(Vec2(), "{}",
+                    lambda: ("\n".join(self.quick_debug_manager.get_values())) if self._quick_debug_manager.has_values() else "Nothing to Show", font_white), anchor=Anchor.TL
             ).set_outer_padding(10), anchor=Anchor.TL)
+        quick_debug_pannel.unfix_height()
         
         # endregion
         
@@ -322,6 +334,7 @@ class State:
         pass
     
     def init_services(self) -> None:
+        self._services.set(State, self)
         self._services.set(AnimationManager, self.animation_manager)
         self._services.set(InputManager, self.input)
         self._services.set(ParticleSystem, self.particle_system)
@@ -329,6 +342,7 @@ class State:
         self._services.set(EventManager, self.event_manager)
         self._services.set(AsyncProcessManager, self.async_process_manager)
         self._services.set(ResourceManager, self.resources)
+        self._services.set(QuickDebugManager, self.quick_debug_manager)
     
     def init_keybinds(self) -> None:
         self.register_keybind(pg.K_F3, lambda: self.debug_overlay.toggle_visible())
@@ -357,6 +371,9 @@ class State:
     
     def add_window(self, window_id: str, window: PygameObject, group: str = "main"):
         self.windows.register(window_id, window, group)
+        
+    def add_quick_debug(self, getter: Callable, template: str = "{}"):
+        self.quick_debug_manager.add_listener(getter, template)
     
     # endregion
     
@@ -391,7 +408,7 @@ class State:
         self.windows.close(window_id)
     
     def quick_debug(self, *infos: Any) -> None:
-        self._quick_debug_queue.append(" ".join(str(info) for info in infos))
+        self.quick_debug_manager.quick_debug(infos)
     
     # endregion
     
@@ -408,7 +425,6 @@ class State:
         self.frame_timer.time("Update.State.Camera", lambda: self.camera.update(dt))
         
         self.frame_timer.time("Update.State.Debug Overlay", lambda: self.debug_overlay.update(dt))
-        self._quick_debug_queue.clear()
     
     def render(self) -> None:
         self.draw_world(self.objects)

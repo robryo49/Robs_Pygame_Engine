@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import Callable, Optional, TYPE_CHECKING
+from typing import Any, Callable, Optional, TYPE_CHECKING, overload
 
 from ..utils import Vec2
 from ..events import Event
@@ -25,6 +25,29 @@ class ObjectBehavior:
     # endregion
     
     # endregion
+    
+    @overload
+    def _normalize_action(self, action: Callable[..., Any]) -> Callable[..., Any]: ...
+    
+    @overload
+    def _normalize_action(self, action: tuple[Callable[..., Any], ...]) -> tuple[Callable[..., Any], ...]: ...
+    
+    @overload
+    def _normalize_action(self, action: None) -> None: ...
+    
+    def _normalize_action(self, action: Callable[..., Any] | tuple[Callable[..., Any], ...] | None) -> Callable[..., Any] | tuple[Callable[..., Any], ...] | None:
+        if action is None:
+            return None
+        elif isinstance(action, tuple):
+            return tuple(self._normalize_action(act) for act in action)
+        elif hasattr(action, "__code__"):
+            if action.__code__.co_argcount == 0:
+                return lambda owner: action()
+        elif hasattr(action, "__func__") and hasattr(action.__func__, "__code__"):
+            if action.__func__.__code__.co_argcount - 1 == 0:
+                return lambda owner: action()
+        
+        return action
     
     def _exec(self, action: Optional[Callable | tuple[Callable, ...]], *args, **kwargs) -> None:
         if action is not None:
