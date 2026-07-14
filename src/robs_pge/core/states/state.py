@@ -44,6 +44,7 @@ class State:
         self._ui_objects: ObjectCollection = ObjectCollection()
         
         self._debug_overlay = self.factory.ui.debug.make_debug_overlay(Vec2(0, self.engine.display.dims.y), width=self.engine.display.dims.x, invert_y=True, anchor=Anchor.TL).set_constant_padding(10)
+        self._quick_debug_queue = []
 
         self.init_resources()
         self.init_keybinds()
@@ -138,7 +139,7 @@ class State:
     
     # endregion
     
-    # region SEVICES CREATION
+    # region SEVICES CREATION METHODS
     
     @staticmethod
     def _create_event_manager() -> EventManager:
@@ -170,6 +171,8 @@ class State:
     
     # endregion
     
+    # region INIT METHODS
+    
     def init_debug_overlay_objects(self) -> None:
         
         green_style = self.resources.get(DebugPanelStyle, "debug_teal_panel_style")
@@ -185,6 +188,7 @@ class State:
         
         
         c1 = self.factory.ui.layouts.make_vertical_layout(Vec2()).skip_rendering().set_cell_padding(10).invert_up_down()
+        c2 = self.factory.ui.layouts.make_vertical_layout(Vec2()).skip_rendering().set_cell_padding(10).invert_up_down()
         
         # region ENGINE PANNEL
         
@@ -193,7 +197,7 @@ class State:
         engine_c1 = self.factory.ui.layouts.make_vertical_layout(Vec2(), 400).skip_rendering().invert_up_down().set_constant_padding(10)
         engine_c1.stack_y(self.factory.text.make_dynamic_text(Vec2(), "{} FPS    |    {} ms", lambda: (round(self.clock.fps), round(self.clock.dtime*1000, 1)), font_blue_title, cache=False), anchor=Anchor.T)
         fps_line_chart = self.factory.ui.make_line_chart(Vec2(), Vec2(380, 100), blue_line_chart_style, 10, 10, None, None, 0, 120, None, 5,
-                                            update_action=lambda: fps_line_chart.insert_point(Vec2(self.clock.time, self.clock.fps)))
+                                                         update_action=lambda o: fps_line_chart.insert_point(Vec2(self.clock.time, self.clock.fps)))
         engine_c1.stack_y(fps_line_chart, anchor=Anchor.TL)
         
         engine_pannel.panel.stack_x(engine_c1)
@@ -292,13 +296,25 @@ class State:
         
         # endregion
         
+        # region QUICK DEBUG PANNEL
+        
+        quick_debug_pannel = self.factory.ui.debug.make_debug_panel(Vec2(), Vec2(400, 200), yellow_style, "QUICK DEBUG").stack_pannel_x(
+            self.factory.ui.layouts.make_vertical_layout(Vec2(), 180).skip_rendering().invert_up_down().stack_y(
+                self.factory.text.make_dynamic_text(Vec2(), "{}", lambda: ("\n".join(self._quick_debug_queue)) if self._quick_debug_queue else "Nothing to show", font_white), anchor=Anchor.TL
+            ).set_outer_padding(10), anchor=Anchor.TL)
+        
+        # endregion
+        
         c1.stack_y(engine_pannel, anchor=Anchor.TL)
         c1.stack_y(frame_pannel, anchor=Anchor.TL)
         c1.stack_y(camera_pannel, anchor=Anchor.TL)
         c1.stack_y(input_pannel, anchor=Anchor.TL)
         c1.stack_y(rendering_pannel, anchor=Anchor.TL)
         
+        c2.stack_y(quick_debug_pannel, anchor=Anchor.TR)
+        
         self.debug_overlay.stack_x(c1, anchor=Anchor.TL)
+        self.debug_overlay.stack_x(c2, anchor=Anchor.TR)
         
         self.debug_overlay.fix_col_width(0, 420)
     
@@ -317,58 +333,34 @@ class State:
     def init_keybinds(self) -> None:
         self.register_keybind(pg.K_F3, lambda: self.debug_overlay.toggle_visible())
         self.register_keybind(pg.K_F4, lambda: self.debug_overlay.toggle_freeze())
-        
+    
     def init_events(self):
         pass
+    
+    # endregion
+    
+    # region REGISTRATION METHODS
     
     def register_keybind(self, key: int | tuple[int, ...], action: Callable, *args) -> None:
         self.keybinds.add(Keybind(key, action, *args))
     
     def register_event_callback(self, event_type: str, callback: Callable[[Event], Any], condition: Optional[Callable[[Event], bool]] = None) -> None:
         self.event_manager.register(event_type, callback, condition)
-        
-    def trigger_event(self, event: Event) -> None:
-        self.event_manager.trigger(event)
     
-    def start_async_process(self, fn: Callable, *args, **kwargs) -> AsyncProcess:
-        return self.async_process_manager.submit(fn, *args, **kwargs)
-        
     def add_object(self, *obj: PygameObject | list[PygameObject]) -> None:
         for o in obj:
             self.objects.add(o)
-        
+    
     def add_ui_object(self, *obj: PygameObject | list[PygameObject]) -> None:
         for o in obj:
             self.ui_objects.add(o)
-            
+    
     def add_window(self, window_id: str, window: PygameObject, group: str = "main"):
         self.windows.register(window_id, window, group)
-        
-    def open_window(self, window_id: str) -> None:
-        self.windows.open(window_id)
-        
-    def close_window(self, window_id: str) -> None:
-        self.windows.close(window_id)
-        
     
-    def update(self, dt: float) -> None:
-        self.animation_manager.update(dt)
-        self.keybinds.update()
-        self.event_manager.update()
-        
-        self.frame_timer.time("Update.State.Interactions", lambda: self.interaction_manager.update(self.objects, self.ui_objects, self.camera))
-        self.frame_timer.time("Update.State.Async Generation", self.async_process_manager.update)
-        self.frame_timer.time("Update.State.UI Objects", lambda: self.ui_objects.update(dt))
-        self.frame_timer.time("Update.State.World Objects", lambda: self.objects.update(dt))
-        self.frame_timer.time("Update.State.Particles", lambda: self.particle_system.update(dt))
-        self.frame_timer.time("Update.State.Camera", lambda: self.camera.update(dt))
-        self.frame_timer.time("Update.State.Debug Overlay", lambda: self.debug_overlay.update(dt))
+    # endregion
     
-    def render(self) -> None:
-        self.draw_world(self.objects)
-        self.draw_particles(self.particle_system)
-        self.draw_ui(self.ui_objects)
-        self.draw_debug(self.debug_overlay)
+    # region DRAW METHODS
     
     def draw_world(self, obj: PygameObject | ObjectCollection) -> None:
         obj.render(self.renderer.draw_world, self.camera)
@@ -381,3 +373,45 @@ class State:
     
     def draw_particles(self, particle_system) -> None:
         particle_system.render(self.renderer.draw_world, self.camera)
+    
+    # endregion
+    
+    # region OTHER
+    
+    def trigger_event(self, event: Event) -> None:
+        self.event_manager.trigger(event)
+    
+    def start_async_process(self, fn: Callable, *args, **kwargs) -> AsyncProcess:
+        return self.async_process_manager.submit(fn, *args, **kwargs)
+    
+    def open_window(self, window_id: str) -> None:
+        self.windows.open(window_id)
+    
+    def close_window(self, window_id: str) -> None:
+        self.windows.close(window_id)
+    
+    def quick_debug(self, *infos: Any) -> None:
+        self._quick_debug_queue.append(" ".join(str(info) for info in infos))
+    
+    # endregion
+    
+    def update(self, dt: float) -> None:
+        self.animation_manager.update(dt)
+        self.keybinds.update()
+        self.event_manager.update()
+        
+        self.frame_timer.time("Update.State.Interactions", lambda: self.interaction_manager.update(self.objects, self.ui_objects, self.camera))
+        self.frame_timer.time("Update.State.Async Generation", self.async_process_manager.update)
+        self.frame_timer.time("Update.State.UI Objects", lambda: self.ui_objects.update(dt))
+        self.frame_timer.time("Update.State.World Objects", lambda: self.objects.update(dt))
+        self.frame_timer.time("Update.State.Particles", lambda: self.particle_system.update(dt))
+        self.frame_timer.time("Update.State.Camera", lambda: self.camera.update(dt))
+        
+        self.frame_timer.time("Update.State.Debug Overlay", lambda: self.debug_overlay.update(dt))
+        self._quick_debug_queue.clear()
+    
+    def render(self) -> None:
+        self.draw_world(self.objects)
+        self.draw_particles(self.particle_system)
+        self.draw_ui(self.ui_objects)
+        self.draw_debug(self.debug_overlay)

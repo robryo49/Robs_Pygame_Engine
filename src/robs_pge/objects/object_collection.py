@@ -1,18 +1,19 @@
 from __future__ import annotations
 from typing import Optional, TYPE_CHECKING
 
-from ..utils import Collection, ObjectLike
+from ..utils import Collection
 
 if TYPE_CHECKING:
     from ..core import Camera
+    from ..objects import PygameObject
 
 
 class ObjectCollection(Collection):
-    def __init__(self, objects: Optional[list[ObjectLike]] = None):
+    def __init__(self, objects: Optional[list[PygameObject]] = None):
         super().__init__(objects)
         
-        self._to_remove: list[ObjectLike] = []
-        self._to_add: list[ObjectLike] = []
+        self._to_remove: list[PygameObject] = []
+        self._to_add: list[PygameObject] = []
         
         self._frozen = False
         self._render = True
@@ -20,7 +21,7 @@ class ObjectCollection(Collection):
     # region PROPERTIES
     
     @property
-    def objects(self) -> list[ObjectLike]:
+    def objects(self) -> list[PygameObject]:
         return self.elements
     
     # endregion
@@ -67,7 +68,7 @@ class ObjectCollection(Collection):
         self._to_remove.clear()
         return self
     
-    def add(self, obj: ObjectLike | list[ObjectLike]) -> "ObjectCollection":
+    def add(self, obj: PygameObject | list[PygameObject]) -> "ObjectCollection":
         if isinstance(obj, list):
             for o in obj:
                 self.add(o)
@@ -75,7 +76,7 @@ class ObjectCollection(Collection):
             self._to_add.append(obj)
         return self
         
-    def remove(self, obj: ObjectLike | list[ObjectLike]) -> "ObjectCollection":
+    def remove(self, obj: PygameObject | list[PygameObject]) -> "ObjectCollection":
         if isinstance(obj, list):
             for o in obj:
                 self.remove(o)

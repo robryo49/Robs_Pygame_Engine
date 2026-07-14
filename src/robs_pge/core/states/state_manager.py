@@ -1,12 +1,9 @@
 from .state import State
-from ...events import Event, EventManager, Events
+from ...events import Event, Events
 
 
 class StateManager:
-    def __init__(self, event_manager: EventManager):
-        
-        self._event_manager = event_manager
-        
+    def __init__(self):
         self._state = None
         self._states: dict[str, State] = {}
         
@@ -33,13 +30,11 @@ class StateManager:
     def update(self, dt: float):
         if self._state_request:
             
-            if self._state is not None:
-                self._event_manager.trigger(Event(Events.STATE_EXIT, state_id=self._state.id))
-            
             self._state = self.states[self._state_request]
             
             if self._state is not None:
-                self._event_manager.trigger(Event(Events.STATE_ENTER, state_id=self._state.id))
+                self._state.trigger_event(Event(Events.STATE_EXIT, state_id=self._state.id))
+                self._state.trigger_event(Event(Events.STATE_ENTER, state_id=self._state.id))
                 
             self._state_request = None
         

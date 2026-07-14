@@ -1,9 +1,10 @@
-from typing import Optional
+from typing import Any, Callable, Optional
 
 from .button_object_factories import ButtonObjectFactory
 from .debug_object_factories import DebugObjectFactory
 from .layout_object_factory import LayoutObjectFactory
 from .sub_factory import SubObjectFactory
+from ..object import PygameObject
 from ..behaviors import ActionOnUpdateBehavior
 from ..custom import LineChartObject, ProgressBarObject, SliderObject
 from ...rendering import RectRenderer, RectStyle, SliderStyle, CircleStyle, ProgressBarStyle, LineChartStyle, LineStyle
@@ -78,7 +79,8 @@ class UIObjectFactory(SubObjectFactory):
         return obj
     
     def make_line_chart(
-            self, position: Vec2, dims: Vec2, style: Optional[LineChartStyle | str] = None, pad_x=0, pad_y=0, min_x=None, max_x=None, min_y=None, max_y=None, max_data_points=None, max_data_x_range=None, update_action=None,
+            self, position: Vec2, dims: Vec2, style: Optional[LineChartStyle | str] = None, pad_x=0, pad_y=0, min_x=None, max_x=None, min_y=None, max_y=None,
+            max_data_points=None, max_data_x_range=None, update_action: Optional[Callable[[PygameObject], Any] | tuple[Callable[[PygameObject], Any], ...]]=None,
             rotation: float = 0.0, scale: float = 1.0, layer: int = 0, anchor: Vec2 = Anchor.C, cache: bool = True, cache_line: bool = False
     ) -> LineChartObject:
         
@@ -98,7 +100,7 @@ class UIObjectFactory(SubObjectFactory):
         if max_data_points is not None: obj.max_data_points = max_data_points
         if max_data_x_range is not None: obj.max_data_x_range = max_data_x_range
         
-        if update_action is not None: obj.add_behavior(ActionOnUpdateBehavior(update_action))
+        if update_action is not None: obj.add_behavior(ActionOnUpdateBehavior(lambda o: update_action(o)))
         
         return obj
     

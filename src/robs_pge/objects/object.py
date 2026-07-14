@@ -289,33 +289,35 @@ class PygameObject:
         
         return self
     
+    @property
+    def collision_box(self) -> Optional[CollisionBox]:
+        return self._collision_box
+    
+    def get_world_aabb(self):
+        w, h = self.aabb_dims
+        x, y = self.uv_to_world(Anchor.C)
+        return Rect(x - w*0.5, y - h*0.5, w, h)
+    
+    # endregion
+    
+    # region REGISTRATION METHODS
+    
+    def register_event_callback(self, event_type: str, callback: Callable[[Event], Any]):
+        self.get_service(EventManager).register(event_type, callback)
+        
+    def do_on_hover(self, start: Optional[Callable] = None, during: Optional[Callable] = None, end: Optional[Callable] = None):
+        if start:
+            pass
+            #self.add_behavior(ActionOnHoverBehavior())
     
     # endregion
     
     def get_service[T](self, cls: type[T]) -> T:
         return self._services.get(cls)
     
-    def register_event_callback(self, event_type: str, callback: Callable[[Event], Any]):
-        self.get_service(EventManager).register(event_type, callback)
-        
-    def trigger_event(self, event: Event):
-        self.get_service(EventManager).trigger(event)
-        
-    def play_animation(self, animation: Animation):
-        self.get_service(AnimationManager).play(animation)
-    
-    # region collision
-    @property
-    def collision_box(self) -> Optional[CollisionBox]:
-            return self._collision_box
+    # region COLLISION METHODS
 
-    def add_collision_box(
-                    self,
-                    kind: Optional[str] = None,
-                    dims: Optional[Vec2] = None,
-                    radius: Optional[float] = None,
-                    rotation_offset: float = 0.0
-            ) -> "PygameObject":
+    def add_collision_box(self, kind: Optional[str] = None, dims: Optional[Vec2] = None, radius: Optional[float] = None, rotation_offset: float = 0.0) -> "PygameObject":
         if kind is None:
                 kind = "circle" if isinstance(self.renderer, CircleRenderer) else "rect"
 
@@ -343,40 +345,58 @@ class PygameObject:
         if self._collision_box is None or other.collision_box is None:
             return False
         return test_collision_box_overlap(self._collision_box, self.world_transform, cast(CollisionBox, other.collision_box), other.world_transform)
+    
     # endregion
     
-    # region METHODS
+    # region HIT TEST METHODS
     
-    # region behavior methods
+    def test_screen_hit(self, screen: Vec2, camera: Optional[Camera] = None):
+        return self.test_world_hit(camera.screen_to_world_pos(screen) if camera else screen)
+    
+    def test_world_hit(self, world: Vec2):
+        return self.test_local_hit(self.world_to_local(world))
+    
+    def test_local_hit(self, local: Vec2):
+        return self.renderer.test_hit(local) if self.renderer else False
+    
+    def test_uv_hit(self, uv: Vec2):
+        return self.test_local_hit(self.uv_to_local(uv))
+    
+    def test_aabb_object_hit(self, other: "PygameObject") -> bool:
+        return self.get_world_aabb().colliderect(other.get_world_aabb())
+    
+    # endregion
+    
+    # region BEHAVIOR METHODS
     
     def while_hovered(self):
         self.behaviors.on_hover()
-        
+    
     def on_hover_end(self):
         self.behaviors.on_hover_end()
-        
+    
     def on_hover_start(self):
         self.behaviors.on_hover_start()
-        
+    
     def on_click(self, button: int, pos: Vec2):
         self.behaviors.on_click(button, pos)
-        
+    
     def on_hold(self, button: int, pos: Vec2):
         self.behaviors.on_hold(button, pos)
-        
+    
     def on_release(self, button: int, pos: Vec2):
         self.behaviors.on_release(button, pos)
-        
+    
     # endregion
     
-    # region coordinates conversion methods
+    # region COORDINATES CONVERSION METHODS
     
     def screen_to_local(self, screen: Vec2, camera: Optional[Camera] = None):
         return self.world_to_local(camera.screen_to_world_pos(screen)) if camera else self.world_to_local(screen)
     
     def screen_to_uv(self, screen: Vec2, camera: Optional[Camera] = None):
         return self.world_to_uv(camera.screen_to_world_pos(screen)) if camera else self.world_to_uv(screen)
-        
+    
     
     def world_to_local(self, world: Vec2):
         return self.world_transform.apply_inverse(world) + self.uv_to_local(self.anchor)
@@ -410,30 +430,13 @@ class PygameObject:
     
     # endregion
     
-    # region hit test methods
+    # region OTHER
     
-    def test_screen_hit(self, screen: Vec2, camera: Optional[Camera] = None):
-        return self.test_world_hit(camera.screen_to_world_pos(screen) if camera else screen)
+    def trigger_event(self, event: Event):
+        self.get_service(EventManager).trigger(event)
     
-    def test_world_hit(self, world: Vec2):
-        return self.test_local_hit(self.world_to_local(world))
-    
-    def test_local_hit(self, local: Vec2):
-        return self.renderer.test_hit(local) if self.renderer else False
-    
-    def test_uv_hit(self, uv: Vec2):
-        return self.test_local_hit(self.uv_to_local(uv))
-    
-    def test_aabb_object_hit(self, other: "PygameObject") -> bool:
-        return self.get_world_aabb().colliderect(other.get_world_aabb())
-    
-    # endregion
-    
-    def get_world_aabb(self):
-        w, h = self.aabb_dims
-        x, y = self.uv_to_world(Anchor.C)
-        return Rect(x - w*0.5, y - h*0.5, w, h)
-    
+    def play_animation(self, animation: Animation):
+        self.get_service(AnimationManager).play(animation)
     
     # endregion
     

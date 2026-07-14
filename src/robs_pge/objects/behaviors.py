@@ -4,16 +4,20 @@ from typing import Any, Callable, Optional, TYPE_CHECKING
 
 from ..events import Event
 from ..animation import AnimationManager, MultiplierAnimation, Animation
-from ..utils import ObjectFlags, Vec2, clamp, inf
+from ..utils import ObjectFlags, Vec2, clamp, inf, ObjectCallbackLike
 from .behavior import ObjectBehavior
 
 if TYPE_CHECKING:
     from ..core import Camera
+    from ..objects import PygameObject
+
+
+    _ACTION_WITH_OBJECT_ARG = Optional[Callable[[PygameObject], Any] | tuple[Callable[[PygameObject], Any], ...]]
 
 
 
 class ActionOnEventBehavior(ObjectBehavior):
-    def __init__(self, event: str | Event | tuple[str | Event, ...], action: Callable | tuple[Callable, ...]):
+    def __init__(self, event: str | Event | tuple[str | Event, ...], action: ObjectCallbackLike):
         super().__init__()
         
         self._event = event
@@ -30,50 +34,66 @@ class ActionOnEventBehavior(ObjectBehavior):
                     break
             if not found: return
         elif Event.are_equal(self._event, event): return
-        elif self._action is None: return
         
-        if isinstance(self._action, tuple):
-            for action in self._action:
-                action()
-        else:
-            self._action()
+        self._exec(self._action, self.owner)
         
 
-    
 class ActionOnUpdateBehavior(ObjectBehavior):
-    def __init__(self, action: Callable | tuple[Callable, ...]):
+    def __init__(self, action: ObjectCallbackLike):
         super().__init__()
         
         self._action = action
         
     def on_update(self, dt: float):
-        if self._action is None: return
-        if isinstance(self._action, tuple):
-            for action in self._action:
-                action()
-        else:
-            self._action()
+        self._exec(self._action, self.owner)
     
 
 class ActionOnClickBehavior(ObjectBehavior):
-    def __init__(self, button: int, action: Optional[Callable | tuple[Callable, ...]]):
+    def __init__(self, button: int, on_click: _ACTION_WITH_OBJECT_ARG = None,
+                 on_hold: _ACTION_WITH_OBJECT_ARG = None,
+                 on_release: _ACTION_WITH_OBJECT_ARG = None):
         super().__init__()
         
         self._button = button
         
-        self._action = action
+        self._on_click = on_click
+        self._on_hold = on_hold
+        self._on_release = on_release
         
     def on_attach(self):
         self.owner.add_flag(ObjectFlags.CLICKABLE)
     
     def on_click(self, button: int, pos: Vec2):
-        if button == self._button:
-            if isinstance(self._action, tuple):
-                for action in self._action:
-                    if action is not None: action()
-            elif self._action is not None:
-                self._action()
-
+        self._exec(self._on_click, self.owner)
+        
+    def on_hold(self, button: int, pos: Vec2):
+        self._exec(self._on_hold, self.owner)
+    
+    def on_release(self, button: int, pos: Vec2):
+        self._exec(self._on_release, self.owner)
+        
+                
+class ActionOnHoverBehavior(ObjectBehavior):
+    def __init__(self, hover_start: _ACTION_WITH_OBJECT_ARG = None,
+                 while_hovered: _ACTION_WITH_OBJECT_ARG = None,
+                 hover_end: _ACTION_WITH_OBJECT_ARG = None):
+        super().__init__()
+        
+        self._on_hover_start = hover_start
+        self._on_hover = while_hovered
+        self._on_hover_end = hover_end
+        
+    def on_attach(self):
+        self.owner.add_flag(ObjectFlags.HOVERABLE)
+    
+    def on_hover(self):
+        self._exec(self._on_hover, self.owner)
+        
+    def on_hover_start(self):
+        self._exec(self._on_hover_start, self.owner)
+        
+    def on_hover_end(self):
+        self._exec(self._on_hover_end, self.owner)
 
 
 class AnimationOnClickBehavior(ObjectBehavior):
@@ -123,6 +143,7 @@ class AnimationOnHoverBehavior(ObjectBehavior):
         self._animation_manager.play(self._hover_end_animation())
 
 
+
 class ScaleOnHoverBehavior(AnimationOnHoverBehavior):
     def __init__(self, scaling: float, duration: float, easing_function: Callable[[float], float]):
         super().__init__(
@@ -135,6 +156,7 @@ class ScaleOnClickBehavior(AnimationOnClickBehavior):
     def __init__(self, button: int, scaling: float, duration: float, easing_function: Callable[[float], float]):
         super().__init__(button, lambda: MultiplierAnimation(self.owner, "scale", scaling, duration, easing_function),
                          lambda: MultiplierAnimation(self.owner, "scale", 1 / scaling, duration, easing_function))
+
 
 
 class HideOnCameraZoomBehavior(ObjectBehavior):

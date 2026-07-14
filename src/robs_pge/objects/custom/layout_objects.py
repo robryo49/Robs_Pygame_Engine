@@ -385,7 +385,6 @@ class LayoutObject(RectObject):
             offset += self._row_heights[row_y]
     
     
-    
     def update_grid_size(self):
         self._reset_dims()
         
@@ -396,6 +395,8 @@ class LayoutObject(RectObject):
             span_x, span_y = spanning
             
             free_columns = [col_x for col_x in range(grid_x, grid_x + span_x) if not self._fixed_cols.get(col_x, False)]
+            for col_x in range(grid_x, grid_x + span_x):
+                self._col_widths.setdefault(col_x, 0)
             target = width + 2 * pad_x
             missing = target - sum(self._col_widths.get(col_x, 0) for col_x in range(grid_x, grid_x + span_x))
             if free_columns and missing > 0:
@@ -403,6 +404,8 @@ class LayoutObject(RectObject):
                     self._col_widths[col_x] = self._col_widths.get(col_x, 0) + missing / len(free_columns)
             
             free_rows = [row_y for row_y in range(grid_y, grid_y + span_y) if not self._fixed_rows.get(row_y, False)]
+            for row_y in range(grid_y, grid_y + span_y):
+                self._row_heights.setdefault(row_y, 0)
             target = height + 2 * pad_y
             missing = target - sum(self._row_heights.get(row_y, 0) for row_y in range(grid_y, grid_y + span_y))
             if free_rows and missing > 0:
@@ -432,7 +435,8 @@ class LayoutObject(RectObject):
             self.height = sum(self._row_heights.values()) + self._outer_padding.y * 2
         
         self._compute_offsets()
-    
+                    
+                    
     def update_grid_object_positions(self):
         for obj in self._grid_objects_grid_positions:
             obj.pos = self.get_obj_pos(obj)

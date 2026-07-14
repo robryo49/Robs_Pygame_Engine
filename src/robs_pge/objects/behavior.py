@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import Optional, TYPE_CHECKING
+from typing import Callable, Optional, TYPE_CHECKING
 
 from ..utils import Vec2
 from ..events import Event
@@ -25,6 +25,15 @@ class ObjectBehavior:
     # endregion
     
     # endregion
+    
+    def _exec(self, action: Optional[Callable | tuple[Callable, ...]], *args, **kwargs) -> None:
+        if action is not None:
+            if isinstance(action, tuple):
+                for action in action:
+                    self._exec(action, *args, **kwargs)
+            else:
+                action(*args, **kwargs)
+            
     
     def on_click(self, button: int, pos: Vec2): pass
     def on_hold(self, button: int, pos: Vec2): pass

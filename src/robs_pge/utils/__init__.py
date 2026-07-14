@@ -10,7 +10,7 @@ from .color import Color, Colors, ColorPalette
 from .flags import ObjectFlags, KeybindFlags
 from .keys import Keybinds
 from .collection import Collection, DictCollection
-from .types import Vec2Like, Vec3Like, ObjectLike, validate_signature
+from .types import Vec2Like, Vec3Like, validate_signature, ObjectCallbackLike
 from .array_tools import *
 from .async_tools import AsyncProcessManager, AsyncProcess
 from .collision import CollisionBox, CircleCollisionBox, RectCollisionBox, test_collision_circle_circle, test_collision_rect_circle, test_collision_rect_rect, test_collision_box_overlap
@@ -33,7 +33,7 @@ __all__ = [
     # collection
     "Collection", "DictCollection",
     # types
-    "Vec2Like", "Vec3Like", "ObjectLike", "validate_signature",
+    "Vec2Like", "Vec3Like", "validate_signature", "ObjectCallbackLike",
     # array_tools
     "make_linear_gradient_array", "make_angular_gradient_array", "make_radial_gradient_array",
     "make_circle_mask", "make_rect_mask",
