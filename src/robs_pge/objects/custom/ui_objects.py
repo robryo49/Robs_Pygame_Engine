@@ -73,9 +73,9 @@ class CycleButtonObject(ButtonObject):
         self._index = 0
         
         self.add_behavior([
-            ActionOnClickBehavior(1, lambda o: o.cycle_forward),
+            ActionOnClickBehavior(1, lambda o: o.cycle_forward()),
             ScaleOnClickBehavior(3, 0.9, 0.1, Easing.EASE_OUT_QUAD),
-            ActionOnClickBehavior(3, lambda o: o.cycle_backward)
+            ActionOnClickBehavior(3, lambda o: o.cycle_backward())
         ])
         
         if callback is not None: self.add_behavior(ActionOnClickBehavior(1, lambda o: callback(o.value)))
@@ -472,7 +472,7 @@ class CheckBoxObject(RectObject):
         
         self._checked_icon.hide()
         
-        self.add_behavior(ActionOnClickBehavior(1, lambda o: self.toggle))
+        self.add_behavior(ActionOnClickBehavior(1, lambda o: self.toggle()))
         if callback is not None: self.add_behavior(ActionOnClickBehavior(1, lambda o: callback(self.checked)))
         
     # region PROPERTIES
@@ -521,7 +521,7 @@ class ToggleButtonObject(RectObject):
         toggle.anchor = Anchor.L
         toggle_background.anchor = Anchor.L
         
-        self.add_behavior(ActionOnClickBehavior(1, lambda o: self.toggle))
+        self.add_behavior(ActionOnClickBehavior(1, lambda o: self.toggle()))
         
         self._toggle_background.add_behavior(DynamicAttributeBehavior("width", lambda: self._toggle.x_pos + self._toggle.width * 0.5))
         
