@@ -3,7 +3,7 @@ from .styles import (
     RectStyle, CircleStyle, PolygonStyle,
     LineStyle, ButtonStyle, ProgressBarStyle,
     LineChartStyle, DebugPanelStyle, SliderStyle,
-    IconButtonStyle, SpriteButtonStyle, ToggleButtonStyle
+    IconButtonStyle, SpriteButtonStyle, ToggleButtonStyle, RadioButtonStyle
 )
 from .draw_commands import (
     DrawCommand,
@@ -21,7 +21,7 @@ __all__ = [
     "Style", "ShapeStyle",
     "RectStyle", "CircleStyle", "PolygonStyle",
     "LineStyle", "ButtonStyle", "ProgressBarStyle",
-    "LineChartStyle", "DebugPanelStyle", "SliderStyle", "IconButtonStyle", "SpriteButtonStyle", "ToggleButtonStyle",
+    "LineChartStyle", "DebugPanelStyle", "SliderStyle", "IconButtonStyle", "SpriteButtonStyle", "ToggleButtonStyle", "RadioButtonStyle",
     # draw commands
     "DrawCommand",
     "DrawRect", "DrawCircle", "DrawTexture", "DrawText", "DrawLine", "DrawSubSurface", "DrawChunkedSprite",

@@ -9,7 +9,7 @@ from ..animation import Animation, AnimationManager
 from ..debug import QuickDebugManager
 from ..events import Event, EventManager
 from ..rendering import CircleRenderer, ObjectRenderer
-from ..utils import Anchor, CircleCollisionBox, CollisionBox, DictCollection, ObjectFlags, Rect, RectCollisionBox, Transform, Vec2, test_collision_box_overlap
+from ..utils import Anchor, CircleCollisionBox, CollisionBox, DictCollection, ObjectFlags, Rect, RectCollisionBox, Transform, Vec2, test_collision_box_overlap, FRect
 
 if TYPE_CHECKING:
     from ..core import Camera
@@ -41,6 +41,9 @@ class PygameObject:
         
         self._fixed_x: Optional[float] = None
         self._fixed_y: Optional[float] = None
+        
+        self._clip_area: Optional[FRect] = None
+        self._clip_area_relative: bool = False
 
     # region PROPERTIES
     
@@ -157,6 +160,52 @@ class PygameObject:
     @layer.setter
     def layer(self, value: int):
         self._layer = value
+    # endregion
+    
+    # region clip_area
+    
+    @property
+    def clip_area(self):
+        return self._clip_area
+    
+    @clip_area.setter
+    def clip_area(self, value: Optional[FRect]):
+        self._clip_area = value
+    
+    @property
+    def clip_area_relative(self):
+        return self._clip_area_relative
+    
+    def set_clip_area(self, rect: Optional[FRect], relative: bool = False):
+        self._clip_area = rect
+        self._clip_area_relative = relative
+        return self
+    
+    def clear_clip_area(self):
+        self._clip_area = None
+        return self
+    
+    def get_world_clip_area(self) -> Optional[FRect]:
+        if self._clip_area is None:
+            return None
+        
+        parent = self.parent
+        if self._clip_area_relative and parent is not None:
+            parent_transform = parent.world_transform
+            corners = [
+                parent_transform.apply(Vec2(self._clip_area.left, self._clip_area.top)),
+                parent_transform.apply(Vec2(self._clip_area.right, self._clip_area.top)),
+                parent_transform.apply(Vec2(self._clip_area.right, self._clip_area.bottom)),
+                parent_transform.apply(Vec2(self._clip_area.left, self._clip_area.bottom)),
+            ]
+            xs = [c.x for c in corners]
+            ys = [c.y for c in corners]
+            
+            return FRect(min(xs), min(ys), max(xs) - min(xs), max(ys) - min(ys))
+        
+        else:
+            return self._clip_area
+    
     # endregion
     
     # region parent
@@ -309,38 +358,49 @@ class PygameObject:
     
     def register_event_callback(self, event_type: str, callback: Callable[[Event], Any]):
         self.get_service(EventManager).register(event_type, callback)
+        return self
         
     def add_quick_debug(self, getter: Callable, template: str = "{}"):
         self.get_service(QuickDebugManager).add_listener(getter, template)
+        return self
         
     def do_on_update(self, action: ObjectCallBackType):
         self.add_behavior(ActionOnUpdateBehavior(action))
+        return self
         
     def do_on_click(self, button: int, on_click: Optional[ObjectCallBackType] = None, on_hold: Optional[ObjectCallBackType] = None, on_release: Optional[ObjectCallBackType] = None):
         if on_click or on_hold or on_release:
             self.add_behavior(ActionOnClickBehavior(button, on_click, on_hold, on_release))
+        return self
             
     def do_on_hover(self, hover_start: ObjectCallBackType = None, while_hovered: ObjectCallBackType = None, hover_end: ObjectCallBackType = None):
         if hover_start or while_hovered or hover_end:
             self.add_behavior(ActionOnHoverBehavior(hover_start, while_hovered, hover_end))
+        return self
             
     def make_attribute_dynamic(self, attribute: str, getter: Callable[[], Any | tuple[Any, ...]], template: Optional[str] = None):
         self.add_behavior(DynamicAttributeBehavior(attribute, getter, template))
+        return self
         
     def make_attribute_fixed(self, attribute: str):
         self.add_behavior(AttributeFixingBehavior(attribute))
+        return self
         
     def make_attribute_clamped(self, attribute: str, min_value: Optional[float] = None, max_value: Optional[float] = None):
         self.add_behavior(AttributeClampingBehavior(attribute, min_value, max_value))
+        return self
         
     def make_attribute_snap(self, attribute: str, values: list[float], offset: float = 0):
         self.add_behavior(AttributeValueSnappingBehavior(attribute, values, offset))
+        return self
         
     def make_attribute_snap_on_grid(self, attribute: str, step: float, offset: float = 0):
         self.add_behavior(AttributeGridSnappingBehavior(attribute, step, offset))
+        return self
         
     def make_draggable(self, button: int = 1):
         self.add_behavior(DraggableBehavior(button))
+        return self
     
     # endregion
     
@@ -383,6 +443,10 @@ class PygameObject:
         return self.test_world_hit(camera.screen_to_world_pos(screen) if camera else screen)
     
     def test_world_hit(self, world: Vec2):
+        clip = self.get_world_clip_area()
+        if clip is not None and not clip.collidepoint(world.x, world.y):
+            return False
+        
         return self.test_local_hit(self.world_to_local(world))
     
     def test_local_hit(self, local: Vec2):
@@ -473,7 +537,7 @@ class PygameObject:
     # endregion
     
     def _render_self(self, submit, camera: Camera):
-        self.renderer.render(submit, self.world_transform, self.layer, self.anchor)
+        self.renderer.render(submit, self.world_transform, self.layer, self.anchor, self.get_world_clip_area())
     
     def render(self, submit, camera: Camera):
         self._culled = False

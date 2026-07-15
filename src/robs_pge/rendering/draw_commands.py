@@ -6,7 +6,7 @@ import math
 
 from .styles import CircleStyle, LineStyle, RectStyle
 from ..resources import Texture, SurfaceCache
-from ..utils import Font, Transform, Vec2, surface_pos_from_uv_pos, Rect
+from ..utils import Font, Transform, Vec2, surface_pos_from_uv_pos, Rect, FRect
 
 from typing import Optional, TYPE_CHECKING
 
@@ -20,6 +20,19 @@ class DrawCommand:
     layer: int
     anchor: Vec2
     caching: bool
+    clip_area: Optional[FRect]
+    
+    def get_screen_clip_rect(self, camera: Camera) -> Optional[pg.Rect]:
+        if self.clip_area is None:
+            return None
+        
+        p1 = camera.world_to_screen_pos(Vec2(self.clip_area.left, self.clip_area.top))
+        p2 = camera.world_to_screen_pos(Vec2(self.clip_area.right, self.clip_area.bottom))
+        
+        x0, x1 = sorted((p1.x, p2.x))
+        y0, y1 = sorted((p1.y, p2.y))
+        
+        return pg.Rect(round(x0), round(y0), round(x1 - x0), round(y1 - y0))
     
     def get_composed_transform(self, camera: Camera):
         camera_transform: Transform =   camera.transform
@@ -33,8 +46,22 @@ class DrawCommand:
         raise NotImplementedError("Draw command doesnt have a defined draw method")
     
     @staticmethod
-    def add_blit(blit_call_queue: list[tuple[pg.Surface, Vec2]], surface: pg.Surface, screen_pos: Vec2, offset: Optional[Vec2] = None):
-        blit_call_queue.append((surface, screen_pos - (offset or Vec2())))
+    def add_blit(blit_call_queue: list[tuple[pg.Surface, Vec2]], surface: pg.Surface, screen_pos: Vec2, offset: Optional[Vec2] = None, clip_rect: Optional[pg.Rect] = None):
+        top_left = screen_pos - (offset or Vec2())
+        
+        if clip_rect is not None:
+            surf_rect = pg.Rect(round(top_left.x), round(top_left.y), surface.get_width(), surface.get_height())
+            visible = surf_rect.clip(clip_rect)
+            
+            if visible.width <= 0 or visible.height <= 0:
+                return
+            
+            if visible.topleft != surf_rect.topleft or visible.size != surf_rect.size:
+                local_rect = pg.Rect(visible.x - surf_rect.x, visible.y - surf_rect.y, visible.width, visible.height)
+                surface = surface.subsurface(local_rect)
+                top_left = Vec2(visible.x, visible.y)
+        
+        blit_call_queue.append((surface, top_left))
     
     @staticmethod
     def get_cached(surface_cache: SurfaceCache, key: tuple):
@@ -101,7 +128,7 @@ class DrawTexture(DrawCommand):
         surface, cached = self.get_surface(surface_cache, key, lod_surface, rotation, target_w, target_h)
     
         
-        self.add_blit(blit_call_queue, surface, screen_pos, surface_pos_from_uv_pos(self.anchor, base_dims, rotation))
+        self.add_blit(blit_call_queue, surface, screen_pos, surface_pos_from_uv_pos(self.anchor, base_dims, rotation), self.get_screen_clip_rect(camera))
         
         return cached
 
@@ -140,7 +167,7 @@ class DrawRect(DrawCommand):
         
         surface, cached = self.get_surface(surface_cache, key)
         
-        self.add_blit(blit_call_queue, surface, screen_pos, surface_pos_from_uv_pos(self.anchor, dims, rotation))
+        self.add_blit(blit_call_queue, surface, screen_pos, surface_pos_from_uv_pos(self.anchor, dims, rotation), self.get_screen_clip_rect(camera))
         
         return cached
 
@@ -176,7 +203,7 @@ class DrawCircle(DrawCommand):
         
         surface, cached = self.get_surface(surface_cache, key)
         
-        self.add_blit(blit_call_queue, surface, screen_pos, surface_pos_from_uv_pos(self.anchor, dims))
+        self.add_blit(blit_call_queue, surface, screen_pos, surface_pos_from_uv_pos(self.anchor, dims), self.get_screen_clip_rect(camera))
         
         return cached
 
@@ -235,12 +262,7 @@ class DrawText(DrawCommand):
             if new_w > 0 and new_h > 0:
                 surface = pg.transform.smoothscale(surface, (new_w, new_h))
         
-        self.add_blit(
-            blit_call_queue,
-            surface,
-            screen_pos,
-            surface_pos_from_uv_pos(self.anchor, Vec2(surface.get_width(), surface.get_height()), rotation)
-        )
+        self.add_blit(blit_call_queue, surface, screen_pos, surface_pos_from_uv_pos(self.anchor, Vec2(surface.get_width(), surface.get_height()), rotation), self.get_screen_clip_rect(camera))
         
         return cached
 
@@ -297,7 +319,7 @@ class DrawLine(DrawCommand):
         key     = (tuple((p.x, p.y) for p in self.points), color, width, rotation, scale)
         surface, cached = self.get_surface(surface_cache, key, screen_points)
         
-        self.add_blit(blit_call_queue, surface, Vec2(min_x - pad, min_y - pad))
+        self.add_blit(blit_call_queue, surface, Vec2(min_x - pad, min_y - pad), None, self.get_screen_clip_rect(camera))
         
         return cached
 
@@ -358,9 +380,7 @@ class DrawSubSurface(DrawCommand):
         else:
             final_surf = surface
         
-        offset = surface_pos_from_uv_pos(self.anchor, base_dims, rotation)
-        
-        self.add_blit(blit_call_queue, final_surf, screen_pos, offset)
+        self.add_blit(blit_call_queue, final_surf, screen_pos, surface_pos_from_uv_pos(self.anchor, base_dims, rotation), self.get_screen_clip_rect(camera))
         
         return cached
 

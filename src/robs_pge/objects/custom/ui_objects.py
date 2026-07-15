@@ -2,7 +2,7 @@ from .primitive_objects import LineObject, RectObject, CircleObject, TextObject
 from .sprite_objects import SpriteObject, IconObject
 from .layout_objects import LayoutObject
 from ..behaviors import *
-from ...rendering import RectRenderer
+from ...rendering import CircleRenderer, RectRenderer
 from ...utils import Anchor, DictCollection, Easing, Transform, Vec2, clamp, inf, invert_y
 from ...animation import SetterAnimation
 
@@ -109,7 +109,133 @@ class CycleButtonObject(ButtonObject):
     # endregion
     
     # endregion
+
+
+class CheckBoxObject(RectObject):
+    def __init__(self, transform: Transform, background: RectRenderer, checked_icon: IconObject, callback: Optional[Callable[[bool], Any] | tuple[Callable[[bool], Any], ...]],
+                 services: DictCollection, layer: int = 0, anchor: Vec2 = Anchor.C):
+        super().__init__(transform, background, services, layer, anchor)
+        
+        self._checked_icon = checked_icon
+        self.add_child(self._checked_icon)
+        self._checked_icon.hide()
+        
+        self.do_on_click(1, lambda: self.toggle())
+        self.do_on_click(1, lambda: callback(self.checked))
     
+    # region PROPERTIES
+    
+    @property
+    def checked(self):
+        return self._checked_icon.visible
+    
+    @property
+    def unchecked(self):
+        return not self.checked
+    
+    # endregion
+    
+    def toggle(self):
+        self._checked_icon.toggle_visible()
+    
+    def check(self):
+        self._checked_icon.show()
+    
+    def uncheck(self):
+        self._checked_icon.hide()
+
+
+class RadioButtonObject(CircleObject):
+    def __init__(self, transform: Transform, background: CircleRenderer, tick: CircleObject, callback: Optional[Callable[[bool], Any] | tuple[Callable[[bool], Any], ...]],
+                services: DictCollection, layer: int = 0, anchor: Vec2 = Anchor.C):
+        super().__init__(transform, background, services, layer, anchor)
+        
+        self._tick = tick
+        self.add_child(self._tick)
+        self._tick.hide()
+        
+        self.do_on_click(1, self.toggle)
+        self.do_on_click(1, lambda: callback(self.checked))
+    
+    # region PROPERTIES
+    
+    @property
+    def checked(self):
+        return self._tick.visible
+    
+    @property
+    def unchecked(self):
+        return not self.checked
+    
+    # endregion
+    
+    def toggle(self):
+        self._tick.toggle_visible()
+    
+    def check(self):
+        self._tick.show()
+    
+    def uncheck(self):
+        self._tick.hide()
+        
+
+class ToggleButtonObject(RectObject):
+    def __init__(self, transform: Transform, background: RectRenderer, toggle: RectObject, toggle_background: RectObject, toggle_movement_range: tuple[int, int], callback: Optional[Callable[[bool], Any] | tuple[Callable[[bool], Any], ...]],
+                 services: DictCollection, layer: int = 0, anchor: Vec2 = Anchor.C):
+        super().__init__(transform, background, services, layer, anchor)
+        
+        self._toggle_min_x = toggle_movement_range[0]
+        self._toggle_max_x = toggle_movement_range[1]
+        self._toggle_movement_range = self._toggle_max_x - self._toggle_min_x
+        
+        self._toggle = toggle
+        self._toggle_background = toggle_background
+        
+        self._enabled = False
+        
+        self.add_child(toggle_background, Anchor.L)
+        self.add_child(toggle, Anchor.L)
+        
+        toggle.anchor = Anchor.L
+        toggle_background.anchor = Anchor.L
+        
+        self.do_on_click(1, self.toggle)
+        
+        self._toggle_background.make_attribute_dynamic("width", lambda: self._toggle.x_pos + self._toggle.width * 0.5)
+        self.do_on_click(1, lambda: callback(self.enabled))
+    
+    # region PROPERTIES
+    
+    @property
+    def enabled(self):
+        return self._enabled
+    
+    @property
+    def disabled(self):
+        return not self.enabled
+    
+    # endregion
+    
+    def toggle(self):
+        if self._enabled:
+            self.disable()
+        else:
+            self.enable()
+    
+    def enable(self):
+        self._enabled = True
+        self._toggle.play_animation(
+            SetterAnimation(self._toggle, "x_pos", self._toggle_max_x, 0.07, Easing.EASE_IN_QUAD, start_value=self._toggle_min_x)
+        )
+    
+    def disable(self):
+        self._enabled = False
+        self._toggle.play_animation(
+            SetterAnimation(self._toggle, "x_pos", self._toggle_min_x, 0.07, Easing.EASE_IN_QUAD, start_value=self._toggle_max_x)
+        )
+        
+    
+
 
 class SliderObject(LayoutObject):
     def __init__(self, transform: Transform, background: RectRenderer, bar: RectObject, handle: RectObject | CircleObject, text: TextObject, min_value: float, max_value: float, step: Optional[float],
@@ -455,101 +581,4 @@ class LineChartObject(RectObject):
             self._line.points = points
             
             self._dirty = False
-            
-
-class CheckBoxObject(RectObject):
-    def __init__(self, transform: Transform, background: RectRenderer, checked_icon: IconObject, callback: Optional[Callable[[bool], Any] | tuple[Callable[[bool], Any], ...]],
-                 services: DictCollection, layer: int = 0, anchor: Vec2 = Anchor.C):
-        super().__init__(transform, background, services, layer, anchor)
-        
-        self._checked_icon = checked_icon
-        
-        self.add_child(checked_icon)
-        
-        self._checked_icon.hide()
-        
-        self.do_on_click(1, self.toggle)
-        self.do_on_click(1, callback)
-        
-        
-    # region PROPERTIES
-    
-    @property
-    def checked(self):
-        return self._checked_icon.visible
-    
-    @property
-    def unchecked(self):
-        return not self.checked
-    
-    # endregion
-    
-    def toggle(self):
-        self._checked_icon.toggle_visible()
-        
-    def check(self):
-        self._checked_icon.show()
-        
-    def uncheck(self):
-        self._checked_icon.hide()
-        
-        
-class RadioButtonObject(CircleObject):
-    pass # TODO RadioButtonObject
-
-
-class ToggleButtonObject(RectObject):
-    def __init__(self, transform: Transform, background: RectRenderer, toggle: RectObject, toggle_background: RectObject, toggle_movement_range: tuple[int, int], callback: Optional[Callable[[bool], Any] | tuple[Callable[[bool], Any], ...]],
-                 services: DictCollection, layer: int = 0, anchor: Vec2 = Anchor.C):
-        super().__init__(transform, background, services, layer, anchor)
-        
-        self._toggle_min_x = toggle_movement_range[0]
-        self._toggle_max_x = toggle_movement_range[1]
-        self._toggle_movement_range = self._toggle_max_x - self._toggle_min_x
-        
-        self._toggle = toggle
-        self._toggle_background = toggle_background
-        
-        self._enabled = False
-        
-        self.add_child(toggle_background, Anchor.L)
-        self.add_child(toggle, Anchor.L)
-        
-        toggle.anchor = Anchor.L
-        toggle_background.anchor = Anchor.L
-        
-        self.do_on_click(1, self.toggle)
-        
-        self._toggle_background.make_attribute_dynamic("width", lambda: self._toggle.x_pos + self._toggle.width * 0.5)
-        self.do_on_click(1, lambda: callback(self.enabled))
-    
-    # region PROPERTIES
-    
-    @property
-    def enabled(self):
-        return self._enabled
-    
-    @property
-    def disabled(self):
-        return not self.enabled
-    
-    # endregion
-    
-    def toggle(self):
-        if self._enabled:
-            self.disable()
-        else:
-            self.enable()
-    
-    def enable(self):
-        self._enabled = True
-        self._toggle.play_animation(
-            SetterAnimation(self._toggle, "x_pos", self._toggle_max_x, 0.07, Easing.EASE_IN_QUAD, start_value=self._toggle_min_x)
-        )
-        
-    def disable(self):
-        self._enabled = False
-        self._toggle.play_animation(
-            SetterAnimation(self._toggle, "x_pos", self._toggle_min_x, 0.07, Easing.EASE_IN_QUAD, start_value=self._toggle_max_x)
-        )
 

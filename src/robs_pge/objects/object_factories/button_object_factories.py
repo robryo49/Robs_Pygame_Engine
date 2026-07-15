@@ -3,12 +3,14 @@ from typing import Any, Callable, Optional
 from .sub_factory import SubObjectFactory
 from ..object import PygameObject
 from ..custom import *
-from ...rendering import ButtonStyle, IconButtonStyle, RectRenderer, SpriteButtonStyle, ToggleButtonStyle
+from ...rendering import ButtonStyle, CircleRenderer, IconButtonStyle, RadioButtonStyle, RectRenderer, SpriteButtonStyle, ToggleButtonStyle, CircleStyle
 from ...resources import Icons, Texture
 from ...utils import Anchor, Vec2
 
 
-ObjectCallBackType = Optional[Callable[[PygameObject], Any] | tuple[Callable[[PygameObject], Any], ...] | Callable | tuple[Callable, ...]]
+CallBackType = Optional[Callable | tuple[Callable, ...]]
+ObjectCallBackType = Optional[Callable[[PygameObject], Any] | tuple[Callable[[PygameObject], Any], ...] | CallBackType]
+BooleanCallbackType = Optional[Callable[[bool], Any] | tuple[Callable[[bool], Any]] | CallBackType]
 
 
 class ButtonObjectFactory(SubObjectFactory):
@@ -82,7 +84,7 @@ class ButtonObjectFactory(SubObjectFactory):
         return self.make_sprite_button(position, icon, action, dims, button_style, rotation, scale, layer, anchor, cache)
     
     def make_checkbox(
-            self, position: Vec2, icon_size, callback: ObjectCallBackType = None, dims: Optional[Vec2] = None, checked_icon: str = Icons.CHECK, checked=False, style: Optional[IconButtonStyle | str] = None,
+            self, position: Vec2, icon_size, dims: Optional[Vec2] = None, callback: ObjectCallBackType = None, checked_icon: str = Icons.CHECK, checked=False, style: Optional[IconButtonStyle | str] = None,
             rotation: float = 0.0, scale: float = 1.0, layer: int = 0, anchor: Vec2 = Anchor.C, cache: bool = True
     ) -> CheckBoxObject:
         
@@ -98,6 +100,25 @@ class ButtonObjectFactory(SubObjectFactory):
         dims = dims or Vec2(icon_size) + Vec2(margin*2)
         
         obj = self._make_object(CheckBoxObject, position, rotation, scale, RectRenderer(dims, bg_style, cache), layer, anchor, sprite, callback)
+        
+        if checked: obj.check()
+        
+        return obj
+    
+    def make_radio_button(
+            self, position: Vec2, radius: int, callback: ObjectCallBackType = None, checked=False, style: Optional[RadioButtonStyle | str] = None,
+            rotation: float = 0.0, scale: float = 1.0, layer: int = 0, anchor: Vec2 = Anchor.C, cache: bool = True
+    ) -> RadioButtonObject:
+        
+        radio_button_style = self._get_resource(style, RadioButtonStyle)
+        bg_style = radio_button_style.bg_style
+        
+        margin = radio_button_style.margin + bg_style.bd
+        color = radio_button_style.icon_color
+        
+        tick = self.factory.shape.make_circle(Vec2(), radius-margin, CircleStyle(color), cache=cache)
+        
+        obj = self._make_object(RadioButtonObject, position, rotation, scale, CircleRenderer(radius, bg_style, cache), layer, anchor, tick, callback)
         
         if checked: obj.check()
         

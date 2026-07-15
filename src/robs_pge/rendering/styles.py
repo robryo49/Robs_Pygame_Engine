@@ -92,6 +92,19 @@ class IconButtonStyle(Style):
         )
 
 @dataclass
+class RadioButtonStyle(Style):
+    bg_style: CircleStyle = field(default_factory=CircleStyle)
+    icon_color: Color = field(default_factory=lambda: Color(255, 255, 255))
+    margin: int = 0
+    
+    def with_alpha(self, alpha: int):
+        return self.with_(
+            bg_style = self.bg_style.with_alpha(alpha),
+            icon_color = Colors.with_alpha(self.icon_color, alpha),
+        )
+
+
+@dataclass
 class ToggleButtonStyle(Style):
     bg_style: RectStyle = field(default_factory=RectStyle)
     toggle_style: RectStyle = field(default_factory=RectStyle)
