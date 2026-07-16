@@ -547,3 +547,5 @@ class DebugPanelObject(LayoutObject):
     def __repr__(self):
         return f"DebugPannel({id(self)})"
     
+
+    

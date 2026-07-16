@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import TYPE_CHECKING
+from typing import Callable, TYPE_CHECKING
 from typing import Optional
 
 from .object_collection import ObjectCollection
@@ -57,12 +57,21 @@ class InteractionManager:
                 objects.extend(self._collect_objects(obj.children))
             
         return objects
-        
+    
+    @staticmethod
+    def _get_first(objects: list[PygameObject], object_filter: Optional[Callable[[PygameObject], bool]] = None) -> Optional[PygameObject]:
+        if not objects: return None
+        if object_filter is None: return objects[0]
+        else:
+            for obj in objects:
+                if object_filter(obj):
+                    return obj
+        return None
     
     def _handle_hover(self):
         previous_hovered = self._hovered
-        self._hovered = self._hovered_ui[0] if self.hovered_ui and self._hovered_ui[0].has_flag(ObjectFlags.HOVERABLE) \
-            else self._hovered_world[0] if self._hovered_world and self._hovered_world[0].has_flag(ObjectFlags.HOVERABLE) else None
+        
+        self._hovered = self._get_first(self._hovered_ui + self._hovered_world, lambda obj: obj.has_flag(ObjectFlags.HOVERABLE))
         
         hovered = self.hovered
         if previous_hovered is self.hovered:
@@ -89,10 +98,13 @@ class InteractionManager:
             self._active[button] = None
             
     def _handle_scroll(self):
-        if self.input.mouse_scroll:
-            hovered = self._hovered
-            if hovered is not None:
-                hovered.on_scroll(self.input.mouse_scroll, self._mouse_pos)
+        if not self.input.mouse_scroll:
+            return
+        
+        first_scrollable = self._get_first(self._hovered_ui + self._hovered_world, lambda obj: obj.has_flag(ObjectFlags.SCROLLABLE))
+        
+        if first_scrollable is not None:
+            first_scrollable.on_scroll(self.input.mouse_scroll, self._mouse_pos)
     
     def get_hovered_objects(self, objects: ObjectCollection, camera: Optional[Camera] = None):
         self._mouse_pos = self.input.mouse.world_pos(camera) if camera else self.input.mouse.pos

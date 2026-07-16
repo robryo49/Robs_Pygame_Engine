@@ -396,8 +396,7 @@ class PygameObject:
         return self
     
     def has_flag(self, flag):
-        return bool(flag & self.flags)
-    
+        return flag == flag & self.flags
     
     @property
     def behaviors(self):
@@ -465,8 +464,8 @@ class PygameObject:
         self.add_behavior(DynamicAttributeBehavior(attribute, getter, template, strength))
         return self
         
-    def make_attribute_fixed(self, attribute: str, strength: float = 1):
-        self.add_behavior(AttributeFixingBehavior(attribute, strength))
+    def make_attribute_fixed(self, attribute: str, value: Optional[Any] = None, strength: float = 1):
+        self.add_behavior(AttributeFixingBehavior(attribute, value, strength))
         return self
         
     def make_attribute_clamped(self, attribute: str, min_value: Optional[float] = None, max_value: Optional[float] = None, strength: float = 1):

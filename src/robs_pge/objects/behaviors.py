@@ -98,6 +98,9 @@ class ActionOnScrollBehavior(ObjectBehavior):
         
         self._action = action
         
+    def on_attach(self):
+        self.owner.add_flag(ObjectFlags.SCROLLABLE)
+        
     def on_scroll(self, scroll: int, pos: Vec2):
         self._exec(self._action, self.owner, scroll, pos)
 
@@ -287,7 +290,7 @@ class AttributeFixingBehavior(ObjectBehavior):
         
         if 0 < self._strength < 1:
             value = lerp(attr_value, self._value, self._strength)
-        
+        print(value,attr_value)
         setattr(self.owner, self._attribute, value)
 
 

@@ -9,9 +9,11 @@ class ObjectFlags(IntFlag):
     _HOVER = auto()
     _CLICK = auto()
     _DRAG = auto()
+    _SCROLL = auto()
     
     HOVERABLE = _HOVER | INTERACTABLE
     CLICKABLE = _CLICK | HOVERABLE
+    SCROLLABLE = _SCROLL | HOVERABLE
     DRAGGABLE = _DRAG  | CLICKABLE
     
     HIDDEN = auto()
