@@ -1,9 +1,11 @@
 from __future__ import annotations
 
 from typing import Any, Callable, Optional, TYPE_CHECKING, Union, cast
+import inspect
 
 from .behavior_collection import BehaviorCollection
-from .behaviors import ActionOnClickBehavior, ActionOnHoverBehavior, ActionOnUpdateBehavior, AttributeClampingBehavior, AttributeFixingBehavior, AttributeGridSnappingBehavior, AttributeValueSnappingBehavior, DraggableBehavior, DynamicAttributeBehavior, ObjectBehavior
+from .behaviors import ActionOnClickBehavior, ActionOnHoverBehavior, ActionOnScrollBehavior, ActionOnUpdateBehavior, AttributeClampingBehavior, AttributeFixingBehavior, AttributeGridSnappingBehavior, \
+    AttributeValueSnappingBehavior, DraggableBehavior, DynamicAttributeBehavior, ObjectBehavior
 from .object_collection import ObjectCollection
 from ..animation import Animation, AnimationManager
 from ..debug import QuickDebugManager
@@ -14,6 +16,7 @@ from ..utils import Anchor, CircleCollisionBox, CollisionBox, DictCollection, Ob
 if TYPE_CHECKING:
     from ..core import Camera
     from ..objects import PygameObject
+    
     ObjectCallBackType = Optional[Callable[[PygameObject], Any] | tuple[Callable[[PygameObject], Any], ...] | Callable | tuple[Callable, ...]]
     
 
@@ -28,6 +31,8 @@ class PygameObject:
         self._flags = PygameObject.DEFAULT_FLAGS
         self._behaviors = BehaviorCollection(self)
         self._services = services
+        
+        self._properties: dict[str, Any] = {}
         
         self._renderer = renderer
         self._collision_box = None
@@ -44,6 +49,9 @@ class PygameObject:
         
         self._clip_area: Optional[FRect] = None
         self._clip_area_relative: bool = False
+        
+        self._children_clip_area: Optional[FRect] = None
+        self._children_clip_area_relative = True
 
     # region PROPERTIES
     
@@ -79,6 +87,26 @@ class PygameObject:
     def world_transform(self):
         parent = self.parent
         return (parent.world_transform * (self.transform + Transform(parent.get_anchor_offset(self._parent_anchor - Vec2(0.5))))) if parent is not None else self.transform
+    
+    # region properties
+    
+    @property
+    def properties(self) -> dict[str, Any]:
+        return self._properties
+    
+    def get_property[T](self, name: str, default: Optional[T] = None) -> T:
+        return self.properties.get(name, default)
+    
+    def set_property(self, name: str, value: Any):
+        self.properties[name] = value
+        return self
+    
+    def modify_property[T](self, name: str, modifier: Callable[[T], T], default: Optional[T] = None):
+        self.set_property(name, modifier(self.get_property(name, default)))
+        return self
+    
+    # endregion
+    
     
     # region pos
     @property
@@ -187,16 +215,61 @@ class PygameObject:
     
     def get_world_clip_area(self) -> Optional[FRect]:
         if self._clip_area is None:
+            parent = self.parent
+            if parent is not None:
+                return parent.get_world_children_clip_area()
             return None
         
+        rect = self._clip_area
+        
         parent = self.parent
-        if self._clip_area_relative and parent is not None:
-            parent_transform = parent.world_transform
+        if parent is not None:
+            parent_worl_clip_area = parent.get_world_children_clip_area()
+            
+            if self._clip_area_relative:
+                parent_transform = parent.world_transform
+                rect = parent_transform.apply_on_rect(rect)
+                
+            if parent_worl_clip_area is not None:
+                rect = rect.clip(parent_worl_clip_area)
+                
+        return rect
+    
+    # endregion
+    
+    # region clip_area
+    
+    @property
+    def children_clip_area(self):
+        return self._children_clip_area
+    
+    @children_clip_area.setter
+    def children_clip_area(self, value: Optional[FRect]):
+        self._children_clip_area = value
+    
+    @property
+    def children_clip_area_relative(self):
+        return self._children_clip_area_relative
+    
+    def set_children_clip_area(self, rect: Optional[FRect], relative: bool = False):
+        self._children_clip_area = rect
+        self._children_clip_area_relative = relative
+        return self
+    
+    def clear_children_clip_area(self):
+        self._children_clip_area = None
+        return self
+    
+    def get_world_children_clip_area(self) -> Optional[FRect]:
+        if self._children_clip_area is None:
+            return None
+        
+        if self._children_clip_area_relative:
             corners = [
-                parent_transform.apply(Vec2(self._clip_area.left, self._clip_area.top)),
-                parent_transform.apply(Vec2(self._clip_area.right, self._clip_area.top)),
-                parent_transform.apply(Vec2(self._clip_area.right, self._clip_area.bottom)),
-                parent_transform.apply(Vec2(self._clip_area.left, self._clip_area.bottom)),
+                self.world_transform.apply(Vec2(self._children_clip_area.left, self._children_clip_area.top)),
+                self.world_transform.apply(Vec2(self._children_clip_area.right, self._children_clip_area.top)),
+                self.world_transform.apply(Vec2(self._children_clip_area.right, self._children_clip_area.bottom)),
+                self.world_transform.apply(Vec2(self._children_clip_area.left, self._children_clip_area.bottom)),
             ]
             xs = [c.x for c in corners]
             ys = [c.y for c in corners]
@@ -204,7 +277,7 @@ class PygameObject:
             return FRect(min(xs), min(ys), max(xs) - min(xs), max(ys) - min(ys))
         
         else:
-            return self._clip_area
+            return self._children_clip_area
     
     # endregion
     
@@ -361,7 +434,13 @@ class PygameObject:
         return self
         
     def add_quick_debug(self, getter: Callable, template: str = "{}"):
-        self.get_service(QuickDebugManager).add_listener(getter, template)
+        arg_count = len(inspect.signature(getter).parameters)
+        if arg_count == 0:
+            self.get_service(QuickDebugManager).add_listener(getter, template)
+        if arg_count == 1:
+            self.get_service(QuickDebugManager).add_listener(lambda: getter(self), template)
+        else:
+            raise AttributeError("Can't accept method with more than 1 parameter")
         return self
         
     def do_on_update(self, action: ObjectCallBackType):
@@ -377,25 +456,29 @@ class PygameObject:
         if hover_start or while_hovered or hover_end:
             self.add_behavior(ActionOnHoverBehavior(hover_start, while_hovered, hover_end))
         return self
+    
+    def do_on_scroll(self, action: Optional[Callable[[PygameObject, int, Vec2], Any] | tuple[Callable[[PygameObject, int, Vec2], Any], ...]]):
+        self.add_behavior(ActionOnScrollBehavior(action))
+        return self
             
-    def make_attribute_dynamic(self, attribute: str, getter: Callable[[], Any | tuple[Any, ...]], template: Optional[str] = None):
-        self.add_behavior(DynamicAttributeBehavior(attribute, getter, template))
+    def make_attribute_dynamic(self, attribute: str, getter: Callable[[], Any | tuple[Any, ...]], template: Optional[str] = None, strength: float = 1):
+        self.add_behavior(DynamicAttributeBehavior(attribute, getter, template, strength))
         return self
         
-    def make_attribute_fixed(self, attribute: str):
-        self.add_behavior(AttributeFixingBehavior(attribute))
+    def make_attribute_fixed(self, attribute: str, strength: float = 1):
+        self.add_behavior(AttributeFixingBehavior(attribute, strength))
         return self
         
-    def make_attribute_clamped(self, attribute: str, min_value: Optional[float] = None, max_value: Optional[float] = None):
-        self.add_behavior(AttributeClampingBehavior(attribute, min_value, max_value))
+    def make_attribute_clamped(self, attribute: str, min_value: Optional[float] = None, max_value: Optional[float] = None, strength: float = 1):
+        self.add_behavior(AttributeClampingBehavior(attribute, min_value, max_value, strength))
         return self
         
-    def make_attribute_snap(self, attribute: str, values: list[float], offset: float = 0):
-        self.add_behavior(AttributeValueSnappingBehavior(attribute, values, offset))
+    def make_attribute_snap(self, attribute: str, values: list[float], offset: float = 0, strength: float = 1):
+        self.add_behavior(AttributeValueSnappingBehavior(attribute, values, offset, strength))
         return self
         
-    def make_attribute_snap_on_grid(self, attribute: str, step: float, offset: float = 0):
-        self.add_behavior(AttributeGridSnappingBehavior(attribute, step, offset))
+    def make_attribute_snap_on_grid(self, attribute: str, step: float, offset: float = 0, strength: float = 1):
+        self.add_behavior(AttributeGridSnappingBehavior(attribute, step, offset, strength))
         return self
         
     def make_draggable(self, button: int = 1):
@@ -479,6 +562,9 @@ class PygameObject:
     
     def on_release(self, button: int, pos: Vec2):
         self.behaviors.on_release(button, pos)
+        
+    def on_scroll(self, scroll: int, pos: Vec2):
+        self.behaviors.on_scroll(scroll, pos)
     
     # endregion
     

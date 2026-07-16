@@ -1,5 +1,7 @@
 from dataclasses import dataclass, field
 from random import random as rand
+from typing import overload
+
 from pygame import Vector2 as Vec2, Vector3 as Vec3, Rect, FRect
 from math import cos, sin, pi, log10, inf
 
@@ -82,8 +84,20 @@ class Transform:
     def __eq__(self, other: "Transform"):
         return self.pos == other.pos and self.rotation == other.rotation and self.scale == other.scale
     
-    def apply(self, point: Vec2):
+    def apply(self, point: Vec2) -> Vec2:
         return (point * self.scale).rotate(self.rotation) + self.pos
+    
+    def apply_on_rect(self, rect: FRect):
+        corners = [
+            self.apply(Vec2(rect.left, rect.top)),
+            self.apply(Vec2(rect.right, rect.top)),
+            self.apply(Vec2(rect.right, rect.bottom)),
+            self.apply(Vec2(rect.left, rect.bottom)),
+        ]
+        xs = [c.x for c in corners]
+        ys = [c.y for c in corners]
+        
+        return FRect(min(xs), min(ys), max(xs) - min(xs), max(ys) - min(ys))
     
     def apply_inverse(self, point):
         return (point - self.pos).rotate(-self.rotation) / self.scale

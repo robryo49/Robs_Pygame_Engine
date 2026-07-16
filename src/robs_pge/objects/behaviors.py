@@ -4,7 +4,7 @@ from typing import Any, Callable, Optional, TYPE_CHECKING
 
 from ..events import Event
 from ..animation import AnimationManager, MultiplierAnimation, Animation
-from ..utils import ObjectFlags, Vec2, clamp, inf
+from ..utils import ObjectFlags, Vec2, clamp, inf, Vec3, lerp
 from .behavior import ObjectBehavior
 
 if TYPE_CHECKING:
@@ -91,6 +91,15 @@ class ActionOnHoverBehavior(ObjectBehavior):
         
     def on_hover_end(self):
         self._exec(self._on_hover_end, self.owner)
+        
+class ActionOnScrollBehavior(ObjectBehavior):
+    def __init__(self, action: Optional[Callable[[PygameObject, int, Vec2], Any] | tuple[Callable[[PygameObject, int, Vec2], Any], ...]] = None):
+        super().__init__()
+        
+        self._action = action
+        
+    def on_scroll(self, scroll: int, pos: Vec2):
+        self._exec(self._action, self.owner, scroll, pos)
 
 
 # endregion
@@ -168,14 +177,14 @@ class ScaleOnClickBehavior(AnimationOnClickBehavior):
 
 
 class DynamicAttributeBehavior(ObjectBehavior):
-    def __init__(self, attribute: str, getter: Callable[[], Any | tuple[Any, ...]], template: Optional[str] = None):
+    def __init__(self, attribute: str, getter: Callable, template: Optional[str] = None, strength: float = 1):
         super().__init__()
         
         self._attribute = attribute
         self._getter = getter
         self._template = template
         
-        self._value = None
+        self._strength = strength
     
     
     def on_update(self, dt: float):
@@ -183,66 +192,103 @@ class DynamicAttributeBehavior(ObjectBehavior):
             return
         
         value = self._getter()
-        if value == self._value:
-            return
+        attr_value = getattr(self.owner, self._attribute)
         
-        self._value = copy(value)
         
         if self._template is not None:
-            value = self._template.format(*value if isinstance(value, tuple) else (value, ))
+            value = self._template.format(*(value if isinstance(value, tuple) else (value, )))
+        elif 0 < self._strength < 1:
+            try:
+                value = lerp(attr_value, value, self._strength)
+            except TypeError:
+                pass
+            
+        if value == attr_value:
+            return
         
         setattr(self.owner, self._attribute, value)
 
 
 class AttributeValueSnappingBehavior(ObjectBehavior):
-    def __init__(self, attribute: str, values: list[float], offset: float = 0):
+    def __init__(self, attribute: str, values: list[float], offset: float = 0, strength: float = 1):
         super().__init__()
         
         self._attribute = attribute
         self._values = values
         self._offset = offset
+        
+        self._strength = strength
     
     def on_update(self, dt):
-        setattr(self.owner, self._attribute, min(
-            self._values,
-            key=lambda x: abs(x - (getattr(self.owner, self._attribute) + self._offset))
-        ))
+        attr_value = getattr(self.owner, self._attribute)
+        value = min(self._values, key=lambda x: abs(x - (attr_value + self._offset)))
+        
+        if 0 < self._strength < 1:
+            value = lerp(attr_value, value, self._strength)
+            
+        setattr(self.owner, self._attribute, value)
 
 
 class AttributeGridSnappingBehavior(ObjectBehavior):
-    def __init__(self, attribute: str, step: float, offset: float = 0):
+    def __init__(self, attribute: str, step: float, offset: float = 0, strength: float = 1):
         super().__init__()
         self._attribute = attribute
         
         self._step = step
         self._offset = offset
+        
+        self._strength = strength
     
     def on_update(self, dt: float):
-        setattr(self.owner, self._attribute, round((getattr(self.owner, self._attribute)-self._offset) / self._step)*self._step+self._offset)
+        
+        attr_value = getattr(self.owner, self._attribute)
+        value = round((attr_value - self._offset) / self._step) * self._step + self._offset
+        
+        if 0 < self._strength < 1:
+            value = lerp(attr_value, value, self._strength)
+        
+        setattr(self.owner, self._attribute, value)
 
 
 class AttributeClampingBehavior(ObjectBehavior):
-    def __init__(self, attribute: str, min_value: Optional[float] = -inf, max_value: Optional[float] = inf):
+    def __init__(self, attribute: str, min_value: Optional[float] = -inf, max_value: Optional[float] = inf, strength: float = 1):
         super().__init__()
         self._attribute = attribute
         self._min_value = min_value if min_value is not None else -inf
         self._max_value = max_value if max_value is not None else inf
+        
+        self._strength = strength
     
     def on_update(self, dt: float):
-        setattr(self.owner, self._attribute, clamp(getattr(self.owner, self._attribute), self._min_value, self._max_value))
+        
+        attr_value = getattr(self.owner, self._attribute)
+        value = clamp(attr_value, self._min_value, self._max_value)
+        
+        if 0 < self._strength < 1:
+            value = lerp(attr_value, value, self._strength)
+        
+        setattr(self.owner, self._attribute, value)
 
 
 class AttributeFixingBehavior(ObjectBehavior):
-    def __init__(self, attribute: str, value = None):
+    def __init__(self, attribute: str, value = None, strength: float = 1):
         super().__init__()
         self._attribute = attribute
         self._value = value
+        
+        self._strength = strength
     
     def on_attach(self):
         self._value = self._value if self._value is not None else getattr(self.owner, self._attribute)
     
     def on_update(self, dt: float):
-        setattr(self.owner, self._attribute, self._value)
+        attr_value = getattr(self.owner, self._attribute)
+        value = self._value
+        
+        if 0 < self._strength < 1:
+            value = lerp(attr_value, self._value, self._strength)
+        
+        setattr(self.owner, self._attribute, value)
 
 
 # endregion

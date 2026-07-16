@@ -120,9 +120,10 @@ class CheckBoxObject(RectObject):
         self.add_child(self._checked_icon)
         self._checked_icon.hide()
         
-        self.do_on_click(1, lambda: self.toggle())
-        self.do_on_click(1, lambda: callback(self.checked))
-    
+        self.do_on_click(1, self.toggle)
+        if callback is not None:
+            self.do_on_click(1, lambda: callback(self.checked))
+        
     # region PROPERTIES
     
     @property
@@ -155,7 +156,8 @@ class RadioButtonObject(CircleObject):
         self._tick.hide()
         
         self.do_on_click(1, self.toggle)
-        self.do_on_click(1, lambda: callback(self.checked))
+        if callback is not None:
+            self.do_on_click(1, lambda: callback(self.checked))
     
     # region PROPERTIES
     

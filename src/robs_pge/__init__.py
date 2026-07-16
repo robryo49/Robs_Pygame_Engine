@@ -17,7 +17,11 @@ from .utils import (
     Keybinds, ObjectFlags, KeybindFlags,
     clamp, lerp, inf,
 )
-from .rendering import Style, RectStyle, LineStyle, ButtonStyle, CircleStyle, ShapeStyle, LineChartStyle, PolygonStyle, ProgressBarStyle, DebugPanelStyle, SliderStyle, IconButtonStyle
+from .rendering import (
+    Style, RectStyle, LineStyle, ButtonStyle, CircleStyle, ShapeStyle, LineChartStyle,
+    PolygonStyle, ProgressBarStyle, DebugPanelStyle, SliderStyle, IconButtonStyle,
+    RadioButtonStyle, SpriteButtonStyle, ToggleButtonStyle
+)
 
 __all__ = [
     # core
@@ -44,5 +48,6 @@ __all__ = [
     "clamp", "lerp", "inf",
     # styles
     "Style", "RectStyle", "LineStyle", "ButtonStyle", "CircleStyle",
-    "ShapeStyle", "LineChartStyle", "PolygonStyle", "ProgressBarStyle", "DebugPanelStyle", "SliderStyle", "IconButtonStyle"
+    "ShapeStyle", "LineChartStyle", "PolygonStyle", "ProgressBarStyle", "DebugPanelStyle",
+    "SliderStyle", "IconButtonStyle", "RadioButtonStyle", "SpriteButtonStyle", "ToggleButtonStyle",
 ]

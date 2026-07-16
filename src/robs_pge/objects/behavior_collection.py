@@ -67,4 +67,8 @@ class BehaviorCollection(Collection):
     def on_event(self, event: Event):
         for behavior in self._elements:
             behavior.on_event(event)
+    
+    def on_scroll(self, scroll: int, pos: Vec2):
+        for behavior in self._elements:
+            behavior.on_scroll(scroll, pos)
         

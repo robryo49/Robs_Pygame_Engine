@@ -87,6 +87,12 @@ class InteractionManager:
         if self.input.released_button(button) and active and active.has_flag(ObjectFlags.CLICKABLE):
             active.on_release(button, self._mouse_pos)
             self._active[button] = None
+            
+    def _handle_scroll(self):
+        if self.input.mouse_scroll:
+            hovered = self._hovered
+            if hovered is not None:
+                hovered.on_scroll(self.input.mouse_scroll, self._mouse_pos)
     
     def get_hovered_objects(self, objects: ObjectCollection, camera: Optional[Camera] = None):
         self._mouse_pos = self.input.mouse.world_pos(camera) if camera else self.input.mouse.pos
@@ -104,6 +110,8 @@ class InteractionManager:
         self._handle_button(1)
         self._handle_button(2)
         self._handle_button(3)
+        
+        self._handle_scroll()
         
         hovered = self.hovered
         if hovered and hovered.has_flag(ObjectFlags.CLICKABLE):

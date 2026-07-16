@@ -1,4 +1,6 @@
 from __future__ import annotations
+
+import inspect
 from typing import Any, Callable, Optional, TYPE_CHECKING, overload
 
 from ..utils import Vec2
@@ -40,13 +42,8 @@ class ObjectBehavior:
             return None
         elif isinstance(action, tuple):
             return tuple(self._normalize_action(act) for act in action)
-        elif hasattr(action, "__code__"):
-            if action.__code__.co_argcount == 0:
-                return lambda owner: action()
-        elif hasattr(action, "__func__") and hasattr(action.__func__, "__code__"):
-            if action.__func__.__code__.co_argcount - 1 == 0:
-                return lambda owner: action()
-        
+        elif len(inspect.signature(action).parameters) == 0:
+            return lambda o: action()
         return action
     
     def _exec(self, action: Optional[Callable | tuple[Callable, ...]], *args, **kwargs) -> None:
@@ -72,3 +69,5 @@ class ObjectBehavior:
     def on_detach(self): pass
     
     def on_update(self, dt: float): pass
+    
+    def on_scroll(self, scroll: int, pos: Vec2): pass
