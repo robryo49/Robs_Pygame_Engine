@@ -433,7 +433,7 @@ class PygameObject:
         self.get_service(EventManager).register(event_type, callback)
         return self
         
-    def add_quick_debug(self, getter: Callable, template: str = "{}"):
+    def add_quick_debug(self, getter: Callable[[], Any] | Callable[[PygameObject], Any], template: str = "{}"):
         arg_count = len(inspect.signature(getter).parameters)
         if arg_count == 0:
             self.get_service(QuickDebugManager).add_listener(getter, template)
