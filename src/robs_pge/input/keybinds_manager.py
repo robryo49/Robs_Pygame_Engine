@@ -73,7 +73,7 @@ class KeybindsManager:
         return bool(valid and (pressed or held or released or scroll))
     
     def update(self) -> "KeybindsManager":
-        for keybinds in self._keybinds.elements.values():
+        for keybinds in self._keybinds.values():
             for keybind in keybinds:
                 if self._test_keybind(keybind):
                     keybind.action()

@@ -2,16 +2,16 @@ from .primitive_objects import RectObject
 from ..behaviors import *
 from ..object import PygameObject
 from ...rendering import RectRenderer
-from ...utils import Anchor, DictCollection, FRect, Transform, Vec2
+from ...utils import Anchor, DictCollection, FRect, Transform, TypedDictCollection, Vec2
 
 
-class Window(RectObject):
+class WindowObject(RectObject):
     def __init__(self, transform: Transform, renderer: RectRenderer, margin: int, services: DictCollection, layer: int = 0, anchor: Vec2 = Anchor.C):
         super().__init__(transform, renderer, services, layer, anchor)
         
         self._margin = margin
         
-        self._tabs: dict[str, PygameObject] = {}
+        self._tabs = TypedDictCollection(str, PygameObject)
         self._current_tab: Optional[PygameObject] = None
         self._current_tab_name: Optional[str] = None
         
@@ -77,6 +77,8 @@ class Window(RectObject):
         if self._current_tab is None and len(self._tabs) == 0:
             self._current_tab = tab
             self._current_tab_name = name
+        else:
+            tab.hide()
         self._tabs[name] = tab
         
         return self
@@ -95,7 +97,7 @@ class Window(RectObject):
                 self._current_tab.show()
         
         if isinstance(tab, PygameObject):
-            for n, t in self._tabs:
+            for n, t in self._tabs.items():
                 if t is tab:
                     self.set_tab(n)
         

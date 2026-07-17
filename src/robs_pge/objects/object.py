@@ -407,7 +407,7 @@ class PygameObject:
         return self._behaviors
     
     def add_behavior(self, behavior: ObjectBehavior | list[ObjectBehavior] | BehaviorCollection):
-        self.behaviors.add(behavior)
+        self.behaviors.add_behavior(behavior)
         
         return self
         

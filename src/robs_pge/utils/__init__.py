@@ -9,7 +9,7 @@ from .font import Font
 from .color import Color, Colors, ColorPalette
 from .flags import ObjectFlags, KeybindFlags
 from .keys import Keybinds
-from .collection import Collection, DictCollection
+from .collection import Collection, DictCollection, TypedCollection, TypedDictCollection
 from .types import Vec2Like, Vec3Like, NumberLike, validate_signature, CallbackLike
 from .array_tools import *
 from .async_tools import AsyncProcessManager, AsyncProcess
@@ -31,7 +31,7 @@ __all__ = [
     # keys
     "Keybinds",
     # collection
-    "Collection", "DictCollection",
+    "Collection", "DictCollection", "TypedDictCollection", "TypedCollection",
     # types
     "Vec2Like", "Vec3Like", "validate_signature", "CallbackLike",
     # array_tools

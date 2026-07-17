@@ -1,30 +1,25 @@
 from __future__ import annotations
-from typing import Optional, TYPE_CHECKING
 
-from ..utils import Collection
+from typing import Iterable, TYPE_CHECKING
+
+from ..utils import TypedCollection
 
 if TYPE_CHECKING:
     from ..core import Camera
-    from ..objects import PygameObject
+    from .object import PygameObject
 
 
-class ObjectCollection(Collection):
-    def __init__(self, objects: Optional[list[PygameObject]] = None):
-        super().__init__(objects)
+class ObjectCollection(TypedCollection):
+    def __init__(self, objects: Iterable[PygameObject] = ()):
+        from .object import PygameObject
+        
+        super().__init__(PygameObject, objects)
         
         self._to_remove: list[PygameObject] = []
         self._to_add: list[PygameObject] = []
         
         self._frozen = False
         self._render = True
-
-    # region PROPERTIES
-    
-    @property
-    def objects(self) -> list[PygameObject]:
-        return self.elements
-    
-    # endregion
     
     
     def toggle_render(self) -> "ObjectCollection":
@@ -56,7 +51,7 @@ class ObjectCollection(Collection):
         if not self._to_add:
             return self
         
-        self._elements.extend(self._to_add)
+        self.extend(self._to_add)
         self._to_add.clear()
         return self
         
@@ -64,11 +59,13 @@ class ObjectCollection(Collection):
         if not self._to_remove:
             return self
         
-        self._elements = [obj for obj in self._elements if obj not in self._to_remove]
+        for o in self._to_remove:
+            self.remove(o)
+            
         self._to_remove.clear()
         return self
     
-    def add(self, obj: PygameObject | list[PygameObject]) -> "ObjectCollection":
+    def add_object(self, obj: PygameObject | list[PygameObject]) -> "ObjectCollection":
         if isinstance(obj, list):
             for o in obj:
                 self.add(o)
@@ -76,10 +73,11 @@ class ObjectCollection(Collection):
             self._to_add.append(obj)
         return self
         
-    def remove(self, obj: PygameObject | list[PygameObject]) -> "ObjectCollection":
+    def remove_object(self, obj: PygameObject | list[PygameObject]) -> "ObjectCollection":
         if isinstance(obj, list):
             for o in obj:
-                self.remove(o)
+                self.remove_object(o)
+                
         elif self.has(obj):
             self._to_remove.append(obj)
         return self
@@ -88,13 +86,11 @@ class ObjectCollection(Collection):
         self._handle_object_additions()
         self._handle_object_removals()
         
-        for obj in self._elements:
-            obj.update(dt)
+        self.foreach(lambda o: o.update())
         return self
             
     def render(self, submit, camera: Camera) -> "ObjectCollection":
-        for obj in self._elements:
-            obj.render(submit, camera)
+        self.foreach(lambda o: o.render(submit, camera))
         return self
         
     

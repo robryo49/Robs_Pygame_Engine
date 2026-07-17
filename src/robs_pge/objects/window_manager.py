@@ -1,21 +1,21 @@
 from typing import Optional
 
-from ..events import EventManager, Events, Event
-from ..objects import PygameObject
-from ..utils import DictCollection
+from ..events import Event, EventManager, Events
+from ..objects import WindowObject
+from ..utils import TypedDictCollection
 
 
 class WindowManager:
     def __init__(self, event_manager: EventManager):
         self._event_manager = event_manager
-        self._windows: DictCollection = DictCollection()
+        self._windows = TypedDictCollection(str, WindowObject)
         self._groups: dict[str, set[str]] = {}
     
     @property
     def windows(self):
         return self._windows
     
-    def register(self, window_id: str, window: PygameObject, group: Optional[str] = None):
+    def register(self, window_id: str, window: WindowObject, group: Optional[str] = None):
         self._windows.set(window_id, window)
         window.hide()
         if group:
@@ -53,7 +53,7 @@ class WindowManager:
         return self
     
     def close_all(self):
-        for window_id in self._windows.keys:
+        for window_id in self._windows.keys():
             self.close(window_id)
         return self
 

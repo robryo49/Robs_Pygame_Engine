@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import Any, Optional, TYPE_CHECKING
 
 from ..resources import Texture
-from ..utils import Color, ColorPalette, DictCollection, Font, Vec2
+from ..utils import Color, ColorPalette, Font, TypedDictCollection, Vec2
 
 if TYPE_CHECKING:
     from ..core import Camera
@@ -13,8 +13,8 @@ if TYPE_CHECKING:
 
 class ResourceManager:
     def __init__(self):
-        self._folders: DictCollection = DictCollection()
-        self._resources: dict[type, DictCollection] = {}
+        self._folders = TypedDictCollection(str, Path)
+        self._resources = TypedDictCollection(type, TypedDictCollection)
     
     # region CORE
     
@@ -23,7 +23,7 @@ class ResourceManager:
             raise TypeError(f"Resource '{resource_name}' is not of type '{resource_type.__name__}' but of type '{type(resource).__name__}'")
         
         if resource_type not in self._resources:
-            self._resources[resource_type] = DictCollection()
+            self._resources[resource_type] = TypedDictCollection(str, resource_type)
         
         logging.info(f"Registering {resource_type.__name__} : {resource_name}")
         self._resources[resource_type].set(resource_name, resource)
