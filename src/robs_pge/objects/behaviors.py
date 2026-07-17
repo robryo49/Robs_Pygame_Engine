@@ -180,7 +180,7 @@ class ScaleOnClickBehavior(AnimationOnClickBehavior):
 
 
 class DynamicAttributeBehavior(ObjectBehavior):
-    def __init__(self, attribute: str, getter: Callable, template: Optional[str] = None, strength: float = 1):
+    def __init__(self, attribute: str, getter: Any | Callable[[], Any | tuple[Any]], template: Optional[str] = None, strength: float = 1):
         super().__init__()
         
         self._attribute = attribute
@@ -194,7 +194,7 @@ class DynamicAttributeBehavior(ObjectBehavior):
         if not self.owner:
             return
         
-        value = self._getter()
+        value = self._evaluate(self._getter)
         attr_value = getattr(self.owner, self._attribute)
         
         
@@ -254,27 +254,38 @@ class AttributeGridSnappingBehavior(ObjectBehavior):
 
 
 class AttributeClampingBehavior(ObjectBehavior):
-    def __init__(self, attribute: str, min_value: Optional[float] = -inf, max_value: Optional[float] = inf, strength: float = 1):
+    def __init__(
+            self,
+            attribute: str,
+            min_value: Optional[float | Callable[[],  float]] = None,
+            max_value: Optional[float | Callable[[],  float]] = None,
+            strength: float = 1
+    ):
         super().__init__()
         self._attribute = attribute
-        self._min_value = min_value if min_value is not None else -inf
-        self._max_value = max_value if max_value is not None else inf
         
+        self._min_value = -inf if min_value is None else min_value
+        self._max_value = inf if max_value is None else max_value
         self._strength = strength
     
     def on_update(self, dt: float):
-        
         attr_value = getattr(self.owner, self._attribute)
-        value = clamp(attr_value, self._min_value, self._max_value)
         
+        # Dynamically evaluate the bounds every frame
+        current_min = self._evaluate(self._min_value)
+        current_max = self._evaluate(self._max_value)
+        
+        target_value = clamp(attr_value, current_min, current_max)
+        
+        # Apply strength interpolation if necessary
         if 0 < self._strength < 1:
-            value = lerp(attr_value, value, self._strength)
+            target_value = lerp(attr_value, target_value, self._strength)
         
-        setattr(self.owner, self._attribute, value)
+        setattr(self.owner, self._attribute, target_value)
 
 
 class AttributeFixingBehavior(ObjectBehavior):
-    def __init__(self, attribute: str, value = None, strength: float = 1):
+    def __init__(self, attribute: str, value = Optional[Any | Callable[[], Any]], strength: float = 1):
         super().__init__()
         self._attribute = attribute
         self._value = value
@@ -286,11 +297,10 @@ class AttributeFixingBehavior(ObjectBehavior):
     
     def on_update(self, dt: float):
         attr_value = getattr(self.owner, self._attribute)
-        value = self._value
+        value = self._evaluate(self._value)
         
         if 0 < self._strength < 1:
-            value = lerp(attr_value, self._value, self._strength)
-        print(value,attr_value)
+            value = lerp(attr_value, value, self._strength)
         setattr(self.owner, self._attribute, value)
 
 

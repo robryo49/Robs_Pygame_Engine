@@ -20,7 +20,7 @@ from .utils import (
 from .rendering import (
     Style, RectStyle, LineStyle, ButtonStyle, CircleStyle, ShapeStyle, LineChartStyle,
     PolygonStyle, ProgressBarStyle, DebugPanelStyle, SliderStyle, IconButtonStyle,
-    RadioButtonStyle, SpriteButtonStyle, ToggleButtonStyle
+    RadioButtonStyle, SpriteButtonStyle, ToggleButtonStyle, WindowStyle
 )
 
 __all__ = [
@@ -50,4 +50,5 @@ __all__ = [
     "Style", "RectStyle", "LineStyle", "ButtonStyle", "CircleStyle",
     "ShapeStyle", "LineChartStyle", "PolygonStyle", "ProgressBarStyle", "DebugPanelStyle",
     "SliderStyle", "IconButtonStyle", "RadioButtonStyle", "SpriteButtonStyle", "ToggleButtonStyle",
+    "WindowStyle"
 ]

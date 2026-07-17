@@ -4,10 +4,9 @@ from .button_object_factories import ButtonObjectFactory
 from .debug_object_factories import DebugObjectFactory
 from .layout_object_factory import LayoutObjectFactory
 from .sub_factory import SubObjectFactory
+from ..custom import LineChartObject, ProgressBarObject, SliderObject, Window
 from ..object import PygameObject
-from ..behaviors import ActionOnUpdateBehavior
-from ..custom import LineChartObject, ProgressBarObject, SliderObject
-from ...rendering import RectRenderer, RectStyle, SliderStyle, CircleStyle, ProgressBarStyle, LineChartStyle, LineStyle
+from ...rendering import CircleStyle, LineChartStyle, LineStyle, ProgressBarStyle, RectRenderer, RectStyle, SliderStyle, WindowStyle
 from ...utils import Anchor, Vec2
 
 
@@ -104,4 +103,15 @@ class UIObjectFactory(SubObjectFactory):
         
         return obj
     
+    def make_window(
+            self, position: Vec2, dims: Vec2, style: WindowStyle,
+            rotation: float = 0.0, scale: float = 1.0, layer: int = 0, anchor: Vec2 = Anchor.C, cache: bool = True
+    ):
+        
+        window_style = self._get_resource(style, WindowStyle)
+        bg_style = window_style.bg_style
+        
+        obj = self._make_object(Window, position, rotation, scale, RectRenderer(dims, bg_style, cache), layer, anchor, window_style.margin)
+        
+        return obj
     

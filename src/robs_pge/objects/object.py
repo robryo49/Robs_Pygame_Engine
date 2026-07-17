@@ -261,23 +261,22 @@ class PygameObject:
         return self
     
     def get_world_children_clip_area(self) -> Optional[FRect]:
-        if self._children_clip_area is None:
-            return None
         
-        if self._children_clip_area_relative:
-            corners = [
-                self.world_transform.apply(Vec2(self._children_clip_area.left, self._children_clip_area.top)),
-                self.world_transform.apply(Vec2(self._children_clip_area.right, self._children_clip_area.top)),
-                self.world_transform.apply(Vec2(self._children_clip_area.right, self._children_clip_area.bottom)),
-                self.world_transform.apply(Vec2(self._children_clip_area.left, self._children_clip_area.bottom)),
-            ]
-            xs = [c.x for c in corners]
-            ys = [c.y for c in corners]
-            
-            return FRect(min(xs), min(ys), max(xs) - min(xs), max(ys) - min(ys))
+        rect = None
         
-        else:
-            return self._children_clip_area
+        if self._children_clip_area is not None:
+            if self._children_clip_area_relative:
+                rect = self.world_transform.apply_on_rect(self._children_clip_area)
+            else:
+                rect = self._children_clip_area
+        
+        parent = self.parent
+        if parent is not None:
+            parent_rect = parent.get_world_children_clip_area()
+            if parent_rect is not None:
+                rect = rect.clip(parent_rect) if rect is not None else parent_rect
+        
+        return rect
     
     # endregion
     
@@ -306,10 +305,15 @@ class PygameObject:
         
         if obj.parent is not self:
             obj.set_parent(self, anchor)
+            
+        return self
         
     def remove_child(self, obj: "PygameObject"):
         self._children.remove(obj)
         obj.set_parent(None)
+        
+        return self
+        
     # endregion
     
     @property
@@ -460,15 +464,15 @@ class PygameObject:
         self.add_behavior(ActionOnScrollBehavior(action))
         return self
             
-    def make_attribute_dynamic(self, attribute: str, getter: Callable[[], Any | tuple[Any, ...]], template: Optional[str] = None, strength: float = 1):
+    def make_attribute_dynamic(self, attribute: str, getter: Any | Callable[[], Any | tuple[Any, ...]], template: Optional[str] = None, strength: float = 1):
         self.add_behavior(DynamicAttributeBehavior(attribute, getter, template, strength))
         return self
         
-    def make_attribute_fixed(self, attribute: str, value: Optional[Any] = None, strength: float = 1):
+    def make_attribute_fixed(self, attribute: str, value: Optional[Any | Callable[[], Any]] = None, strength: float = 1):
         self.add_behavior(AttributeFixingBehavior(attribute, value, strength))
         return self
         
-    def make_attribute_clamped(self, attribute: str, min_value: Optional[float] = None, max_value: Optional[float] = None, strength: float = 1):
+    def make_attribute_clamped(self, attribute: str, min_value: Optional[float | Callable[[],  float]] = None, max_value: Optional[float | Callable[[],  float]] = None, strength: float = 1):
         self.add_behavior(AttributeClampingBehavior(attribute, min_value, max_value, strength))
         return self
         
@@ -610,21 +614,25 @@ class PygameObject:
     
     # region OTHER
     
-    def trigger_event(self, event: Event):
+    def trigger_event(self, event: Event) -> PygameObject:
         self.get_service(EventManager).trigger(event)
+        return self
     
-    def play_animation(self, animation: Animation):
+    def play_animation(self, animation: Animation) -> PygameObject:
         self.get_service(AnimationManager).play(animation)
+        return self
     
-    def quick_debug(self, *infos: Any) -> None:
+    def quick_debug(self, *infos: Any) -> PygameObject:
         self.get_service(QuickDebugManager).quick_debug(infos)
+        return self
     
     # endregion
     
     def _render_self(self, submit, camera: Camera):
         self.renderer.render(submit, self.world_transform, self.layer, self.anchor, self.get_world_clip_area())
+        return self
     
-    def render(self, submit, camera: Camera):
+    def render(self, submit, camera: Camera) -> PygameObject:
         self._culled = False
         if self.visible:
             if self.renderer and not self.has_flag(ObjectFlags.SKIP_RENDERING):
@@ -639,12 +647,14 @@ class PygameObject:
                 if not self._culled:
                     self._render_self(submit, camera)
             self.children.render(submit, camera)
+        return self
             
             
-    def _update_self(self, dt):
+    def _update_self(self, dt) -> PygameObject:
         self.behaviors.on_update(dt)
+        return self
         
-    def update(self, dt: float):
+    def update(self, dt: float=0.0) -> PygameObject:
         if not self.frozen:
             self.children.update(dt)
             if not self.has_flag(ObjectFlags.SKIP_UPDATE):
@@ -652,6 +662,8 @@ class PygameObject:
             
         if self.renderer:
             self.renderer.update(dt)
+            
+        return self
             
     
     def __repr__(self):

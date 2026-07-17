@@ -160,6 +160,7 @@ class SliderStyle(Style):
         )
 
 
+
 @dataclass
 class DebugPanelStyle(Style):
     header_style: RectStyle
@@ -167,3 +168,8 @@ class DebugPanelStyle(Style):
     panel_style: RectStyle
     title_font: Font
 
+
+@dataclass
+class WindowStyle(Style):
+    bg_style: RectStyle
+    margin: int = 20

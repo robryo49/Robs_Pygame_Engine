@@ -53,7 +53,10 @@ class ObjectBehavior:
                     self._exec(action, *args, **kwargs)
             else:
                 action(*args, **kwargs)
-            
+    
+    @staticmethod
+    def _evaluate(val_or_getter):
+        return val_or_getter() if callable(val_or_getter) else val_or_getter
     
     def on_click(self, button: int, pos: Vec2): pass
     def on_hold(self, button: int, pos: Vec2): pass
