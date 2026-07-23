@@ -143,9 +143,17 @@ class DrawRect(DrawCommand):
         dims, bg_color, bd, bd_color, bd_radius, rotation, scale = key
         
         surface = pg.Surface(dims, pg.SRCALPHA)
-        pg.draw.rect(surface, bg_color, surface.get_rect(), 0, bd_radius)
+        
+        if isinstance(bd_radius, tuple):
+            pg.draw.rect(surface, bg_color, surface.get_rect(), 0, 0, *bd_radius)
+        else:
+            pg.draw.rect(surface, bg_color, surface.get_rect(), 0, bd_radius)
+        
         if bd:
-            pg.draw.rect(surface, bd_color, surface.get_rect(), bd, bd_radius)
+            if isinstance(bd_radius, tuple):
+                pg.draw.rect(surface, bd_color, surface.get_rect(), bd, 0, *bd_radius)
+            else:
+                pg.draw.rect(surface, bd_color, surface.get_rect(), bd, bd_radius)
         if rotation:
             surface = pg.transform.rotozoom(surface, rotation, 1).convert_alpha()
         
@@ -157,7 +165,7 @@ class DrawRect(DrawCommand):
         bg_color =  tuple(self.style.bg_color)
         bd =        round(self.style.bd * scale)
         bd_color =  tuple(self.style.bd_color)
-        bd_radius = round(self.style.bd_radius * scale)
+        bd_radius = tuple(round(corner_radius * scale) for corner_radius in self.style.bd_radius) if isinstance(self.style.bd_radius, tuple) else round(self.style.bd_radius * scale)
         
         dims =      round(self.dims * scale)
         key =       (tuple(dims), bg_color, bd, bd_color, bd_radius, rotation, scale)
@@ -214,7 +222,8 @@ class DrawText(DrawCommand):
     font: Font
     
     def make_surface(self, key, *args):
-        text, font_key, color, spacing, rotation = key
+        # Added scale to the cache key unpack
+        text, font_key, color, spacing, rotation, scale = key
         pg_font: pg.font.Font = args[0]
         
         lines = []
@@ -232,6 +241,12 @@ class DrawText(DrawCommand):
         for surf in lines:
             surface.blit(surf, (0, y))
             y += surf.get_height() + spacing
+        
+        # Apply scaling BEFORE rotation for better visual quality
+        if scale != 1.0:
+            new_w = max(1, round(width * scale))
+            new_h = max(1, round(height * scale))
+            surface = pg.transform.smoothscale(surface, (new_w, new_h))
         
         if rotation:
             surface = pg.transform.rotozoom(surface, rotation, 1.0).convert_alpha()
@@ -253,19 +268,29 @@ class DrawText(DrawCommand):
             font_cache[font_key] = pg.font.SysFont(self.font.name, base_font_size, self.font.bold, self.font.italic)
         pg_font = font_cache[font_key]
         
-        key = (self.text, font_key, color, base_spacing, rotation)
+        # 1. Calculate unrotated base dimensions for accurate anchoring
+        unrotated_w = 0
+        unrotated_h = 0
+        for line in self.text.split("\n"):
+            w, h = pg_font.size(line)
+            unrotated_w = max(unrotated_w, w)
+            unrotated_h += h + base_spacing
+        unrotated_h -= base_spacing
+        
+        base_dims = Vec2(unrotated_w * scale, unrotated_h * scale)
+        
+        # 2. Include scale in the cache key so we don't recalculate it every frame
+        key = (self.text, font_key, color, base_spacing, rotation, scale)
         surface, cached = self.get_surface(surface_cache, key, pg_font)
         
-        if scale != 1.0:
-            new_w = round(surface.get_width() * scale)
-            new_h = round(surface.get_height() * scale)
-            if new_w > 0 and new_h > 0:
-                surface = pg.transform.smoothscale(surface, (new_w, new_h))
+        # 3. Pass the unrotated base_dims to your uv function (just like DrawTexture does)
+        offset = surface_pos_from_uv_pos(self.anchor, base_dims, rotation)
         
-        self.add_blit(blit_call_queue, surface, screen_pos, surface_pos_from_uv_pos(self.anchor, Vec2(surface.get_width(), surface.get_height()), rotation), self.get_screen_clip_rect(camera))
+        self.add_blit(blit_call_queue, surface, screen_pos, offset, self.get_screen_clip_rect(camera))
         
         return cached
-
+    
+    
 @dataclass
 class DrawLine(DrawCommand):
     points: list[Vec2]

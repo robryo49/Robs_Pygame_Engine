@@ -344,11 +344,11 @@ class DraggableBehavior(ObjectBehavior):
     def on_click(self, button: int, pos: Vec2):
         if button == self._button:
             self._dragging = True
-            self._offset = self.owner.pos - pos
+            self._offset = self.owner.pos - self.owner.world_to_parent_local(pos)
     
     def on_hold(self, button: int, pos: Vec2):
         if self._dragging and button == self._button:
-            self.owner.pos = pos + self._offset
+            self.owner.pos = self.owner.world_to_parent_local(pos) + self._offset
     
     def on_release(self, button: int, pos: Vec2):
         if button == self._button:

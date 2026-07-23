@@ -7,7 +7,7 @@ from ...animation import AnimationManager
 from ...debug import FrameTimer, QuickDebugManager
 from ...events import Event, EventManager
 from ...input import InputManager, Keybind, KeybindsManager
-from ...objects import InteractionManager, ObjectCollection, ObjectFactory, PygameObject, ParticleSystem, WindowManager
+from ...objects import InteractionManager, ObjectCollection, ObjectFactory, PygameObject, ParticleSystem, WindowManager, WindowObject
 from ...rendering import DebugPanelStyle, LineChartStyle
 from ...resources import ResourceManager
 from ...utils import Anchor, DictCollection, Vec2, AsyncProcessManager, AsyncProcess
@@ -355,7 +355,7 @@ class State:
     
     # region REGISTRATION METHODS
     
-    def register_keybind(self, key: int | tuple[int, ...], action: Callable, *args) -> None:
+    def register_keybind(self, key: int | tuple[int, ...], action: Callable | tuple[Callable, ...], *args) -> None:
         self.keybinds.add(Keybind(key, action, *args))
     
     def register_event_callback(self, event_type: str, callback: Callable[[Event], Any], condition: Optional[Callable[[Event], bool]] = None) -> None:
@@ -369,7 +369,7 @@ class State:
         for o in obj:
             self.ui_objects.add(o)
     
-    def add_window(self, window_id: str, window: PygameObject, group: str = "main"):
+    def add_window(self, window_id: str, window: WindowObject, group: str = "main"):
         self.windows.register(window_id, window, group)
         
     def add_quick_debug(self, getter: Callable, template: str = "{}"):

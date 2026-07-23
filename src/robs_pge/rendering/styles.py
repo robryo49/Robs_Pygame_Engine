@@ -4,18 +4,27 @@ from ..utils import Color, Font, Vec2, Colors
 
 @dataclass
 class Style:
+    """
+    Base class for all UI styles
+    """
     def with_(self, **kwargs):
         return replace(self, **kwargs)  # type: ignore[arg-type]
     
     def copy(self):
         return replace(self)
-    
+
 
 # region PRIMITIVES
 
 
 @dataclass
 class ShapeStyle(Style):
+    """
+    Attributes:
+        bg_color: background color of the shape
+        bd: border width
+        bd_color: color of the border
+    """
     bg_color: Color = field(default_factory=lambda: Color(255, 255, 255))
     bd: int = 0
     bd_color: Color = field(default_factory=lambda: Color(0, 0, 0))
@@ -25,27 +34,49 @@ class ShapeStyle(Style):
             bg_color = Colors.with_alpha(self.bg_color, alpha),
             bd_color = Colors.with_alpha(self.bd_color, alpha)
         )
-        
-        
 
 
 @dataclass
 class RectStyle(ShapeStyle):
-    bd_radius: int = 0
+    """
+    Attributes:
+        bg_color: background color of the shape
+        bd: border width
+        bd_color: color of the border
+        bd_radius: radius for rounded corners
+    """
+    bd_radius: int | tuple[int, int, int, int] = 0
 
 
 @dataclass
 class CircleStyle(ShapeStyle):
+    """
+    Attributes:
+        bg_color: background color of the shape
+        bd: border width
+        bd_color: color of the border
+    """
     pass
 
 
 @dataclass
 class PolygonStyle(ShapeStyle):
+    """
+    Attributes:
+        bg_color: background color of the shape
+        bd: border width
+        bd_color: color of the border
+    """
     pass
 
 
 @dataclass
 class LineStyle(Style):
+    """
+    Attributes:
+        color: color of the line
+        width: thickness of the line
+    """
     color: Color = field(default_factory=lambda: Color(255, 255, 255))
     width: int = 1
     
@@ -59,6 +90,12 @@ class LineStyle(Style):
 
 @dataclass
 class ButtonStyle(Style):
+    """
+    Attributes:
+        bg_style: rect style for the background
+        margin: padding around the text
+        font: font style for the button text
+    """
     bg_style: RectStyle = field(default_factory=RectStyle)
     margin: int = 50
     font: Font = field(default_factory=Font)
@@ -71,6 +108,11 @@ class ButtonStyle(Style):
 
 @dataclass
 class SpriteButtonStyle(Style):
+    """
+    Attributes:
+        bg_style: rect style for the background
+        margin: padding around the sprite/icon
+    """
     bg_style: RectStyle = field(default_factory=RectStyle)
     margin: int = 10
     
@@ -82,6 +124,11 @@ class SpriteButtonStyle(Style):
 
 @dataclass
 class IconButtonStyle(Style):
+    """
+    Attributes:
+        button_style: base sprite button style
+        icon_color: tint color for the icon
+    """
     button_style: SpriteButtonStyle = field(default_factory=SpriteButtonStyle)
     icon_color: Color = field(default_factory=lambda: Color(255, 255, 255))
     
@@ -93,6 +140,12 @@ class IconButtonStyle(Style):
 
 @dataclass
 class RadioButtonStyle(Style):
+    """
+    Attributes:
+        bg_style: circle style for the background
+        icon_color: color of the active indicator
+        margin: spacing around the radio button
+    """
     bg_style: CircleStyle = field(default_factory=CircleStyle)
     icon_color: Color = field(default_factory=lambda: Color(255, 255, 255))
     margin: int = 0
@@ -106,6 +159,12 @@ class RadioButtonStyle(Style):
 
 @dataclass
 class ToggleButtonStyle(Style):
+    """
+    Attributes:
+        bg_style: rect style for the toggle background track
+        toggle_style: rect style for the movable toggle element
+        toggle_bg_color: background color of the active toggle
+    """
     bg_style: RectStyle = field(default_factory=RectStyle)
     toggle_style: RectStyle = field(default_factory=RectStyle)
     toggle_bg_color: Color = field(default_factory=lambda: Color(0, 0, 0))
@@ -118,6 +177,11 @@ class ToggleButtonStyle(Style):
 
 @dataclass
 class ProgressBarStyle(Style):
+    """
+    Attributes:
+        bg_style: rect style for the progress track background
+        color: color of the filled progress indicator
+    """
     bg_style: RectStyle = field(default_factory=RectStyle)
     color: Color = field(default_factory=lambda: Color(255, 255, 255))
     
@@ -130,6 +194,12 @@ class ProgressBarStyle(Style):
 
 @dataclass
 class LineChartStyle(Style):
+    """
+    Attributes:
+        bg_style: rect style for the chart background area
+        line_color: color of the plotted data line
+        line_width: thickness of the plotted data line
+    """
     bg_style: RectStyle = field(default_factory=RectStyle)
     line_color: Color = field(default_factory=lambda: Color(255, 255, 255))
     line_width: int = 1
@@ -143,6 +213,18 @@ class LineChartStyle(Style):
 
 @dataclass
 class SliderStyle(Style):
+    """
+    Attributes:
+        bg_style: rect style for the overall slider area background
+        bar_style: rect style for the slider track
+        bar_width: thickness of the slider track
+        handle_style: style for the draggable handle
+        handle_size: dimensions of the handle
+        font: font style for displaying the value
+        text_position: placement of the value text
+        hide_bg: toggles visibility of the overall background
+        hide_text: toggles visibility of the value text
+    """
     bg_style: RectStyle = field(default_factory=RectStyle)
     bar_style: RectStyle = field(default_factory=RectStyle)
     bar_width: int = 10
@@ -151,6 +233,7 @@ class SliderStyle(Style):
     font: Font = field(default_factory=Font)
     text_position: str = "right"
     hide_bg: bool = False
+    hide_text: bool = False
     
     def with_alpha(self, alpha: int):
         return self.with_(
@@ -160,9 +243,15 @@ class SliderStyle(Style):
         )
 
 
-
 @dataclass
 class DebugPanelStyle(Style):
+    """
+    Attributes:
+        header_style: rect style for the top header
+        title_panel_style: rect style containing the title text
+        panel_style: rect style for the main panel content area
+        title_font: font style for the header title
+    """
     header_style: RectStyle
     title_panel_style: RectStyle
     panel_style: RectStyle
@@ -171,5 +260,10 @@ class DebugPanelStyle(Style):
 
 @dataclass
 class WindowStyle(Style):
+    """
+    Attributes:
+        bg_style: rect style for the window background
+        margin: padding around the inner contents of the window
+    """
     bg_style: RectStyle
     margin: int = 20

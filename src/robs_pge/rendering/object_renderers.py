@@ -99,21 +99,33 @@ class RectRenderer(ObjectRenderer):
     def get_aabb_size(self, rotation: float):
         return Vec2(self.dims.length()) if rotation else self.dims
     
-    def test_hit(self, local_pos: Vec2):
-        hw, hh = self.dims/2
-        r = self.bd_radius
-        
+    def test_hit(self, local_pos: Vec2) -> bool:
         x, y = local_pos
-        x, y = abs(x - hw), abs(y - hh)
+        w, h = self.dims
         
-        if x > hw or y > hh:
+        if not (0 <= x <= w and 0 <= y <= h):
             return False
-        if x < hw - r or y < hh - r:
+        
+        if isinstance(self.bd_radius, (tuple, list)):
+            r_bl, r_br, r_tl, r_tr = self.bd_radius
+        else:
+            r_bl = r_br = r_tl = r_tr = self.bd_radius
+        
+        if x < w / 2:
+            if y < h / 2:
+                r, dx, dy = r_tl, x, y
+            else:
+                r, dx, dy = r_bl, x, h - y
+        else:
+            if y < h / 2:
+                r, dx, dy = r_tr, w - x, y
+            else:
+                r, dx, dy = r_br, w - x, h - y
+        
+        if dx >= r or dy >= r:
             return True
         
-        x, y = x - (hw - r), y - (hh - r)
-        
-        return x**2 + y**2 <= r**2
+        return (r - dx) ** 2 + (r - dy) ** 2 <= r ** 2
     
     def render(self, submit, transform: Transform, layer: int, anchor: Vec2, clip_area: Optional[FRect] = None):
         submit(DrawRect(transform, layer, anchor, self._cache, clip_area, self.dims, self.style))

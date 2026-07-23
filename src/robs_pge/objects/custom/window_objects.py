@@ -71,7 +71,7 @@ class WindowObject(RectObject):
         tab.anchor = Anchor.T
         tab.pos = Vec2(0, -self._margin)
         
-        tab.do_on_scroll(lambda o, s, p: o.move_y(s*10))
+        tab.do_on_scroll(lambda o, s, p: o.move_y(-s*20))
         tab.make_attribute_clamped("y_pos", -self._margin, lambda: max(0, tab.height-self.children_clip_area.height)-self._margin)
         
         if self._current_tab is None and len(self._tabs) == 0:

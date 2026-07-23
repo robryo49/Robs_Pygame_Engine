@@ -573,37 +573,46 @@ class PygameObject:
     
     # region COORDINATES CONVERSION METHODS
     
-    def screen_to_local(self, screen: Vec2, camera: Optional[Camera] = None):
+    def screen_to_local(self, screen: Vec2, camera: Optional[Camera] = None) -> Vec2:
         return self.world_to_local(camera.screen_to_world_pos(screen)) if camera else self.world_to_local(screen)
     
-    def screen_to_uv(self, screen: Vec2, camera: Optional[Camera] = None):
+    
+    def screen_to_uv(self, screen: Vec2, camera: Optional[Camera] = None) -> Vec2:
         return self.world_to_uv(camera.screen_to_world_pos(screen)) if camera else self.world_to_uv(screen)
     
     
-    def world_to_local(self, world: Vec2):
+    
+    def world_to_local(self, world: Vec2) -> Vec2:
         return self.world_transform.apply_inverse(world) + self.uv_to_local(self.anchor)
     
-    def world_to_uv(self, world: Vec2):
+    def world_to_parent_local(self, world: Vec2) -> Vec2:
+        parent = self.parent
+        return parent.world_to_local(world) if parent else world
+    
+    
+    def world_to_uv(self, world: Vec2) -> Vec2:
         return self.local_to_uv(self.world_to_local(world))
     
     
-    def local_to_world(self, local_pos: Vec2):
+    
+    def local_to_world(self, local_pos: Vec2) -> Vec2:
         return self.world_transform.apply(local_pos - self.uv_to_local(self.anchor))
     
-    def local_to_uv(self, local):
+    def local_to_uv(self, local) -> Vec2:
         return self.renderer.local_to_uv(local) if self.renderer else Vec2()
     
-    def local_to_screen(self, local: Vec2, camera: Optional[Camera] = None):
+    def local_to_screen(self, local: Vec2, camera: Optional[Camera] = None) -> Vec2:
         return camera.world_to_screen_pos(self.local_to_world(local)) if camera else self.local_to_world(local)
     
     
-    def uv_to_local(self, uv: Vec2):
+    
+    def uv_to_local(self, uv: Vec2) -> Vec2:
         return self.renderer.uv_to_local(uv) if self.renderer else Vec2()
     
-    def uv_to_world(self, uv: Vec2):
+    def uv_to_world(self, uv: Vec2) -> Vec2:
         return self.local_to_world(self.uv_to_local(uv))
     
-    def uv_to_screen(self, uv: Vec2, camera: Optional[Camera] = None):
+    def uv_to_screen(self, uv: Vec2, camera: Optional[Camera] = None) -> Vec2:
         return camera.world_to_screen_pos(self.uv_to_world(uv)) if camera else self.uv_to_world(uv)
     
     

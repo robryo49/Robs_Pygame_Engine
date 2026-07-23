@@ -1,6 +1,8 @@
-from typing import Any, Callable, Generic, Iterable, Mapping, Optional, SupportsIndex, TypeVar
+from typing import Any, Callable, Generic, Iterable, Mapping, SupportsIndex, TypeVar
 
 T = TypeVar("T")
+K = TypeVar("K")
+V = TypeVar("V")
 
 
 class Collection(list[T], Generic[T]):
@@ -54,13 +56,26 @@ class Collection(list[T], Generic[T]):
         super().__imul__(value)
         return self
     
-    def foreach(self, method: Callable[[T], Any]):
+    def foreach(self, method: Callable[[T], Any]) -> None:
         for o in self:
             method(o)
-
-
-K = TypeVar("K")
-V = TypeVar("V")
+    
+    def filter(self, predicate: Callable[[T], bool]) -> "Collection[T]":
+        return self._new(item for item in self if predicate(item))
+    
+    def remove_if(self, predicate: Callable[[T], bool]) -> None:
+        for i in range(len(self) - 1, -1, -1):
+            if predicate(self[i]):
+                self.pop(i)
+    
+    def map[R, T2](self, mapper: Callable[[T2], R]) -> "Collection[R]":
+        return Collection(mapper(item) for item in self)
+    
+    def any_match(self, predicate: Callable[[T], bool]) -> bool:
+        return any(predicate(item) for item in self)
+    
+    def all_match(self, predicate: Callable[[T], bool]) -> bool:
+        return all(predicate(item) for item in self)
 
 
 class DictCollection(dict[K, V], Generic[K, V]):
@@ -79,7 +94,6 @@ class DictCollection(dict[K, V], Generic[K, V]):
     def __or__(self, other):
         if not isinstance(other, dict):
             return NotImplemented
-        
         result = self.copy()
         result.update(other)
         return result
@@ -87,7 +101,6 @@ class DictCollection(dict[K, V], Generic[K, V]):
     def __ror__(self, other):
         if not isinstance(other, dict):
             return NotImplemented
-        
         result = self._new(other)
         result.update(self)
         return result
@@ -95,7 +108,6 @@ class DictCollection(dict[K, V], Generic[K, V]):
     def __ior__(self, other):
         if not isinstance(other, dict):
             return NotImplemented
-        
         self.update(other)
         return self
     
@@ -103,17 +115,30 @@ class DictCollection(dict[K, V], Generic[K, V]):
     def fromkeys(cls, iterable, value=None):
         return cls(dict.fromkeys(iterable, value))
     
-    def foreach(self, method: Callable[[T], Any]):
-        for o in self:
-            method(o)
+    def foreach(self, method: Callable[[V], Any]) -> None:
+        for v in self.values():
+            method(v)
+    
+    def filter(self, predicate: Callable[[V], bool]) -> "DictCollection[K, V]":
+        return self._new({key: item for key, item in self.items() if predicate(item)})
+    
+    def remove_if(self, predicate: Callable[[V], bool]) -> None:
+        keys_to_remove = [k for k, v in self.items() if predicate(v)]
+        for k in keys_to_remove:
+            self.pop(k)
+    
+    def map[R, V2](self, mapper: Callable[[V2], R]) -> "DictCollection[K, R]":
+        return DictCollection({key: mapper(item) for key, item in self.items()})
+    
+    def any_match(self, predicate: Callable[[V], bool]) -> bool:
+        return any(predicate(item) for item in self.values())
+    
+    def all_match(self, predicate: Callable[[V], bool]) -> bool:
+        return all(predicate(item) for item in self.values())
 
 
 class TypedCollection(Collection[T]):
-    def __init__(
-            self,
-            item_type: type[T],
-            iterable: Iterable[T] = ()
-    ):
+    def __init__(self, item_type: type[T], iterable: Iterable[T] = ()):
         self._item_type = item_type
         super().__init__(iterable)
     
@@ -154,9 +179,11 @@ class TypedCollection(Collection[T]):
             self._validate(value)
             super().__setitem__(index, value)
     
-    def foreach(self, method: Callable[[T], Any]):
-        for o in self:
-            method(o)
+    def map[R, T2](self, mapper: Callable[[T2], R], target_type: type[R] | None = None) -> "Collection[R]":
+        mapped_items = [mapper(item) for item in self]
+        if target_type is not None:
+            return TypedCollection(target_type, mapped_items)
+        return Collection(mapped_items)
 
 
 class TypedDictCollection(DictCollection[K, V]):
@@ -173,7 +200,6 @@ class TypedDictCollection(DictCollection[K, V]):
         
         if mapping is not None:
             self.update(mapping)
-        
         if kwargs:
             self.update(kwargs)
     
@@ -186,22 +212,13 @@ class TypedDictCollection(DictCollection[K, V]):
         return self._value_type
     
     def _new(self, mapping=None) -> "TypedDictCollection[K, V]":
-        return type(self)(
-            self.key_type,
-            self.value_type,
-            mapping or {}
-        )
+        return type(self)(self.key_type, self.value_type, mapping or {})
     
     def _validate(self, key: Any, value: Any) -> None:
         if not isinstance(key, self.key_type):
-            raise TypeError(
-                f"Expected key {self.key_type.__name__}, got {type(key).__name__}"
-            )
-        
+            raise TypeError(f"Expected key {self.key_type.__name__}, got {type(key).__name__}")
         if not isinstance(value, self.value_type):
-            raise TypeError(
-                f"Expected value {self.value_type.__name__}, got {type(value).__name__}"
-            )
+            raise TypeError(f"Expected value {self.value_type.__name__}, got {type(value).__name__}")
     
     def __setitem__(self, key: K, value: V) -> None:
         self._validate(key, value)
@@ -222,25 +239,3 @@ class TypedDictCollection(DictCollection[K, V]):
         if key not in self:
             self._validate(key, default)
         return super().setdefault(key, default)
-    
-    def __or__(self, other):
-        if not isinstance(other, dict):
-            return NotImplemented
-        
-        result = self.copy()
-        result.update(other)
-        return result
-    
-    def __ror__(self, other):
-        if not isinstance(other, dict):
-            return NotImplemented
-        
-        result = self._new(other)
-        result.update(self)
-        return result
-    
-    def foreach(self, method: Callable[[T], Any]):
-        for o in self:
-            method(o)
-    
-    

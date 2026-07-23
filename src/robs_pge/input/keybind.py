@@ -7,7 +7,7 @@ from ..utils import KeybindFlags
 @dataclass
 class Keybind:
     key: int | tuple[int, ...]
-    action: Callable
+    action: Callable | tuple[Callable, ...]
     flag: int = KeybindFlags.PRESS
     
     def has_flag(self, flag: int) -> bool:

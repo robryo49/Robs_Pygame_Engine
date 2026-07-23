@@ -29,11 +29,16 @@ class UIObjectFactory(SubObjectFactory):
         handle_style: RectStyle | CircleStyle = slider_style.handle_style
         font = slider_style.font
         
-        max_text_width = font.get_render_size(str(max_value))[0]
+        max_text_width = font.get_render_size(str(max_value) + ".00" )[0]
         bar_width = slider_style.bar_width
         handle_size = slider_style.handle_size
         
-        bar = self.factory.shape.make_rect(Vec2(), Vec2(dims.x - (dims.y - bar_width) - max_text_width, bar_width), bar_style)
+        text_height = font.get_render_size(str(max_value) + ".00")[1]
+        content_height = max(bar_width, text_height)
+        margin = round((dims.y - content_height) * 0.5)
+        
+        bar = self.factory.shape.make_rect(Vec2(), Vec2(dims.x - margin*3 - max_text_width, bar_width), bar_style)
+        
         if isinstance(handle_style, RectStyle):
             handle_size: Vec2 = Vec2(handle_size)
             handle = self.factory.shape.make_rect(Vec2(), Vec2(handle_size), handle_style)
@@ -46,11 +51,12 @@ class UIObjectFactory(SubObjectFactory):
         
         obj = self._make_object(SliderObject, position, rotation, scale, RectRenderer(dims, bg_style, cache), layer, anchor, bar, handle, text, min_value, max_value, step)
         obj.fix_width(dims.x).fix_height(dims.y)
-        obj.set_constant_padding(round((dims.y - bar_width)*0.5))
-        obj.fix_col_width(1, max_text_width)
+        obj.set_constant_padding(margin)
+        obj.fix_col_width(0 if slider_style.text_position.lower() in ["left", "l"] else 1, max_text_width+margin*0.5)
         
-        obj.add_object(bar, 1 if slider_style.text_position.lower() in ["left", "l"] else 0, 0, anchor=Anchor.C)
-        obj.add_object(text, 0 if slider_style.text_position.lower() in ["left", "l"] else 1, 0, anchor=Anchor.C)
+        
+        obj.add_object(bar, 1 if slider_style.text_position.lower() in ["left", "l"] else 0, 0)
+        obj.add_object(text, 0 if slider_style.text_position.lower() in ["left", "l"] else 1, 0)
         
         if slider_style.hide_bg:
             obj.skip_rendering()
