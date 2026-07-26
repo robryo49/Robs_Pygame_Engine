@@ -32,7 +32,7 @@ class PygameObject:
         self._behaviors = BehaviorCollection(self)
         self._services = services
         
-        self._properties: dict[str, Any] = {}
+        self._properties: DictCollection = DictCollection()
         
         self._renderer = renderer
         self._collision_box = None
@@ -43,9 +43,6 @@ class PygameObject:
         self._parent_anchor = Anchor.C
         
         self._culled = False
-        
-        self._fixed_x: Optional[float] = None
-        self._fixed_y: Optional[float] = None
         
         self._clip_area: Optional[FRect] = None
         self._clip_area_relative: bool = False
@@ -91,10 +88,11 @@ class PygameObject:
     # region properties
     
     @property
-    def properties(self) -> dict[str, Any]:
+    def properties(self) -> DictCollection[str, Any]:
         return self._properties
     
-    def get_property[T](self, name: str, default: Optional[T] = None) -> T:
+    def get_property[T](self, name: str, default: Optional[T] = None, ignore_missing=True) -> T:
+        if not ignore_missing and not self.properties.has(name): raise AttributeError(f"Unknown property '{name}', only has {self.properties.keys()}")
         return self.properties.get(name, default)
     
     def set_property(self, name: str, value: Any):
@@ -461,7 +459,8 @@ class PygameObject:
         return self
     
     def do_on_scroll(self, action: Optional[Callable[[PygameObject, int, Vec2], Any] | tuple[Callable[[PygameObject, int, Vec2], Any], ...]]):
-        self.add_behavior(ActionOnScrollBehavior(action))
+        if action is not None:
+            self.add_behavior(ActionOnScrollBehavior(action))
         return self
             
     def make_attribute_dynamic(self, attribute: str, getter: Any | Callable[[], Any | tuple[Any, ...]], template: Optional[str] = None, strength: float = 1):
@@ -646,7 +645,7 @@ class PygameObject:
         if self.visible:
             if self.renderer and not self.has_flag(ObjectFlags.SKIP_RENDERING):
                 
-                if True or self.has_flag(ObjectFlags.CULLABLE):
+                if self.has_flag(ObjectFlags.CULLABLE):
                     camera_rect = camera.world_aabb
                     object_rect = self.get_world_aabb()
                 

@@ -11,9 +11,13 @@ class WindowManager:
         self._windows = TypedDictCollection(str, WindowObject)
         self._groups: dict[str, set[str]] = {}
     
+    # region PROPERTIES
+    
     @property
     def windows(self):
         return self._windows
+    
+    # endregion
     
     def register(self, window_id: str, window: WindowObject, group: Optional[str] = None):
         self._windows.set(window_id, window)

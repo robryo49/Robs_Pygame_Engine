@@ -18,5 +18,8 @@ class Event:
     
     def __getitem__(self, item):
         return self._data.get(item)
+    
+    def is_of_type(self, event_type: str):
+        return self.type == event_type
 
     
