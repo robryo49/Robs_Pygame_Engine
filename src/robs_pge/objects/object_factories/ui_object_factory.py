@@ -1,12 +1,15 @@
 from typing import Any, Callable, Optional
 
+from pygame import FRect
+
 from .button_object_factories import ButtonObjectFactory
 from .debug_object_factories import DebugObjectFactory
 from .layout_object_factory import LayoutObjectFactory
 from .sub_factory import SubObjectFactory
-from ..custom import LineChartObject, ProgressBarObject, SliderObject, WindowObject
+from ..custom import LineChartObject, ProgressBarObject, SliderObject, WindowObject, TextObject, RectObject, LayoutObject
 from ..object import PygameObject
 from ...rendering import CircleStyle, LineChartStyle, LineStyle, ProgressBarStyle, RectRenderer, RectStyle, SliderStyle, WindowStyle
+from ...resources import Icons
 from ...utils import Anchor, Vec2
 
 
@@ -110,14 +113,85 @@ class UIObjectFactory(SubObjectFactory):
         return obj
     
     def make_window(
-            self, position: Vec2, dims: Vec2, style: WindowStyle,
+            self, position: Vec2, dims: Vec2, style: Optional[WindowStyle | str],
+            title: str,
             rotation: float = 0.0, scale: float = 1.0, layer: int = 0, anchor: Vec2 = Anchor.C, cache: bool = True
-    ):
+    ) -> WindowObject:
         
         window_style = self._get_resource(style, WindowStyle)
         bg_style = window_style.bg_style
+        margin = window_style.margin
         
-        obj = self._make_object(WindowObject, position, rotation, scale, RectRenderer(dims, bg_style, cache), layer, anchor, window_style.margin)
+        show_title = window_style.show_title
+        title_panel_style = window_style.title_panel_style
+        title_panel_margin = window_style.title_panel_margin
+        title_panel_height = window_style.title_panel_height
+        
+        title_font = window_style.title_font
+        title_align = window_style.title_align
+        title_in_header = window_style.title_in_header
+        
+        title_object: Optional[TextObject] = None
+        title_panel: Optional[RectObject] = None
+        if show_title:
+            title_object: TextObject = self.factory.text.make_text(Vec2(), title, title_font)
+            
+            if not title_in_header:
+                title_panel_height = title_panel_height if title_panel_height is not None else title_object.height + title_panel_margin
+                title_panel: RectObject = self.factory.shape.make_rect(Vec2(), Vec2(dims.x, title_panel_height), style=title_panel_style)
+                
+                title_offset = title_panel_margin  * (Vec2(1) - title_align*2)
+                title_object.pos = title_offset
+                title_object.anchor = title_align
+                title_panel.add_child(title_object, title_align)
+        
+        
+        show_header = window_style.show_header
+        header_style = window_style.header_style
+        header_height = window_style.header_height
+        header_margin = window_style.header_margin
+        
+        show_header_buttons = window_style.show_header_buttons
+        icon_buttons_style = window_style.icon_buttons_style
+        
+        header: Optional[LayoutObject] = None
+        if show_header:
+            header_height = header_height if header_height is not None else title_object.height + header_margin if title_object is not None and title_in_header else None
+            
+            if header_height is None: raise ValueError("cannot determine header height when creating window, must specify title or header height")
+            
+            header: LayoutObject = self.factory.ui.layouts.make_horizontal_layout(Vec2(), dims.x, header_height, style=header_style)
+            header.set_constant_padding(header_margin)
+            
+            buttons_height = header_height-header_margin*2
+            buttons_width = buttons_height * 1.5
+            header.fix_col_width(0, dims.x - (buttons_width + header_margin) * 1 - header_margin)
+            
+            if title_in_header and title_object is not None:
+                title_offset = header_margin  * (Vec2(1) - title_align*2)
+                title_object.pos = title_offset
+                title_object.anchor = title_align
+                header.add_object(title_object, 0, 0, anchor=title_align)
+                
+            if show_header_buttons:
+                button_dims = Vec2(buttons_width, buttons_height)
+                x_button = self.factory.ui.buttons.make_icon_button(Vec2(), Icons.X, header_height-header_margin*4, None, button_dims, style=icon_buttons_style)
+                
+                header.add_object(x_button, 1, 0)
+        
+        panel_height = dims.y - (title_panel_height or 0) - (header_height or 0)
+        panel = self.factory.ui.layouts.make_grid_layout(Vec2(), dims.x, panel_height)
+        w, h = panel.dims
+        panel.set_children_clip_area(FRect(margin, margin, w - margin*2, h - margin*2))
+        
+        obj = self._make_object(WindowObject, position, rotation, scale, RectRenderer(dims, bg_style, cache), layer, anchor, panel, header, title_panel, title_object)
+        obj.invert_up_down()
+        
+        if header is not None:
+            obj.stack_y(header)
+        if title_panel is not None:
+            obj.stack_y(title_panel)
+        obj.stack_y(panel)
         
         return obj
     

@@ -1,6 +1,8 @@
 from dataclasses import dataclass, field, replace
+from typing import Optional
 
-from ..utils import Color, Font, Vec2, Colors
+from ..utils import Color, Font, Vec2, Colors, Anchor
+
 
 @dataclass
 class Style:
@@ -262,8 +264,49 @@ class DebugPanelStyle(Style):
 class WindowStyle(Style):
     """
     Attributes:
-        bg_style: rect style for the window background
-        margin: padding around the inner contents of the window
+        bg_style
+        margin
+        show_header
+        header_style
+        header_height
+        header_margin
+        show_header_buttons
+        icon_buttons_style
+        show_title
+        title_panel_style
+        title_panel_height
+        title_panel_margin
+        title_font
+        title_align
+        title_in_header
     """
-    bg_style: RectStyle
-    margin: int = 20
+    bg_style: RectStyle = field(default_factory=RectStyle)
+    margin: int = 0
+    
+    show_header: bool = False
+    header_style: Optional[RectStyle] = field(default_factory=RectStyle)
+    header_height: Optional[int] = None
+    header_margin: int = 0
+    
+    show_header_buttons: bool = False
+    icon_buttons_style: IconButtonStyle = field(default_factory=IconButtonStyle)
+    
+    show_title: bool = False
+    title_panel_style: Optional[RectStyle] = field(default_factory=RectStyle)
+    title_panel_height: Optional[int] = None
+    title_panel_margin: int = 0
+    
+    title_font: Optional[Font] = field(default_factory=Font)
+    title_align: Vec2 = field(default_factory=lambda: Anchor.C)
+    title_in_header: bool = False
+    
+    def with_icons(self, icon_buttons_style: Optional[IconButtonStyle]):
+        return self.with_(show_icons = True, icon_buttons_style = icon_buttons_style if icon_buttons_style is not None else self.icon_buttons_style)
+    
+    def with_title(self, title_panel_style: Optional[RectStyle] = None, title_font: Optional[Font] = None, title_in_header: Optional[bool] = None):
+        return self.with_(
+            show_title = True,
+            title_panel_style = title_panel_style if title_panel_style is not None else self.title_panel_style,
+            title_font = title_font if title_font is not None else self.title_font,
+            title_in_header = title_in_header if title_in_header is not None else self.title_in_header
+        )
