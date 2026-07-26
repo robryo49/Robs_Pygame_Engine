@@ -286,7 +286,7 @@ class LayoutObject(RectObject):
             cell_y = self.height - self._outer_padding.y * 2 - cell_y
         
         
-        return Vec2(cell_x, cell_y) + self._outer_padding - self.get_anchor_offset(self.anchor)
+        return Vec2(cell_x, cell_y) + self._outer_padding - self.get_anchor_offset(Anchor.C)
     
     
     

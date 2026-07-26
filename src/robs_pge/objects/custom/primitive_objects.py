@@ -221,6 +221,20 @@ class TextObject(PygameObject):
     @text.setter
     def text(self, value: str):
         self.renderer.text = value
+        
+    @property
+    def font(self):
+        return self.renderer.font
+    
+    # region color
+    @property
+    def color(self):
+        return self.font.color
+    
+    @color.setter
+    def color(self, value):
+        self.font.color = value
+    # endregion
     
     # endregion
 

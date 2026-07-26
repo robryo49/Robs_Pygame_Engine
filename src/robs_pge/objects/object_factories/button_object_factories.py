@@ -1,12 +1,12 @@
 from typing import Any, Callable, Optional
 
 from .sub_factory import SubObjectFactory
-from ..object import PygameObject
+from ..behaviors import MultiplyAttributeOnClickBehavior, MultiplyAttributeOnHoverBehavior, SetAttributeOnHoverBehavior, SetAttributeOnClickBehavior
 from ..custom import *
-from ...rendering import ButtonStyle, CircleRenderer, IconButtonStyle, RadioButtonStyle, RectRenderer, SpriteButtonStyle, ToggleButtonStyle, CircleStyle
+from ..object import PygameObject
+from ...rendering import ButtonStyle, CircleRenderer, CircleStyle, IconButtonStyle, RadioButtonStyle, RectRenderer, SpriteButtonStyle, ToggleButtonStyle
 from ...resources import Icons, Texture
-from ...utils import Anchor, Vec2
-
+from ...utils import Anchor, Easing, Vec2, Color
 
 CallBackType = Optional[Callable | tuple[Callable, ...]]
 ObjectCallBackType = Optional[Callable[[PygameObject], Any] | tuple[Callable[[PygameObject], Any], ...] | CallBackType]
@@ -14,6 +14,33 @@ BooleanCallbackType = Optional[Callable[[bool], Any] | tuple[Callable[[bool], An
 
 
 class ButtonObjectFactory(SubObjectFactory):
+    
+    @staticmethod
+    def _add_button_behaviors(obj: PygameObject, buttons: int | list[int], hovered_scale: float, clicked_scale: float,
+                              bg_color: Optional[Color], hovered_color: Optional[Color], clicked_color: Optional[Color],
+                              content_color_attribute: Optional[str], content_color: Optional[Color], hovered_content_color: Optional[Color], clicked_content_color: Optional[Color],
+                              transition_duration: float):
+        if hovered_scale != 1:
+            obj.add_behavior(MultiplyAttributeOnHoverBehavior("scale", hovered_scale, transition_duration, Easing.EASE_IN_QUAD))
+            
+        if clicked_scale != 1:
+            for b in buttons if isinstance(buttons, list) else [buttons]:
+                obj.add_behavior(MultiplyAttributeOnClickBehavior(b, "scale", clicked_scale, transition_duration, Easing.EASE_IN_QUAD))
+            
+        if bg_color is not None and hovered_color is not None and hovered_color != bg_color:
+            obj.add_behavior(SetAttributeOnHoverBehavior("bg_color", bg_color, hovered_color, transition_duration, Easing.EASE_IN_QUAD))
+            
+        if bg_color is not None and clicked_color is not None and clicked_color != hovered_color:
+            for b in buttons if isinstance(buttons, list) else [buttons]:
+                obj.add_behavior(SetAttributeOnClickBehavior(b, "bg_color", hovered_color, clicked_color, transition_duration, Easing.EASE_IN_QUAD))
+        
+        if content_color_attribute is not None and content_color is not None and hovered_content_color is not None and hovered_content_color != content_color:
+            obj.add_behavior(SetAttributeOnHoverBehavior(content_color_attribute, content_color, hovered_content_color, transition_duration, Easing.EASE_IN_QUAD))
+        
+        if content_color_attribute is not None and content_color is not None and clicked_content_color is not None and clicked_content_color != hovered_content_color:
+            obj.add_behavior(SetAttributeOnClickBehavior(1, content_color_attribute, clicked_content_color, clicked_content_color, transition_duration, Easing.EASE_IN_QUAD))
+    
+    
     def make_button(
             self, position: Vec2, text: str, action: ObjectCallBackType = None, dims: Optional[Vec2] = None, style: Optional[ButtonStyle | str] = None,
             rotation: float = 0.0, scale: float = 1.0, layer: int = 0, anchor: Vec2 = Anchor.C, cache: bool = True
@@ -28,6 +55,11 @@ class ButtonObjectFactory(SubObjectFactory):
         obj = self._make_object(ButtonObject, position, rotation, scale, RectRenderer(dims, bg_style, cache), layer, anchor,
                                 self.factory.text.make_text(Vec2(), text, font, 0.0, 1.0, layer, Anchor.C, cache), action
                                 )
+        
+        self._add_button_behaviors(obj, 1, button_style.hovered_scale, button_style.clicked_scale,
+                                   bg_style.bg_color, button_style.hovered_color, button_style.clicked_color,
+                                   "font_color", font.color, button_style.hovered_text_color, button_style.clicked_text_color,
+                                   button_style.transition_duration)
         
         return obj
     
@@ -52,6 +84,11 @@ class ButtonObjectFactory(SubObjectFactory):
                                 self.factory.text.make_text(Vec2(), text, font, 0.0, 1.0, layer, Anchor.C, cache), texts, values, callback
                                 )
         
+        
+        self._add_button_behaviors(obj, 1, button_style.hovered_scale, button_style.clicked_scale,
+                                   bg_style.bg_color, button_style.hovered_color, button_style.clicked_color,
+                                   "font_color", font.color, button_style.hovered_text_color, button_style.clicked_text_color,
+                                   button_style.transition_duration)
         return obj
     
     def make_sprite_button(
@@ -69,19 +106,36 @@ class ButtonObjectFactory(SubObjectFactory):
         
         obj = self._make_object(SpriteButtonObject, position, rotation, scale, RectRenderer(dims, bg_style, cache), layer, anchor, sprite, action)
         
+        self._add_button_behaviors(obj, 1, button_style.hovered_scale, button_style.clicked_scale,
+                                   bg_style.bg_color, button_style.hovered_color, button_style.clicked_color,
+                                   None, None, None, None,
+                                   button_style.transition_duration)
+        
         return obj
     
     def make_icon_button(
             self, position: Vec2, icon: str, icon_size: int, action: ObjectCallBackType = None, dims: Optional[Vec2] = None, style: Optional[IconButtonStyle | str] = None,
             rotation: float = 0.0, scale: float = 1.0, layer: int = 0, anchor: Vec2 = Anchor.C, cache: bool = True
-    ) -> SpriteButtonObject:
+    ) -> IconButtonObject:
         
         icon_button_style = self._get_resource(style, IconButtonStyle)
         button_style = icon_button_style.button_style
+        bg_style = button_style.bg_style
+        margin = Vec2(button_style.margin)
         
-        icon = Icons.get(icon, icon_size, icon_button_style.icon_color)
+        sprite: IconObject = self.factory.sprite.make_icon_object(Vec2(), icon, icon_size, icon_button_style.icon_color)
         
-        return self.make_sprite_button(position, icon, action, dims, button_style, rotation, scale, layer, anchor, cache)
+        dims = dims or sprite.dims + Vec2(margin*2)
+        
+        obj = self._make_object(IconButtonObject, position, rotation, scale, RectRenderer(dims, bg_style, cache), layer, anchor, sprite, action)
+        
+        
+        self._add_button_behaviors(obj, 1, button_style.hovered_scale, button_style.clicked_scale,
+                                   bg_style.bg_color, button_style.hovered_color, button_style.clicked_color,
+                                   None, None, None, None,
+                                   button_style.transition_duration)
+        
+        return obj
     
     def make_checkbox(
             self, position: Vec2, icon_size, dims: Optional[Vec2] = None, callback: ObjectCallBackType = None, checked_icon: str = Icons.CHECK, checked=False, style: Optional[IconButtonStyle | str] = None,

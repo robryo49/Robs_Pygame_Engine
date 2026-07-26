@@ -1,8 +1,7 @@
 from dataclasses import dataclass, field
 from random import random as rand
-from typing import overload
 
-from pygame import Vector2 as Vec2, Vector3 as Vec3, Rect, FRect
+from pygame import Vector2 as Vec2, Vector3 as Vec3, Rect, FRect, Color
 from math import cos, sin, pi, log10, inf
 
 
@@ -140,3 +139,72 @@ class Anchor:
     BR =    Vec2(1,     0)
     B =     Vec2(0.5,   0)
     BL =    Vec2(0,     0)
+
+
+# region GENERIC ARITHMETIC
+
+ColorDelta = tuple[float, float, float, float]
+
+
+def _is_color(value) -> bool:
+    return isinstance(value, Color)
+
+
+def _is_color_delta(value) -> bool:
+    return isinstance(value, tuple) and len(value) == 4 and all(isinstance(v, (int, float)) for v in value)
+
+
+def _clamp_channel(value: float) -> int:
+    return max(0, min(255, round(value)))
+
+
+def add(a, b):
+    """Generic addition. Supports int/float, and Color combined with Color or a color-delta tuple
+    (as produced by `subtract`). Color results are clamped to 0-255 per channel."""
+    if _is_color(a) and (_is_color(b) or _is_color_delta(b)):
+        return Color(*(_clamp_channel(ac + bc) for ac, bc in zip(a, b)))
+    if _is_color(b) and _is_color_delta(a):
+        return add(b, a)
+    if _is_color_delta(a) and _is_color_delta(b):
+        return tuple(ac + bc for ac, bc in zip(a, b))
+    return a + b
+
+
+def subtract(a, b):
+    """Generic subtraction. Color - Color (or delta) yields an UNCLAMPED delta tuple rather than a Color,
+    since intermediate differences can be negative or exceed 255 and shouldn't be clamped mid-calculation."""
+    if (_is_color(a) or _is_color_delta(a)) and (_is_color(b) or _is_color_delta(b)):
+        return tuple(ac - bc for ac, bc in zip(a, b))
+    return a - b
+
+
+def multiply(a, b):
+    """Generic multiplication. Scales a Color or color-delta tuple by a scalar; falls back to `*` otherwise."""
+    if _is_color(a) and isinstance(b, (int, float)):
+        return Color(*(_clamp_channel(c * b) for c in a))
+    if _is_color_delta(a) and isinstance(b, (int, float)):
+        return tuple(c * b for c in a)
+    if isinstance(a, (int, float)) and (_is_color(b) or _is_color_delta(b)):
+        return multiply(b, a)
+    return a * b
+
+
+def divide(a, b):
+    """Generic division. Divides a Color or color-delta tuple by a scalar; falls back to `/` otherwise."""
+    if isinstance(b, (int, float)) and b == 0:
+        raise ZeroDivisionError("Cannot divide by zero")
+    if _is_color(a) and isinstance(b, (int, float)):
+        return Color(*(_clamp_channel(c / b) for c in a))
+    if _is_color_delta(a) and isinstance(b, (int, float)):
+        return tuple(c / b for c in a)
+    return a / b
+
+
+def power(a, b):
+    """Generic exponentiation, primarily for MultiplierAnimation's numeric (e.g. scale) attributes.
+    Colors are scaled channel-wise for completeness, though exponential color animation rarely makes sense."""
+    if _is_color(a):
+        return Color(*(_clamp_channel(c ** b) for c in a))
+    return a ** b
+
+# endregion

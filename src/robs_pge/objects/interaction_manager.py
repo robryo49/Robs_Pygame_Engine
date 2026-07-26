@@ -70,7 +70,10 @@ class InteractionManager:
     def _handle_hover(self):
         previous_hovered = self._hovered
         
-        self._hovered = self._get_first(self._hovered_ui + self._hovered_world, lambda obj: obj.has_flag(ObjectFlags.HOVERABLE))
+        if any(self._active.values()):
+            self._hovered = self._active[1] or self._active[2] or self._active[3]
+        else:
+            self._hovered = self._get_first(self._hovered_ui + self._hovered_world, lambda obj: obj.has_flag(ObjectFlags.HOVERABLE))
         
         hovered = self.hovered
         if previous_hovered is self.hovered:

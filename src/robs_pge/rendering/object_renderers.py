@@ -429,6 +429,16 @@ class TextRenderer(ObjectRenderer):
         all_dims = list(self.font.get_render_size(txt) for txt in self.text.split("\n"))
         return Vec2(max(v.x for v in all_dims), sum(v.y for v in all_dims) + self.font.line_spacing * (len(all_dims) - 1))
     
+    # region color
+    @property
+    def color(self):
+        return self.font.color
+    
+    @color.setter
+    def color(self, value):
+        self.font.color = value
+    # endregion
+    
     @property
     def width(self):
         return self.dims.x

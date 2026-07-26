@@ -1,11 +1,11 @@
 from __future__ import annotations
-from copy import copy
+
 from typing import Any, Callable, Optional, TYPE_CHECKING
 
-from ..events import Event
-from ..animation import AnimationManager, MultiplierAnimation, Animation
-from ..utils import ObjectFlags, Vec2, clamp, inf, Vec3, lerp
 from .behavior import ObjectBehavior
+from ..animation import AdderAnimation, Animation, AnimationManager, MultiplierAnimation, SetterAnimation
+from ..events import Event
+from ..utils import ObjectFlags, Vec2, clamp, inf, lerp
 
 if TYPE_CHECKING:
     from ..core import Camera
@@ -135,7 +135,6 @@ class AnimationOnClickBehavior(ObjectBehavior):
         if button == self._button:
             self._animation_manager.play(self._release_animation())
 
-
 class AnimationOnHoverBehavior(ObjectBehavior):
     def __init__(self, hover_start_animation: Optional[Callable[[], Animation]] = None, hover_end_animation: Optional[Callable[[], Animation]] = None):
         super().__init__()
@@ -158,19 +157,48 @@ class AnimationOnHoverBehavior(ObjectBehavior):
         self._animation_manager.play(self._hover_end_animation())
 
 
-
-class ScaleOnHoverBehavior(AnimationOnHoverBehavior):
-    def __init__(self, scaling: float, duration: float, easing_function: Callable[[float], float]):
+class AddToAttributeOnHoverBehavior(AnimationOnHoverBehavior):
+    def __init__(self, attribute: str, value, duration: float, easing_function: Callable[[float], float]):
         super().__init__(
-            lambda: MultiplierAnimation(self._owner, "scale", scaling, duration, easing_function),
-            lambda: MultiplierAnimation(self._owner, "scale", 1 / scaling, duration, easing_function)
+            lambda: AdderAnimation(self._owner, attribute, value, duration, easing_function),
+            lambda: AdderAnimation(self._owner, attribute, -value, duration, easing_function)
+        )
+
+class MultiplyAttributeOnHoverBehavior(AnimationOnHoverBehavior):
+    def __init__(self, attribute: str, multiplier, duration: float, easing_function: Callable[[float], float]):
+        super().__init__(
+            lambda: MultiplierAnimation(self._owner, attribute, multiplier, duration, easing_function),
+            lambda: MultiplierAnimation(self._owner, attribute, 1 / multiplier, duration, easing_function)
+        )
+
+class SetAttributeOnHoverBehavior(AnimationOnHoverBehavior):
+    def __init__(self, attribute: str, start_value, end_value, duration: float, easing_function: Callable[[float], float]):
+        super().__init__(
+            lambda: SetterAnimation(self._owner, attribute, end_value, duration, easing_function, start_value),
+            lambda: SetterAnimation(self._owner, attribute, start_value, duration, easing_function, end_value)
         )
 
 
-class ScaleOnClickBehavior(AnimationOnClickBehavior):
-    def __init__(self, button: int, scaling: float, duration: float, easing_function: Callable[[float], float]):
-        super().__init__(button, lambda: MultiplierAnimation(self.owner, "scale", scaling, duration, easing_function),
-                         lambda: MultiplierAnimation(self.owner, "scale", 1 / scaling, duration, easing_function))
+class AddToAttributeOnClickBehavior(AnimationOnClickBehavior):
+    def __init__(self, button: int, attribute: str, value, duration: float, easing_function: Callable[[float], float]):
+        super().__init__(button,
+            lambda: AdderAnimation(self._owner, attribute, value, duration, easing_function),
+            lambda: AdderAnimation(self._owner, attribute, -value, duration, easing_function)
+        )
+
+class MultiplyAttributeOnClickBehavior(AnimationOnClickBehavior):
+    def __init__(self, button: int, attribute: str, multiplier, duration: float, easing_function: Callable[[float], float]):
+        super().__init__(button,
+            lambda: MultiplierAnimation(self._owner, attribute, multiplier, duration, easing_function),
+            lambda: MultiplierAnimation(self._owner, attribute, 1 / multiplier, duration, easing_function)
+        )
+
+class SetAttributeOnClickBehavior(AnimationOnClickBehavior):
+    def __init__(self, button: int, attribute: str, start_value, end_value, duration: float, easing_function: Callable[[float], float]):
+        super().__init__(button,
+            lambda: SetterAnimation(self._owner, attribute, end_value, duration, easing_function, start_value),
+            lambda: SetterAnimation(self._owner, attribute, start_value, duration, easing_function, end_value)
+        )
         
 
 # endregion

@@ -1,7 +1,7 @@
 from typing import Callable, Optional
 
 from .tween import Tween
-from ..utils import Easing
+from ..utils import Easing, add, subtract, multiply, power
 
 
 class Animation:
@@ -12,7 +12,7 @@ class Animation:
         self._tween = Tween(duration, easing_function)
         
         self._linked_animations: list[tuple[Animation, float]] = []
-        
+    
     # region PROPERTIES
     
     @property
@@ -51,19 +51,19 @@ class Animation:
     def plus(self, anim, delay):
         self._linked_animations.append((anim, delay))
         return self
-        
+    
     def set_attr(self, value):
         setattr(self.obj, self.attr, value)
-        
+    
     def get_attr(self):
         return getattr(self.obj, self.attr)
-        
+    
     def update(self, dt: float):
         self.tween.step(dt)
     
     def start(self):
         self.tween.reset()
-        
+
 
 
 class AdderAnimation(Animation):
@@ -73,7 +73,7 @@ class AdderAnimation(Animation):
         self._adder = value
         
         self._start_value = self.get_attr()
-        self._end_value = self.start_value + self._adder
+        self._end_value = add(self.start_value, self._adder)
     
     # region PROPERTIES
     
@@ -91,25 +91,26 @@ class AdderAnimation(Animation):
         return f"AdderAnimation({str(self.obj)}.{self.attr}, {round(self.tween.time, 2)}/{round(self.duration, 2)})"
     
     def get_inverse(self):
-        return AdderAnimation(self.obj, self.attr, -self._adder, self.duration)
+        return AdderAnimation(self.obj, self.attr, multiply(self._adder, -1), self.duration)
     
     def start(self):
         super().start()
         
         self._start_value = self.get_attr()
-        self._end_value = self.start_value + self._adder
-        
+        self._end_value = add(self.start_value, self._adder)
+    
     def update(self, dt: float):
-        self.set_attr(self.get_attr() + self._adder * self.tween.step(dt))
-        
+        progress_delta = self.tween.step(dt)
+        self.set_attr(add(self.get_attr(), multiply(self._adder, progress_delta)))
+
 
 class SetterAnimation(AdderAnimation):
     def __init__(self, obj: object, attr: str, value, duration: float, easing_function: Callable[[float], float] = Easing.LINEAR, start_value: Optional[float] = None):
-        super().__init__(obj, attr, value - getattr(obj, attr), duration, easing_function)
+        super().__init__(obj, attr, subtract(value, getattr(obj, attr)), duration, easing_function)
         
         self._target = value
         self._forced_start_value = start_value
-        
+    
     # region PROPERTIES
     
     @property
@@ -122,10 +123,11 @@ class SetterAnimation(AdderAnimation):
         return f"SetterAnimation({str(self.obj)}.{self.attr}, {round(self.tween.time, 2)}/{round(self.duration, 2)})"
     
     def start(self):
-        self._adder = self.target - (self.get_attr() if self._forced_start_value is None else self._forced_start_value)
+        current = self.get_attr() if self._forced_start_value is None else self._forced_start_value
+        self._adder = subtract(self.target, current)
         super().start()
-    
-        
+
+
 
 class MultiplierAnimation(Animation):
     def __init__(self, obj: object, attr: str, value, duration: float, easing_function: Callable[[float], float] = Easing.LINEAR):
@@ -134,7 +136,7 @@ class MultiplierAnimation(Animation):
         self._multiplier = value
         
         self._start_value = self.get_attr()
-        self._end_value = self.start_value * self._multiplier
+        self._end_value = multiply(self.start_value, self._multiplier)
     
     # region PROPERTIES
     
@@ -158,8 +160,8 @@ class MultiplierAnimation(Animation):
         super().start()
         
         self._start_value = self.get_attr()
-        self._end_value = self.start_value * self._multiplier
-        
-    def update(self, dt: float):
-        self.set_attr(self.get_attr() * (self._multiplier ** self.tween.step(dt)))
+        self._end_value = multiply(self.start_value, self._multiplier)
     
+    def update(self, dt: float):
+        factor = power(self._multiplier, self.tween.step(dt))
+        self.set_attr(multiply(self.get_attr(), factor))

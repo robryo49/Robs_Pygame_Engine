@@ -83,7 +83,7 @@ class PygameObject:
     @property
     def world_transform(self):
         parent = self.parent
-        return (parent.world_transform * (self.transform + Transform(parent.get_anchor_offset(self._parent_anchor - Vec2(0.5))))) if parent is not None else self.transform
+        return (parent.world_transform * (self.transform + Transform(parent.get_anchor_offset(self._parent_anchor - parent.anchor)))) if parent is not None else self.transform
     
     # region properties
     

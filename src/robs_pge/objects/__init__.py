@@ -2,8 +2,12 @@ from .behavior import ObjectBehavior
 from .behaviors import (
     ActionOnUpdateBehavior,
     ActionOnClickBehavior,
-    ScaleOnHoverBehavior,
-    ScaleOnClickBehavior,
+    MultiplyAttributeOnClickBehavior,
+    MultiplyAttributeOnHoverBehavior,
+    AddToAttributeOnClickBehavior,
+    AddToAttributeOnHoverBehavior,
+    SetAttributeOnClickBehavior,
+    SetAttributeOnHoverBehavior,
     DynamicAttributeBehavior,
     DraggableBehavior,
     AttributeGridSnappingBehavior,
@@ -33,7 +37,9 @@ __all__ = [
     # behaviors
     "ObjectBehavior",
     "ActionOnUpdateBehavior", "ActionOnClickBehavior",
-    "ScaleOnHoverBehavior", "ScaleOnClickBehavior",
+    "MultiplyAttributeOnClickBehavior", "MultiplyAttributeOnHoverBehavior",
+    "AddToAttributeOnClickBehavior", "AddToAttributeOnHoverBehavior",
+    "SetAttributeOnClickBehavior", "SetAttributeOnHoverBehavior",
     "DynamicAttributeBehavior", "DraggableBehavior", "AttributeClampingBehavior", "AttributeGridSnappingBehavior", "AttributeValueSnappingBehavior", "AttributeFixingBehavior",
     "BehaviorCollection",
     # core

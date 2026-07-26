@@ -1,3 +1,5 @@
+from typing import cast
+
 from .primitive_objects import LineObject, RectObject, CircleObject, TextObject
 from .sprite_objects import SpriteObject, IconObject
 from .layout_objects import LayoutObject
@@ -12,14 +14,9 @@ class ButtonObject(RectObject):
         
         super().__init__(transform, background, services, layer, anchor)
         
-        self._text = text
+        self._text: TextObject = text
         
         self.add_child(self._text, Anchor.C)
-        
-        self.add_behavior([
-            ScaleOnHoverBehavior(1.1, 0.1, Easing.EASE_OUT_QUAD),
-            ScaleOnClickBehavior(1, 0.9, 0.1, Easing.EASE_OUT_QUAD)
-        ])
         
         self.do_on_click(1, action)
     
@@ -32,6 +29,20 @@ class ButtonObject(RectObject):
     @text.setter
     def text(self, value):
         self._text.text = value
+        
+    @property
+    def font(self):
+        return self._text.font
+    
+    # region font_color
+    @property
+    def font_color(self):
+        return self.font.color
+    
+    @font_color.setter
+    def font_color(self, value):
+        self.font.color = value
+    # endregion
     
     # endregion
 
@@ -45,19 +56,57 @@ class SpriteButtonObject(RectObject):
         
         self.add_child(self._sprite, Anchor.C)
         
-        self.add_behavior([
-            ScaleOnHoverBehavior(1.1, 0.1, Easing.EASE_OUT_QUAD),
-            ScaleOnClickBehavior(1, 0.9, 0.1, Easing.EASE_OUT_QUAD)
-        ])
         self.do_on_click(1, action)
     
     # region PROPERTIES
     
     @property
-    def sprite(self):
+    def sprite(self) -> SpriteObject:
         return self._sprite
     
     # endregion
+    
+
+class IconButtonObject(SpriteButtonObject):
+        
+    # region PROPERTIES
+    
+    @property
+    def sprite(self) -> IconObject:
+        return cast(IconObject, self._sprite)
+    
+    # region icon
+    @property
+    def icon(self):
+        return self.sprite.icon
+    
+    @icon.setter
+    def icon(self, value):
+        self.sprite.icon = value
+    # endregion
+    
+    # region icon_color
+    @property
+    def icon_color(self):
+        return self.sprite.icon_color
+    
+    @icon_color.setter
+    def icon_color(self, value):
+        self.sprite.icon_color = value
+    # endregion
+    
+    # region icon_size
+    @property
+    def icon_size(self):
+        return self.sprite.icon_size
+    
+    @icon_size.setter
+    def icon_size(self, value):
+        self.sprite.icon_size = value
+    # endregion
+    
+    # endregion
+    
 
 
 class CycleButtonObject(ButtonObject):
@@ -72,8 +121,9 @@ class CycleButtonObject(ButtonObject):
         self.do_on_click(1, self.cycle_forward)
         self.do_on_click(3, self.cycle_backward)
         
-        self.add_behavior(ScaleOnClickBehavior(3, 0.9, 0.1, Easing.EASE_OUT_QUAD))
-        if callback is not None: self.do_on_click(1, lambda: callback(self.value))
+        if callback is not None:
+            self.do_on_click(1, lambda: callback(self.value))
+            self.do_on_click(3, lambda: callback(self.value))
     
     
     # region PROPERTIES
@@ -410,7 +460,7 @@ class LineChartObject(RectObject):
         self._dirty = True
         
         self._line = line
-        self.add_child(line, Vec2(0.5, -0.5))
+        self.add_child(line, Anchor.BL)
     
     # region PROPERTIES
     
