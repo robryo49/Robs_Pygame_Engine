@@ -181,8 +181,7 @@ class UIObjectFactory(SubObjectFactory):
         
         panel_height = dims.y - (title_panel_height or 0) - (header_height or 0)
         panel = self.factory.ui.layouts.make_grid_layout(Vec2(), dims.x, panel_height)
-        w, h = panel.dims
-        panel.set_children_clip_area(FRect(margin, margin, w - margin*2, h - margin*2), True)
+        panel.set_children_clip_area(FRect(margin - dims.x*0.5, margin - panel_height*0.5, dims.x - margin*2, panel_height - margin*2), True)
         
         obj = self._make_object(WindowObject, position, rotation, scale, RectRenderer(dims, bg_style, cache), layer, anchor, title, panel, header, title_panel, title_object)
         obj.invert_up_down()
