@@ -4,7 +4,7 @@ from .primitive_objects import RectObject, TextObject
 from .ui_objects import LayoutObject
 from ..object import PygameObject
 from ...rendering import RectRenderer
-from ...utils import Anchor, DictCollection, Transform, Vec2
+from ...utils import Anchor, DictCollection, Transform, Vec2, ObjectFlags
 
 
 class WindowObject(LayoutObject):
@@ -48,7 +48,21 @@ class WindowObject(LayoutObject):
     def id(self):
         return self._id
     
+    @property
+    def opened(self):
+        return not self.closed
+    
+    @property
+    def closed(self):
+        return self.has_flag(ObjectFlags.HIDDEN)
+    
     # endregion
+    
+    def open(self):
+        self.show()
+        
+    def close(self):
+        self.hide()
     
     def add_content(self, obj: PygameObject, x: int, y: int, span_x: int = 1, span_y: int = 1, anchor: Vec2 = Anchor.C):
         self.content.add_object(obj, x, y, span_x, span_y, anchor)

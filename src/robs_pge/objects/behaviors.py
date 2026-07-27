@@ -353,11 +353,16 @@ class HideOnCameraZoomBehavior(ObjectBehavior):
 
 
 class DraggableBehavior(ObjectBehavior):
-    def __init__(self, button: int = 1):
+    def __init__(self, button: int = 1, target: Optional["PygameObject"] = None):
         super().__init__()
         self._button = button
+        self._target = target
         self._dragging = False
         self._offset = Vec2(0, 0)
+    
+    @property
+    def target(self) -> "PygameObject":
+        return self._target if self._target is not None else self.owner
     
     def on_attach(self):
         self.owner.add_flag(ObjectFlags.DRAGGABLE)
@@ -365,14 +370,13 @@ class DraggableBehavior(ObjectBehavior):
     def on_click(self, button: int, pos: Vec2):
         if button == self._button:
             self._dragging = True
-            self._offset = self.owner.pos - self.owner.world_to_parent_local(pos)
+            self._offset = self.target.pos - self.target.world_to_parent_local(pos)
     
     def on_hold(self, button: int, pos: Vec2):
         if self._dragging and button == self._button:
-            self.owner.pos = self.owner.world_to_parent_local(pos) + self._offset
+            self.target.pos = self.target.world_to_parent_local(pos) + self._offset
     
     def on_release(self, button: int, pos: Vec2):
         if button == self._button:
             self._dragging = False
-    
     

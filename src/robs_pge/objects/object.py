@@ -482,9 +482,9 @@ class PygameObject:
     def make_attribute_snap_on_grid(self, attribute: str, step: float, offset: float = 0, strength: float = 1):
         self.add_behavior(AttributeGridSnappingBehavior(attribute, step, offset, strength))
         return self
-        
-    def make_draggable(self, button: int = 1):
-        self.add_behavior(DraggableBehavior(button))
+    
+    def make_draggable(self, button: int = 1, target: Optional["PygameObject"] = None):
+        self.add_behavior(DraggableBehavior(button, target))
         return self
     
     # endregion

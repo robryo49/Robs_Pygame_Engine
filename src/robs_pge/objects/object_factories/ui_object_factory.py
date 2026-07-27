@@ -114,7 +114,7 @@ class UIObjectFactory(SubObjectFactory):
     
     def make_window(
             self, position: Vec2, dims: Vec2, style: Optional[WindowStyle | str],
-            title: str,
+            title: str, draggable: bool = False,
             rotation: float = 0.0, scale: float = 1.0, layer: int = 0, anchor: Vec2 = Anchor.C, cache: bool = True
     ) -> WindowObject:
         
@@ -154,6 +154,8 @@ class UIObjectFactory(SubObjectFactory):
         show_header_buttons = window_style.show_header_buttons
         icon_buttons_style = window_style.icon_buttons_style
         
+        obj: WindowObject
+        
         header: Optional[LayoutObject] = None
         if show_header:
             header_height = header_height if header_height is not None else title_object.height + header_margin if title_object is not None and title_in_header else None
@@ -175,7 +177,7 @@ class UIObjectFactory(SubObjectFactory):
                 
             if show_header_buttons:
                 button_dims = Vec2(buttons_width, buttons_height)
-                x_button = self.factory.ui.buttons.make_icon_button(Vec2(), Icons.X, header_height-header_margin*4, None, button_dims, style=icon_buttons_style)
+                x_button = self.factory.ui.buttons.make_icon_button(Vec2(), Icons.X, header_height-header_margin*4, lambda: obj.close(), button_dims, style=icon_buttons_style)
                 
                 header.add_object(x_button, 1, 0)
         
@@ -191,6 +193,10 @@ class UIObjectFactory(SubObjectFactory):
         if title_panel is not None:
             obj.stack_y(title_panel)
         obj.stack_y(panel)
+        
+        if draggable:
+            drag_handle = header if header is not None else (title_panel if title_panel is not None else obj)
+            drag_handle.make_draggable(1, target=obj)
         
         return obj
     
