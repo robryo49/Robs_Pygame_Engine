@@ -195,6 +195,7 @@ class UIObjectFactory(SubObjectFactory):
         obj.stack_y(panel)
         
         if draggable:
+            print("is draggable")
             drag_handle = header if header is not None else (title_panel if title_panel is not None else obj)
             drag_handle.make_draggable(1, target=obj)
         

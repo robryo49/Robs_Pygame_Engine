@@ -46,6 +46,10 @@ class LayoutObject(RectObject):
         
         self._dirty = False
         self._dirty_check = True
+        
+        self._scroll_offset: Vec2 = Vec2()
+        self._scroll_speed: float = 15.0
+        
     
     # region PROPERITIES
     
@@ -157,6 +161,18 @@ class LayoutObject(RectObject):
         self.mark_dirty()
     # endregion
     
+    # region scroll_offset
+    @property
+    def scroll_offset(self):
+        return self._scroll_offset
+    
+    @scroll_offset.setter
+    def scroll_offset(self, value: Vec2):
+        if value != self._scroll_offset:
+            self._scroll_offset = value
+            self.mark_dirty()
+    # endregion
+    
     # endregion
     
     
@@ -261,6 +277,21 @@ class LayoutObject(RectObject):
         return self
     
     
+    def get_scroll_range_y(self) -> float:
+        content_height = sum(self._row_heights.values())
+        viewport_height = self._fixed_height if self._fixed_height is not None else self.height
+        return max(0.0, content_height - viewport_height)
+    
+    def enable_scroll(self, speed: float = 15.0):
+        self._scroll_speed = speed
+        self.do_on_scroll(lambda o, scroll, pos: o.apply_scroll(scroll))
+        return self
+    
+    def apply_scroll(self, scroll: int):
+        max_offset = self.get_scroll_range_y()
+        new_y = clamp(self.scroll_offset.y - scroll * self._scroll_speed, 0, max_offset)
+        self.scroll_offset = Vec2(self.scroll_offset.x, new_y)
+    
     
     def get_col_width(self, grid_x: int, span: int = 0):
         return sum(self._col_widths.get(grid_x + offset, 0) for offset in range(span + 1))
@@ -286,7 +317,7 @@ class LayoutObject(RectObject):
             cell_y = self.height - self._outer_padding.y * 2 - cell_y
         
         
-        return Vec2(cell_x, cell_y) + self._outer_padding - self.get_anchor_offset(Anchor.C)
+        return Vec2(cell_x, cell_y) + self._outer_padding - self.get_anchor_offset(Anchor.C) - Vec2(0, self.get_scroll_range_y()) + self._scroll_offset
     
     
     
