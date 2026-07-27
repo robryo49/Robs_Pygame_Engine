@@ -61,4 +61,3 @@ class WindowObject(LayoutObject):
     def __repr__(self):
         return f"Window('{self.id}')"
         
-        
