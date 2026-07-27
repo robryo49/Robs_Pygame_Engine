@@ -2,6 +2,7 @@ from typing import Optional
 
 from .primitive_objects import RectObject, TextObject
 from .ui_objects import LayoutObject
+from ... import PygameObject
 from ...rendering import RectRenderer
 from ...utils import Anchor, DictCollection, Transform, Vec2
 
@@ -48,6 +49,15 @@ class WindowObject(LayoutObject):
     
     # endregion
     
+    def add_content(self, obj: PygameObject, x: int, y: int, span_x: int = 1, span_y: int = 1, anchor: Vec2 = Anchor.C):
+        self.content.add_object(obj, x, y, span_x, span_y, anchor)
+        
+    def stack_content_x(self, obj: PygameObject, y: Optional[int] = None, span_y: Optional[int] = None, anchor: Vec2 = Anchor.C):
+        self.content.stack_x(obj, y, span_y, anchor)
+    
+    def stack_content_y(self, obj: PygameObject, x: Optional[int] = None, span_x: Optional[int] = None, anchor: Vec2 = Anchor.C):
+        self.content.stack_y(obj, x, span_x, anchor)
+        
     def __repr__(self):
         return f"Window('{self.id}')"
         
