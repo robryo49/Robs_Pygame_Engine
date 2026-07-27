@@ -8,7 +8,7 @@ from ...debug import FrameTimer, QuickDebugManager
 from ...events import Event, EventManager
 from ...input import InputManager, Keybind, KeybindsManager
 from ...objects import InteractionManager, ObjectCollection, ObjectFactory, PygameObject, ParticleSystem, WindowManager, WindowObject
-from ...rendering import DebugPanelStyle, LineChartStyle
+from ...rendering import WindowStyle, LineChartStyle
 from ...resources import ResourceManager
 from ...utils import Anchor, DictCollection, Vec2, AsyncProcessManager, AsyncProcess
 from ..camera import Camera
@@ -182,12 +182,12 @@ class State:
     # endregion
     
     # region INIT METHODS
-    
+
     def init_debug_overlay_objects(self) -> None:
         
-        green_style = self.resources.get(DebugPanelStyle, "debug_teal_panel_style")
-        blue_style = self.resources.get(DebugPanelStyle, "debug_blue_panel_style")
-        yellow_style = self.resources.get(DebugPanelStyle, "debug_yellow_panel_style")
+        green_style = self.resources.get(WindowStyle, "debug_teal_panel_style")
+        blue_style = self.resources.get(WindowStyle, "debug_blue_panel_style")
+        yellow_style = self.resources.get(WindowStyle, "debug_yellow_panel_style")
         
         blue_line_chart_style = self.resources.get(LineChartStyle, "debug_blue_line_chart_style")
         
@@ -202,7 +202,7 @@ class State:
         
         # region ENGINE PANNEL
         
-        engine_pannel = self.factory.ui.debug.make_debug_panel(Vec2(), Vec2(400, 190), green_style, "ENGINE")
+        engine_pannel = self.factory.ui.make_window(Vec2(), Vec2(400, 190), green_style, "ENGINE")
         
         engine_c1 = self.factory.ui.layouts.make_vertical_layout(Vec2(), 400).skip_rendering().invert_up_down().set_constant_padding(10)
         engine_c1.stack_y(self.factory.text.make_dynamic_text(Vec2(), "{} FPS    |    {} ms", lambda: (round(self.clock.fps), round(self.clock.dtime*1000, 1)), font_blue_title, cache=False), anchor=Anchor.T)
@@ -210,13 +210,13 @@ class State:
                                                          update_action=lambda o: fps_line_chart.insert_point(Vec2(self.clock.time, self.clock.fps)))
         engine_c1.stack_y(fps_line_chart, anchor=Anchor.TL)
         
-        engine_pannel.panel.stack_x(engine_c1)
+        engine_pannel.content.stack_x(engine_c1)
         
         # endregion
         
         # region FRAME PANNEL
         
-        frame_pannel = self.factory.ui.debug.make_debug_panel(Vec2(), Vec2(400, 200), yellow_style, "FRAME TIMER").stack_pannel_x(
+        frame_pannel = self.factory.ui.make_window(Vec2(), Vec2(400, 200), yellow_style, "FRAME TIMER").stack_content_x(
             self.factory.ui.layouts.make_vertical_layout(Vec2(), 180).skip_rendering().invert_up_down().
             stack_y(self.factory.text.make_text(Vec2(), "Update", font_white), anchor=Anchor.TL).
             stack_y(self.factory.text.make_text(Vec2(), "- Events", font_gray), anchor=Anchor.TL).
@@ -227,7 +227,7 @@ class State:
             stack_y(self.factory.text.make_text(Vec2(), "- Drawing", font_gray), anchor=Anchor.TL).
             stack_y(self.factory.text.make_text(Vec2(), "- Screen Update", font_gray), anchor=Anchor.TL).
             stack_y(self.factory.text.make_text(Vec2(), "Ticking", font_white), anchor=Anchor.TL)
-        ).stack_pannel_x(
+        ).stack_content_x(
             self.factory.ui.layouts.make_vertical_layout(Vec2(), 180).skip_rendering().invert_up_down().
             stack_y(self.factory.text.make_dynamic_text(Vec2(), "{} ms", lambda: self.frame_timer.get_time_ms("Update"), font_white), anchor=Anchor.TL).
             stack_y(self.factory.text.make_dynamic_text(Vec2(), "{} ms", lambda: self.frame_timer.get_time_ms("Update.Events"), font_gray), anchor=Anchor.TL).
@@ -244,14 +244,14 @@ class State:
         
         # region CAMERA PANEL
         
-        camera_pannel = self.factory.ui.debug.make_debug_panel(Vec2(), Vec2(400, 132), blue_style, "CAMERA").stack_pannel_x(
+        camera_pannel = self.factory.ui.make_window(Vec2(), Vec2(400, 132), blue_style, "CAMERA").stack_content_x(
             self.factory.ui.layouts.make_vertical_layout(Vec2(), 180).skip_rendering().invert_up_down().
             stack_y(self.factory.text.make_text(Vec2(), "Position", font_gray), anchor=Anchor.TL).
             stack_y(self.factory.text.make_text(Vec2(), "Zoom", font_gray), anchor=Anchor.TL).
             stack_y(self.factory.text.make_text(Vec2(), "Rotation", font_gray), anchor=Anchor.TL).
             stack_y(self.factory.text.make_text(Vec2(), "BL", font_gray), anchor=Anchor.TL).
             stack_y(self.factory.text.make_text(Vec2(), "TR", font_gray), anchor=Anchor.TL)
-        ).stack_pannel_x(
+        ).stack_content_x(
             self.factory.ui.layouts.make_vertical_layout(Vec2(), 180).skip_rendering().invert_up_down().
             stack_y(self.factory.text.make_dynamic_text(Vec2(), "{}", lambda: round(self.camera.pos, 1), font_white), anchor=Anchor.TL).
             stack_y(self.factory.text.make_dynamic_text(Vec2(), "{}", lambda: (f"{self.camera.zoom:.2e}" if (abs(self.camera.zoom) < 0.01 or abs(self.camera.zoom) >= 1000) else f"{self.camera.zoom:.3f}"), font_white), anchor=Anchor.TL).
@@ -264,13 +264,13 @@ class State:
         
         # region INPUT PANEL
         
-        input_pannel = self.factory.ui.debug.make_debug_panel(Vec2(), Vec2(400, 116), green_style, "INPUT").stack_pannel_x(
+        input_pannel = self.factory.ui.make_window(Vec2(), Vec2(400, 116), green_style, "INPUT").stack_content_x(
             self.factory.ui.layouts.make_vertical_layout(Vec2(), 180).skip_rendering().invert_up_down().
             stack_y(self.factory.text.make_text(Vec2(), "Mouse Screen Pos", font_gray), anchor=Anchor.TL).
             stack_y(self.factory.text.make_text(Vec2(), "Mouse World Pos", font_gray), anchor=Anchor.TL).
             stack_y(self.factory.text.make_text(Vec2(), "Held Buttons", font_gray), anchor=Anchor.TL).
             stack_y(self.factory.text.make_text(Vec2(), "Held Keys", font_gray), anchor=Anchor.TL)
-        ).stack_pannel_x(
+        ).stack_content_x(
             self.factory.ui.layouts.make_vertical_layout(Vec2(), 180).skip_rendering().invert_up_down().
             stack_y(self.factory.text.make_dynamic_text(Vec2(), "{}", lambda: round(self.mouse.pos, 1), font_white), anchor=Anchor.TL).
             stack_y(self.factory.text.make_dynamic_text(Vec2(), "{}", lambda: round(self.mouse.world_pos(self.camera), 1), font_white), anchor=Anchor.TL).
@@ -282,7 +282,7 @@ class State:
         
         # region RENDERING PANNEL
         
-        rendering_pannel = self.factory.ui.debug.make_debug_panel(Vec2(), Vec2(400, 176), blue_style, "RENDERING").stack_pannel_x(
+        rendering_pannel = self.factory.ui.make_window(Vec2(), Vec2(400, 176), blue_style, "RENDERING").stack_content_x(
             self.factory.ui.layouts.make_vertical_layout(Vec2(), 180).skip_rendering().invert_up_down().
             stack_y(self.factory.text.make_text(Vec2(), "Cache Size", font_gray), anchor=Anchor.TL).
             stack_y(self.factory.text.make_text(Vec2(), "Cache Hits", font_gray), anchor=Anchor.TL).
@@ -292,7 +292,7 @@ class State:
             stack_y(self.factory.text.make_text(Vec2(), "UI Draw Commands", font_gray), anchor=Anchor.TL).
             stack_y(self.factory.text.make_text(Vec2(), "Debug Draw Commands", font_gray), anchor=Anchor.TL).
             stack_y(self.factory.text.make_text(Vec2(), "Blits", font_gray), anchor=Anchor.TL)
-        ).stack_pannel_x(
+        ).stack_content_x(
             self.factory.ui.layouts.make_vertical_layout(Vec2(), 180).skip_rendering().invert_up_down().
             stack_y(self.factory.text.make_dynamic_text(Vec2(), "{} ({}Mo)", lambda: (self.renderer.surface_cache_size, round(self.renderer.surface_cache_memory_size, 1)), font_white, cache=False), anchor=Anchor.TL).
             stack_y(self.factory.text.make_dynamic_text(Vec2(), "{}", lambda: self.renderer.cache_hits, font_white), anchor=Anchor.TL).
@@ -308,10 +308,10 @@ class State:
         
         # region QUICK DEBUG PANNEL
         
-        quick_debug_pannel = self.factory.ui.debug.make_debug_panel(Vec2(), Vec2(400, 200), yellow_style, "QUICK DEBUG").stack_pannel_x(
+        quick_debug_pannel = self.factory.ui.make_window(Vec2(), Vec2(400, 200), yellow_style, "QUICK DEBUG").stack_content_x(
             self.factory.ui.layouts.make_vertical_layout(Vec2(), 180).skip_rendering().invert_up_down().stack_y(
                 self.factory.text.make_dynamic_text(Vec2(), "{}",
-                    lambda: ("\n".join(self.quick_debug_manager.get_values())) if self._quick_debug_manager.has_values() else "Nothing to Show", font_white), anchor=Anchor.TL
+                                                    lambda: ("\n".join(self.quick_debug_manager.get_values())) if self._quick_debug_manager.has_values() else "Nothing to Show", font_white), anchor=Anchor.TL
             ).set_outer_padding(10), anchor=Anchor.TL)
         quick_debug_pannel.unfix_height()
         

@@ -7,9 +7,9 @@ import pygame as pg
 from ..debug import FrameTimer
 from ..input import InputManager
 from ..objects import InteractionManager
-from ..rendering import DebugPanelStyle, LineChartStyle, ProgressBarStyle, RectStyle, Renderer
+from ..rendering import WindowStyle, LineChartStyle, ProgressBarStyle, RectStyle, Renderer
 from ..resources import ResourceManager
-from ..utils import Colors, Vec2, Vec2Like, Color
+from ..utils import Colors, Vec2, Vec2Like, Color, Anchor
 from .camera import Camera
 from .clock import Clock
 from .display import Display
@@ -206,7 +206,7 @@ class Engine:
         logging.info("Initializing styles")
         
         self.init_debug_styles()
-    
+
     def init_debug_styles(self) -> "Engine":
         logging.info("Initializing debug styles")
         
@@ -235,7 +235,19 @@ class Engine:
             header_style = RectStyle(bg_color=color)
             font = self.resources.get_font(f"debug_{name}_title")
             self.resources.set(RectStyle, f"debug_{name}_header_style", header_style)
-            self.resources.set(DebugPanelStyle, f"debug_{name}_panel_style", DebugPanelStyle(header_style, title_panel_style, panel_style, font))
+            self.resources.set(WindowStyle, f"debug_{name}_panel_style", WindowStyle(
+                bg_style=panel_style,
+                show_header=True,
+                header_style=header_style,
+                header_height=4,
+                header_margin=0,
+                show_title=True,
+                title_panel_style=title_panel_style,
+                title_panel_height=30,
+                title_panel_margin=8,
+                title_font=font,
+                title_align=Anchor.L,
+            ))
         
         for name, color in colors.items():
             self.resources.set(LineChartStyle, f"debug_{name}_line_chart_style", LineChartStyle(RectStyle(Colors.with_alpha(Colors.BLACK, 60), bd=0), line_color=color, line_width=1))
@@ -244,7 +256,6 @@ class Engine:
             self.resources.set(ProgressBarStyle, f"debug_{name}_progress_bar_style", ProgressBarStyle(RectStyle(Colors.with_alpha(debug.dark_gray, 150), bd=0, bd_radius=2), color=color))
         
         return self
-    
     
     def set_state(self, state: str | State):
         self.state_manager.set_state(state)

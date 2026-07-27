@@ -2,16 +2,17 @@ from typing import Optional
 
 from .primitive_objects import RectObject, TextObject
 from .ui_objects import LayoutObject
-from ... import PygameObject
+from ..object import PygameObject
 from ...rendering import RectRenderer
 from ...utils import Anchor, DictCollection, Transform, Vec2
 
 
 class WindowObject(LayoutObject):
-    def __init__(self, transform: Transform, renderer: RectRenderer, services: DictCollection,
+    def __init__(self, transform: Transform, renderer: RectRenderer,
                  title: str, content_panel: LayoutObject, header: Optional[LayoutObject], title_panel: Optional[RectObject], title_object: Optional[TextObject],
-                 layer: int = 0, anchor: Vec2 = Anchor.C):
+                 services: DictCollection, layer: int = 0, anchor: Vec2 = Anchor.C):
         super().__init__(transform, renderer, services, layer, anchor)
+        
         
         self._id = title.lower().replace(" ", "_")
         self._title = title
@@ -51,12 +52,15 @@ class WindowObject(LayoutObject):
     
     def add_content(self, obj: PygameObject, x: int, y: int, span_x: int = 1, span_y: int = 1, anchor: Vec2 = Anchor.C):
         self.content.add_object(obj, x, y, span_x, span_y, anchor)
+        return self
         
     def stack_content_x(self, obj: PygameObject, y: Optional[int] = None, span_y: Optional[int] = None, anchor: Vec2 = Anchor.C):
         self.content.stack_x(obj, y, span_y, anchor)
+        return self
     
     def stack_content_y(self, obj: PygameObject, x: Optional[int] = None, span_x: Optional[int] = None, anchor: Vec2 = Anchor.C):
         self.content.stack_y(obj, x, span_x, anchor)
+        return self
         
     def __repr__(self):
         return f"Window('{self.id}')"

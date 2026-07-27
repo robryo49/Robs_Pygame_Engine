@@ -184,7 +184,7 @@ class UIObjectFactory(SubObjectFactory):
         w, h = panel.dims
         panel.set_children_clip_area(FRect(margin, margin, w - margin*2, h - margin*2))
         
-        obj = self._make_object(WindowObject, position, rotation, scale, RectRenderer(dims, bg_style, cache), layer, anchor, panel, header, title_panel, title_object)
+        obj = self._make_object(WindowObject, position, rotation, scale, RectRenderer(dims, bg_style, cache), layer, anchor, title, panel, header, title_panel, title_object)
         obj.invert_up_down()
         
         if header is not None:
