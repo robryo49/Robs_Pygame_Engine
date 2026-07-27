@@ -38,7 +38,6 @@ class ActionOnEventBehavior(ObjectBehavior):
         
         self._exec(self._action, self.owner)
         
-
 class ActionOnUpdateBehavior(ObjectBehavior):
     def __init__(self, action: ObjectCallBackType):
         super().__init__()
@@ -48,7 +47,6 @@ class ActionOnUpdateBehavior(ObjectBehavior):
     def on_update(self, dt: float):
         self._exec(self._action, self.owner)
     
-
 class ActionOnClickBehavior(ObjectBehavior):
     def __init__(self, button: int, on_click: ObjectCallBackType = None, on_hold: ObjectCallBackType = None, on_release: ObjectCallBackType = None):
         super().__init__()
@@ -71,7 +69,6 @@ class ActionOnClickBehavior(ObjectBehavior):
     def on_release(self, button: int, pos: Vec2):
         self._exec(self._on_release, self.owner)
         
-                
 class ActionOnHoverBehavior(ObjectBehavior):
     def __init__(self, hover_start: ObjectCallBackType = None, while_hovered: ObjectCallBackType = None, hover_end: ObjectCallBackType = None):
         super().__init__()
@@ -157,6 +154,12 @@ class AnimationOnHoverBehavior(ObjectBehavior):
         self._animation_manager.play(self._hover_end_animation())
 
 
+# endregion
+
+
+# region ATTRIBUTE BEHAVIORS
+
+
 class AddToAttributeOnHoverBehavior(AnimationOnHoverBehavior):
     def __init__(self, attribute: str, value, duration: float, easing_function: Callable[[float], float]):
         super().__init__(
@@ -182,30 +185,24 @@ class SetAttributeOnHoverBehavior(AnimationOnHoverBehavior):
 class AddToAttributeOnClickBehavior(AnimationOnClickBehavior):
     def __init__(self, button: int, attribute: str, value, duration: float, easing_function: Callable[[float], float]):
         super().__init__(button,
-            lambda: AdderAnimation(self._owner, attribute, value, duration, easing_function),
-            lambda: AdderAnimation(self._owner, attribute, -value, duration, easing_function)
-        )
+                         lambda: AdderAnimation(self._owner, attribute, value, duration, easing_function),
+                         lambda: AdderAnimation(self._owner, attribute, -value, duration, easing_function)
+                         )
 
 class MultiplyAttributeOnClickBehavior(AnimationOnClickBehavior):
     def __init__(self, button: int, attribute: str, multiplier, duration: float, easing_function: Callable[[float], float]):
         super().__init__(button,
-            lambda: MultiplierAnimation(self._owner, attribute, multiplier, duration, easing_function),
-            lambda: MultiplierAnimation(self._owner, attribute, 1 / multiplier, duration, easing_function)
-        )
+                         lambda: MultiplierAnimation(self._owner, attribute, multiplier, duration, easing_function),
+                         lambda: MultiplierAnimation(self._owner, attribute, 1 / multiplier, duration, easing_function)
+                         )
 
 class SetAttributeOnClickBehavior(AnimationOnClickBehavior):
     def __init__(self, button: int, attribute: str, start_value, end_value, duration: float, easing_function: Callable[[float], float]):
         super().__init__(button,
-            lambda: SetterAnimation(self._owner, attribute, end_value, duration, easing_function, start_value),
-            lambda: SetterAnimation(self._owner, attribute, start_value, duration, easing_function, end_value)
-        )
+                         lambda: SetterAnimation(self._owner, attribute, end_value, duration, easing_function, start_value),
+                         lambda: SetterAnimation(self._owner, attribute, start_value, duration, easing_function, end_value)
+                         )
         
-
-# endregion
-
-
-# region ATTRIBUTE BEHAVIORS
-
 
 class DynamicAttributeBehavior(ObjectBehavior):
     def __init__(self, attribute: str, getter: Any | Callable[[], Any | tuple[Any]], template: Optional[str] = None, strength: float = 1):
@@ -239,7 +236,6 @@ class DynamicAttributeBehavior(ObjectBehavior):
         
         setattr(self.owner, self._attribute, value)
 
-
 class AttributeValueSnappingBehavior(ObjectBehavior):
     def __init__(self, attribute: str, values: list[float], offset: float = 0, strength: float = 1):
         super().__init__()
@@ -258,7 +254,6 @@ class AttributeValueSnappingBehavior(ObjectBehavior):
             value = lerp(attr_value, value, self._strength)
             
         setattr(self.owner, self._attribute, value)
-
 
 class AttributeGridSnappingBehavior(ObjectBehavior):
     def __init__(self, attribute: str, step: float, offset: float = 0, strength: float = 1):
@@ -279,7 +274,6 @@ class AttributeGridSnappingBehavior(ObjectBehavior):
             value = lerp(attr_value, value, self._strength)
         
         setattr(self.owner, self._attribute, value)
-
 
 class AttributeClampingBehavior(ObjectBehavior):
     def __init__(
@@ -310,7 +304,6 @@ class AttributeClampingBehavior(ObjectBehavior):
             target_value = lerp(attr_value, target_value, self._strength)
         
         setattr(self.owner, self._attribute, target_value)
-
 
 class AttributeFixingBehavior(ObjectBehavior):
     def __init__(self, attribute: str, value = Optional[Any | Callable[[], Any]], strength: float = 1):

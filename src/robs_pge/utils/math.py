@@ -1,3 +1,4 @@
+import operator
 from dataclasses import dataclass, field
 from random import random as rand
 
@@ -143,68 +144,72 @@ class Anchor:
 
 # region GENERIC ARITHMETIC
 
-ColorDelta = tuple[float, float, float, float]
-
-
 def _is_color(value) -> bool:
     return isinstance(value, Color)
 
-
-def _is_color_delta(value) -> bool:
-    return isinstance(value, tuple) and len(value) == 4 and all(isinstance(v, (int, float)) for v in value)
-
+def _is_math_iterable(value) -> bool:
+    return isinstance(value, (Color, Vec2, Vec3, tuple, list))
 
 def _clamp_channel(value: float) -> int:
-    return max(0, min(255, round(value)))
+    return max(0, min(255, int(round(value))))
 
+def _cast(blueprint, values, clamp_color=True):
+    vals = list(values)
+    
+    if _is_color(blueprint):
+        if clamp_color:
+            return Color(*[_clamp_channel(v) for v in vals][:4])
+        return tuple(vals)  # Yields unclamped delta tuple when clamping is bypassed
+    
+    if isinstance(blueprint, (Vec2, Vec3)):
+        return type(blueprint)(*vals[:len(blueprint)])
+    
+    if isinstance(blueprint, (tuple, list)):
+        return type(blueprint)(vals)
+    
+    return vals
+
+def _universal_op(a, b, op, clamp_color=True):
+    a_is_iter = _is_math_iterable(a)
+    b_is_iter = _is_math_iterable(b)
+    
+    # 1. Sequence <OP> Sequence (Element-wise via zip)
+    if a_is_iter and b_is_iter:
+        # Color takes type priority to preserve clamping behavior
+        blueprint = a if _is_color(a) else (b if _is_color(b) else a)
+        return _cast(blueprint, (op(v1, v2) for v1, v2 in zip(a, b)), clamp_color)
+    
+    # 2. Sequence <OP> Scalar
+    if a_is_iter and isinstance(b, (int, float)):
+        return _cast(a, (op(v, b) for v in a), clamp_color)
+    
+    # 3. Scalar <OP> Sequence (Order matters for sub/div/pow!)
+    if isinstance(a, (int, float)) and b_is_iter:
+        return _cast(b, (op(a, v) for v in b), clamp_color)
+    
+    # 4. Fallback (Native Pygame vectors, raw scalars, etc.)
+    return op(a, b)
+
+# ---------------------------------------------------------
+# The Public API
+# ---------------------------------------------------------
 
 def add(a, b):
-    """Generic addition. Supports int/float, and Color combined with Color or a color-delta tuple
-    (as produced by `subtract`). Color results are clamped to 0-255 per channel."""
-    if _is_color(a) and (_is_color(b) or _is_color_delta(b)):
-        return Color(*(_clamp_channel(ac + bc) for ac, bc in zip(a, b)))
-    if _is_color(b) and _is_color_delta(a):
-        return add(b, a)
-    if _is_color_delta(a) and _is_color_delta(b):
-        return tuple(ac + bc for ac, bc in zip(a, b))
-    return a + b
-
+    return _universal_op(a, b, operator.add, clamp_color=True)
 
 def subtract(a, b):
-    """Generic subtraction. Color - Color (or delta) yields an UNCLAMPED delta tuple rather than a Color,
-    since intermediate differences can be negative or exceed 255 and shouldn't be clamped mid-calculation."""
-    if (_is_color(a) or _is_color_delta(a)) and (_is_color(b) or _is_color_delta(b)):
-        return tuple(ac - bc for ac, bc in zip(a, b))
-    return a - b
-
+    is_delta = _is_math_iterable(a) and _is_math_iterable(b)
+    return _universal_op(a, b, operator.sub, clamp_color=not is_delta)
 
 def multiply(a, b):
-    """Generic multiplication. Scales a Color or color-delta tuple by a scalar; falls back to `*` otherwise."""
-    if _is_color(a) and isinstance(b, (int, float)):
-        return Color(*(_clamp_channel(c * b) for c in a))
-    if _is_color_delta(a) and isinstance(b, (int, float)):
-        return tuple(c * b for c in a)
-    if isinstance(a, (int, float)) and (_is_color(b) or _is_color_delta(b)):
-        return multiply(b, a)
-    return a * b
-
+    return _universal_op(a, b, operator.mul, clamp_color=True)
 
 def divide(a, b):
-    """Generic division. Divides a Color or color-delta tuple by a scalar; falls back to `/` otherwise."""
     if isinstance(b, (int, float)) and b == 0:
         raise ZeroDivisionError("Cannot divide by zero")
-    if _is_color(a) and isinstance(b, (int, float)):
-        return Color(*(_clamp_channel(c / b) for c in a))
-    if _is_color_delta(a) and isinstance(b, (int, float)):
-        return tuple(c / b for c in a)
-    return a / b
-
+    return _universal_op(a, b, operator.truediv, clamp_color=True)
 
 def power(a, b):
-    """Generic exponentiation, primarily for MultiplierAnimation's numeric (e.g. scale) attributes.
-    Colors are scaled channel-wise for completeness, though exponential color animation rarely makes sense."""
-    if _is_color(a):
-        return Color(*(_clamp_channel(c ** b) for c in a))
-    return a ** b
+    return _universal_op(a, b, operator.pow, clamp_color=True)
 
 # endregion
