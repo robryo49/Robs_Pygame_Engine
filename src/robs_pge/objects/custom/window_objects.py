@@ -9,7 +9,7 @@ from ...utils import Anchor, DictCollection, Transform, Vec2, ObjectFlags
 
 class WindowObject(LayoutObject):
     def __init__(self, transform: Transform, renderer: RectRenderer,
-                 title: str, content_panel: LayoutObject, header: Optional[LayoutObject], title_panel: Optional[RectObject], title_object: Optional[TextObject],
+                 title: str, content_panel: LayoutObject, header: Optional[LayoutObject], title_panel: Optional[RectObject], title_object: Optional[TextObject], scrollbar: ScrollbarObject,
                  services: DictCollection, layer: int = 0, anchor: Vec2 = Anchor.C):
         super().__init__(transform, renderer, services, layer, anchor)
         
@@ -22,7 +22,7 @@ class WindowObject(LayoutObject):
         self._title_panel = title_panel
         self._title_object = title_object
         
-        self._scrollbar: Optional[ScrollbarObject] = None
+        self._scrollbar: ScrollbarObject = scrollbar
         
     # region PROPERTIES
     
@@ -59,37 +59,76 @@ class WindowObject(LayoutObject):
         return self.has_flag(ObjectFlags.HIDDEN)
     
     @property
-    def scrollbar(self) -> Optional[ScrollbarObject]:
+    def scrollbar(self) -> ScrollbarObject:
         return self._scrollbar
-    
-    def attach_scrollbar(self, scrollbar: ScrollbarObject):
-        self._scrollbar = scrollbar
-        scrollbar.hide()
-        return self
     
     def _update_self(self, dt: float):
         super()._update_self(dt)
         self._sync_scrollbar()
-    
-    def _sync_scrollbar(self):
-        scrollbar = self._scrollbar
-        if scrollbar is None:
+        
+    def show_scrollbar(self):
+        if self._scrollbar.visible:
             return
         
+        scrollbar = self._scrollbar
+        
+        scrollbar.show()
+        
+        scrollbar_col_width = (
+                scrollbar.width
+                + self.content.parent.get_cell_padding((1, 0)).x * 2
+        )
+        
+        self.fix_col_width(0, self.width - scrollbar_col_width)
+        self.fix_col_width(1, scrollbar_col_width)
+        
+        self.content.fix_width(self.width - scrollbar_col_width)
+        self.content.renderer.dims.x = self.width - scrollbar_col_width
+        
+        clip = self.content.children_clip_area
+        clip.width = self.content.width - clip.x * 2
+        
+    def hide_scrollbar(self):
+        if not self._scrollbar.visible:
+            return
+        
+        scrollbar = self._scrollbar
+        
+        scrollbar.hide()
+        scrollbar.value = 0.0
+        self.content.scroll_offset = Vec2()
+        
+        self.fix_col_width(0, self.width)
+        self.fix_col_width(1, 0)
+        
+        self.content.fix_width(self.width)
+        self.content.renderer.dims.x = self.width
+        
+        clip = self.content.children_clip_area
+        clip.width = self.content.width - clip.x * 2
+    
+    def _sync_scrollbar(self):
         max_offset = self.content.get_scroll_range_y()
         needed = max_offset > 0.5
         
-        if needed != scrollbar.visible:
-            scrollbar.visible = needed
-            if not needed:
-                scrollbar.value = 0.0
-                self.content.scroll_offset = Vec2()
-        
         if needed:
-            viewport_height = self.content.get_viewport_height()
-            content_height = viewport_height + max_offset
-            ratio = viewport_height / content_height if content_height > 0 else 1.0
-            scrollbar.handle_height = max(scrollbar.handle_width, viewport_height * ratio)
+            self.show_scrollbar()
+        else:
+            self.hide_scrollbar()
+        
+        if not self.scrollbar.visible:
+            return
+        
+        viewport_height = self.content.get_viewport_height()
+        content_height = viewport_height + max_offset
+        
+        ratio = viewport_height / content_height if content_height > 0 else 1.0
+        self.scrollbar.handle_height = max(
+            self.scrollbar.handle_width,
+            viewport_height * ratio
+        )
+        
+        self.scrollbar.update_movement_range()
     
     # endregion
     

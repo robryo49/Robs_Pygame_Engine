@@ -262,6 +262,9 @@ class LayoutObject(RectObject):
         self.mark_dirty()
         return self
     
+    def get_cell_padding(self, cell: Optional[tuple[int, int]] = None):
+        return self._cells_padding.get(cell, self._padding) if cell is not None else self._padding
+    
     def clear_cell_padding(self, cell: Optional[tuple[int, int]] = None):
         if cell is not None:
             self._cells_padding.pop(cell, 0)

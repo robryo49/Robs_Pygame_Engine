@@ -111,7 +111,7 @@ class UIObjectFactory(SubObjectFactory):
         if update_action is not None: obj.do_on_update(update_action)
         
         return obj
-    
+
     def make_window(self, position: Vec2, dims: Vec2, title: str, draggable: bool = False, style: Optional[WindowStyle | str] = None,
                     rotation: float = 0.0, scale: float = 1.0, layer: int = 0, anchor: Vec2 = Anchor.C, cache: bool = True) -> WindowObject:
         
@@ -171,7 +171,7 @@ class UIObjectFactory(SubObjectFactory):
                 title_object.pos = title_offset
                 title_object.anchor = title_align
                 header.add_object(title_object, 0, 0, anchor=title_align)
-                
+            
             if show_header_buttons:
                 button_dims = Vec2(buttons_width, buttons_height)
                 icons_size = button_dims * 0.5
@@ -179,48 +179,55 @@ class UIObjectFactory(SubObjectFactory):
                 
                 header.add_object(x_button, 1, 0)
         
-        panel_height = dims.y - (title_panel_height or 0) - (header_height or 0)
-        panel = self.factory.ui.layouts.make_grid_layout(Vec2(), dims.x, panel_height, layer=layer)
-        panel.set_children_clip_area(FRect(margin - dims.x*0.5, margin - panel_height*0.5, dims.x - margin*2, panel_height - margin*2), True)
+        scrollbar_width = window_style.scrollbar_width
+        scrollbar_edge_margin = window_style.scrollbar_edge_margin
+        scrollbar_col_width = (scrollbar_width + scrollbar_edge_margin + scrollbar_edge_margin)
         
-        obj = self._make_object(WindowObject, position, rotation, scale, RectRenderer(dims, bg_style, cache), layer, anchor, title, panel, header, title_panel, title_object)
+        panel_height = dims.y - (title_panel_height or 0) - (header_height or 0)
+        panel_width = dims.x - scrollbar_col_width
+        
+        panel = self.factory.ui.layouts.make_grid_layout(Vec2(), panel_width, panel_height, layer=layer)
+        panel.set_children_clip_area(FRect(margin - panel_width*0.5, margin - panel_height*0.5, panel_width - margin*2, panel_height - margin*2), True)
+        
+        scrollbar_style = self._get_resource(window_style.scrollbar_style, ScrollbarStyle)
+        scrollbar = self.make_scrollbar(
+            Vec2(), Vec2(scrollbar_width, panel_height - scrollbar_edge_margin*2),
+            scrollbar_style, layer=layer + 1
+        )
+        
+        
+        obj = self._make_object(WindowObject, position, rotation, scale, RectRenderer(dims, bg_style, cache), layer, anchor, title, panel, header, title_panel, title_object, scrollbar)
         obj.invert_up_down()
         
+        row = 0
         if header is not None:
-            obj.stack_y(header)
+            obj.add_object(header, 0, row, span_x=2)
+            row += 1
         if title_panel is not None:
-            obj.stack_y(title_panel)
-        obj.stack_y(panel)
+            obj.add_object(title_panel, 0, row, span_x=2)
+            row += 1
         
-        if window_style.show_scrollbar:
-            scrollbar_width = window_style.scrollbar_width
-            scrollbar_gutter = window_style.scrollbar_gutter
-            scrollbar_style = self._get_resource(window_style.scrollbar_style, ScrollbarStyle)
-            
-            scrollbar = self.make_scrollbar(
-                Vec2(), Vec2(scrollbar_width, panel_height - margin*2),
-                scrollbar_style, layer=layer + 1
-            )
-            obj.add_child(scrollbar, Anchor.C)
-            scrollbar.make_attribute_dynamic(
-                "pos",
-                lambda: panel.pos + Vec2(panel.width * 0.5 + scrollbar_gutter + scrollbar_width * 0.5, 0)
-            )
-            obj.attach_scrollbar(scrollbar)
-            
-            def _on_panel_scroll(o: PygameObject, scroll: int, pos: Vec2):
-                max_offset = panel.get_scroll_range_y()
-                if max_offset <= 0:
-                    return
-                scrollbar.value = clamp(scrollbar.value - scroll * 40 / max_offset, 0.0, 1.0)
-            
-            panel.do_on_scroll(_on_panel_scroll)
-            panel.make_attribute_dynamic("scroll_offset", lambda: Vec2(0, scrollbar.value * panel.get_scroll_range_y()))
+        obj.add_object(panel, 0, row)
+        obj.fix_col_width(0, panel_width)
         
+        obj.add_object(scrollbar, 1, row, anchor=Anchor.R)
+        obj.fix_col_width(1, scrollbar_col_width)
+        obj.set_cell_padding(Vec2(scrollbar_edge_margin, 0), (1, row))
+        
+        def _on_panel_scroll(o: PygameObject, scroll: int, pos: Vec2):
+            max_offset = panel.get_scroll_range_y()
+            if max_offset <= 0:
+                return
+            scrollbar.value = clamp(scrollbar.value - scroll * 40 / max_offset, 0.0, 1.0)
+        
+        panel.do_on_scroll(_on_panel_scroll)
+        panel.make_attribute_dynamic("scroll_offset", lambda: Vec2(0, scrollbar.value * panel.get_scroll_range_y()), strength=0.2)
         
         if draggable:
             drag_handle = header if header is not None else (title_panel if title_panel is not None else obj)
             drag_handle.make_draggable(1, target=obj)
+            
+        obj._sync_scrollbar()
         
         return obj
     

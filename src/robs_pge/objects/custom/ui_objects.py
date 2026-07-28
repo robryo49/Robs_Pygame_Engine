@@ -440,13 +440,18 @@ class ScrollbarObject(RectObject):
         super().__init__(transform, background, services, layer, anchor)
         
         self._handle = handle
+        self._handle_movement_range = 0
+        self._min_y = 0
+        self._max_y = 0
         
         self.add_child(self._handle, Anchor.C)
         
         self._handle.make_draggable(1)
         self._handle.make_attribute_fixed("x_pos")
         
-        self._update_movement_range()
+        self.update_movement_range()
+        
+        self._handle.make_attribute_clamped("y_pos", lambda: self._min_y, lambda: self._max_y)
     
     # region PROPERTIES
     
@@ -461,7 +466,7 @@ class ScrollbarObject(RectObject):
     @handle_height.setter
     def handle_height(self, value: float):
         self._handle.height = clamp(value, 5.0, self.height)
-        self._update_movement_range()
+        self.update_movement_range()
         
         self.value = self.value
     
@@ -482,13 +487,12 @@ class ScrollbarObject(RectObject):
     
     # endregion
     
-    def _update_movement_range(self):
-        self._handle_movement_range = self.height - self._handle.height
+    def update_movement_range(self):
+        margin = (self.width - self._handle.width) * 0.5
+        self._handle_movement_range = self.height - self._handle.height - margin * 2
         
-        self._min_y = -self._handle_movement_range * 0.5 + (self.width - self._handle.width) * 0.5
-        self._max_y = self._handle_movement_range * 0.5 - (self.width - self._handle.width) * 0.5
-        
-        self._handle.make_attribute_clamped("y_pos", self._min_y, self._max_y)
+        self._min_y = -self._handle_movement_range * 0.5
+        self._max_y = self._handle_movement_range * 0.5
     
     def _update_self(self, dt: float):
         super()._update_self(dt)

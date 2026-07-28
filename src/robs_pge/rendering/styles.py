@@ -322,6 +322,9 @@ class WindowStyle(Style):
         title_font
         title_align
         title_in_header
+        scrollbar_style
+        scrollbar_width
+        scrollbar_edge_margin
     """
     bg_style: RectStyle = field(default_factory=RectStyle)
     margin: int = 0
@@ -343,16 +346,15 @@ class WindowStyle(Style):
     title_align: Vec2 = field(default_factory=lambda: Anchor.C)
     title_in_header: bool = False
     
-    show_scrollbar: bool = False
     scrollbar_style: Optional[ScrollbarStyle] = field(default_factory=ScrollbarStyle)
     scrollbar_width: int = 14
-    scrollbar_gutter: int = 4
+    scrollbar_edge_margin: int = 4
     
-    def with_scrollbar(self, scrollbar_style: Optional[ScrollbarStyle] = None, width: Optional[int] = None):
+    def with_scrollbar(self, scrollbar_style: Optional[ScrollbarStyle] = None, width: Optional[int] = None, edge_margin: Optional[int] = None):
         return self.with_(
-            show_scrollbar=True,
             scrollbar_style=scrollbar_style if scrollbar_style is not None else self.scrollbar_style,
             scrollbar_width=width if width is not None else self.scrollbar_width,
+            scrollbar_edge_margin=edge_margin if edge_margin is not None else self.scrollbar_edge_margin,
         )
     
     def with_icons(self, icon_buttons_style: Optional[IconButtonStyle]):
