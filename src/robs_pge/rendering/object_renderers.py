@@ -106,10 +106,12 @@ class RectRenderer(ObjectRenderer):
         if not (0 <= x <= w and 0 <= y <= h):
             return False
         
+        max_r = min(w, h) / 2
+        
         if isinstance(self.bd_radius, (tuple, list)):
-            r_bl, r_br, r_tl, r_tr = self.bd_radius
+            r_bl, r_br, r_tl, r_tr = (min(r, max_r) for r in self.bd_radius)
         else:
-            r_bl = r_br = r_tl = r_tr = self.bd_radius
+            r_bl = r_br = r_tl = r_tr = min(self.bd_radius, max_r)
         
         if x < w / 2:
             if y < h / 2:
