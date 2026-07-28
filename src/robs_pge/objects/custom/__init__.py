@@ -1,7 +1,12 @@
 from .primitive_objects import RectObject, CircleObject, LineObject, TextObject
 from .sprite_objects import SpriteObject, ChunkedSpriteObject, SubSurfaceSpriteObject, IconObject
 from .layout_objects import LayoutObject, DebugPanelObject, DebugOverlay
-from .ui_objects import CheckBoxObject, SliderObject, ButtonObject, LineChartObject, ProgressBarObject, CycleButtonObject, SpriteButtonObject, ToggleButtonObject, RadioButtonObject, IconButtonObject
+from .ui_objects import (
+    CheckBoxObject, SliderObject, ButtonObject, LineChartObject,
+    ProgressBarObject, CycleButtonObject, SpriteButtonObject,
+    ToggleButtonObject, RadioButtonObject, IconButtonObject,
+    ScrollbarObject
+)
 from .window_objects import WindowObject
 
 __all__ = [
@@ -26,5 +31,6 @@ __all__ = [
     "ToggleButtonObject",
     "IconButtonObject",
     "RadioButtonObject",
-    "WindowObject"
+    "WindowObject",
+    "ScrollbarObject"
 ]

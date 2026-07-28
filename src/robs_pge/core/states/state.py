@@ -345,8 +345,8 @@ class State:
         self._services.set(QuickDebugManager, self.quick_debug_manager)
     
     def init_keybinds(self) -> None:
-        self.register_keybind(pg.K_F3, lambda: self.debug_overlay.toggle_visible())
-        self.register_keybind(pg.K_F4, lambda: self.debug_overlay.toggle_freeze())
+        self.add_keybind(pg.K_F3, lambda: self.debug_overlay.toggle_visible())
+        self.add_keybind(pg.K_F4, lambda: self.debug_overlay.toggle_freeze())
     
     def init_events(self):
         pass
@@ -355,7 +355,7 @@ class State:
     
     # region REGISTRATION METHODS
     
-    def register_keybind(self, key: int | tuple[int, ...], action: Callable | tuple[Callable, ...], *args) -> None:
+    def add_keybind(self, key: int | tuple[int, ...], action: Callable | tuple[Callable, ...], *args) -> None:
         self.keybinds.add(Keybind(key, action, *args))
     
     def register_event_callback(self, event_type: str, callback: Callable[[Event], Any], condition: Optional[Callable[[Event], bool]] = None) -> None:
@@ -369,8 +369,8 @@ class State:
         for o in obj:
             self.ui_objects.add(o)
     
-    def add_window(self, window_id: str, window: WindowObject, group: str = "main"):
-        self.windows.register(window_id, window, group)
+    def add_window(self, window: WindowObject, group: str = "main"):
+        self.windows.register(window, group)
         
     def add_quick_debug(self, getter: Callable, template: str = "{}"):
         self.quick_debug_manager.add_listener(getter, template)

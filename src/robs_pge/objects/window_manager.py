@@ -20,7 +20,8 @@ class WindowManager:
     
     # endregion
     
-    def register(self, window_id: str, window: WindowObject, group: Optional[str] = None):
+    def register(self, window: WindowObject, group: Optional[str] = None):
+        window_id = window.id
         self._windows.set(window_id, window)
         window.hide()
         if group:
@@ -30,7 +31,7 @@ class WindowManager:
     
     def is_open(self, window_id: str) -> bool:
         win = self._windows.get(window_id)
-        return win is not None and not win.has_flag(ObjectFlags.HIDDEN)
+        return win is not None and not win.opened
     
     def open(self, window_id: str):
         window = self._windows.get(window_id)

@@ -4,7 +4,7 @@ from .styles import (
     LineStyle, ButtonStyle, ProgressBarStyle,
     LineChartStyle, DebugPanelStyle, SliderStyle,
     IconButtonStyle, SpriteButtonStyle, ToggleButtonStyle,
-    RadioButtonStyle, WindowStyle
+    RadioButtonStyle, WindowStyle, ScrollbarStyle
 )
 from .draw_commands import (
     DrawCommand,
@@ -24,7 +24,7 @@ __all__ = [
     "LineStyle", "ButtonStyle", "ProgressBarStyle",
     "LineChartStyle", "DebugPanelStyle", "SliderStyle",
     "IconButtonStyle", "SpriteButtonStyle", "ToggleButtonStyle",
-    "RadioButtonStyle", "WindowStyle",
+    "RadioButtonStyle", "WindowStyle", "ScrollbarStyle",
     # draw commands
     "DrawCommand",
     "DrawRect", "DrawCircle", "DrawTexture", "DrawText", "DrawLine", "DrawSubSurface", "DrawChunkedSprite",

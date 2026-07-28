@@ -434,6 +434,62 @@ class ProgressBarObject(RectObject):
             self._dirty = False
 
 
+class ScrollbarObject(RectObject):
+    def __init__(self, transform: Transform, background: RectRenderer, handle: RectObject,
+                 services: DictCollection, layer: int = 0, anchor: Vec2 = Anchor.C):
+        super().__init__(transform, background, services, layer, anchor)
+        
+        self._handle = handle
+        
+        self.add_child(self._handle, Anchor.C)
+        
+        self._handle.make_draggable(1)
+        self._handle.make_attribute_fixed("x_pos")
+        
+        self._update_movement_range()
+    
+    # region PROPERTIES
+    
+    @property
+    def handle_height(self) -> float:
+        return self._handle.height
+    
+    @handle_height.setter
+    def handle_height(self, value: float):
+        self._handle.height = clamp(value, 5.0, self.height)
+        self._update_movement_range()
+        
+        self.value = self.value
+    
+    @property
+    def normalized_value(self) -> float:
+        if self._handle_movement_range == 0:
+            return 0.0
+        return (self._handle.y_pos - self._min_y) / self._handle_movement_range
+    
+    @property
+    def value(self) -> float:
+        return clamp(self.normalized_value, 0.0, 1.0)
+    
+    @value.setter
+    def value(self, value: float):
+        value = clamp(value, 0.0, 1.0)
+        self._handle.y_pos = self._min_y + (value * self._handle_movement_range)
+    
+    # endregion
+    
+    def _update_movement_range(self):
+        self._handle_movement_range = self.height - self._handle.height
+        
+        self._min_y = -self._handle_movement_range * 0.5 + (self.width - self._handle.width) * 0.5
+        self._max_y = self._handle_movement_range * 0.5 - (self.width - self._handle.width) * 0.5
+        
+        self._handle.make_attribute_clamped("y_pos", self._min_y, self._max_y)
+    
+    def _update_self(self, dt: float):
+        super()._update_self(dt)
+
+
 class LineChartObject(RectObject):
     def __init__(self, transform: Transform, background: RectRenderer, line: LineObject, services: DictCollection, layer: int = 0, anchor: Vec2 = Anchor.C):
         super().__init__(transform, background, services, layer, anchor)

@@ -270,6 +270,25 @@ class SliderStyle(Style):
 
 
 @dataclass
+class ScrollbarStyle(Style):
+    """
+    Attributes:
+        bg_style
+        handle_style
+        margin
+    """
+    bg_style: RectStyle = field(default_factory=RectStyle)
+    handle_style: RectStyle = field(default_factory=RectStyle)
+    margin: int = 10
+    
+    def with_alpha(self, alpha: int):
+        return self.with_(
+            bg_style = self.bg_style.with_alpha(alpha),
+            handle_style = self.handle_style.with_alpha(alpha),
+        )
+
+
+@dataclass
 class DebugPanelStyle(Style):
     """
     Attributes:
