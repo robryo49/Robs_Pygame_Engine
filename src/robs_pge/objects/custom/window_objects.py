@@ -65,71 +65,54 @@ class WindowObject(LayoutObject):
     def _update_self(self, dt: float):
         super()._update_self(dt)
         self.sync_scrollbar()
+    
+    def _apply_content_width(self, width: float):
+        self.content.fix_width(width)
+        self.content.renderer.dims.x = width
         
-    def show_scrollbar(self):
-        if self._scrollbar.visible:
+        clip = self.content.children_clip_area
+        if clip is not None:
+            clip.width = width - clip.x * 2
+    
+    def _set_scrollbar_visible(self, visible: bool):
+        if visible == self._scrollbar.visible:
             return
         
-        scrollbar = self._scrollbar
+        if visible:
+            self._scrollbar.show()
+            scrollbar_col_width = self._scrollbar.width + self.content.parent.get_cell_padding((1, 0)).x * 2
+            content_width = self.width - scrollbar_col_width
+        else:
+            self._scrollbar.hide()
+            self._scrollbar.value = 0.0
+            self.content.scroll_offset = Vec2()
+            scrollbar_col_width = 0
+            content_width = self.width
         
-        scrollbar.show()
-        
-        scrollbar_col_width = (
-                scrollbar.width
-                + self.content.parent.get_cell_padding((1, 0)).x * 2
-        )
-        
-        self.fix_col_width(0, self.width - scrollbar_col_width)
+        self.fix_col_width(0, content_width)
         self.fix_col_width(1, scrollbar_col_width)
-        
-        self.content.fix_width(self.width - scrollbar_col_width)
-        self.content.renderer.dims.x = self.width - scrollbar_col_width
-        
-        clip = self.content.children_clip_area
-        clip.width = self.content.width - clip.x * 2
-        
+        self._apply_content_width(content_width)
+    
+    def show_scrollbar(self):
+        self._set_scrollbar_visible(True)
+    
     def hide_scrollbar(self):
-        if not self._scrollbar.visible:
-            return
-        
-        scrollbar = self._scrollbar
-        
-        scrollbar.hide()
-        scrollbar.value = 0.0
-        self.content.scroll_offset = Vec2()
-        
-        self.fix_col_width(0, self.width)
-        self.fix_col_width(1, 0)
-        
-        self.content.fix_width(self.width)
-        self.content.renderer.dims.x = self.width
-        
-        clip = self.content.children_clip_area
-        clip.width = self.content.width - clip.x * 2
+        self._set_scrollbar_visible(False)
     
     def sync_scrollbar(self):
-        max_offset = self.content.get_scroll_range_y()
-        needed = max_offset > 0.5
         
-        if needed:
-            self.show_scrollbar()
-        else:
-            self.hide_scrollbar()
+        max_offset = self.content.get_scroll_range_y()
+        self._set_scrollbar_visible(max_offset > 0.5)
         
         if not self.scrollbar.visible:
             return
         
         viewport_height = self.content.get_viewport_height()
         content_height = viewport_height + max_offset
-        
         ratio = viewport_height / content_height if content_height > 0 else 1.0
-        self.scrollbar.handle_height = max(
-            self.scrollbar.handle_width,
-            viewport_height * ratio
-        )
         
-        self.scrollbar.update_movement_range()
-    
+        self.scrollbar.handle_height = max(self.scrollbar.handle_width, viewport_height * ratio)
+        
     # endregion
     
     def open(self):

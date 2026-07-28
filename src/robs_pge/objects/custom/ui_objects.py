@@ -484,8 +484,15 @@ class ScrollbarObject(RectObject):
     def value(self, value: float):
         value = clamp(value, 0.0, 1.0)
         self._handle.y_pos = self._max_y - (value * self._handle_movement_range)
+        
+    def set_value(self, value: float):
+        self.value = value
     
     # endregion
+    
+    @property
+    def handle_movement_range(self):
+        return self._handle_movement_range
     
     def update_movement_range(self):
         margin = (self.width - self._handle.width) * 0.5
@@ -493,9 +500,6 @@ class ScrollbarObject(RectObject):
         
         self._min_y = -self._handle_movement_range * 0.5
         self._max_y = self._handle_movement_range * 0.5
-    
-    def _update_self(self, dt: float):
-        super()._update_self(dt)
 
 
 class LineChartObject(RectObject):
