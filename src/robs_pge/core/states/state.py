@@ -202,7 +202,7 @@ class State:
         
         # region ENGINE PANNEL
         
-        engine_pannel = self.factory.ui.make_window(Vec2(), Vec2(400, 190), green_style, "ENGINE")
+        engine_pannel = self.factory.ui.make_window(Vec2(), Vec2(400, 190), "ENGINE", style=green_style)
         
         engine_c1 = self.factory.ui.layouts.make_vertical_layout(Vec2(), 400).skip_rendering().invert_up_down().set_constant_padding(10)
         engine_c1.stack_y(self.factory.text.make_dynamic_text(Vec2(), "{} FPS    |    {} ms", lambda: (round(self.clock.fps), round(self.clock.dtime*1000, 1)), font_blue_title, cache=False), anchor=Anchor.T)
@@ -216,7 +216,7 @@ class State:
         
         # region FRAME PANNEL
         
-        frame_pannel = self.factory.ui.make_window(Vec2(), Vec2(400, 200), yellow_style, "FRAME TIMER").stack_content_x(
+        frame_pannel = self.factory.ui.make_window(Vec2(), Vec2(400, 200), "FRAME TIMER", style=yellow_style).stack_content_x(
             self.factory.ui.layouts.make_vertical_layout(Vec2(), 180).skip_rendering().invert_up_down().
             stack_y(self.factory.text.make_text(Vec2(), "Update", font_white), anchor=Anchor.TL).
             stack_y(self.factory.text.make_text(Vec2(), "- Events", font_gray), anchor=Anchor.TL).
@@ -244,7 +244,7 @@ class State:
         
         # region CAMERA PANEL
         
-        camera_pannel = self.factory.ui.make_window(Vec2(), Vec2(400, 132), blue_style, "CAMERA").stack_content_x(
+        camera_pannel = self.factory.ui.make_window(Vec2(), Vec2(400, 132), "CAMERA", style=blue_style).stack_content_x(
             self.factory.ui.layouts.make_vertical_layout(Vec2(), 180).skip_rendering().invert_up_down().
             stack_y(self.factory.text.make_text(Vec2(), "Position", font_gray), anchor=Anchor.TL).
             stack_y(self.factory.text.make_text(Vec2(), "Zoom", font_gray), anchor=Anchor.TL).
@@ -264,7 +264,7 @@ class State:
         
         # region INPUT PANEL
         
-        input_pannel = self.factory.ui.make_window(Vec2(), Vec2(400, 116), green_style, "INPUT").stack_content_x(
+        input_pannel = self.factory.ui.make_window(Vec2(), Vec2(400, 116), "INPUT", style=green_style).stack_content_x(
             self.factory.ui.layouts.make_vertical_layout(Vec2(), 180).skip_rendering().invert_up_down().
             stack_y(self.factory.text.make_text(Vec2(), "Mouse Screen Pos", font_gray), anchor=Anchor.TL).
             stack_y(self.factory.text.make_text(Vec2(), "Mouse World Pos", font_gray), anchor=Anchor.TL).
@@ -282,7 +282,7 @@ class State:
         
         # region RENDERING PANNEL
         
-        rendering_pannel = self.factory.ui.make_window(Vec2(), Vec2(400, 176), blue_style, "RENDERING").stack_content_x(
+        rendering_pannel = self.factory.ui.make_window(Vec2(), Vec2(400, 176), "RENDERING", style=blue_style).stack_content_x(
             self.factory.ui.layouts.make_vertical_layout(Vec2(), 180).skip_rendering().invert_up_down().
             stack_y(self.factory.text.make_text(Vec2(), "Cache Size", font_gray), anchor=Anchor.TL).
             stack_y(self.factory.text.make_text(Vec2(), "Cache Hits", font_gray), anchor=Anchor.TL).
@@ -308,7 +308,7 @@ class State:
         
         # region QUICK DEBUG PANNEL
         
-        quick_debug_pannel = self.factory.ui.make_window(Vec2(), Vec2(400, 200), yellow_style, "QUICK DEBUG").stack_content_x(
+        quick_debug_pannel = self.factory.ui.make_window(Vec2(), Vec2(400, 200), "QUICK DEBUG", style=yellow_style).stack_content_x(
             self.factory.ui.layouts.make_vertical_layout(Vec2(), 180).skip_rendering().invert_up_down().stack_y(
                 self.factory.text.make_dynamic_text(Vec2(), "{}",
                                                     lambda: ("\n".join(self.quick_debug_manager.get_values())) if self._quick_debug_manager.has_values() else "Nothing to Show", font_white), anchor=Anchor.TL

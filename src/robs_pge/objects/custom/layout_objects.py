@@ -173,6 +173,13 @@ class LayoutObject(RectObject):
             self.mark_dirty()
     # endregion
     
+    def get_viewport_height(self) -> float:
+        return self._fixed_height if self._fixed_height is not None else self.height
+
+    def get_scroll_range_y(self) -> float:
+        content_height = sum(self._row_heights.values())
+        return max(0.0, content_height - self.get_viewport_height())
+    
     # endregion
     
     
@@ -275,12 +282,7 @@ class LayoutObject(RectObject):
         self.renderer.bd = 0
         self.mark_dirty()
         return self
-    
-    
-    def get_scroll_range_y(self) -> float:
-        content_height = sum(self._row_heights.values())
-        viewport_height = self._fixed_height if self._fixed_height is not None else self.height
-        return max(0.0, content_height - viewport_height)
+
     
     def enable_scroll(self, speed: float = 15.0):
         self._scroll_speed = speed

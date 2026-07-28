@@ -343,6 +343,18 @@ class WindowStyle(Style):
     title_align: Vec2 = field(default_factory=lambda: Anchor.C)
     title_in_header: bool = False
     
+    show_scrollbar: bool = False
+    scrollbar_style: Optional[ScrollbarStyle] = field(default_factory=ScrollbarStyle)
+    scrollbar_width: int = 14
+    scrollbar_gutter: int = 4
+    
+    def with_scrollbar(self, scrollbar_style: Optional[ScrollbarStyle] = None, width: Optional[int] = None):
+        return self.with_(
+            show_scrollbar=True,
+            scrollbar_style=scrollbar_style if scrollbar_style is not None else self.scrollbar_style,
+            scrollbar_width=width if width is not None else self.scrollbar_width,
+        )
+    
     def with_icons(self, icon_buttons_style: Optional[IconButtonStyle]):
         return self.with_(show_icons = True, icon_buttons_style = icon_buttons_style if icon_buttons_style is not None else self.icon_buttons_style)
     

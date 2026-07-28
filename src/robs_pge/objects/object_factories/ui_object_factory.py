@@ -8,9 +8,9 @@ from .layout_object_factory import LayoutObjectFactory
 from .sub_factory import SubObjectFactory
 from ..custom import LineChartObject, ProgressBarObject, SliderObject, WindowObject, TextObject, RectObject, LayoutObject, ScrollbarObject
 from ..object import PygameObject
-from ...rendering import CircleStyle, LineChartStyle, LineStyle, ProgressBarStyle, RectRenderer, RectStyle, SliderStyle, WindowStyle, ScrollbarStyle
+from ...rendering import CircleStyle, LineChartStyle, LineStyle, ProgressBarStyle, RectRenderer, RectStyle, SliderStyle, WindowStyle, ScrollbarStyle, IconButtonStyle
 from ...resources import Icons
-from ...utils import Anchor, Vec2
+from ...utils import Anchor, Vec2, clamp
 
 
 class UIObjectFactory(SubObjectFactory):
@@ -112,11 +112,8 @@ class UIObjectFactory(SubObjectFactory):
         
         return obj
     
-    def make_window(
-            self, position: Vec2, dims: Vec2, style: Optional[WindowStyle | str],
-            title: str, draggable: bool = False,
-            rotation: float = 0.0, scale: float = 1.0, layer: int = 0, anchor: Vec2 = Anchor.C, cache: bool = True
-    ) -> WindowObject:
+    def make_window(self, position: Vec2, dims: Vec2, title: str, draggable: bool = False, style: Optional[WindowStyle | str] = None,
+                    rotation: float = 0.0, scale: float = 1.0, layer: int = 0, anchor: Vec2 = Anchor.C, cache: bool = True) -> WindowObject:
         
         window_style = self._get_resource(style, WindowStyle)
         bg_style = window_style.bg_style
@@ -147,12 +144,12 @@ class UIObjectFactory(SubObjectFactory):
         
         
         show_header = window_style.show_header
-        header_style = window_style.header_style
+        header_style = self._get_resource(window_style.header_style, RectStyle)
         header_height = window_style.header_height
         header_margin = window_style.header_margin
         
         show_header_buttons = window_style.show_header_buttons
-        icon_buttons_style = window_style.icon_buttons_style
+        icon_buttons_style = self._get_resource(window_style.icon_buttons_style, IconButtonStyle)
         
         obj: WindowObject
         
@@ -194,6 +191,32 @@ class UIObjectFactory(SubObjectFactory):
         if title_panel is not None:
             obj.stack_y(title_panel)
         obj.stack_y(panel)
+        
+        if window_style.show_scrollbar:
+            scrollbar_width = window_style.scrollbar_width
+            scrollbar_gutter = window_style.scrollbar_gutter
+            scrollbar_style = self._get_resource(window_style.scrollbar_style, ScrollbarStyle)
+            
+            scrollbar = self.make_scrollbar(
+                Vec2(), Vec2(scrollbar_width, panel_height - margin*2),
+                scrollbar_style, layer=layer + 1
+            )
+            obj.add_child(scrollbar, Anchor.C)
+            scrollbar.make_attribute_dynamic(
+                "pos",
+                lambda: panel.pos + Vec2(panel.width * 0.5 + scrollbar_gutter + scrollbar_width * 0.5, 0)
+            )
+            obj.attach_scrollbar(scrollbar)
+            
+            def _on_panel_scroll(o: PygameObject, scroll: int, pos: Vec2):
+                max_offset = panel.get_scroll_range_y()
+                if max_offset <= 0:
+                    return
+                scrollbar.value = clamp(scrollbar.value - scroll * 40 / max_offset, 0.0, 1.0)
+            
+            panel.do_on_scroll(_on_panel_scroll)
+            panel.make_attribute_dynamic("scroll_offset", lambda: Vec2(0, scrollbar.value * panel.get_scroll_range_y()))
+        
         
         if draggable:
             drag_handle = header if header is not None else (title_panel if title_panel is not None else obj)

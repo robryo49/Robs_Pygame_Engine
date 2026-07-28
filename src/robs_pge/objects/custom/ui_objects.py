@@ -451,6 +451,10 @@ class ScrollbarObject(RectObject):
     # region PROPERTIES
     
     @property
+    def handle_width(self):
+        return self._handle.width
+    
+    @property
     def handle_height(self) -> float:
         return self._handle.height
     
@@ -465,7 +469,7 @@ class ScrollbarObject(RectObject):
     def normalized_value(self) -> float:
         if self._handle_movement_range == 0:
             return 0.0
-        return (self._handle.y_pos - self._min_y) / self._handle_movement_range
+        return (self._max_y - self._handle.y_pos) / self._handle_movement_range
     
     @property
     def value(self) -> float:
@@ -474,7 +478,7 @@ class ScrollbarObject(RectObject):
     @value.setter
     def value(self, value: float):
         value = clamp(value, 0.0, 1.0)
-        self._handle.y_pos = self._min_y + (value * self._handle_movement_range)
+        self._handle.y_pos = self._max_y - (value * self._handle_movement_range)
     
     # endregion
     

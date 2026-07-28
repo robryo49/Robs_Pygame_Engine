@@ -1,7 +1,7 @@
 from typing import Optional
 
 from .primitive_objects import RectObject, TextObject
-from .ui_objects import LayoutObject
+from .ui_objects import LayoutObject, ScrollbarObject
 from ..object import PygameObject
 from ...rendering import RectRenderer
 from ...utils import Anchor, DictCollection, Transform, Vec2, ObjectFlags
@@ -21,6 +21,8 @@ class WindowObject(LayoutObject):
         self._header = header
         self._title_panel = title_panel
         self._title_object = title_object
+        
+        self._scrollbar: Optional[ScrollbarObject] = None
         
     # region PROPERTIES
     
@@ -55,6 +57,39 @@ class WindowObject(LayoutObject):
     @property
     def closed(self):
         return self.has_flag(ObjectFlags.HIDDEN)
+    
+    @property
+    def scrollbar(self) -> Optional[ScrollbarObject]:
+        return self._scrollbar
+    
+    def attach_scrollbar(self, scrollbar: ScrollbarObject):
+        self._scrollbar = scrollbar
+        scrollbar.hide()
+        return self
+    
+    def _update_self(self, dt: float):
+        super()._update_self(dt)
+        self._sync_scrollbar()
+    
+    def _sync_scrollbar(self):
+        scrollbar = self._scrollbar
+        if scrollbar is None:
+            return
+        
+        max_offset = self.content.get_scroll_range_y()
+        needed = max_offset > 0.5
+        
+        if needed != scrollbar.visible:
+            scrollbar.visible = needed
+            if not needed:
+                scrollbar.value = 0.0
+                self.content.scroll_offset = Vec2()
+        
+        if needed:
+            viewport_height = self.content.get_viewport_height()
+            content_height = viewport_height + max_offset
+            ratio = viewport_height / content_height if content_height > 0 else 1.0
+            scrollbar.handle_height = max(scrollbar.handle_width, viewport_height * ratio)
     
     # endregion
     
