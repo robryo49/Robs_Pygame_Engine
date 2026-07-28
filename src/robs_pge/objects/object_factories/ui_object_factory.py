@@ -195,7 +195,6 @@ class UIObjectFactory(SubObjectFactory):
             scrollbar_style, layer=layer + 1
         )
         
-        
         obj = self._make_object(WindowObject, position, rotation, scale, RectRenderer(dims, bg_style, cache), layer, anchor, title, panel, header, title_panel, title_object, scrollbar)
         obj.invert_up_down()
         
@@ -227,7 +226,7 @@ class UIObjectFactory(SubObjectFactory):
             drag_handle = header if header is not None else (title_panel if title_panel is not None else obj)
             drag_handle.make_draggable(1, target=obj)
             
-        obj._sync_scrollbar()
+        obj.sync_scrollbar()
         
         return obj
     

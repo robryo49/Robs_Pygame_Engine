@@ -64,7 +64,7 @@ class WindowObject(LayoutObject):
     
     def _update_self(self, dt: float):
         super()._update_self(dt)
-        self._sync_scrollbar()
+        self.sync_scrollbar()
         
     def show_scrollbar(self):
         if self._scrollbar.visible:
@@ -107,7 +107,7 @@ class WindowObject(LayoutObject):
         clip = self.content.children_clip_area
         clip.width = self.content.width - clip.x * 2
     
-    def _sync_scrollbar(self):
+    def sync_scrollbar(self):
         max_offset = self.content.get_scroll_range_y()
         needed = max_offset > 0.5
         
