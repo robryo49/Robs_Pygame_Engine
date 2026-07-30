@@ -339,12 +339,10 @@ class HideOnCameraZoomBehavior(ObjectBehavior):
     
     def on_update(self, dt: float):
         hide = False
-        if self._max_zoom is not None:
-            if self._max_zoom < self._camera.zoom:
-                hide = True
-        if self._min_zoom is not None:
-            if self._min_zoom > self._camera.zoom:
-                hide = True
+        if self._max_zoom is not None and self._max_zoom < self._camera.zoom:
+            hide = True
+        if self._min_zoom is not None and self._min_zoom > self._camera.zoom:
+            hide = True
         
         if hide:
             self.owner.add_flag(ObjectFlags.HIDDEN)
