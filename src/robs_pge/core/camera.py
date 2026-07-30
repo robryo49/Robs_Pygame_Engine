@@ -5,7 +5,7 @@ from ..utils import FRect, Transform, Vec2, Vec2Like, invert_y
 
 
 class Camera:
-    def __init__(self, display: Display):
+    def __init__(self, display: Display, invert_y_axis: bool = True):
         
         self._display: Display = display
         
@@ -14,11 +14,13 @@ class Camera:
         
         self._transform: Transform = Transform()
         
+        self._invert_y: bool = invert_y_axis
+        
         self._world_aabb: FRect = self._get_world_aabb()
         
         self._min_zoom: Optional[float] = None
         self._max_zoom: Optional[float] = None
-
+    
     # region PROPERTIES
     
     @property
@@ -29,6 +31,16 @@ class Camera:
     def transform(self) -> Transform:
         return self._transform
     
+    # region invert_y
+    @property
+    def invert_y(self) -> bool:
+        return self._invert_y
+    
+    @invert_y.setter
+    def invert_y(self, value: bool) -> None:
+        self._invert_y = value
+    # endregion
+    
     # region pos
     @property
     def pos(self) -> Vec2:
@@ -37,7 +49,7 @@ class Camera:
     @pos.setter
     def pos(self, value: Vec2Like) -> None:
         self.transform.pos = Vec2(value)
-        
+    
     def move(self, value: Vec2Like) -> "Camera":
         self.pos += Vec2(value)
         return self
@@ -50,7 +62,7 @@ class Camera:
         self.pos.y += dy
         return self
     # endregion
-        
+    
     # region rotation
     @property
     def rotation(self) -> float:
@@ -59,7 +71,7 @@ class Camera:
     @rotation.setter
     def rotation(self, value: float) -> None:
         self.transform.rotation = value
-        
+    
     def rotate(self, value: float) -> "Camera":
         self.rotation += value
         return self
@@ -114,7 +126,7 @@ class Camera:
     def max_zoom(self, value):
         self._max_zoom = value
     # endregion
-
+    
     @property
     def display_dims(self) -> Vec2:
         return self._display_dims
@@ -182,17 +194,17 @@ class Camera:
     
     def world_to_screen_pos(self, world_pos: Vec2) -> Vec2:
         x, y = self.transform.apply_inverse(world_pos) + self.display_center
-        return Vec2(x, self.display_height - y)
+        return Vec2(x, self.display_height - y if self._invert_y else y)
     
     def screen_to_world_pos(self, screen_pos: Vec2) -> Vec2:
-        y = self.display_height - screen_pos.y
+        y = self.display_height - screen_pos.y if self._invert_y else screen_pos.y
         return self.transform.apply(Vec2(screen_pos.x, y) - self.display_center)
     
     def world_to_screen_vec(self, vec: Vec2) -> Vec2:
-        return invert_y(vec) / self.transform.scale
+        return (invert_y(vec) if self._invert_y else vec) / self.transform.scale
     
     def screen_to_world_vec(self, vec: Vec2) -> Vec2:
-        return invert_y(vec) * self.transform.scale
+        return self.transform.scale * (invert_y(vec) if self._invert_y else vec)
     
     
     def update(self, dt: float) -> "Camera":

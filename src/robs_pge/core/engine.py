@@ -31,7 +31,7 @@ class Engine:
         
         self._frame_timer: FrameTimer = self._create_frame_timer()
         
-        self._default_camera: Camera = Camera(self._display).move(self._display.dims*0.5).update(self.clock.dtime)
+        self._default_camera: Camera = Camera(self._display, invert_y_axis=False).move(self._display.dims*0.5).update(self.clock.dtime)
         
         self._state_manager: StateManager = self._create_state_manager()
         self._renderer: Renderer = self._create_renderer(self.display, self._default_camera)
