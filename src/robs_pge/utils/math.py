@@ -140,17 +140,6 @@ class Anchor:
     BR =    Vec2(1,     0)
     B =     Vec2(0.5,   0)
     BL =    Vec2(0,     0)
-    
-class UIAnchor:
-    C =     Vec2(0.5,   0.5)
-    L =     Vec2(0,     0.5)
-    TL =    Vec2(0,     0)
-    T =     Vec2(0.5,   0)
-    TR =    Vec2(1,     0)
-    R =     Vec2(1,     0.5)
-    BR =    Vec2(1,     1)
-    B =     Vec2(0.5,   1)
-    BL =    Vec2(0,     1)
 
 
 # region GENERIC ARITHMETIC

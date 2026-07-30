@@ -10,7 +10,7 @@ from ..custom import LineChartObject, ProgressBarObject, SliderObject, WindowObj
 from ..object import PygameObject
 from ...rendering import CircleStyle, LineChartStyle, LineStyle, ProgressBarStyle, RectRenderer, RectStyle, SliderStyle, WindowStyle, ScrollbarStyle, IconButtonStyle
 from ...resources import Icons
-from ...utils import Anchor, Vec2, clamp, UIAnchor
+from ...utils import Anchor, Vec2, clamp
 
 
 class UIObjectFactory(SubObjectFactory):
@@ -203,6 +203,7 @@ class UIObjectFactory(SubObjectFactory):
             WindowObject, position, rotation, scale, RectRenderer(dims, bg_style, cache), layer, anchor,
             title, panel, header, title_panel, title_object, scrollbar
         )
+        obj.invert_up_down()
         
         row = 0
         if header is not None:
@@ -215,7 +216,7 @@ class UIObjectFactory(SubObjectFactory):
         obj.add_object(panel, 0, row)
         obj.fix_col_width(0, panel_width)
         
-        obj.add_object(scrollbar, 1, row, anchor=UIAnchor.R)
+        obj.add_object(scrollbar, 1, row, anchor=Anchor.R)
         obj.fix_col_width(1, scrollbar_col_width)
         obj.set_cell_padding(Vec2(window_style.scrollbar_edge_margin, 0), (1, row))
         

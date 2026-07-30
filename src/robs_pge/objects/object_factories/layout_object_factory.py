@@ -76,7 +76,7 @@ class LayoutObjectFactory(SubObjectFactory):
         )
     
     def make_object_stack[T: PygameObject](
-            self, position: Vec2, object_constructor: Callable[..., T], data: dict[str, list[Any]], horizontal: bool = False, invert_y: bool = False, invert_x=False,
+            self, position: Vec2, object_constructor: Callable[..., T], data: dict[str, list[Any]], horizontal: bool = False, invert_y: bool = True, invert_x=False,
             width: Optional[int | float] = None, height: Optional[int | float] = None, spacing: int = 10, margin: Optional[int] = None, style: Optional[RectStyle | str] = None, object_grid_anchors: Vec2 = Anchor.C,
             rotation: float = 0.0, scale: float = 1.0, layer: int = 0, anchor: Vec2 = Anchor.C, cache: bool=True
     ) -> LayoutObject:
@@ -114,7 +114,7 @@ class LayoutObjectFactory(SubObjectFactory):
             self, position: Vec2, objects: list[list[PygameObject | tuple[PygameObject, int] | tuple[PygameObject, int, int]]],
             align_columns: bool = True, align_rows: bool = True, cell_anchor: Vec2 = Anchor.C,
             width: Optional[int | float] = None, height: Optional[int | float] = None, spacing: int = 10, margin: Optional[int] = None,
-            invert_x: bool = True, invert_y: bool = False, style: Optional[RectStyle | str] = None,
+            invert_x: bool = True, invert_y: bool = True, style: Optional[RectStyle | str] = None,
             rotation: float = 0.0, scale: float = 1.0, layer: int = 0, anchor: Vec2 = Anchor.C, cache: bool = True
     ) -> LayoutObject:
     
@@ -174,7 +174,7 @@ class LayoutObjectFactory(SubObjectFactory):
     
     def stack_objects_vertical(
             self, position: Vec2, objects: list[PygameObject | tuple[PygameObject, int]],
-            cell_anchor: Vec2 = Anchor.C, width: Optional[int | float] = None, height: Optional[int | float] = None, spacing: int = 10, margin: Optional[int] = None, invert_y: bool = False, style: Optional[RectStyle | str] = None,
+            cell_anchor: Vec2 = Anchor.C, width: Optional[int | float] = None, height: Optional[int | float] = None, spacing: int = 10, margin: Optional[int] = None, invert_y: bool = True, style: Optional[RectStyle | str] = None,
             rotation: float = 0.0, scale: float = 1.0, layer: int = 0, anchor: Vec2 = Anchor.C, cache: bool = True
     ) -> LayoutObject:
         
