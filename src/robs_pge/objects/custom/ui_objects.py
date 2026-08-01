@@ -528,7 +528,7 @@ class LineChartObject(RectObject):
         self._dirty = True
         
         self._line = line
-        self.add_child(line, Anchor.BL)
+        self.add_child(line, Anchor.TL)
     
     # region PROPERTIES
     

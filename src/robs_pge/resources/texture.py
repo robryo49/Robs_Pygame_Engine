@@ -80,7 +80,7 @@ class Texture:
     
     
     def get_at_uv(self, uv: Vec2):
-        pos = self.dims.elementwise() * invert_uv_y(uv)
+        pos = self.dims.elementwise() * uv
         return self.get_at_pos(pos)
     
     def get_at_pos(self, pos: Vec2):

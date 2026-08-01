@@ -47,7 +47,7 @@ def surface_pos_from_pixel_pos(pixel_pos: Vec2, dims: Vec2, rotation: float=0):
 
 
 def surface_pos_from_uv_pos(uv: Vec2, dims: Vec2, rotation: float=0):
-    return surface_pos_from_pixel_pos(invert_uv_y(uv).elementwise() * dims, dims, rotation)
+    return surface_pos_from_pixel_pos(uv.elementwise() * dims, dims, rotation)
 
 def random(a, b):
     return rand() * (b - a) + a
