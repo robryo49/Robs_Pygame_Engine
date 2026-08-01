@@ -3,7 +3,7 @@ from typing import Optional
 from .sub_factory import SubObjectFactory
 from ..custom import *
 from ...rendering import *
-from ...utils import Anchor, Transform, Vec2, inf
+from ...utils import Anchor, Transform, Vec2, inf, Color
 
 
 class DebugObjectFactory(SubObjectFactory):
@@ -57,9 +57,9 @@ class DebugObjectFactory(SubObjectFactory):
     ) -> DebugOverlay:
         obj = DebugOverlay(
             Transform(position, rotation, scale),
-            RectRenderer(Vec2(), None, cache),
+            RectRenderer(Vec2(), RectStyle(Color(255, 255, 255, 200)), cache),
             self.factory.services, layer, anchor
-        ).skip_rendering()
+        ).enable_rendering()
         
         obj.min_col = min_col
         obj.max_col = max_col

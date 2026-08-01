@@ -131,15 +131,15 @@ class Easing:
 
 
 class Anchor:
-    C =     Vec2(0.5,   0.5)
+    TL =    Vec2(0,     0)
+    T =     Vec2(0.5,   0)
+    TR =    Vec2(1,     0)
     L =     Vec2(0,     0.5)
-    TL =    Vec2(0,     1)
-    T =     Vec2(0.5,   1)
-    TR =    Vec2(1,     1)
+    C =     Vec2(0.5,   0.5)
     R =     Vec2(1,     0.5)
-    BR =    Vec2(1,     0)
-    B =     Vec2(0.5,   0)
-    BL =    Vec2(0,     0)
+    BL =    Vec2(0,     1)
+    B =     Vec2(0.5,   1)
+    BR =    Vec2(1,     1)
 
 
 # region GENERIC ARITHMETIC

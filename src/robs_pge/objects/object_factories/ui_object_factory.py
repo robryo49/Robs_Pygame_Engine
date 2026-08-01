@@ -203,7 +203,6 @@ class UIObjectFactory(SubObjectFactory):
             WindowObject, position, rotation, scale, RectRenderer(dims, bg_style, cache), layer, anchor,
             title, panel, header, title_panel, title_object, scrollbar
         )
-        obj.invert_up_down()
         
         row = 0
         if header is not None:
