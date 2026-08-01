@@ -57,9 +57,9 @@ class DebugObjectFactory(SubObjectFactory):
     ) -> DebugOverlay:
         obj = DebugOverlay(
             Transform(position, rotation, scale),
-            RectRenderer(Vec2(), RectStyle(Color(255, 255, 255, 200)), cache),
+            RectRenderer(Vec2(), None, cache),
             self.factory.services, layer, anchor
-        ).enable_rendering()
+        ).skip_rendering()
         
         obj.min_col = min_col
         obj.max_col = max_col

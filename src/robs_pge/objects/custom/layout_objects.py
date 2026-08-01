@@ -294,7 +294,7 @@ class LayoutObject(RectObject):
     
     def apply_scroll(self, scroll: int):
         max_offset = self.get_scroll_range_y()
-        new_y = clamp(self.scroll_offset.y - scroll * self._scroll_speed, 0, max_offset)
+        new_y = clamp(self.scroll_offset.y + scroll * self._scroll_speed, 0, max_offset)
         self.scroll_offset = Vec2(self.scroll_offset.x, new_y)
     
     
@@ -322,7 +322,7 @@ class LayoutObject(RectObject):
             cell_y = self.height - self._outer_padding.y * 2 - cell_y
         
         
-        return Vec2(cell_x, cell_y) + self._outer_padding - self.get_anchor_offset(Anchor.C) - Vec2(0, self.get_scroll_range_y()) + self._scroll_offset
+        return Vec2(cell_x, cell_y) + self._outer_padding - self.get_anchor_offset(Anchor.C) - self._scroll_offset
     
     
     

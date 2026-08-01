@@ -474,7 +474,7 @@ class ScrollbarObject(RectObject):
     def normalized_value(self) -> float:
         if self._handle_movement_range == 0:
             return 0.0
-        return (self._max_y - self._handle.y_pos) / self._handle_movement_range
+        return 0.5 + self._handle.y_pos / self._handle_movement_range
     
     @property
     def value(self) -> float:
@@ -483,7 +483,7 @@ class ScrollbarObject(RectObject):
     @value.setter
     def value(self, value: float):
         value = clamp(value, 0.0, 1.0)
-        self._handle.y_pos = self._max_y - (value * self._handle_movement_range)
+        self._handle.y_pos = (value - 0.5) * self._handle_movement_range
         
     def set_value(self, value: float):
         self.value = value
@@ -696,7 +696,10 @@ class LineChartObject(RectObject):
                 
                 for point in self._data_points:
                     if min_x_value <= point.x <= max_x_value and min_y_value <= point.y <= max_y_value:
-                        points.append(Vec2(self._pad_x + (point.x - min_x_value)*x_fac, self._pad_y + (point.y - min_y_value)*y_fac))
+                        points.append(Vec2(
+                            self._pad_x + (point.x - min_x_value) * x_fac,
+                            (self.height - self._pad_y) - (point.y - min_y_value) * y_fac
+                        ))
             
             self._line.points = points
             

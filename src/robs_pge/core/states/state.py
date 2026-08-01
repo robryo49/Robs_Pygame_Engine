@@ -370,6 +370,7 @@ class State:
             self.ui_objects.add(o)
     
     def add_window(self, window: WindowObject, group: str = "main"):
+        self.add_ui_object(window)
         self.windows.register(window, group)
         
     def add_quick_debug(self, getter: Callable, template: str = "{}"):
