@@ -4,7 +4,7 @@ from .sub_factory import SubObjectFactory
 from ..custom import LayoutObject
 from ..object import PygameObject
 from ...rendering import RectRenderer, RectStyle
-from ...utils import Anchor, Vec2, inf, validate_signature
+from ...utils import Anchor, StyleOrName, Vec2, inf, validate_signature
 
 
 class LayoutObjectFactory(SubObjectFactory):
@@ -29,7 +29,8 @@ class LayoutObjectFactory(SubObjectFactory):
     
     
     def make_grid_layout(
-            self, position: Vec2, width: Optional[int | float] = None, height: Optional[int | float] = None, min_col=0, max_col=inf, min_row=0, max_row=inf, invert_x=False, invert_y=False, style: Optional[RectStyle | str] = None,
+            self, position: Vec2, width: Optional[float] = None, height: Optional[float] = None, min_col=0, max_col=inf, min_row=0, max_row=inf,
+            invert_x=False, invert_y=False, style: StyleOrName[RectStyle] = None,
             rotation: float = 0.0, scale: float = 1.0, layer: int = 0, anchor: Vec2 = Anchor.C, cache: bool=True
     ) -> LayoutObject:
         
@@ -58,7 +59,7 @@ class LayoutObjectFactory(SubObjectFactory):
         return obj
     
     def make_vertical_layout(
-            self, position: Vec2, width: Optional[int | float] = None, height: Optional[int | float] = None, min_row=0, max_row=inf, invert_y=False, style: Optional[RectStyle | str] = None,
+            self, position: Vec2, width: Optional[float] = None, height: Optional[float] = None, min_row=0, max_row=inf, invert_y=False, style: StyleOrName[RectStyle] = None,
             rotation: float = 0.0, scale: float = 1.0, layer: int = 0, anchor: Vec2 = Anchor.C, cache: bool=True
     ) -> LayoutObject:
         return self.make_grid_layout(
@@ -67,7 +68,7 @@ class LayoutObjectFactory(SubObjectFactory):
         )
     
     def make_horizontal_layout(
-            self, position: Vec2, width: Optional[int | float] = None, height: Optional[int | float] = None, min_col=0, max_col=inf, invert_x=False, style: Optional[RectStyle | str] = None,
+            self, position: Vec2, width: Optional[float] = None, height: Optional[float] = None, min_col=0, max_col=inf, invert_x=False, style: StyleOrName[RectStyle] = None,
             rotation: float = 0.0, scale: float = 1.0, layer: int = 0, anchor: Vec2 = Anchor.C, cache: bool=True
     ) -> LayoutObject:
         return self.make_grid_layout(
@@ -77,7 +78,7 @@ class LayoutObjectFactory(SubObjectFactory):
     
     def make_object_stack[T: PygameObject](
             self, position: Vec2, object_constructor: Callable[..., T], data: dict[str, list[Any]], horizontal: bool = False, invert_y: bool = False, invert_x=False,
-            width: Optional[int | float] = None, height: Optional[int | float] = None, spacing: int = 10, margin: Optional[int] = None, style: Optional[RectStyle | str] = None, object_grid_anchors: Vec2 = Anchor.C,
+            width: Optional[float] = None, height: Optional[float] = None, spacing: int = 10, margin: Optional[int] = None, style: StyleOrName[RectStyle] = None, object_grid_anchors: Vec2 = Anchor.C,
             rotation: float = 0.0, scale: float = 1.0, layer: int = 0, anchor: Vec2 = Anchor.C, cache: bool=True
     ) -> LayoutObject:
         
@@ -113,8 +114,8 @@ class LayoutObjectFactory(SubObjectFactory):
     def stack_objects_in_grid(
             self, position: Vec2, objects: list[list[PygameObject | tuple[PygameObject, int] | tuple[PygameObject, int, int]]],
             align_columns: bool = True, align_rows: bool = True, cell_anchor: Vec2 = Anchor.C,
-            width: Optional[int | float] = None, height: Optional[int | float] = None, spacing: int = 10, margin: Optional[int] = None,
-            invert_x: bool = False, invert_y: bool = False, style: Optional[RectStyle | str] = None,
+            width: Optional[float] = None, height: Optional[float] = None, spacing: int = 10, margin: Optional[int] = None,
+            invert_x: bool = False, invert_y: bool = False, style: StyleOrName[RectStyle] = None,
             rotation: float = 0.0, scale: float = 1.0, layer: int = 0, anchor: Vec2 = Anchor.C, cache: bool = True
     ) -> LayoutObject:
     
@@ -174,7 +175,8 @@ class LayoutObjectFactory(SubObjectFactory):
     
     def stack_objects_vertical(
             self, position: Vec2, objects: list[PygameObject | tuple[PygameObject, int]],
-            cell_anchor: Vec2 = Anchor.C, width: Optional[int | float] = None, height: Optional[int | float] = None, spacing: int = 10, margin: Optional[int] = None, invert_y: bool = False, style: Optional[RectStyle | str] = None,
+            cell_anchor: Vec2 = Anchor.C, width: Optional[float] = None, height: Optional[float] = None,
+            spacing: int = 10, margin: Optional[int] = None, invert_y: bool = False, style: StyleOrName[RectStyle] = None,
             rotation: float = 0.0, scale: float = 1.0, layer: int = 0, anchor: Vec2 = Anchor.C, cache: bool = True
     ) -> LayoutObject:
         
@@ -195,7 +197,7 @@ class LayoutObjectFactory(SubObjectFactory):
     
     def stack_objects_horizontal(
             self, position: Vec2, objects: list[PygameObject | tuple[PygameObject, int]],
-            cell_anchor: Vec2 = Anchor.C, width: Optional[int | float] = None, height: Optional[int | float] = None, spacing: int = 10, margin: Optional[int] = None, invert_x: bool = False, style: Optional[RectStyle | str] = None,
+            cell_anchor: Vec2 = Anchor.C, width: Optional[float] = None, height: Optional[float] = None, spacing: int = 10, margin: Optional[int] = None, invert_x: bool = False, style: StyleOrName[RectStyle] = None,
             rotation: float = 0.0, scale: float = 1.0, layer: int = 0, anchor: Vec2 = Anchor.C, cache: bool = True
     ) -> LayoutObject:
         

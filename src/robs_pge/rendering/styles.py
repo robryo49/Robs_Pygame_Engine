@@ -1,7 +1,7 @@
 from dataclasses import dataclass, field, replace
 from typing import Optional
 
-from ..utils import Color, Font, Vec2, Colors, Anchor
+from ..utils import Color, Font, Vec2, Colors, Anchor, StyleOrName
 
 
 @dataclass

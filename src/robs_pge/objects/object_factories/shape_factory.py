@@ -3,14 +3,14 @@ from typing import Optional
 from .sub_factory import SubObjectFactory
 from ..custom import RectObject, CircleObject, LineObject
 from ...rendering import RectRenderer, RectStyle, CircleRenderer, CircleStyle, LineRenderer, LineStyle
-from ...utils import Vec2, Anchor
+from ...utils import StyleOrName, Vec2, Anchor
 
 
 
 class ShapeFactory(SubObjectFactory):
     
     def make_rect(
-            self, position: Vec2, dims: Vec2, style: Optional[RectStyle | str] = None,
+            self, position: Vec2, dims: Vec2, style: StyleOrName[RectStyle] = None,
             rotation: float = 0.0, scale: float = 1.0, layer: int = 0, anchor: Vec2 = Anchor.C, cache: bool = True
     ) -> RectObject:
         
@@ -20,7 +20,7 @@ class ShapeFactory(SubObjectFactory):
         return obj
     
     def make_circle(
-            self, position: Vec2, radius: int, style: Optional[CircleStyle | str] = None,
+            self, position: Vec2, radius: int, style: StyleOrName[CircleStyle] = None,
             rotation: float = 0.0, scale: float = 1.0, layer: int = 0, anchor: Vec2 = Anchor.C, cache: bool = True
     ) -> CircleObject:
         
@@ -30,7 +30,7 @@ class ShapeFactory(SubObjectFactory):
         return obj
     
     def make_line(
-            self, position: Vec2, points: list[Vec2], style: Optional[LineStyle | str] = None,
+            self, position: Vec2, points: list[Vec2], style: StyleOrName[LineStyle] = None,
             rotation: float = 0.0, scale: float = 1.0, layer: int = 0, anchor: Vec2 = Anchor.C, cache: bool = True
     ) -> LineObject:
         

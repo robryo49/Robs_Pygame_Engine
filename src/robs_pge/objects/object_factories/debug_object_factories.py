@@ -52,7 +52,7 @@ class DebugObjectFactory(SubObjectFactory):
     
     
     def make_debug_overlay(
-            self, position: Vec2, width: Optional[int | float] = None, height: Optional[int | float] = None, min_col=0, max_col=inf, min_row=0, max_row=inf, invert_x=False, invert_y=False,
+            self, position: Vec2, width: Optional[float] = None, height: Optional[float] = None, min_col=0, max_col=inf, min_row=0, max_row=inf, invert_x=False, invert_y=False,
             rotation: float = 0.0, scale: float = 1.0, layer: int = 0, anchor: Vec2 = Anchor.C, cache: bool=True
     ) -> DebugOverlay:
         obj = DebugOverlay(

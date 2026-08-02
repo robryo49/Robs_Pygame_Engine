@@ -4,7 +4,7 @@ from typing import Callable, Optional
 import numpy as np
 
 from ...resources import Texture
-from ...utils import Color, Colors, Vec2, random
+from ...utils import Color, Colors, Vec2, random, EasingFunctionType
 from .particle import FadingTypes
 from .particle_system import ParticleSystem
 
@@ -28,7 +28,7 @@ class BurstParticleEmitter(ParticleEmitter):
             spread: float,
             lifetime: float | tuple[float, float],
             fade_duration: float = 0,
-            fade_easing: Callable[[float], float] = lambda f: f,
+            fade_easing: EasingFunctionType = lambda f: f,
             fade_type: int = FadingTypes.NONE,
             color: Optional[Color]=None,
             texture: Optional[Texture]=None

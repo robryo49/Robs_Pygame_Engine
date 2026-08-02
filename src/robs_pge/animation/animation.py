@@ -1,11 +1,11 @@
 from typing import Callable, Optional
 
 from .tween import Tween
-from ..utils import Easing, add, subtract, multiply, power
+from ..utils import Easing, add, subtract, multiply, power, EasingFunctionType
 
 
 class Animation:
-    def __init__(self, obj: object, attr: str, duration: float, easing_function: Callable[[float], float] = Easing.LINEAR):
+    def __init__(self, obj: object, attr: str, duration: float, easing_function: EasingFunctionType = Easing.LINEAR):
         self._obj = obj
         self._attr = attr
         
@@ -67,7 +67,7 @@ class Animation:
 
 
 class AdderAnimation(Animation):
-    def __init__(self, obj: object, attr: str, value, duration: float, easing_function: Callable[[float], float] = Easing.LINEAR):
+    def __init__(self, obj: object, attr: str, value, duration: float, easing_function: EasingFunctionType = Easing.LINEAR):
         super().__init__(obj, attr, duration, easing_function)
         
         self._adder = value
@@ -105,7 +105,7 @@ class AdderAnimation(Animation):
 
 
 class SetterAnimation(AdderAnimation):
-    def __init__(self, obj: object, attr: str, value, duration: float, easing_function: Callable[[float], float] = Easing.LINEAR, start_value: Optional[float] = None):
+    def __init__(self, obj: object, attr: str, value, duration: float, easing_function: EasingFunctionType = Easing.LINEAR, start_value: Optional[float] = None):
         super().__init__(obj, attr, subtract(value, getattr(obj, attr)), duration, easing_function)
         
         self._target = value
@@ -130,7 +130,7 @@ class SetterAnimation(AdderAnimation):
 
 
 class MultiplierAnimation(Animation):
-    def __init__(self, obj: object, attr: str, value, duration: float, easing_function: Callable[[float], float] = Easing.LINEAR):
+    def __init__(self, obj: object, attr: str, value, duration: float, easing_function: EasingFunctionType = Easing.LINEAR):
         super().__init__(obj, attr, duration, easing_function)
         
         self._multiplier = value

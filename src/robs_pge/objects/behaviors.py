@@ -5,7 +5,7 @@ from typing import Any, Callable, Optional, TYPE_CHECKING
 from .behavior import ObjectBehavior
 from ..animation import AdderAnimation, Animation, AnimationManager, MultiplierAnimation, SetterAnimation
 from ..events import Event
-from ..utils import ObjectFlags, Vec2, clamp, inf, lerp
+from ..utils import ObjectFlags, Vec2, clamp, inf, lerp, EasingFunctionType
 
 if TYPE_CHECKING:
     from ..core import Camera
@@ -161,21 +161,21 @@ class AnimationOnHoverBehavior(ObjectBehavior):
 
 
 class AddToAttributeOnHoverBehavior(AnimationOnHoverBehavior):
-    def __init__(self, attribute: str, value, duration: float, easing_function: Callable[[float], float]):
+    def __init__(self, attribute: str, value, duration: float, easing_function: EasingFunctionType):
         super().__init__(
             lambda: AdderAnimation(self._owner, attribute, value, duration, easing_function),
             lambda: AdderAnimation(self._owner, attribute, -value, duration, easing_function)
         )
 
 class MultiplyAttributeOnHoverBehavior(AnimationOnHoverBehavior):
-    def __init__(self, attribute: str, multiplier, duration: float, easing_function: Callable[[float], float]):
+    def __init__(self, attribute: str, multiplier, duration: float, easing_function: EasingFunctionType):
         super().__init__(
             lambda: MultiplierAnimation(self._owner, attribute, multiplier, duration, easing_function),
             lambda: MultiplierAnimation(self._owner, attribute, 1 / multiplier, duration, easing_function)
         )
 
 class SetAttributeOnHoverBehavior(AnimationOnHoverBehavior):
-    def __init__(self, attribute: str, start_value, end_value, duration: float, easing_function: Callable[[float], float]):
+    def __init__(self, attribute: str, start_value, end_value, duration: float, easing_function: EasingFunctionType):
         super().__init__(
             lambda: SetterAnimation(self._owner, attribute, end_value, duration, easing_function, start_value),
             lambda: SetterAnimation(self._owner, attribute, start_value, duration, easing_function, end_value)
@@ -183,21 +183,21 @@ class SetAttributeOnHoverBehavior(AnimationOnHoverBehavior):
 
 
 class AddToAttributeOnClickBehavior(AnimationOnClickBehavior):
-    def __init__(self, button: int, attribute: str, value, duration: float, easing_function: Callable[[float], float]):
+    def __init__(self, button: int, attribute: str, value, duration: float, easing_function: EasingFunctionType):
         super().__init__(button,
                          lambda: AdderAnimation(self._owner, attribute, value, duration, easing_function),
                          lambda: AdderAnimation(self._owner, attribute, -value, duration, easing_function)
                          )
 
 class MultiplyAttributeOnClickBehavior(AnimationOnClickBehavior):
-    def __init__(self, button: int, attribute: str, multiplier, duration: float, easing_function: Callable[[float], float]):
+    def __init__(self, button: int, attribute: str, multiplier, duration: float, easing_function: EasingFunctionType):
         super().__init__(button,
                          lambda: MultiplierAnimation(self._owner, attribute, multiplier, duration, easing_function),
                          lambda: MultiplierAnimation(self._owner, attribute, 1 / multiplier, duration, easing_function)
                          )
 
 class SetAttributeOnClickBehavior(AnimationOnClickBehavior):
-    def __init__(self, button: int, attribute: str, start_value, end_value, duration: float, easing_function: Callable[[float], float]):
+    def __init__(self, button: int, attribute: str, start_value, end_value, duration: float, easing_function: EasingFunctionType):
         super().__init__(button,
                          lambda: SetterAnimation(self._owner, attribute, end_value, duration, easing_function, start_value),
                          lambda: SetterAnimation(self._owner, attribute, start_value, duration, easing_function, end_value)

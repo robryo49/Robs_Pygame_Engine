@@ -10,7 +10,7 @@ from ..custom import LineChartObject, ProgressBarObject, SliderObject, WindowObj
 from ..object import PygameObject
 from ...rendering import CircleStyle, LineChartStyle, LineStyle, ProgressBarStyle, RectRenderer, RectStyle, SliderStyle, WindowStyle, ScrollbarStyle, IconButtonStyle
 from ...resources import Icons
-from ...utils import Anchor, Vec2, clamp
+from ...utils import Anchor, StyleOrName, Vec2, clamp
 
 
 class UIObjectFactory(SubObjectFactory):
@@ -22,7 +22,7 @@ class UIObjectFactory(SubObjectFactory):
         self.debug = DebugObjectFactory(object_factory)
     
     def make_slider(
-            self, position: Vec2, dims: Vec2, min_value: float, max_value: float, step: Optional[float] = None, start_value=None, style: Optional[SliderStyle | str] = None,
+            self, position: Vec2, dims: Vec2, min_value: float, max_value: float, step: Optional[float] = None, start_value=None, style: StyleOrName[SliderStyle] = None,
             rotation: float = 0.0, scale: float = 1.0, layer: int = 0, anchor: Vec2 = Anchor.C, cache: bool = True
     ) -> SliderObject:
         
@@ -73,7 +73,7 @@ class UIObjectFactory(SubObjectFactory):
     
     
     def make_progress_bar(
-            self, position: Vec2, dims: Vec2, style: Optional[ProgressBarStyle | str] = None,
+            self, position: Vec2, dims: Vec2, style: StyleOrName[ProgressBarStyle] = None,
             rotation: float = 0.0, scale: float = 1.0, layer: int = 0, anchor: Vec2 = Anchor.C, cache: bool = True, cache_bar: bool = False
     ) -> ProgressBarObject:
         
@@ -87,7 +87,7 @@ class UIObjectFactory(SubObjectFactory):
         return obj
     
     def make_line_chart(
-            self, position: Vec2, dims: Vec2, style: Optional[LineChartStyle | str] = None, pad_x=0, pad_y=0, min_x=None, max_x=None, min_y=None, max_y=None,
+            self, position: Vec2, dims: Vec2, style: StyleOrName[LineChartStyle] = None, pad_x=0, pad_y=0, min_x=None, max_x=None, min_y=None, max_y=None,
             max_data_points=None, max_data_x_range=None, update_action: Optional[Callable[[PygameObject], Any] | tuple[Callable[[PygameObject], Any], ...]]=None,
             rotation: float = 0.0, scale: float = 1.0, layer: int = 0, anchor: Vec2 = Anchor.C, cache: bool = True, cache_line: bool = False
     ) -> LineChartObject:
@@ -112,7 +112,7 @@ class UIObjectFactory(SubObjectFactory):
         
         return obj
 
-    def make_window(self, position: Vec2, dims: Vec2, title: str, draggable: bool = False, style: Optional[WindowStyle | str] = None,
+    def make_window(self, position: Vec2, dims: Vec2, title: str, draggable: bool = False, style: StyleOrName[WindowStyle] = None,
                     rotation: float = 0.0, scale: float = 1.0, layer: int = 0, anchor: Vec2 = Anchor.C, cache: bool = True) -> WindowObject:
         
         window_style = self._get_resource(style, WindowStyle)

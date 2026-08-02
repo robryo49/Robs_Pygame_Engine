@@ -6,7 +6,7 @@ from ..custom import *
 from ..object import PygameObject
 from ...rendering import ButtonStyle, CircleRenderer, CircleStyle, IconButtonStyle, RadioButtonStyle, RectRenderer, SpriteButtonStyle, ToggleButtonStyle
 from ...resources import Icons, Texture
-from ...utils import Anchor, Easing, Vec2, Color
+from ...utils import Anchor, Easing, StyleOrName, Vec2, Color
 
 CallBackType = Optional[Callable | tuple[Callable, ...]]
 ObjectCallBackType = Optional[Callable[[PygameObject], Any] | tuple[Callable[[PygameObject], Any], ...] | CallBackType]
@@ -42,7 +42,7 @@ class ButtonObjectFactory(SubObjectFactory):
     
     
     def make_button(
-            self, position: Vec2, text: str, action: ObjectCallBackType = None, dims: Optional[Vec2] = None, style: Optional[ButtonStyle | str] = None,
+            self, position: Vec2, text: str, action: ObjectCallBackType = None, dims: Optional[Vec2] = None, style: StyleOrName[ButtonStyle] = None,
             rotation: float = 0.0, scale: float = 1.0, layer: int = 0, anchor: Vec2 = Anchor.C, cache: bool = True
     ) -> ButtonObject:
         
@@ -64,7 +64,7 @@ class ButtonObjectFactory(SubObjectFactory):
         return obj
     
     def make_cycle_button(
-            self, position: Vec2, texts: tuple[str, ...], values: Optional[tuple[Any, ...]] = None, default_index: int = 0, callback: ObjectCallBackType = None, dims: Optional[Vec2] = None, style: Optional[ButtonStyle | str] = None,
+            self, position: Vec2, texts: tuple[str, ...], values: Optional[tuple[Any, ...]] = None, default_index: int = 0, callback: ObjectCallBackType = None, dims: Optional[Vec2] = None, style: StyleOrName[ButtonStyle] = None,
             rotation: float = 0.0, scale: float = 1.0, layer: int = 0, anchor: Vec2 = Anchor.C, cache: bool = True
     ) -> CycleButtonObject:
         
@@ -92,7 +92,7 @@ class ButtonObjectFactory(SubObjectFactory):
         return obj
     
     def make_sprite_button(
-            self, position: Vec2, texture: Texture, action: ObjectCallBackType = None, dims: Optional[Vec2] = None, style: Optional[SpriteButtonStyle | str] = None,
+            self, position: Vec2, texture: Texture, action: ObjectCallBackType = None, dims: Optional[Vec2] = None, style: StyleOrName[SpriteButtonStyle] = None,
             rotation: float = 0.0, scale: float = 1.0, layer: int = 0, anchor: Vec2 = Anchor.C, cache: bool = True
     ) -> SpriteButtonObject:
         
@@ -114,7 +114,7 @@ class ButtonObjectFactory(SubObjectFactory):
         return obj
     
     def make_icon_button(
-            self, position: Vec2, icon: str, icon_size: int, action: ObjectCallBackType = None, dims: Optional[Vec2] = None, style: Optional[IconButtonStyle | str] = None,
+            self, position: Vec2, icon: str, icon_size: int, action: ObjectCallBackType = None, dims: Optional[Vec2] = None, style: StyleOrName[IconButtonStyle] = None,
             rotation: float = 0.0, scale: float = 1.0, layer: int = 0, anchor: Vec2 = Anchor.C, cache: bool = True
     ) -> IconButtonObject:
         
@@ -138,7 +138,7 @@ class ButtonObjectFactory(SubObjectFactory):
         return obj
     
     def make_checkbox(
-            self, position: Vec2, icon_size, dims: Optional[Vec2] = None, callback: ObjectCallBackType = None, checked_icon: str = Icons.CHECK, checked=False, style: Optional[IconButtonStyle | str] = None,
+            self, position: Vec2, icon_size, dims: Optional[Vec2] = None, callback: ObjectCallBackType = None, checked_icon: str = Icons.CHECK, checked=False, style: StyleOrName[IconButtonStyle] = None,
             rotation: float = 0.0, scale: float = 1.0, layer: int = 0, anchor: Vec2 = Anchor.C, cache: bool = True
     ) -> CheckBoxObject:
         
@@ -160,7 +160,7 @@ class ButtonObjectFactory(SubObjectFactory):
         return obj
     
     def make_radio_button(
-            self, position: Vec2, radius: int, callback: ObjectCallBackType = None, checked=False, style: Optional[RadioButtonStyle | str] = None,
+            self, position: Vec2, radius: int, callback: ObjectCallBackType = None, checked=False, style: StyleOrName[RadioButtonStyle] = None,
             rotation: float = 0.0, scale: float = 1.0, layer: int = 0, anchor: Vec2 = Anchor.C, cache: bool = True
     ) -> RadioButtonObject:
         
@@ -179,7 +179,7 @@ class ButtonObjectFactory(SubObjectFactory):
         return obj
     
     def make_toggle_button(
-            self, position: Vec2, dims: Vec2, toggle_width: Optional[int] = None, enabled=False, callback: Optional[Callable[[PygameObject], Any] | tuple[Callable[[PygameObject], Any], ...]] = None, style: Optional[ToggleButtonStyle | str] = None,
+            self, position: Vec2, dims: Vec2, toggle_width: Optional[int] = None, enabled=False, callback: Optional[Callable[[PygameObject], Any] | tuple[Callable[[PygameObject], Any], ...]] = None, style: StyleOrName[ToggleButtonStyle] = None,
             rotation: float = 0.0, scale: float = 1.0, layer: int = 0, anchor: Vec2 = Anchor.C, cache: bool = True
     ) -> ToggleButtonObject:
         

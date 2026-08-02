@@ -183,7 +183,7 @@ class LayoutObject(RectObject):
     # endregion
     
     
-    def fix_col_width(self, col_x: int, width: Optional[int | float] = None):
+    def fix_col_width(self, col_x: int, width: Optional[float] = None):
         if width is not None:
             self._col_widths[col_x] = width
         self._fixed_cols[col_x] = True
@@ -191,7 +191,7 @@ class LayoutObject(RectObject):
         self.mark_dirty()
         return self
     
-    def fix_row_height(self, row_y: int, height: Optional[int | float] = None):
+    def fix_row_height(self, row_y: int, height: Optional[float] = None):
         if height is not None:
             self._row_heights[row_y] = height
         self._fixed_rows[row_y] = True
@@ -212,13 +212,13 @@ class LayoutObject(RectObject):
         return self
     
     
-    def fix_width(self, width: Optional[int | float] = None):
+    def fix_width(self, width: Optional[float] = None):
         self._fixed_width = width or self.width
         
         self.mark_dirty()
         return self
     
-    def fix_height(self, height: Optional[int | float] = None):
+    def fix_height(self, height: Optional[float] = None):
         self._fixed_height = height or self.height
         
         self.mark_dirty()
@@ -253,7 +253,7 @@ class LayoutObject(RectObject):
         self.set_outer_padding(padding / 2)
         return self
     
-    def set_cell_padding(self, padding: Vec2 | int | float, cell: Optional[tuple[int, int]] = None):
+    def set_cell_padding(self, padding: Vec2 | float, cell: Optional[tuple[int, int]] = None):
         if cell is not None:
             self._cells_padding[cell] = Vec2(padding)
         else:
@@ -274,7 +274,7 @@ class LayoutObject(RectObject):
         self.mark_dirty()
         return self
     
-    def set_outer_padding(self, padding: Vec2 | int | float):
+    def set_outer_padding(self, padding: Vec2 | float):
         padding = Vec2(padding)
         self._outer_padding = padding
         self.mark_dirty()
@@ -556,12 +556,12 @@ class DebugPanelObject(LayoutObject):
         super().unfix_height()
         self.panel.unfix_height()
         
-    def fix_height(self, height: Optional[int | float] = None):
+    def fix_height(self, height: Optional[float] = None):
         if height:
             super().fix_height(height)
             self.panel.fix_height(round(height - self.title_panel.height - self.header.height))
     
-    def fix_width(self, width: Optional[int | float] = None):
+    def fix_width(self, width: Optional[float] = None):
         super().fix_width(width)
         self.panel.fix_width(width)
         self.title_panel.width = width

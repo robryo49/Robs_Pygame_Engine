@@ -1,9 +1,9 @@
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from enum import IntFlag, auto
-from typing import Callable
+from typing import Optional
 
 from ...resources import Texture
-from ...utils import Vec2, Transform, inf, Easing, Color
+from ...utils import Color, Easing, EasingFunctionType, Transform, Vec2
 
 
 class FadingTypes(IntFlag):
@@ -21,11 +21,11 @@ class Particle:
     
     life: float
     
-    texture: Texture = None
-    color: Color = None
+    texture: Optional[Texture] = None
+    color: Optional[Color] = None
     
     fade_duration: float = 0
-    fade_easing: Callable[[float], float] = Easing.EASE_IN_QUAD
+    fade_easing: EasingFunctionType = Easing.EASE_IN_QUAD
     fade_type: int = FadingTypes.NONE
     
-    layer: int = inf
+    layer: int = 0

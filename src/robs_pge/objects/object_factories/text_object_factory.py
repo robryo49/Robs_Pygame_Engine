@@ -5,13 +5,13 @@ from .sub_factory import SubObjectFactory
 from ..custom import *
 
 from ...rendering import *
-from ...utils import Vec2, Anchor, Font
+from ...utils import StyleOrName, Vec2, Anchor, Font
 
 
 
 class TextObjectFactory(SubObjectFactory):
     def make_text(
-            self, position: Vec2, text: str, font: Optional[Font | str] = None,
+            self, position: Vec2, text: str, font: StyleOrName[Font] = None,
             rotation: float = 0.0, scale: float = 1.0, layer: int = 0, anchor: Vec2 = Anchor.C, cache: bool = True
     ) -> TextObject:
         
@@ -21,7 +21,7 @@ class TextObjectFactory(SubObjectFactory):
         return obj
     
     def make_dynamic_text(
-            self, position: Vec2, template: str, getter: Callable[[], Any | tuple[Any, ...]], font: Optional[Font] = None,
+            self, position: Vec2, template: str, getter: Callable[[], Any | tuple[Any, ...]], font: StyleOrName[Font] = None,
             rotation: float = 0.0, scale: float = 1.0, layer: int = 0, anchor: Vec2 = Anchor.C, cache: bool = True
     ) -> TextObject:
         

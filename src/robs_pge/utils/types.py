@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import inspect
-from typing import Any, Callable, Protocol, TYPE_CHECKING, runtime_checkable
+from typing import Any, Callable, Optional, Protocol, TYPE_CHECKING, runtime_checkable
 
 import numpy as np
 
@@ -10,15 +10,17 @@ from .math import Vec2, Vec3
 if TYPE_CHECKING:
     from ..core import Camera
     from ..rendering import DrawCommand
-    
-
-NumberLike = int | float
-
-Vec2Like = Vec2 | np.ndarray | tuple[NumberLike, NumberLike]
-Vec3Like = Vec3 | np.ndarray | tuple[NumberLike, NumberLike, NumberLike]
 
 
-CallbackLike = Callable | tuple[Callable, ...] | None
+type Vec2Like = Vec2 | np.ndarray | tuple[float, float]
+type Vec3Like = Vec3 | np.ndarray | tuple[float, float, float]
+
+
+type CallbackLike = Callable | tuple[Callable, ...] | None
+
+type EasingFunctionType = Callable[[float], float]
+type StyleOrName[T] = Optional[T | str]
+type ValueOrGetter[T] = T | Callable[[], T]
 
 
 @runtime_checkable

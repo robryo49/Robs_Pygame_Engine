@@ -1,11 +1,11 @@
 from dataclasses import dataclass
-from typing import Callable
+
 
 import numpy as np
 
 from .particle import FadingTypes
 from ...resources import Texture
-from ...utils import inf, Easing, Color
+from ...utils import inf, Easing, Color, EasingFunctionType
 
 
 @dataclass
@@ -22,7 +22,7 @@ class ParticlePool:
     color: Color = None
     
     fade_duration: float = 0
-    fade_easing: Callable[[float], float] = Easing.EASE_IN_QUAD
+    fade_easing: EasingFunctionType = Easing.EASE_IN_QUAD
     fade_type: int = FadingTypes.NONE
     
     layer: int = inf

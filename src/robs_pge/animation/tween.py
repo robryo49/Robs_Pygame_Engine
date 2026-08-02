@@ -1,10 +1,9 @@
-from typing import Callable
 
-from ..utils import Easing, clamp
+from ..utils import Easing, clamp, EasingFunctionType
 
 
 class Tween:
-    def __init__(self, duration: float, easing_function: Callable = Easing.LINEAR):
+    def __init__(self, duration: float, easing_function: EasingFunctionType = Easing.LINEAR):
         
         self._duration = duration
         self._easing_function = easing_function

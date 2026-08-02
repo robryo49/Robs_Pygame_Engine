@@ -12,8 +12,9 @@ from .flags import ObjectFlags, KeybindFlags
 from .keys import Keybinds
 from .collection import Collection, DictCollection, TypedCollection, TypedDictCollection
 from .types import (
-    Vec2Like, Vec3Like, NumberLike, validate_signature, CallbackLike,
-    RenderableType, UpdatableType, ObjectLikeType
+    Vec2Like, Vec3Like, validate_signature, CallbackLike,
+    RenderableType, UpdatableType, ObjectLikeType,
+    EasingFunctionType, StyleOrName, ValueOrGetter
 )
 from .array_tools import *
 from .async_tools import AsyncProcessManager, AsyncProcess
@@ -40,6 +41,7 @@ __all__ = [
     # types
     "Vec2Like", "Vec3Like", "validate_signature", "CallbackLike",
     "RenderableType", "UpdatableType", "ObjectLikeType",
+    "EasingFunctionType", "StyleOrName", "ValueOrGetter",
     # array_tools
     "make_linear_gradient_array", "make_angular_gradient_array", "make_radial_gradient_array",
     "make_circle_mask", "make_rect_mask",
