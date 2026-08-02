@@ -1,5 +1,5 @@
 from .math import (
-    Vec2, Vec3, Rect, FRect, Transform, Easing, Anchor,
+    Vec2, Vec3, Rect, FRect, Transform, Easing, Anchor, ScreenAnchor,
     lerp, clamp, round_sig,
     invert_y, invert_x, invert_uv_y, invert_uv_x,
     rotated_surface_dims, surface_pos_from_uv_pos,
@@ -18,7 +18,7 @@ from .collision import CollisionBox, CircleCollisionBox, RectCollisionBox, test_
 
 __all__ = [
     # math
-    "Vec2", "Vec3", "Rect", "FRect", "Transform", "Easing", "Anchor",
+    "Vec2", "Vec3", "Rect", "FRect", "Transform", "Easing", "Anchor", "ScreenAnchor",
     "lerp", "clamp", "round_sig",
     "invert_y", "invert_x", "invert_uv_y", "invert_uv_x",
     "rotated_surface_dims", "surface_pos_from_uv_pos",

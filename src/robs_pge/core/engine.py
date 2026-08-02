@@ -9,7 +9,7 @@ from ..input import InputManager
 from ..objects import InteractionManager
 from ..rendering import WindowStyle, LineChartStyle, ProgressBarStyle, RectStyle, Renderer
 from ..resources import ResourceManager
-from ..utils import Colors, Vec2, Vec2Like, Color, Anchor
+from ..utils import Colors, Vec2, Vec2Like, Color, Anchor, ScreenAnchor
 from .camera import Camera
 from .clock import Clock
 from .display import Display
@@ -100,6 +100,7 @@ class Engine:
     
     @staticmethod
     def _create_display(dims: Vec2Like, fullscreen: bool = True) -> Display:
+        ScreenAnchor.set_screen_dims(Vec2(dims))
         return Display(dims, fullscreen, True, Color(20, 26, 40))
     
     @staticmethod

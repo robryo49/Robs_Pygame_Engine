@@ -140,6 +140,31 @@ class Anchor:
     BL =    Vec2(0,     1)
     B =     Vec2(0.5,   1)
     BR =    Vec2(1,     1)
+    
+
+class ScreenAnchor:
+    TL =    Vec2(0,     0)
+    T =     Vec2(0.5,   0)
+    TR =    Vec2(1,     0)
+    L =     Vec2(0,     0.5)
+    C =     Vec2(0.5,   0.5)
+    R =     Vec2(1,     0.5)
+    BL =    Vec2(0,     1)
+    B =     Vec2(0.5,   1)
+    BR =    Vec2(1,     1)
+    
+    @staticmethod
+    def set_screen_dims(dims: Vec2):
+        ScreenAnchor.TL =    Vec2(0,     0).elementwise() * dims
+        ScreenAnchor.T =     Vec2(0.5,   0).elementwise() * dims
+        ScreenAnchor.TR =    Vec2(1,     0).elementwise() * dims
+        ScreenAnchor.L =     Vec2(0,     0.5).elementwise() * dims
+        ScreenAnchor.C =     Vec2(0.5,   0.5).elementwise() * dims
+        ScreenAnchor.R =     Vec2(1,     0.5).elementwise() * dims
+        ScreenAnchor.BL =    Vec2(0,     1).elementwise() * dims
+        ScreenAnchor.B =     Vec2(0.5,   1).elementwise() * dims
+        ScreenAnchor.BR =    Vec2(1,     1).elementwise() * dims
+    
 
 
 # region GENERIC ARITHMETIC
@@ -159,7 +184,7 @@ def _cast(blueprint, values, clamp_color=True):
     if _is_color(blueprint):
         if clamp_color:
             return Color(*[_clamp_channel(v) for v in vals][:4])
-        return tuple(vals)  # Yields unclamped delta tuple when clamping is bypassed
+        return tuple(vals)
     
     if isinstance(blueprint, (Vec2, Vec3)):
         return type(blueprint)(*vals[:len(blueprint)])
@@ -173,26 +198,18 @@ def _universal_op(a, b, op, clamp_color=True):
     a_is_iter = _is_math_iterable(a)
     b_is_iter = _is_math_iterable(b)
     
-    # 1. Sequence <OP> Sequence (Element-wise via zip)
     if a_is_iter and b_is_iter:
-        # Color takes type priority to preserve clamping behavior
         blueprint = a if _is_color(a) else (b if _is_color(b) else a)
         return _cast(blueprint, (op(v1, v2) for v1, v2 in zip(a, b)), clamp_color)
     
-    # 2. Sequence <OP> Scalar
     if a_is_iter and isinstance(b, (int, float)):
         return _cast(a, (op(v, b) for v in a), clamp_color)
     
-    # 3. Scalar <OP> Sequence (Order matters for sub/div/pow!)
     if isinstance(a, (int, float)) and b_is_iter:
         return _cast(b, (op(a, v) for v in b), clamp_color)
     
-    # 4. Fallback (Native Pygame vectors, raw scalars, etc.)
     return op(a, b)
 
-# ---------------------------------------------------------
-# The Public API
-# ---------------------------------------------------------
 
 def add(a, b):
     return _universal_op(a, b, operator.add, clamp_color=True)
