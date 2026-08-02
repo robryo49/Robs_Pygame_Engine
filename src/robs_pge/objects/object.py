@@ -10,7 +10,7 @@ from .object_collection import ObjectCollection
 from ..animation import Animation, AnimationManager
 from ..debug import QuickDebugManager
 from ..events import Event, EventManager
-from ..rendering import CircleRenderer, ObjectRenderer
+from ..rendering import CircleRenderer, ObjectRenderer, DrawCommand
 from ..utils import Anchor, CircleCollisionBox, CollisionBox, DictCollection, ObjectFlags, Rect, RectCollisionBox, Transform, Vec2, test_collision_box_overlap, FRect
 
 if TYPE_CHECKING:
@@ -636,7 +636,7 @@ class PygameObject:
     
     # endregion
     
-    def _render_self(self, submit, camera: Camera):
+    def _render_self(self, submit: Callable[[DrawCommand], Any], camera: Camera):
         self.renderer.render(submit, self.world_transform, self.layer, self.anchor, self.get_world_clip_area())
         return self
     

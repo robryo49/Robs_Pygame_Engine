@@ -1,11 +1,16 @@
 from __future__ import annotations
 
 import inspect
-from typing import Any, Callable
+from typing import Any, Callable, Protocol, TYPE_CHECKING, runtime_checkable
 
 import numpy as np
 
 from .math import Vec2, Vec3
+
+if TYPE_CHECKING:
+    from ..core import Camera
+    from ..rendering import DrawCommand
+    
 
 NumberLike = int | float
 
@@ -14,6 +19,21 @@ Vec3Like = Vec3 | np.ndarray | tuple[NumberLike, NumberLike, NumberLike]
 
 
 CallbackLike = Callable | tuple[Callable, ...] | None
+
+
+@runtime_checkable
+class RenderableType(Protocol):
+    def render(self, submit: Callable[[DrawCommand], Any], camera: Camera): pass
+
+
+@runtime_checkable
+class UpdatableType(Protocol):
+    def update(self, dt: float): pass
+    
+
+@runtime_checkable
+class ObjectLikeType(RenderableType, UpdatableType, Protocol): pass
+
 
 
 def validate_signature(method: Callable[..., Any], *args: Any, **kwargs: Any) -> None:

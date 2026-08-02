@@ -11,7 +11,10 @@ from .color import Color, Colors, ColorPalette
 from .flags import ObjectFlags, KeybindFlags
 from .keys import Keybinds
 from .collection import Collection, DictCollection, TypedCollection, TypedDictCollection
-from .types import Vec2Like, Vec3Like, NumberLike, validate_signature, CallbackLike
+from .types import (
+    Vec2Like, Vec3Like, NumberLike, validate_signature, CallbackLike,
+    RenderableType, UpdatableType, ObjectLikeType
+)
 from .array_tools import *
 from .async_tools import AsyncProcessManager, AsyncProcess
 from .collision import CollisionBox, CircleCollisionBox, RectCollisionBox, test_collision_circle_circle, test_collision_rect_circle, test_collision_rect_rect, test_collision_box_overlap
@@ -36,6 +39,7 @@ __all__ = [
     "Collection", "DictCollection", "TypedDictCollection", "TypedCollection",
     # types
     "Vec2Like", "Vec3Like", "validate_signature", "CallbackLike",
+    "RenderableType", "UpdatableType", "ObjectLikeType",
     # array_tools
     "make_linear_gradient_array", "make_angular_gradient_array", "make_radial_gradient_array",
     "make_circle_mask", "make_rect_mask",

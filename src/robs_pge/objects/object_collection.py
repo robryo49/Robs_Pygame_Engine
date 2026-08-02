@@ -1,22 +1,21 @@
 from __future__ import annotations
 
-from typing import Iterable, TYPE_CHECKING
+from typing import Iterable, TYPE_CHECKING, Any, Callable
 
-from ..utils import TypedCollection
+from ..utils import TypedCollection, ObjectLikeType
+from ..rendering import DrawCommand
 
 if TYPE_CHECKING:
     from ..core import Camera
-    from .object import PygameObject
 
 
 class ObjectCollection(TypedCollection):
-    def __init__(self, objects: Iterable[PygameObject] = ()):
-        from .object import PygameObject
+    def __init__(self, objects: Iterable[ObjectLikeType] = ()):
         
-        super().__init__(PygameObject, objects)
+        super().__init__(ObjectLikeType, objects)
         
-        self._to_remove: list[PygameObject] = []
-        self._to_add: list[PygameObject] = []
+        self._to_remove: list[ObjectLikeType] = []
+        self._to_add: list[ObjectLikeType] = []
         
         self._frozen = False
         self._render = True
@@ -65,7 +64,7 @@ class ObjectCollection(TypedCollection):
         self._to_remove.clear()
         return self
     
-    def add_object(self, obj: PygameObject | list[PygameObject]) -> "ObjectCollection":
+    def add_object(self, obj: ObjectLikeType | list[ObjectLikeType]) -> "ObjectCollection":
         if isinstance(obj, list):
             for o in obj:
                 self.add(o)
@@ -73,7 +72,7 @@ class ObjectCollection(TypedCollection):
             self._to_add.append(obj)
         return self
         
-    def remove_object(self, obj: PygameObject | list[PygameObject]) -> "ObjectCollection":
+    def remove_object(self, obj: ObjectLikeType | list[ObjectLikeType]) -> "ObjectCollection":
         if isinstance(obj, list):
             for o in obj:
                 self.remove_object(o)
@@ -89,7 +88,7 @@ class ObjectCollection(TypedCollection):
         self.foreach(lambda o: o.update())
         return self
             
-    def render(self, submit, camera: Camera) -> "ObjectCollection":
+    def render(self, submit: Callable[[DrawCommand], Any], camera: Camera) -> "ObjectCollection":
         self.foreach(lambda o: o.render(submit, camera))
         return self
         

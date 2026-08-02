@@ -10,7 +10,7 @@ from ...input import InputManager, Keybind, KeybindsManager
 from ...objects import InteractionManager, ObjectCollection, ObjectFactory, PygameObject, ParticleSystem, WindowManager, WindowObject
 from ...rendering import WindowStyle, LineChartStyle
 from ...resources import ResourceManager
-from ...utils import Anchor, DictCollection, Vec2, AsyncProcessManager, AsyncProcess
+from ...utils import Anchor, DictCollection, RenderableType, Vec2, AsyncProcessManager, AsyncProcess, UpdatableType, ObjectLikeType
 from ..camera import Camera
 
 if TYPE_CHECKING:
@@ -361,11 +361,11 @@ class State:
     def register_event_callback(self, event_type: str, callback: Callable[[Event], Any], condition: Optional[Callable[[Event], bool]] = None) -> None:
         self.event_manager.register(event_type, callback, condition)
     
-    def add_object(self, *obj: PygameObject | list[PygameObject]) -> None:
+    def add_object(self, *obj: ObjectLikeType | list[ObjectLikeType]) -> None:
         for o in obj:
             self.objects.add(o)
     
-    def add_ui_object(self, *obj: PygameObject | list[PygameObject]) -> None:
+    def add_ui_object(self, *obj: ObjectLikeType | list[ObjectLikeType]) -> None:
         for o in obj:
             self.ui_objects.add(o)
     
@@ -380,16 +380,16 @@ class State:
     
     # region DRAW METHODS
     
-    def draw_world(self, obj: PygameObject | ObjectCollection) -> None:
+    def draw_world(self, obj: RenderableType) -> None:
         obj.render(self.renderer.draw_world, self.camera)
     
-    def draw_ui(self, obj: PygameObject | ObjectCollection) -> None:
+    def draw_ui(self, obj: RenderableType) -> None:
         obj.render(self.renderer.draw_ui, self.engine.default_camera)
     
-    def draw_debug(self, obj: PygameObject | ObjectCollection) -> None:
+    def draw_debug(self, obj: RenderableType) -> None:
         obj.render(self.renderer.draw_debug, self.engine.default_camera)
     
-    def draw_particles(self, particle_system) -> None:
+    def draw_particles(self, particle_system: RenderableType) -> None:
         particle_system.render(self.renderer.draw_world, self.camera)
     
     # endregion
