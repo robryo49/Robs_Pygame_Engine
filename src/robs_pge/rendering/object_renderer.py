@@ -1,5 +1,10 @@
+from __future__ import annotations
 from ..utils import Transform, Vec2, FRect
-from typing import Optional
+from typing import Optional, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from ..objects import Layer
+
 
 
 class ObjectRenderer:
@@ -32,7 +37,7 @@ class ObjectRenderer:
     def get_aabb_size(self, rotation: float):
         raise NotImplementedError
     
-    def render(self, submit, transform: Transform, layer: int, anchor: Vec2, clip_area: Optional[FRect] = None) -> None:
+    def render(self, submit, transform: Transform, layer: Layer, sub_layer: int, anchor: Vec2, clip_area: Optional[FRect] = None) -> None:
         raise NotImplementedError
     
     def test_hit(self, local_pos: Vec2) -> bool:

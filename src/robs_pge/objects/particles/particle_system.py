@@ -10,7 +10,7 @@ from .particle import Particle, FadingTypes
 from .particle_pool import ParticlePool
 
 if TYPE_CHECKING:
-    from ...core import Camera
+    from ...objects import Layer
 
 
 class ParticleSystem:
@@ -73,7 +73,7 @@ class ParticleSystem:
         self.update_pools(dt)
     
     
-    def render(self, submit, camera: Optional[Camera] = None):
+    def render(self, submit, layer: Layer):
         self.count = 0
     
         for p in self.particles:
@@ -90,6 +90,7 @@ class ParticleSystem:
             else:
                 submit(DrawCircle(
                     Transform(transform.pos, transform.rotation, 1),
+                    layer,
                     p.layer, Anchor.C, False,
                     round(4*transform.scale),
                     CircleStyle(bg_color=p.color or Colors.WHITE)

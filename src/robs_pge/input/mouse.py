@@ -53,7 +53,7 @@ class Mouse:
     # endregion
     
     def world_pos(self, camera: Camera) -> Vec2:
-        return camera.screen_to_world_pos(self.pos)
+        return camera.screen_to_camera_pos(self.pos)
     
     def update(self)  -> "Mouse":
         self.transform.pos = Vec2(pg.mouse.get_pos())

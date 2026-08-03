@@ -4,8 +4,9 @@ from .math import (
     invert_y, invert_x, invert_uv_y, invert_uv_x,
     rotated_surface_dims, surface_pos_from_uv_pos,
     surface_pos_from_pixel_pos, random, inf, pi,
-    add, subtract, multiply, divide, power,
+    add, subtract, multiply, divide, power
 )
+from .coordinate_system import CoordinateSystem
 from .font import Font
 from .color import Color, Colors, ColorPalette
 from .flags import ObjectFlags, KeybindFlags
@@ -28,6 +29,7 @@ __all__ = [
     "rotated_surface_dims", "surface_pos_from_uv_pos",
     "surface_pos_from_pixel_pos", "random", "inf", "pi",
     "add", "subtract", "multiply", "divide", "power",
+    "CoordinateSystem",
     # font
     "Font",
     # color

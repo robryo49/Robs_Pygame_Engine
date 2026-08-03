@@ -180,17 +180,24 @@ class Camera:
             half.y * 2
         )
     
-    def world_to_screen_pos(self, world_pos: Vec2) -> Vec2:
-        return self.transform.apply_inverse(world_pos) + self.display_center
+    # region Coordinates Conversion Methods
     
-    def screen_to_world_pos(self, screen_pos: Vec2) -> Vec2:
-        return self.transform.apply(screen_pos - self.display_center)
     
-    def world_to_screen_vec(self, vec: Vec2) -> Vec2:
-        return vec / self.transform.scale
+    def camera_to_screen_pos(self, world_point: Vec2) -> Vec2:
+        return self.transform.apply_inverse(world_point) + self.display_center
     
-    def screen_to_world_vec(self, vec: Vec2) -> Vec2:
-        return vec * self.transform.scale
+    def camera_to_screen_vec(self, camera_vec: Vec2) -> Vec2:
+        return camera_vec / self.transform.scale
+    
+    
+    def screen_to_camera_vec(self, screen_vec: Vec2) -> Vec2:
+        return screen_vec * self.transform.scale
+    
+    def screen_to_camera_pos(self, screen_point: Vec2) -> Vec2:
+        return self.transform.apply(screen_point - self.display_center)
+    
+    
+    # endregion
     
     
     def update(self, dt: float) -> "Camera":

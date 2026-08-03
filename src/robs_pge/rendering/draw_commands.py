@@ -1,48 +1,49 @@
 from __future__ import annotations
-from dataclasses import dataclass
 
-import pygame as pg
 import math
-
-from .styles import CircleStyle, LineStyle, RectStyle
-from ..resources import Texture, SurfaceCache
-from ..utils import Font, Transform, Vec2, surface_pos_from_uv_pos, Rect, FRect
-
+from dataclasses import dataclass
 from typing import Optional, TYPE_CHECKING
 
+import pygame as pg
+
+from .styles import CircleStyle, LineStyle, RectStyle
+from ..resources import SurfaceCache, Texture
+from ..utils import FRect, Font, Rect, Transform, Vec2, surface_pos_from_uv_pos
+
 if TYPE_CHECKING:
-    from ..core import Camera
+    from ..objects import Layer
 
 
 @dataclass
 class DrawCommand:
     transform: Transform
+    layer: Layer
     sub_layer: int
     anchor: Vec2
     caching: bool
     clip_area: Optional[FRect]
     
-    def get_screen_clip_rect(self, camera: Camera) -> Optional[pg.Rect]:
+    def get_screen_clip_rect(self) -> Optional[pg.Rect]:
         if self.clip_area is None:
             return None
         
-        p1 = camera.world_to_screen_pos(Vec2(self.clip_area.left, self.clip_area.top))
-        p2 = camera.world_to_screen_pos(Vec2(self.clip_area.right, self.clip_area.bottom))
+        p1 = self.layer.world_to_screen_pos(Vec2(self.clip_area.left, self.clip_area.top))
+        p2 = self.layer.world_to_screen_pos(Vec2(self.clip_area.right, self.clip_area.bottom))
         
         x0, x1 = sorted((p1.x, p2.x))
         y0, y1 = sorted((p1.y, p2.y))
         
         return pg.Rect(round(x0), round(y0), round(x1 - x0), round(y1 - y0))
     
-    def get_composed_transform(self, camera: Camera):
-        camera_transform: Transform =   camera.transform
+    def get_composed_transform(self):
+        camera_transform: Transform =   self.layer.camera.transform
         rotation =  round((self.transform.rotation - camera_transform.rotation)%360, 2)
         scale =     round(self.transform.scale / camera_transform.scale, 4)
-        screen_pos = camera.world_to_screen_pos(self.transform.pos) if camera else self.transform.pos
+        screen_pos = self.layer.world_to_screen_pos(self.transform.pos)
         
         return screen_pos, rotation, scale
     
-    def draw(self, blit_call_queue: list[tuple[pg.Surface, Vec2]], camera: Camera, surface_cache, font_cache) -> bool | None:
+    def draw(self, blit_call_queue: list[tuple[pg.Surface, Vec2]], surface_cache, font_cache) -> bool | None:
         raise NotImplementedError("Draw command doesnt have a defined draw method")
     
     @staticmethod
@@ -109,11 +110,10 @@ class DrawTexture(DrawCommand):
     def draw(
             self,
             blit_call_queue: list[tuple[pg.Surface, Vec2]],
-            camera,
             surface_cache,
             font_cache,
     ):
-        screen_pos, rotation, scale = self.get_composed_transform(camera)
+        screen_pos, rotation, scale = self.get_composed_transform()
         
         if scale <= 0:
             return None
@@ -128,7 +128,7 @@ class DrawTexture(DrawCommand):
         surface, cached = self.get_surface(surface_cache, key, lod_surface, rotation, target_w, target_h)
     
         
-        self.add_blit(blit_call_queue, surface, screen_pos, surface_pos_from_uv_pos(self.anchor, base_dims, rotation), self.get_screen_clip_rect(camera))
+        self.add_blit(blit_call_queue, surface, screen_pos, surface_pos_from_uv_pos(self.anchor, base_dims, rotation), self.get_screen_clip_rect())
         
         return cached
 
@@ -159,8 +159,8 @@ class DrawRect(DrawCommand):
         
         return surface
     
-    def draw(self, blit_call_queue: list[tuple[pg.Surface, Vec2]], camera: Camera, surface_cache, font_cache):
-        screen_pos, rotation, scale = self.get_composed_transform(camera)
+    def draw(self, blit_call_queue: list[tuple[pg.Surface, Vec2]], surface_cache, font_cache):
+        screen_pos, rotation, scale = self.get_composed_transform()
         
         bg_color =  tuple(self.style.bg_color)
         bd =        round(self.style.bd * scale)
@@ -175,7 +175,7 @@ class DrawRect(DrawCommand):
         
         surface, cached = self.get_surface(surface_cache, key)
         
-        self.add_blit(blit_call_queue, surface, screen_pos, surface_pos_from_uv_pos(self.anchor, dims, rotation), self.get_screen_clip_rect(camera))
+        self.add_blit(blit_call_queue, surface, screen_pos, surface_pos_from_uv_pos(self.anchor, dims, rotation), self.get_screen_clip_rect())
         
         return cached
 
@@ -195,8 +195,8 @@ class DrawCircle(DrawCommand):
             
         return surface
     
-    def draw(self, blit_call_queue: list[tuple[pg.Surface, Vec2]], camera: Camera, surface_cache, font_cache):
-        screen_pos, rotation, scale = self.get_composed_transform(camera)
+    def draw(self, blit_call_queue: list[tuple[pg.Surface, Vec2]], surface_cache, font_cache):
+        screen_pos, rotation, scale = self.get_composed_transform()
         
         radius =    round(self.radius * scale)
         bg_color =  tuple(self.style.bg_color)
@@ -211,7 +211,7 @@ class DrawCircle(DrawCommand):
         
         surface, cached = self.get_surface(surface_cache, key)
         
-        self.add_blit(blit_call_queue, surface, screen_pos, surface_pos_from_uv_pos(self.anchor, dims), self.get_screen_clip_rect(camera))
+        self.add_blit(blit_call_queue, surface, screen_pos, surface_pos_from_uv_pos(self.anchor, dims), self.get_screen_clip_rect())
         
         return cached
 
@@ -253,11 +253,11 @@ class DrawText(DrawCommand):
         
         return surface
     
-    def draw(self, blit_call_queue, camera, surface_cache, font_cache):
+    def draw(self, blit_call_queue, surface_cache, font_cache):
         if not self.text:
             return None
         
-        screen_pos, rotation, scale = self.get_composed_transform(camera)
+        screen_pos, rotation, scale = self.get_composed_transform()
         
         base_font_size = round(self.font.size)
         color          = tuple(self.font.color)
@@ -286,7 +286,7 @@ class DrawText(DrawCommand):
         # 3. Pass the unrotated base_dims to your uv function (just like DrawTexture does)
         offset = surface_pos_from_uv_pos(self.anchor, base_dims, rotation)
         
-        self.add_blit(blit_call_queue, surface, screen_pos, offset, self.get_screen_clip_rect(camera))
+        self.add_blit(blit_call_queue, surface, screen_pos, offset, self.get_screen_clip_rect())
         
         return cached
     
@@ -327,14 +327,14 @@ class DrawLine(DrawCommand):
         
         return surface
     
-    def draw(self, blit_call_queue, camera, surface_cache, font_cache):
+    def draw(self, blit_call_queue, surface_cache, font_cache):
         
-        position, rotation, scale = self.get_composed_transform(camera)
+        position, rotation, scale = self.get_composed_transform()
         
         color = tuple(self.style.color)
         width = max(1, round(self.style.width * scale))
         
-        screen_points = [camera.world_to_screen_pos(self.transform.apply(p)) for p in self.points]
+        screen_points = [self.layer.world_to_screen_pos(self.transform.apply(p)) for p in self.points]
         
         xs = [p.x for p in screen_points]
         ys = [p.y for p in screen_points]
@@ -344,7 +344,7 @@ class DrawLine(DrawCommand):
         key     = (tuple((p.x, p.y) for p in self.points), color, width, rotation, scale)
         surface, cached = self.get_surface(surface_cache, key, screen_points)
         
-        self.add_blit(blit_call_queue, surface, Vec2(min_x - pad, min_y - pad), None, self.get_screen_clip_rect(camera))
+        self.add_blit(blit_call_queue, surface, Vec2(min_x - pad, min_y - pad), None, self.get_screen_clip_rect())
         
         return cached
 
@@ -387,8 +387,8 @@ class DrawSubSurface(DrawCommand):
         
         return surface
     
-    def draw(self, blit_call_queue: list[tuple[pg.Surface, Vec2]], camera: Camera, surface_cache, font_cache):
-        screen_pos, rotation, scale = self.get_composed_transform(camera)
+    def draw(self, blit_call_queue: list[tuple[pg.Surface, Vec2]], surface_cache, font_cache):
+        screen_pos, rotation, scale = self.get_composed_transform()
         
         view_w = max(1, round(self.target_dims.x * scale))
         view_h = max(1, round(self.target_dims.y * scale))
@@ -405,7 +405,7 @@ class DrawSubSurface(DrawCommand):
         else:
             final_surf = surface
         
-        self.add_blit(blit_call_queue, final_surf, screen_pos, surface_pos_from_uv_pos(self.anchor, base_dims, rotation), self.get_screen_clip_rect(camera))
+        self.add_blit(blit_call_queue, final_surf, screen_pos, surface_pos_from_uv_pos(self.anchor, base_dims, rotation), self.get_screen_clip_rect())
         
         return cached
 
@@ -446,8 +446,8 @@ class DrawChunkedSprite(DrawCommand):
         
         return sub_surf.convert_alpha()
     
-    def draw(self, blit_call_queue: list[tuple[pg.Surface, Vec2]], camera: Camera, surface_cache, font_cache):
-        screen_pos, rotation, scale = self.get_composed_transform(camera)
+    def draw(self, blit_call_queue: list[tuple[pg.Surface, Vec2]], surface_cache, font_cache):
+        screen_pos, rotation, scale = self.get_composed_transform()
         
         if scale <= 0:
             return None
@@ -459,7 +459,7 @@ class DrawChunkedSprite(DrawCommand):
         cw = self.chunk_size
         ch = self.chunk_size
 
-        screen_w, screen_h = camera.display_dims
+        screen_w, screen_h = self.layer.camera.display_dims
 
         anchor_offset_x = self.anchor.x * base_w
         anchor_offset_y = self.anchor.y * base_h

@@ -19,7 +19,7 @@ if TYPE_CHECKING:
     from .layer import Layer
     
     ObjectCallBackType = Optional[Callable[[PygameObject], Any] | tuple[Callable[[PygameObject], Any], ...] | Callable | tuple[Callable, ...]]
-    
+
 
 class PygameObject:
     DEFAULT_FLAGS = ObjectFlags.CULLABLE
@@ -84,9 +84,14 @@ class PygameObject:
         return self._transform
     
     @property
-    def world_transform(self):
+    def world_transform(self) -> Transform:
         parent = self.parent
         return (parent.world_transform * (self.transform + Transform(parent.get_anchor_offset(self._parent_anchor - parent.anchor)))) if parent is not None else self.transform
+    
+    @property
+    def camera_transform(self) -> Transform:
+        cam_pos = self.world_to_camera(self.world_transform.pos)
+        return Transform(cam_pos, self.world_transform.rotation, self.world_transform.scale)
     
     # region properties
     
@@ -538,29 +543,6 @@ class PygameObject:
     
     # endregion
     
-    # region HIT TEST METHODS
-    
-    def test_screen_hit(self, screen: Vec2, camera: Optional[Camera] = None):
-        return self.test_world_hit(camera.screen_to_world_pos(screen) if camera else screen)
-    
-    def test_world_hit(self, world: Vec2):
-        clip = self.get_world_clip_area()
-        if clip is not None and not clip.collidepoint(world.x, world.y):
-            return False
-        
-        return self.test_local_hit(self.world_to_local(world))
-    
-    def test_local_hit(self, local: Vec2):
-        return self.renderer.test_hit(local) if self.renderer else False
-    
-    def test_uv_hit(self, uv: Vec2):
-        return self.test_local_hit(self.uv_to_local(uv))
-    
-    def test_aabb_object_hit(self, other: "PygameObject") -> bool:
-        return self.get_world_aabb().colliderect(other.get_world_aabb())
-    
-    # endregion
-    
     # region BEHAVIOR METHODS
     
     def while_hovered(self):
@@ -586,50 +568,116 @@ class PygameObject:
     
     # endregion
     
+    # region HIT TEST METHODS
+    
+    def test_screen_hit(self, screen: Vec2, camera: Optional[Camera] = None) -> bool:
+        cam_pos = self.screen_to_camera(screen, camera)
+        return self.test_camera_hit(cam_pos)
+    
+    def test_camera_hit(self, camera_pos: Vec2) -> bool:
+        # 1. Check clip area in World Space
+        clip = self.get_world_clip_area()
+        if clip is not None:
+            world_pos = self.camera_to_world(camera_pos)
+            if not clip.collidepoint(world_pos.x, world_pos.y):
+                return False
+        
+        # 2. Check texture hit directly from Camera Space -> Local Space
+        return self.test_local_hit(self.camera_to_local(camera_pos))
+    
+    def test_world_hit(self, world: Vec2) -> bool:
+        return self.test_camera_hit(self.world_to_camera(world))
+    
+    def test_local_hit(self, local: Vec2) -> bool:
+        return self.renderer.test_hit(local) if self.renderer else False
+    
+    def test_uv_hit(self, uv: Vec2) -> bool:
+        return self.test_local_hit(self.uv_to_local(uv))
+    
+    def test_aabb_object_hit(self, other: "PygameObject") -> bool:
+        return self.get_world_aabb().colliderect(other.get_world_aabb())
+    
+    # endregion
+    
     # region COORDINATES CONVERSION METHODS
     
-    def screen_to_local(self, screen: Vec2, camera: Optional[Camera] = None) -> Vec2:
-        return self.world_to_local(camera.screen_to_world_pos(screen)) if camera else self.world_to_local(screen)
+    # --- Screen Conversions ---
+    def screen_to_camera(self, screen: Vec2, camera: Optional[Camera] = None) -> Vec2:
+        if camera:
+            return camera.screen_to_camera_pos(screen)
+        if self.layer:
+            return self.layer.screen_to_camera_pos(screen)
+        return screen
     
+    def screen_to_world(self, screen: Vec2, camera: Optional[Camera] = None) -> Vec2:
+        return self.camera_to_world(self.screen_to_camera(screen, camera))
+    
+    def screen_to_local(self, screen: Vec2, camera: Optional[Camera] = None) -> Vec2:
+        return self.camera_to_local(self.screen_to_camera(screen, camera))
     
     def screen_to_uv(self, screen: Vec2, camera: Optional[Camera] = None) -> Vec2:
-        return self.world_to_uv(camera.screen_to_world_pos(screen)) if camera else self.world_to_uv(screen)
+        return self.local_to_uv(self.screen_to_local(screen, camera))
     
+    # --- Camera Conversions ---
+    def camera_to_screen(self, camera_pos: Vec2, camera: Optional[Camera] = None) -> Vec2:
+        if camera:
+            return camera.camera_to_screen_pos(camera_pos)
+        if self.layer:
+            return self.layer.camera_to_screen_pos(camera_pos)
+        return camera_pos
     
+    def camera_to_world(self, camera_pos: Vec2) -> Vec2:
+        return self.layer.camera_to_world_pos(camera_pos) if self.layer else camera_pos
+    
+    def camera_to_local(self, camera_pos: Vec2) -> Vec2:
+        # Bypassing the World skew! We use the camera_transform.
+        return self.camera_transform.apply_inverse(camera_pos) + self.uv_to_local(self.anchor)
+    
+    def camera_to_uv(self, camera_pos: Vec2) -> Vec2:
+        return self.local_to_uv(self.camera_to_local(camera_pos))
+    
+    # --- World Conversions ---
+    def world_to_screen(self, world: Vec2, camera: Optional[Camera] = None) -> Vec2:
+        return self.camera_to_screen(self.world_to_camera(world), camera)
+    
+    def world_to_camera(self, world: Vec2) -> Vec2:
+        return self.layer.world_to_camera_pos(world) if self.layer else world
     
     def world_to_local(self, world: Vec2) -> Vec2:
-        return self.world_transform.apply_inverse(world) + self.uv_to_local(self.anchor)
+        return self.camera_to_local(self.world_to_camera(world))
     
     def world_to_parent_local(self, world: Vec2) -> Vec2:
         parent = self.parent
         return parent.world_to_local(world) if parent else world
     
-    
     def world_to_uv(self, world: Vec2) -> Vec2:
         return self.local_to_uv(self.world_to_local(world))
     
+    # --- Local Conversions ---
+    def local_to_screen(self, local: Vec2, camera: Optional[Camera] = None) -> Vec2:
+        return self.camera_to_screen(self.local_to_camera(local), camera)
     
+    def local_to_camera(self, local: Vec2) -> Vec2:
+        return self.camera_transform.apply(local - self.uv_to_local(self.anchor))
     
     def local_to_world(self, local_pos: Vec2) -> Vec2:
-        return self.world_transform.apply(local_pos - self.uv_to_local(self.anchor))
+        return self.camera_to_world(self.local_to_camera(local_pos))
     
     def local_to_uv(self, local) -> Vec2:
         return self.renderer.local_to_uv(local) if self.renderer else Vec2()
     
-    def local_to_screen(self, local: Vec2, camera: Optional[Camera] = None) -> Vec2:
-        return camera.world_to_screen_pos(self.local_to_world(local)) if camera else self.local_to_world(local)
+    # --- UV Conversions ---
+    def uv_to_screen(self, uv: Vec2, camera: Optional[Camera] = None) -> Vec2:
+        return self.local_to_screen(self.uv_to_local(uv), camera)
     
-    
-    
-    def uv_to_local(self, uv: Vec2) -> Vec2:
-        return self.renderer.uv_to_local(uv) if self.renderer else Vec2()
+    def uv_to_camera(self, uv: Vec2) -> Vec2:
+        return self.local_to_camera(self.uv_to_local(uv))
     
     def uv_to_world(self, uv: Vec2) -> Vec2:
         return self.local_to_world(self.uv_to_local(uv))
     
-    def uv_to_screen(self, uv: Vec2, camera: Optional[Camera] = None) -> Vec2:
-        return camera.world_to_screen_pos(self.uv_to_world(uv)) if camera else self.uv_to_world(uv)
-    
+    def uv_to_local(self, uv: Vec2) -> Vec2:
+        return self.renderer.uv_to_local(uv) if self.renderer else Vec2()
     
     def get_anchor_offset(self, anchor: Vec2):
         return self.uv_to_local(anchor)
@@ -652,25 +700,16 @@ class PygameObject:
     
     # endregion
     
-    def _render_self(self, submit: Callable[[DrawCommand], Any], camera: Camera):
-        self.renderer.render(submit, self.world_transform, self.sub_layer, self.anchor, self.get_world_clip_area())
+    def _render_self(self, submit: Callable[[DrawCommand], Any]):
+        self.renderer.render(submit, self.world_transform, self.layer, self.sub_layer, self.anchor, self.get_world_clip_area())
         return self
     
-    def render(self, submit, camera: Camera) -> PygameObject:
+    def render(self, submit) -> PygameObject:
         self._culled = False
         if self.visible:
             if self.renderer and not self.has_flag(ObjectFlags.SKIP_RENDERING):
-                
-                if self.has_flag(ObjectFlags.CULLABLE):
-                    camera_rect = camera.world_aabb
-                    object_rect = self.get_world_aabb()
-                
-                    if not object_rect.colliderect(camera_rect):
-                        self._culled = True
-                
-                if not self._culled:
-                    self._render_self(submit, camera)
-            self.children.render(submit, camera)
+                self._render_self(submit)
+            self.children.render(submit)
         return self
             
             

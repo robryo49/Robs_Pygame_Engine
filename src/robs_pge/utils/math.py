@@ -3,7 +3,7 @@ from dataclasses import dataclass, field
 from random import random as rand
 
 from pygame import Vector2 as Vec2, Vector3 as Vec3, Rect, FRect, Color
-from math import cos, sin, pi, log10, inf
+from math import cos, sin, pi, log10, inf, radians, degrees
 
 
 def lerp(a, b, t):

@@ -1,10 +1,15 @@
-from typing import Optional
+from __future__ import annotations
 
 from .draw_commands import DrawCircle, DrawLine, DrawRect, DrawText, DrawTexture, DrawSubSurface, DrawChunkedSprite
 from .styles import *
 from .object_renderer import ObjectRenderer
 from ..resources import Icons, Texture
 from ..utils import Anchor, Color, Font, Transform, Vec2, Rect, FRect
+
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from ..objects import Layer
 
 
 class RectRenderer(ObjectRenderer):
@@ -129,8 +134,8 @@ class RectRenderer(ObjectRenderer):
         
         return (r - dx) ** 2 + (r - dy) ** 2 <= r ** 2
     
-    def render(self, submit, transform: Transform, layer: int, anchor: Vec2, clip_area: Optional[FRect] = None):
-        submit(DrawRect(transform, layer, anchor, self._cache, clip_area, self.dims, self.style))
+    def render(self, submit, transform: Transform, layer: Layer, sub_layer: int, anchor: Vec2, clip_area: Optional[FRect] = None):
+        submit(DrawRect(transform, layer, sub_layer, anchor, self._cache, clip_area, self.dims, self.style))
 
 
 class CircleRenderer(ObjectRenderer):
@@ -231,8 +236,8 @@ class CircleRenderer(ObjectRenderer):
         pos = local_pos - self.get_offset(Anchor.C)
         return pos.length_squared() <= self.radius ** 2
     
-    def render(self, submit, transform: Transform, layer: int, anchor: Vec2, clip_area: Optional[FRect] = None):
-        submit(DrawCircle(transform, layer, anchor, self._cache, clip_area, self.radius, self.style))
+    def render(self, submit, transform: Transform, layer: Layer, sub_layer: int, anchor: Vec2, clip_area: Optional[FRect] = None):
+        submit(DrawCircle(transform, layer, sub_layer, anchor, self._cache, clip_area, self.radius, self.style))
 
 
 class LineRenderer(ObjectRenderer):
@@ -302,8 +307,8 @@ class LineRenderer(ObjectRenderer):
     def test_hit(self, local_pos: Vec2):
         return False
     
-    def render(self, submit, transform: Transform, layer: int, anchor: Vec2, clip_area: Optional[FRect] = None):
-        submit(DrawLine(transform, layer, anchor, self._cache, clip_area, self.points, self.style))
+    def render(self, submit, transform: Transform, layer: Layer, sub_layer: int, anchor: Vec2, clip_area: Optional[FRect] = None):
+        submit(DrawLine(transform, layer, sub_layer, anchor, self._cache, clip_area, self.points, self.style))
 
 
 class SpriteRenderer(ObjectRenderer):
@@ -346,8 +351,8 @@ class SpriteRenderer(ObjectRenderer):
         
         return self.texture.get_at_pos(local_pos).a > 0
     
-    def render(self, submit, transform: Transform, layer: int, anchor: Vec2, clip_area: Optional[FRect] = None):
-        submit(DrawTexture(transform, layer, anchor, self._cache, clip_area, self.texture))
+    def render(self, submit, transform: Transform, layer: Layer, sub_layer: int, anchor: Vec2, clip_area: Optional[FRect] = None):
+        submit(DrawTexture(transform, layer, sub_layer, anchor, self._cache, clip_area, self.texture))
 
 
 class IconRenderer(SpriteRenderer):
@@ -458,8 +463,8 @@ class TextRenderer(ObjectRenderer):
         x, y = local_pos
         return 0 <= x < self.width and 0 <= y < self.height
     
-    def render(self, submit, transform: Transform, layer: int, anchor: Vec2, clip_area: Optional[FRect] = None):
-        submit(DrawText(transform, layer, anchor, self._cache, clip_area, self.text, self.font))
+    def render(self, submit, transform: Transform, layer: Layer, sub_layer: int, anchor: Vec2, clip_area: Optional[FRect] = None):
+        submit(DrawText(transform, layer, sub_layer, anchor, self._cache, clip_area, self.text, self.font))
 
 
 class SubSurfaceRenderer(ObjectRenderer):
@@ -543,9 +548,9 @@ class SubSurfaceRenderer(ObjectRenderer):
         # Click was in the out-of-bounds transparent gutter area
         return False
     
-    def render(self, submit, transform: Transform, layer: int, anchor: Vec2, clip_area: Optional[FRect] = None):
+    def render(self, submit, transform: Transform, layer: Layer, sub_layer: int, anchor: Vec2, clip_area: Optional[FRect] = None):
         submit(DrawSubSurface(
-            transform, layer, anchor, self._cache, clip_area, self.texture, self.sub_rect, self.target_dims
+            transform, layer, sub_layer, anchor, self._cache, clip_area, self.texture, self.sub_rect, self.target_dims
         ))
 
 
@@ -593,5 +598,5 @@ class ChunkedSpriteRenderer(ObjectRenderer):
         
         return self.texture.get_at_pos(local_pos).a > 0
     
-    def render(self, submit, transform: Transform, layer: int, anchor: Vec2, clip_area: Optional[FRect] = None):
-        submit(DrawChunkedSprite(transform, layer, anchor, self._cache, clip_area, self.texture, self.chunk_size))
+    def render(self, submit, transform: Transform, layer: Layer, sub_layer: int, anchor: Vec2, clip_area: Optional[FRect] = None):
+        submit(DrawChunkedSprite(transform, layer, sub_layer, anchor, self._cache, clip_area, self.texture, self.chunk_size))

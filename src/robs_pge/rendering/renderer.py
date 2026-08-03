@@ -21,7 +21,7 @@ class Renderer:
         self._surface_cache: SurfaceCache = SurfaceCache(max_cache_size)
         self._font_cache: dict[tuple, pg.Font] = {}
         
-        self._commands: list[tuple[DrawCommand, Camera, float]] = []
+        self._commands: list[DrawCommand] = []
         
         self._cache_hits: int = 0
         self._cache_misses: int = 0
@@ -39,7 +39,7 @@ class Renderer:
         return self._display
     
     @property
-    def commands(self) -> list[tuple[DrawCommand, Camera, float]]:
+    def commands(self) -> list[DrawCommand]:
         return self._commands
     
     @property
@@ -76,8 +76,8 @@ class Renderer:
     
     # endregion
     
-    def draw(self, cmd: DrawCommand, camera: Camera, z_order: float) -> "Renderer":
-        self._commands.append((cmd, camera, z_order))
+    def draw(self, cmd: DrawCommand) -> "Renderer":
+        self._commands.append(cmd)
         return self
     
     def render(self, _camera: Optional[Camera] = None) -> "Renderer":
@@ -86,8 +86,8 @@ class Renderer:
         self._cache_misses = 0
         self._cache_skips = 0
         
-        for cmd, camera, _ in sorted(self._commands, key=lambda x: (x[2], x[0].sub_layer)):
-            self._execute_command(cmd, camera)
+        for cmd in sorted(self._commands, key=lambda c: (c.layer.layer_value, c.sub_layer)):
+            self._execute_command(cmd)
         
         self.display.surface.blits(self._blit_calls)
         
@@ -99,8 +99,8 @@ class Renderer:
         
         return self
     
-    def _execute_command(self, cmd: DrawCommand, camera: Camera) -> "Renderer":
-        cache_hit = cmd.draw(self._blit_calls, camera, self._surface_cache, self._font_cache)
+    def _execute_command(self, cmd: DrawCommand) -> "Renderer":
+        cache_hit = cmd.draw(self._blit_calls, self._surface_cache, self._font_cache)
         
         if cache_hit is None:
             self._cache_skips += 1

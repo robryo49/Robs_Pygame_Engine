@@ -436,7 +436,7 @@ class State:
         return self._layer_manager.create_layer(name, layer_value, cam, interactable)
     
     def add_window(self, window: WindowObject, group: str = "main"):
-        self.add_object("ui", window)
+        self.ui_layer.add_object(window)
         self.windows.register(window, group)
     
     def add_quick_debug(self, getter: Callable, template: str = "{}"):
@@ -478,7 +478,3 @@ class State:
         for layer in self._layer_manager.sorted_layers:
             layer.render(self.renderer.draw)
     
-        self.particle_system.render(
-            lambda cmd: self.renderer.draw(cmd, self.camera, _LAYER_WORLD),
-            self.camera
-    )

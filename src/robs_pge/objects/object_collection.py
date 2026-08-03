@@ -7,6 +7,7 @@ from ..rendering import DrawCommand
 
 if TYPE_CHECKING:
     from ..core import Camera
+    from .layer import Layer
 
 
 class ObjectCollection(TypedCollection):
@@ -102,10 +103,10 @@ class ObjectCollection(TypedCollection):
             
         return self
             
-    def render(self, submit: Callable[[DrawCommand], Any], camera: Camera) -> "ObjectCollection":
+    def render(self, submit: Callable[[DrawCommand], Any]) -> "ObjectCollection":
         
         if self.rendering_enabled:
-            self.foreach(lambda o: o.render(submit, camera))
+            self.foreach(lambda o: o.render(submit))
         
         return self
         
