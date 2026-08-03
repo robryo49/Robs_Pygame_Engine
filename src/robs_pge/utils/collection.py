@@ -135,6 +135,13 @@ class DictCollection(dict[K, V], Generic[K, V]):
     
     def all_match(self, predicate: Callable[[V], bool]) -> bool:
         return all(predicate(item) for item in self.values())
+    
+    def get_or_default(self, key: K, value: V):
+        try:
+            return self[key]
+        except KeyError:
+            self.set(key, value)
+            return value
 
 
 class TypedCollection(Collection[T]):
@@ -239,3 +246,4 @@ class TypedDictCollection(DictCollection[K, V]):
         if key not in self:
             self._validate(key, default)
         return super().setdefault(key, default)
+        

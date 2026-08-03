@@ -11,19 +11,19 @@ import pygame as pg
 
 if TYPE_CHECKING:
     from ..core import Camera
+    from ..objects import LayerManager
 
 
 class InteractionManager:
     def __init__(self, input_manager: InputManager):
         self._input = input_manager
         
-        self._hovered_ui: list[PygameObject] = []
-        self._hovered_world: list[PygameObject] = []
-        self._hovered: Optional[PygameObject] = None
+        self._hovered: list[PygameObject] = []
+        self._top_hovered: Optional[PygameObject] = None
         
         self._mouse_pos = Vec2()
         
-        self._active: dict[int, Optional[PygameObject]] = {1:None, 2:None, 3:None}
+        self._active: dict[int, Optional[PygameObject]] = {1: None, 2: None, 3: None}
     
     # region PROPERTIES
     
@@ -32,16 +32,8 @@ class InteractionManager:
         return self._input
     
     @property
-    def hovered_ui(self):
-        return list(self._hovered_ui)
-    
-    @property
-    def hovered_world(self):
-        return list(self._hovered_world)
-    
-    @property
     def hovered(self):
-        return self._hovered
+        return self._top_hovered
     
     # endregion
     
@@ -52,83 +44,103 @@ class InteractionManager:
             if isinstance(obj, ObjectCollection):
                 objects.extend(self._collect_objects(obj))
             elif isinstance(obj, PygameObject):
-                if obj.visible: objects.append(obj)
+                if obj.visible:
+                    objects.append(obj)
                 objects.extend(self._collect_objects(obj.children))
-            
+        
         return objects
     
     @staticmethod
     def _get_first(objects: list[PygameObject], object_filter: Optional[Callable[[PygameObject], bool]] = None) -> Optional[PygameObject]:
-        if not objects: return None
-        if object_filter is None: return objects[0]
-        else:
-            for obj in objects:
-                if object_filter(obj):
-                    return obj
+        if not objects:
+            return None
+        if object_filter is None:
+            return objects[0]
+        for obj in objects:
+            if object_filter(obj):
+                return obj
         return None
     
-    def _handle_hover(self):
-        previous_hovered = self._hovered
+    def _collect_hovered_from_layers(self, layer_manager: "LayerManager") -> list[PygameObject]:
+        """
+        Iterate interactable layers in descending z-order (topmost first).
+        Each layer uses its own camera for coordinate conversion.
+        Returns a flat list of all hovered interactable objects, topmost layer first.
+        """
+        all_hovered: list[PygameObject] = []
+        
+        for layer in layer_manager.interactable_layers_reversed():
+            camera = layer.camera
+            mouse_pos = self._input.mouse.world_pos(camera)
+            
+            objects = self._collect_objects(layer)
+            objects.reverse()
+            layer_hovered = [
+                obj for obj in sorted(objects, key=lambda c: c.layer, reverse=True)
+                if obj.test_world_hit(mouse_pos) and obj.has_flag(ObjectFlags.INTERACTABLE)
+            ]
+            all_hovered.extend(layer_hovered)
+        
+        return all_hovered
+    
+    def _handle_hover(self, hovered: list[PygameObject]):
+        previous_hovered = self._top_hovered
         
         if any(self._active.values()):
-            self._hovered = self._active[1] or self._active[2] or self._active[3]
+            self._top_hovered = self._active[1] or self._active[2] or self._active[3]
         else:
-            self._hovered = self._get_first(self._hovered_ui + self._hovered_world, lambda obj: obj.has_flag(ObjectFlags.HOVERABLE))
+            self._top_hovered = self._get_first(hovered, lambda obj: obj.has_flag(ObjectFlags.HOVERABLE))
         
-        hovered = self.hovered
-        if previous_hovered is self.hovered:
-            if hovered is not None:
-                hovered.while_hovered()
+        top = self._top_hovered
+        if previous_hovered is top:
+            if top is not None:
+                top.while_hovered()
         else:
             if previous_hovered:
                 previous_hovered.on_hover_end()
-            if hovered is not None:
-                hovered.on_hover_start()
+            if top is not None:
+                top.on_hover_start()
     
     def _handle_button(self, button: int):
-        if self.input.pressed_button(button):
-            active = self._active[button] = self.hovered
+        mouse_pos = self._mouse_pos
+        
+        if self._input.pressed_button(button):
+            active = self._active[button] = self._top_hovered
             if active and active.has_flag(ObjectFlags.CLICKABLE):
-                active.on_click(button, self._mouse_pos)
+                active.on_click(button, mouse_pos)
         
         active = self._active[button]
-        if self.input.held_button(button) and active and active.has_flag(ObjectFlags.CLICKABLE):
-            active.on_hold(button, self._mouse_pos)
-            
-        if self.input.released_button(button) and active and active.has_flag(ObjectFlags.CLICKABLE):
-            active.on_release(button, self._mouse_pos)
+        if self._input.held_button(button) and active and active.has_flag(ObjectFlags.CLICKABLE):
+            active.on_hold(button, mouse_pos)
+        
+        if self._input.released_button(button) and active and active.has_flag(ObjectFlags.CLICKABLE):
+            active.on_release(button, mouse_pos)
             self._active[button] = None
-            
-    def _handle_scroll(self):
-        if not self.input.mouse_scroll:
+    
+    def _handle_scroll(self, hovered: list[PygameObject]):
+        if not self._input.mouse_scroll:
             return
         
-        first_scrollable = self._get_first(self._hovered_ui + self._hovered_world, lambda obj: obj.has_flag(ObjectFlags.SCROLLABLE))
+        first_scrollable = self._get_first(hovered, lambda obj: obj.has_flag(ObjectFlags.SCROLLABLE))
         
         if first_scrollable is not None:
-            first_scrollable.on_scroll(self.input.mouse_scroll, self._mouse_pos)
+            first_scrollable.on_scroll(self._input.mouse_scroll, self._mouse_pos)
     
-    def get_hovered_objects(self, objects: ObjectCollection, camera: Optional[Camera] = None):
-        self._mouse_pos = self.input.mouse.world_pos(camera) if camera else self.input.mouse.pos
-        objects = self._collect_objects(objects)
-        objects.reverse()
-        return [obj for obj in sorted(objects, key=lambda c: c.layer, reverse=True) if obj.test_world_hit(self._mouse_pos) and obj.has_flag(ObjectFlags.INTERACTABLE)]
-    
-    def update(self, objects: ObjectCollection, ui_objects: ObjectCollection, camera: Camera):
+    def update(self, layer_manager: "LayerManager"):
+        self._mouse_pos = self._input.mouse.pos
         
-        self._hovered_ui = self.get_hovered_objects(ui_objects)
-        self._hovered_world = self.get_hovered_objects(objects, camera)
-    
-        self._handle_hover()
+        hovered = self._collect_hovered_from_layers(layer_manager)
+        
+        self._handle_hover(hovered)
         
         self._handle_button(1)
         self._handle_button(2)
         self._handle_button(3)
         
-        self._handle_scroll()
+        self._handle_scroll(hovered)
         
-        hovered = self.hovered
-        if hovered and hovered.has_flag(ObjectFlags.CLICKABLE):
+        top = self._top_hovered
+        if top and top.has_flag(ObjectFlags.CLICKABLE):
             pg.mouse.set_cursor(pg.SYSTEM_CURSOR_HAND)
         else:
             pg.mouse.set_cursor(pg.SYSTEM_CURSOR_ARROW)

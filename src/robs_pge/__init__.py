@@ -8,6 +8,7 @@ from .objects import (
     LayoutObject, DebugOverlay, DebugPanelObject,
     ButtonObject, ProgressBarObject, LineChartObject,
     ObjectFactory, ObjectCollection, ObjectBehavior,
+    Layer
 )
 from .objects.custom import TextObject
 from .utils import (
@@ -40,6 +41,7 @@ __all__ = [
     "LayoutObject", "DebugOverlay", "DebugPanelObject",
     "ButtonObject", "ProgressBarObject", "LineChartObject",
     "ObjectFactory", "ObjectCollection", "ObjectBehavior",
+    "Layer",
     # utils (commonly needed at top level)
     "Vec2", "Vec3", "Transform", "Easing", "Anchor", "Rect",
     "Color", "Colors",

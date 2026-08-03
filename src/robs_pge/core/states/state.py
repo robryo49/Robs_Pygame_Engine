@@ -1,21 +1,29 @@
 from __future__ import annotations
-from typing import Any, Optional, TYPE_CHECKING, Callable
+
+from typing import Any, Callable, Optional, TYPE_CHECKING
 
 import pygame as pg
 
+from ..camera import Camera
 from ...animation import AnimationManager
 from ...debug import FrameTimer, QuickDebugManager
 from ...events import Event, EventManager
 from ...input import InputManager, Keybind, KeybindsManager
-from ...objects import InteractionManager, ObjectCollection, ObjectFactory, PygameObject, ParticleSystem, WindowManager, WindowObject
-from ...rendering import WindowStyle, LineChartStyle
+from ...objects import InteractionManager, Layer, LayerManager, ObjectFactory, ParticleSystem, WindowManager, WindowObject
+from ...rendering import LineChartStyle, WindowStyle
 from ...resources import ResourceManager
-from ...utils import Anchor, DictCollection, RenderableType, Vec2, AsyncProcessManager, AsyncProcess, UpdatableType, ObjectLikeType
-from ..camera import Camera
+from ...utils import Anchor, AsyncProcess, AsyncProcessManager, DictCollection, ObjectLikeType, Vec2
 
 if TYPE_CHECKING:
     from ..engine import Engine
     
+    
+
+_LAYER_WORLD = 0.0
+_LAYER_UI    = 100.0
+_LAYER_DEBUG = 1000.0
+
+
 
 class State:
     def __init__(self, engine: Engine, state_id: str):
@@ -40,14 +48,19 @@ class State:
         self._services: DictCollection = DictCollection()
         self._factory.services = self._services
         
-        self._objects: ObjectCollection = ObjectCollection()
-        self._ui_objects: ObjectCollection = ObjectCollection()
+        self._layer_manager: LayerManager = LayerManager()
         
-        self._debug_overlay = self.factory.ui.debug.make_debug_overlay(Vec2(), width=self.engine.display.dims.x, anchor=Anchor.TL).set_constant_padding(10)
+        self._debug_layer = self.create_layer("debug", _LAYER_DEBUG, self.engine.default_camera, interactable=False)
+        self._ui_layer = self.create_layer("ui", _LAYER_UI, self.engine.default_camera, interactable=True)
+        self._world_layer = self.create_layer("world", _LAYER_WORLD, self.camera, interactable=True)
         
-        self._quick_debug_getters: list[tuple[str, Callable | tuple[Callable, ...]]] = []
-        self._quick_debug_queue: list[str] = []
-
+        self._debug_overlay = (
+            self.factory.ui.debug
+            .make_debug_overlay(Vec2(), width=self.engine.display.dims.x, anchor=Anchor.TL)
+            .set_constant_padding(10)
+        )
+        self.debug_layer.add_object(self._debug_overlay)
+        
         self.init_resources()
         self.init_keybinds()
         self.init_services()
@@ -78,6 +91,10 @@ class State:
     @property
     def camera(self) -> Camera:
         return self._camera
+    
+    @property
+    def default_camera(self) -> Camera:
+        return self.engine.default_camera
     
     @property
     def mouse(self):
@@ -132,20 +149,29 @@ class State:
         return self._keybinds_manager
     
     @property
-    def objects(self) -> ObjectCollection:
-        return self._objects
-    
-    @property
-    def ui_objects(self) -> ObjectCollection:
-        return self._ui_objects
+    def layer_manager(self) -> LayerManager:
+        return self._layer_manager
     
     @property
     def windows(self):
         return self._window_manager
     
+    
+    @property
+    def debug_layer(self):
+        return self._debug_layer
+    
+    @property
+    def ui_layer(self):
+        return self._ui_layer
+    
+    @property
+    def world_layer(self):
+        return self._world_layer
+    
     # endregion
     
-    # region SEVICES CREATION METHODS
+    # region SERVICES CREATION METHODS
     
     @staticmethod
     def _create_event_manager() -> EventManager:
@@ -182,145 +208,188 @@ class State:
     # endregion
     
     # region INIT METHODS
-
+    
+    def init_layers(self) -> None:
+        self.layer_manager.create_layer("world", _LAYER_WORLD, self.camera)
+        self.layer_manager.create_layer("ui", _LAYER_UI, self.engine.default_camera)
+        
+    
     def init_debug_overlay_objects(self) -> None:
         
-        green_style = self.resources.get(WindowStyle, "debug_teal_panel_style")
-        blue_style = self.resources.get(WindowStyle, "debug_blue_panel_style")
+        green_style  = self.resources.get(WindowStyle, "debug_teal_panel_style")
+        blue_style   = self.resources.get(WindowStyle, "debug_blue_panel_style")
         yellow_style = self.resources.get(WindowStyle, "debug_yellow_panel_style")
         
         blue_line_chart_style = self.resources.get(LineChartStyle, "debug_blue_line_chart_style")
         
         font_blue_title = self.resources.get_font("debug_blue_title")
-        
-        font_gray = self.resources.get_font("debug_gray_text")
-        font_white = self.resources.get_font("debug_white_text")
-        
+        font_gray       = self.resources.get_font("debug_gray_text")
+        font_white      = self.resources.get_font("debug_white_text")
         
         c1 = self.factory.ui.layouts.make_vertical_layout(Vec2()).skip_rendering().set_cell_padding(10)
         c2 = self.factory.ui.layouts.make_vertical_layout(Vec2()).skip_rendering().set_cell_padding(10)
         
-        # region ENGINE PANNEL
+        # region ENGINE PANEL
         
         engine_pannel = self.factory.ui.make_window(Vec2(), Vec2(400, 190), "ENGINE", style=green_style)
         
-        engine_c1 = self.factory.ui.layouts.make_vertical_layout(Vec2(), 400).skip_rendering().set_constant_padding(10)
-        engine_c1.stack_y(self.factory.text.make_dynamic_text(Vec2(), "{} FPS    |    {} ms", lambda: (round(self.clock.fps), round(self.clock.dtime*1000, 1)), font_blue_title, cache=False), anchor=Anchor.T)
-        fps_line_chart = self.factory.ui.make_line_chart(Vec2(), Vec2(380, 100), blue_line_chart_style, 10, 10, None, None, 0, 120, None, 5,
-                                                         update_action=lambda o: fps_line_chart.insert_point(Vec2(self.clock.time, self.clock.fps)))
+        engine_c1 = (
+            self.factory.ui.layouts.make_vertical_layout(Vec2(), 400)
+            .skip_rendering().set_constant_padding(10)
+        )
+        engine_c1.stack_y(
+            self.factory.text.make_dynamic_text(
+                Vec2(), "{} FPS    |    {} ms",
+                lambda: (round(self.clock.fps), round(self.clock.dtime * 1000, 1)),
+                font_blue_title, cache=False
+            ),
+            anchor=Anchor.T
+        )
+        fps_line_chart = self.factory.ui.make_line_chart(
+            Vec2(), Vec2(380, 100), blue_line_chart_style, 10, 10, None, None, 0, 120, None, 5,
+            update_action=lambda o: fps_line_chart.insert_point(Vec2(self.clock.time, self.clock.fps))
+        )
         engine_c1.stack_y(fps_line_chart, anchor=Anchor.TL)
-        
         engine_pannel.content.stack_x(engine_c1)
         
         # endregion
         
-        # region FRAME PANNEL
+        # region FRAME PANEL
         
-        frame_pannel = self.factory.ui.make_window(Vec2(), Vec2(400, 200), "FRAME TIMER", style=yellow_style).stack_content_x(
-            self.factory.ui.layouts.make_vertical_layout(Vec2(), 180).skip_rendering().
-            stack_y(self.factory.text.make_text(Vec2(), "Update", font_white), anchor=Anchor.TL).
-            stack_y(self.factory.text.make_text(Vec2(), "- Events", font_gray), anchor=Anchor.TL).
-            stack_y(self.factory.text.make_text(Vec2(), "- State", font_gray), anchor=Anchor.TL).
-            stack_y(self.factory.text.make_text(Vec2(), "- Input", font_gray), anchor=Anchor.TL).
-            stack_y(self.factory.text.make_text(Vec2(), "Rendering", font_white), anchor=Anchor.TL).
-            stack_y(self.factory.text.make_text(Vec2(), "- Draw Calls", font_gray), anchor=Anchor.TL).
-            stack_y(self.factory.text.make_text(Vec2(), "- Drawing", font_gray), anchor=Anchor.TL).
-            stack_y(self.factory.text.make_text(Vec2(), "- Screen Update", font_gray), anchor=Anchor.TL).
-            stack_y(self.factory.text.make_text(Vec2(), "Ticking", font_white), anchor=Anchor.TL)
-        ).stack_content_x(
-            self.factory.ui.layouts.make_vertical_layout(Vec2(), 180).skip_rendering().
-            stack_y(self.factory.text.make_dynamic_text(Vec2(), "{} ms", lambda: self.frame_timer.get_time_ms("Update"), font_white), anchor=Anchor.TL).
-            stack_y(self.factory.text.make_dynamic_text(Vec2(), "{} ms", lambda: self.frame_timer.get_time_ms("Update.Events"), font_gray), anchor=Anchor.TL).
-            stack_y(self.factory.text.make_dynamic_text(Vec2(), "{} ms", lambda: self.frame_timer.get_time_ms("Update.State"), font_gray), anchor=Anchor.TL).
-            stack_y(self.factory.text.make_dynamic_text(Vec2(), "{} ms", lambda: self.frame_timer.get_time_ms("Update.Input"), font_gray), anchor=Anchor.TL).
-            stack_y(self.factory.text.make_dynamic_text(Vec2(), "{} ms", lambda: self.frame_timer.get_time_ms("Rendering"), font_white), anchor=Anchor.TL).
-            stack_y(self.factory.text.make_dynamic_text(Vec2(), "{} ms", lambda: self.frame_timer.get_time_ms("Rendering.Draw Calls"), font_gray), anchor=Anchor.TL).
-            stack_y(self.factory.text.make_dynamic_text(Vec2(), "{} ms", lambda: self.frame_timer.get_time_ms("Rendering.Drawing"), font_gray), anchor=Anchor.TL).
-            stack_y(self.factory.text.make_dynamic_text(Vec2(), "{} ms", lambda: self.frame_timer.get_time_ms("Rendering.Screen Update"), font_gray), anchor=Anchor.TL).
-            stack_y(self.factory.text.make_dynamic_text(Vec2(), "{} ms", lambda: self.frame_timer.get_time_ms("Ticking"), font_white), anchor=Anchor.TL)
+        frame_pannel = (
+            self.factory.ui.make_window(Vec2(), Vec2(400, 200), "FRAME TIMER", style=yellow_style)
+            .stack_content_x(
+                self.factory.ui.layouts.make_vertical_layout(Vec2(), 180).skip_rendering()
+                .stack_y(self.factory.text.make_text(Vec2(), "Update",         font_white), anchor=Anchor.TL)
+                .stack_y(self.factory.text.make_text(Vec2(), "- Events",       font_gray),  anchor=Anchor.TL)
+                .stack_y(self.factory.text.make_text(Vec2(), "- State",        font_gray),  anchor=Anchor.TL)
+                .stack_y(self.factory.text.make_text(Vec2(), "- Input",        font_gray),  anchor=Anchor.TL)
+                .stack_y(self.factory.text.make_text(Vec2(), "Rendering",      font_white), anchor=Anchor.TL)
+                .stack_y(self.factory.text.make_text(Vec2(), "- Draw Calls",   font_gray),  anchor=Anchor.TL)
+                .stack_y(self.factory.text.make_text(Vec2(), "- Drawing",      font_gray),  anchor=Anchor.TL)
+                .stack_y(self.factory.text.make_text(Vec2(), "- Screen Update",font_gray),  anchor=Anchor.TL)
+                .stack_y(self.factory.text.make_text(Vec2(), "Ticking",        font_white), anchor=Anchor.TL)
+            ).stack_content_x(
+                self.factory.ui.layouts.make_vertical_layout(Vec2(), 180).skip_rendering()
+                .stack_y(self.factory.text.make_dynamic_text(Vec2(), "{} ms", lambda: self.frame_timer.get_time_ms("Update"),                    font_white), anchor=Anchor.TL)
+                .stack_y(self.factory.text.make_dynamic_text(Vec2(), "{} ms", lambda: self.frame_timer.get_time_ms("Update.Events"),             font_gray),  anchor=Anchor.TL)
+                .stack_y(self.factory.text.make_dynamic_text(Vec2(), "{} ms", lambda: self.frame_timer.get_time_ms("Update.State"),              font_gray),  anchor=Anchor.TL)
+                .stack_y(self.factory.text.make_dynamic_text(Vec2(), "{} ms", lambda: self.frame_timer.get_time_ms("Update.Input"),              font_gray),  anchor=Anchor.TL)
+                .stack_y(self.factory.text.make_dynamic_text(Vec2(), "{} ms", lambda: self.frame_timer.get_time_ms("Rendering"),                 font_white), anchor=Anchor.TL)
+                .stack_y(self.factory.text.make_dynamic_text(Vec2(), "{} ms", lambda: self.frame_timer.get_time_ms("Rendering.Draw Calls"),      font_gray),  anchor=Anchor.TL)
+                .stack_y(self.factory.text.make_dynamic_text(Vec2(), "{} ms", lambda: self.frame_timer.get_time_ms("Rendering.Drawing"),         font_gray),  anchor=Anchor.TL)
+                .stack_y(self.factory.text.make_dynamic_text(Vec2(), "{} ms", lambda: self.frame_timer.get_time_ms("Rendering.Screen Update"),   font_gray),  anchor=Anchor.TL)
+                .stack_y(self.factory.text.make_dynamic_text(Vec2(), "{} ms", lambda: self.frame_timer.get_time_ms("Ticking"),                   font_white), anchor=Anchor.TL)
+            )
         )
         
         # endregion
         
         # region CAMERA PANEL
         
-        camera_pannel = self.factory.ui.make_window(Vec2(), Vec2(400, 132), "CAMERA", style=blue_style).stack_content_x(
-            self.factory.ui.layouts.make_vertical_layout(Vec2(), 180).skip_rendering().
-            stack_y(self.factory.text.make_text(Vec2(), "Position", font_gray), anchor=Anchor.TL).
-            stack_y(self.factory.text.make_text(Vec2(), "Zoom", font_gray), anchor=Anchor.TL).
-            stack_y(self.factory.text.make_text(Vec2(), "Rotation", font_gray), anchor=Anchor.TL).
-            stack_y(self.factory.text.make_text(Vec2(), "BL", font_gray), anchor=Anchor.TL).
-            stack_y(self.factory.text.make_text(Vec2(), "TR", font_gray), anchor=Anchor.TL)
-        ).stack_content_x(
-            self.factory.ui.layouts.make_vertical_layout(Vec2(), 180).skip_rendering().
-            stack_y(self.factory.text.make_dynamic_text(Vec2(), "{}", lambda: round(self.camera.pos, 1), font_white), anchor=Anchor.TL).
-            stack_y(self.factory.text.make_dynamic_text(Vec2(), "{}", lambda: (f"{self.camera.zoom:.2e}" if (abs(self.camera.zoom) < 0.01 or abs(self.camera.zoom) >= 1000) else f"{self.camera.zoom:.3f}"), font_white), anchor=Anchor.TL).
-            stack_y(self.factory.text.make_dynamic_text(Vec2(), "{}°", lambda: round(self.camera.rotation, 1), font_white), anchor=Anchor.TL).
-            stack_y(self.factory.text.make_dynamic_text(Vec2(), "{}", lambda: round(Vec2(self.camera.world_aabb.topleft), 1), font_white), anchor=Anchor.TL).
-            stack_y(self.factory.text.make_dynamic_text(Vec2(), "{}", lambda: round(Vec2(self.camera.world_aabb.bottomright), 1), font_white), anchor=Anchor.TL)
+        camera_pannel = (
+            self.factory.ui.make_window(Vec2(), Vec2(400, 132), "CAMERA", style=blue_style)
+            .stack_content_x(
+                self.factory.ui.layouts.make_vertical_layout(Vec2(), 180).skip_rendering()
+                .stack_y(self.factory.text.make_text(Vec2(), "Position", font_gray), anchor=Anchor.TL)
+                .stack_y(self.factory.text.make_text(Vec2(), "Zoom",     font_gray), anchor=Anchor.TL)
+                .stack_y(self.factory.text.make_text(Vec2(), "Rotation", font_gray), anchor=Anchor.TL)
+                .stack_y(self.factory.text.make_text(Vec2(), "BL",       font_gray), anchor=Anchor.TL)
+                .stack_y(self.factory.text.make_text(Vec2(), "TR",       font_gray), anchor=Anchor.TL)
+            ).stack_content_x(
+                self.factory.ui.layouts.make_vertical_layout(Vec2(), 180).skip_rendering()
+                .stack_y(self.factory.text.make_dynamic_text(Vec2(), "{}", lambda: round(self.camera.pos, 1), font_white), anchor=Anchor.TL)
+                .stack_y(self.factory.text.make_dynamic_text(Vec2(), "{}", lambda: (f"{self.camera.zoom:.2e}" if (abs(self.camera.zoom) < 0.01 or abs(self.camera.zoom) >= 1000) else f"{self.camera.zoom:.3f}"), font_white), anchor=Anchor.TL)
+                .stack_y(self.factory.text.make_dynamic_text(Vec2(), "{}°", lambda: round(self.camera.rotation, 1), font_white), anchor=Anchor.TL)
+                .stack_y(self.factory.text.make_dynamic_text(Vec2(), "{}", lambda: round(Vec2(self.camera.world_aabb.topleft), 1), font_white), anchor=Anchor.TL)
+                .stack_y(self.factory.text.make_dynamic_text(Vec2(), "{}", lambda: round(Vec2(self.camera.world_aabb.bottomright), 1), font_white), anchor=Anchor.TL)
+            )
         )
         
         # endregion
         
         # region INPUT PANEL
         
-        input_pannel = self.factory.ui.make_window(Vec2(), Vec2(400, 116), "INPUT", style=green_style).stack_content_x(
-            self.factory.ui.layouts.make_vertical_layout(Vec2(), 180).skip_rendering().
-            stack_y(self.factory.text.make_text(Vec2(), "Mouse Screen Pos", font_gray), anchor=Anchor.TL).
-            stack_y(self.factory.text.make_text(Vec2(), "Mouse World Pos", font_gray), anchor=Anchor.TL).
-            stack_y(self.factory.text.make_text(Vec2(), "Held Buttons", font_gray), anchor=Anchor.TL).
-            stack_y(self.factory.text.make_text(Vec2(), "Held Keys", font_gray), anchor=Anchor.TL)
-        ).stack_content_x(
-            self.factory.ui.layouts.make_vertical_layout(Vec2(), 180).skip_rendering().
-            stack_y(self.factory.text.make_dynamic_text(Vec2(), "{}", lambda: round(self.mouse.pos, 1), font_white), anchor=Anchor.TL).
-            stack_y(self.factory.text.make_dynamic_text(Vec2(), "{}", lambda: round(self.mouse.world_pos(self.camera), 1), font_white), anchor=Anchor.TL).
-            stack_y(self.factory.text.make_dynamic_text(Vec2(), "{}", lambda: self.input.held_buttons, font_white), anchor=Anchor.TL).
-            stack_y(self.factory.text.make_dynamic_text(Vec2(), "{}", lambda: "{" + ", ".join(f"{pg.key.name(k)}: {v}" for k, v in list(self.input.held_keys.items())[:2]) + (f", +{len(self.input.held_keys)-2}" if len(self.input.held_keys) > 2 else "") + "}",font_white), anchor=Anchor.TL)
+        input_pannel = (
+            self.factory.ui.make_window(Vec2(), Vec2(400, 116), "INPUT", style=green_style)
+            .stack_content_x(
+                self.factory.ui.layouts.make_vertical_layout(Vec2(), 180).skip_rendering()
+                .stack_y(self.factory.text.make_text(Vec2(), "Mouse Screen Pos", font_gray), anchor=Anchor.TL)
+                .stack_y(self.factory.text.make_text(Vec2(), "Mouse World Pos",  font_gray), anchor=Anchor.TL)
+                .stack_y(self.factory.text.make_text(Vec2(), "Held Buttons",     font_gray), anchor=Anchor.TL)
+                .stack_y(self.factory.text.make_text(Vec2(), "Held Keys",        font_gray), anchor=Anchor.TL)
+            ).stack_content_x(
+                self.factory.ui.layouts.make_vertical_layout(Vec2(), 180).skip_rendering()
+                .stack_y(self.factory.text.make_dynamic_text(Vec2(), "{}", lambda: round(self.mouse.pos, 1), font_white), anchor=Anchor.TL)
+                .stack_y(self.factory.text.make_dynamic_text(Vec2(), "{}", lambda: round(self.mouse.world_pos(self.camera), 1), font_white), anchor=Anchor.TL)
+                .stack_y(self.factory.text.make_dynamic_text(Vec2(), "{}", lambda: self.input.held_buttons, font_white), anchor=Anchor.TL)
+                .stack_y(self.factory.text.make_dynamic_text(
+                    Vec2(), "{}",
+                    lambda: "{" + ", ".join(f"{pg.key.name(k)}: {v}" for k, v in list(self.input.held_keys.items())[:2])
+                            + (f", +{len(self.input.held_keys) - 2}" if len(self.input.held_keys) > 2 else "") + "}",
+                    font_white
+                ), anchor=Anchor.TL)
+            )
         )
         
         # endregion
         
-        # region RENDERING PANNEL
+        # region RENDERING PANEL
         
-        rendering_pannel = self.factory.ui.make_window(Vec2(), Vec2(400, 176), "RENDERING", style=blue_style).stack_content_x(
-            self.factory.ui.layouts.make_vertical_layout(Vec2(), 180).skip_rendering().
-            stack_y(self.factory.text.make_text(Vec2(), "Cache Size", font_gray), anchor=Anchor.TL).
-            stack_y(self.factory.text.make_text(Vec2(), "Cache Hits", font_gray), anchor=Anchor.TL).
-            stack_y(self.factory.text.make_text(Vec2(), "Cache Skips", font_gray), anchor=Anchor.TL).
-            stack_y(self.factory.text.make_text(Vec2(), "Cache Misses", font_gray), anchor=Anchor.TL).
-            stack_y(self.factory.text.make_text(Vec2(), "World Draw Commands", font_gray), anchor=Anchor.TL).
-            stack_y(self.factory.text.make_text(Vec2(), "UI Draw Commands", font_gray), anchor=Anchor.TL).
-            stack_y(self.factory.text.make_text(Vec2(), "Debug Draw Commands", font_gray), anchor=Anchor.TL).
-            stack_y(self.factory.text.make_text(Vec2(), "Blits", font_gray), anchor=Anchor.TL)
-        ).stack_content_x(
-            self.factory.ui.layouts.make_vertical_layout(Vec2(), 180).skip_rendering().
-            stack_y(self.factory.text.make_dynamic_text(Vec2(), "{} ({}Mo)", lambda: (self.renderer.surface_cache_size, round(self.renderer.surface_cache_memory_size, 1)), font_white, cache=False), anchor=Anchor.TL).
-            stack_y(self.factory.text.make_dynamic_text(Vec2(), "{}", lambda: self.renderer.cache_hits, font_white), anchor=Anchor.TL).
-            stack_y(self.factory.text.make_dynamic_text(Vec2(), "{}", lambda: self.renderer.cache_skips, font_white), anchor=Anchor.TL).
-            stack_y(self.factory.text.make_dynamic_text(Vec2(), "{}", lambda: self.renderer.cache_misses, font_white), anchor=Anchor.TL).
-            stack_y(self.factory.text.make_dynamic_text(Vec2(), "{}", lambda: self.renderer.world_commands_count, font_white), anchor=Anchor.TL).
-            stack_y(self.factory.text.make_dynamic_text(Vec2(), "{}", lambda: self.renderer.ui_commands_count, font_white), anchor=Anchor.TL).
-            stack_y(self.factory.text.make_dynamic_text(Vec2(), "{}", lambda: self.renderer.debug_commands_count, font_white), anchor=Anchor.TL).
-            stack_y(self.factory.text.make_dynamic_text(Vec2(), "{}", lambda: self.renderer.blit_count, font_white), anchor=Anchor.TL)
+        rendering_pannel = (
+            self.factory.ui.make_window(Vec2(), Vec2(400, 176), "RENDERING", style=blue_style)
+            .stack_content_x(
+                self.factory.ui.layouts.make_vertical_layout(Vec2(), 180).skip_rendering()
+                .stack_y(self.factory.text.make_text(Vec2(), "Cache Size",            font_gray), anchor=Anchor.TL)
+                .stack_y(self.factory.text.make_text(Vec2(), "Cache Hits",            font_gray), anchor=Anchor.TL)
+                .stack_y(self.factory.text.make_text(Vec2(), "Cache Skips",           font_gray), anchor=Anchor.TL)
+                .stack_y(self.factory.text.make_text(Vec2(), "Cache Misses",          font_gray), anchor=Anchor.TL)
+                .stack_y(self.factory.text.make_text(Vec2(), "World Draw Commands",   font_gray), anchor=Anchor.TL)
+                .stack_y(self.factory.text.make_text(Vec2(), "UI Draw Commands",      font_gray), anchor=Anchor.TL)
+                .stack_y(self.factory.text.make_text(Vec2(), "Debug Draw Commands",   font_gray), anchor=Anchor.TL)
+                .stack_y(self.factory.text.make_text(Vec2(), "Blits",                 font_gray), anchor=Anchor.TL)
+            ).stack_content_x(
+                self.factory.ui.layouts.make_vertical_layout(Vec2(), 180).skip_rendering()
+                .stack_y(self.factory.text.make_dynamic_text(Vec2(), "{} ({}Mo)", lambda: (self.renderer.surface_cache_size, round(self.renderer.surface_cache_memory_size, 1)), font_white, cache=False), anchor=Anchor.TL)
+                .stack_y(self.factory.text.make_dynamic_text(Vec2(), "{}", lambda: self.renderer.cache_hits,            font_white), anchor=Anchor.TL)
+                .stack_y(self.factory.text.make_dynamic_text(Vec2(), "{}", lambda: self.renderer.cache_skips,           font_white), anchor=Anchor.TL)
+                .stack_y(self.factory.text.make_dynamic_text(Vec2(), "{}", lambda: self.renderer.cache_misses,          font_white), anchor=Anchor.TL)
+                .stack_y(self.factory.text.make_dynamic_text(Vec2(), "{}", lambda: self.renderer.world_commands_count,  font_white), anchor=Anchor.TL)
+                .stack_y(self.factory.text.make_dynamic_text(Vec2(), "{}", lambda: self.renderer.ui_commands_count,     font_white), anchor=Anchor.TL)
+                .stack_y(self.factory.text.make_dynamic_text(Vec2(), "{}", lambda: self.renderer.debug_commands_count,  font_white), anchor=Anchor.TL)
+                .stack_y(self.factory.text.make_dynamic_text(Vec2(), "{}", lambda: self.renderer.blit_count,            font_white), anchor=Anchor.TL)
+            )
         )
         
         # endregion
         
-        # region QUICK DEBUG PANNEL
+        # region QUICK DEBUG PANEL
         
-        quick_debug_pannel = self.factory.ui.make_window(Vec2(), Vec2(400, 200), "QUICK DEBUG", style=yellow_style).stack_content_x(
-            self.factory.ui.layouts.make_vertical_layout(Vec2(), 180).skip_rendering().stack_y(
-                self.factory.text.make_dynamic_text(Vec2(), "{}",
-                                                    lambda: ("\n".join(self.quick_debug_manager.get_values())) if self._quick_debug_manager.has_values() else "Nothing to Show", font_white), anchor=Anchor.TL
-            ).set_outer_padding(10), anchor=Anchor.TL)
+        quick_debug_pannel = (
+            self.factory.ui.make_window(Vec2(), Vec2(400, 200), "QUICK DEBUG", style=yellow_style)
+            .stack_content_x(
+                self.factory.ui.layouts.make_vertical_layout(Vec2(), 180).skip_rendering()
+                .stack_y(
+                    self.factory.text.make_dynamic_text(
+                        Vec2(), "{}",
+                        lambda: ("\n".join(self.quick_debug_manager.get_values()))
+                        if self._quick_debug_manager.has_values() else "Nothing to Show",
+                        font_white
+                    ),
+                    anchor=Anchor.TL
+                )
+                .set_outer_padding(10),
+                anchor=Anchor.TL
+            )
+        )
         quick_debug_pannel.unfix_height()
         
         # endregion
         
-        c1.stack_y(engine_pannel, anchor=Anchor.TL)
-        c1.stack_y(frame_pannel, anchor=Anchor.TL)
-        c1.stack_y(camera_pannel, anchor=Anchor.TL)
-        c1.stack_y(input_pannel, anchor=Anchor.TL)
+        c1.stack_y(engine_pannel,    anchor=Anchor.TL)
+        c1.stack_y(frame_pannel,     anchor=Anchor.TL)
+        c1.stack_y(camera_pannel,    anchor=Anchor.TL)
+        c1.stack_y(input_pannel,     anchor=Anchor.TL)
         c1.stack_y(rendering_pannel, anchor=Anchor.TL)
         
         c2.stack_y(quick_debug_pannel, anchor=Anchor.TR)
@@ -361,36 +430,20 @@ class State:
     def register_event_callback(self, event_type: str, callback: Callable[[Event], Any], condition: Optional[Callable[[Event], bool]] = None) -> None:
         self.event_manager.register(event_type, callback, condition)
     
-    def add_object(self, *obj: ObjectLikeType | list[ObjectLikeType]) -> None:
+    def add_object(self, layer: str, *obj: ObjectLikeType | list[ObjectLikeType]) -> None:
         for o in obj:
-            self.objects.add(o)
+            self._layer_manager.add_object(layer, o)
     
-    def add_ui_object(self, *obj: ObjectLikeType | list[ObjectLikeType]) -> None:
-        for o in obj:
-            self.ui_objects.add(o)
+    def create_layer(self, name: str, layer_value: float, camera: Optional[Camera] = None, interactable: bool = True) -> Layer:
+        cam = camera if camera is not None else self._camera
+        return self._layer_manager.create_layer(name, layer_value, cam, interactable)
     
     def add_window(self, window: WindowObject, group: str = "main"):
-        self.add_ui_object(window)
+        self.add_object("ui", window)
         self.windows.register(window, group)
-        
+    
     def add_quick_debug(self, getter: Callable, template: str = "{}"):
         self.quick_debug_manager.add_listener(getter, template)
-    
-    # endregion
-    
-    # region DRAW METHODS
-    
-    def draw_world(self, obj: RenderableType) -> None:
-        obj.render(self.renderer.draw_world, self.camera)
-    
-    def draw_ui(self, obj: RenderableType) -> None:
-        obj.render(self.renderer.draw_ui, self.engine.default_camera)
-    
-    def draw_debug(self, obj: RenderableType) -> None:
-        obj.render(self.renderer.draw_debug, self.engine.default_camera)
-    
-    def draw_particles(self, particle_system: RenderableType) -> None:
-        particle_system.render(self.renderer.draw_world, self.camera)
     
     # endregion
     
@@ -418,17 +471,29 @@ class State:
         self.keybinds.update()
         self.event_manager.update()
         
-        self.frame_timer.time("Update.State.Interactions", lambda: self.interaction_manager.update(self.objects, self.ui_objects, self.camera))
+        self.frame_timer.time("Update.State.Interactions",     lambda: self.interaction_manager.update(self._layer_manager))
         self.frame_timer.time("Update.State.Async Generation", self.async_process_manager.update)
-        self.frame_timer.time("Update.State.UI Objects", lambda: self.ui_objects.update(dt))
-        self.frame_timer.time("Update.State.World Objects", lambda: self.objects.update(dt))
-        self.frame_timer.time("Update.State.Particles", lambda: self.particle_system.update(dt))
-        self.frame_timer.time("Update.State.Camera", lambda: self.camera.update(dt))
-        
-        self.frame_timer.time("Update.State.Debug Overlay", lambda: self.debug_overlay.update(dt))
+        self.frame_timer.time("Update.State.Layers",           lambda: self._layer_manager.update(dt))
+        self.frame_timer.time("Update.State.Particles",        lambda: self.particle_system.update(dt))
+        self.frame_timer.time("Update.State.Camera",           lambda: self.camera.update(dt))
     
     def render(self) -> None:
-        self.draw_world(self.objects)
-        self.draw_particles(self.particle_system)
-        self.draw_ui(self.ui_objects)
-        self.draw_debug(self.debug_overlay)
+        # World-space objects use the state camera; UI and debug use the default camera.
+        # The renderer has separate queues for world/ui/debug — we route by layer.
+        # Layers with the game camera go to draw_world, others to draw_ui.
+        # The debug layer always goes to draw_debug.
+        debug_layer_id = "debug"
+        default_cam = self.engine.default_camera
+        
+        for layer in self._layer_manager.sorted_layers:
+            if layer.id == debug_layer_id:
+                submit = self.renderer.draw_debug
+            elif layer.camera is default_cam:
+                submit = self.renderer.draw_ui
+            else:
+                submit = self.renderer.draw_world
+            
+            layer.render(submit)
+        
+        # Particle system always renders into the world queue with the game camera
+        self.particle_system.render(self.renderer.draw_world, self.camera)

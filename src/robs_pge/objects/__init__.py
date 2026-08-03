@@ -32,6 +32,8 @@ from .particles import (
     ParticleEmitter, BurstParticleEmitter,
     ParticleSystem
 )
+from .layer import Layer
+from .layer_manager import LayerManager
 
 __all__ = [
     # behaviors
@@ -55,5 +57,7 @@ __all__ = [
     "ButtonObject", "ProgressBarObject", "LineChartObject", "WindowObject",
     # particles
     "Particle", "ParticleEmitter", "BurstParticleEmitter",
-    "ParticleSystem", "ParticlePool"
+    "ParticleSystem", "ParticlePool",
+    
+    "Layer", "LayerManager"
 ]

@@ -1,7 +1,9 @@
 from __future__ import annotations
-import pygame as pg
 
 from typing import TYPE_CHECKING
+
+import pygame as pg
+
 from ..rendering import DrawCommand
 from ..resources import SurfaceCache
 from ..utils import Vec2
