@@ -16,6 +16,7 @@ from ..utils import Anchor, CircleCollisionBox, CollisionBox, DictCollection, Ob
 if TYPE_CHECKING:
     from ..core import Camera
     from ..objects import PygameObject
+    from .layer import Layer
     
     ObjectCallBackType = Optional[Callable[[PygameObject], Any] | tuple[Callable[[PygameObject], Any], ...] | Callable | tuple[Callable, ...]]
     
@@ -23,10 +24,12 @@ if TYPE_CHECKING:
 class PygameObject:
     DEFAULT_FLAGS = ObjectFlags.CULLABLE
     
-    def __init__(self, transform: Transform, renderer: ObjectRenderer, services: DictCollection, layer: int=0, anchor: Vec2=Anchor.C):
+    def __init__(self, transform: Transform, renderer: ObjectRenderer, services: DictCollection, sub_layer: int=0, anchor: Vec2=Anchor.C):
         self._transform = transform
-        self._layer = layer
         self._anchor = anchor
+        
+        self._layer: Optional[Layer] = None
+        self._sub_layer = sub_layer
         
         self._flags = PygameObject.DEFAULT_FLAGS
         self._behaviors = BehaviorCollection(self)
@@ -105,7 +108,6 @@ class PygameObject:
     
     # endregion
     
-    
     # region pos
     @property
     def pos(self):
@@ -179,13 +181,27 @@ class PygameObject:
     # endregion
     
     # region layer
+    
+    # region layer
     @property
-    def layer(self):
-        return self._layer
+    def layer(self) -> Optional[Layer]:
+        return self._layer if self._layer is not None else self._parent.layer if self._parent is not None else None
     
     @layer.setter
-    def layer(self, value: int):
+    def layer(self, value: Layer):
         self._layer = value
+    # endregion
+    
+    # endregion
+    
+    # region sub layer
+    @property
+    def sub_layer(self):
+        return self._sub_layer
+    
+    @sub_layer.setter
+    def sub_layer(self, value: int):
+        self._sub_layer = value
     # endregion
     
     # region clip_area
@@ -637,7 +653,7 @@ class PygameObject:
     # endregion
     
     def _render_self(self, submit: Callable[[DrawCommand], Any], camera: Camera):
-        self.renderer.render(submit, self.world_transform, self.layer, self.anchor, self.get_world_clip_area())
+        self.renderer.render(submit, self.world_transform, self.sub_layer, self.anchor, self.get_world_clip_area())
         return self
     
     def render(self, submit, camera: Camera) -> PygameObject:

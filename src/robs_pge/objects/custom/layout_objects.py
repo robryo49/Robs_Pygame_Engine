@@ -6,8 +6,8 @@ from ...utils import Anchor, DictCollection, Transform, Vec2, clamp, inf
 
 
 class LayoutObject(RectObject):
-    def __init__(self, transform: Transform, renderer: RectRenderer, services: DictCollection, layer: int = 0, anchor: Vec2 = Anchor.C):
-        super().__init__(transform, renderer, services, layer, anchor)
+    def __init__(self, transform: Transform, renderer: RectRenderer, services: DictCollection, sub_layer: int = 0, anchor: Vec2 = Anchor.C):
+        super().__init__(transform, renderer, services, sub_layer, anchor)
         
         self._grid_objects_grid_positions: dict[PygameObject, tuple[int, int]] = {}
         self._grid_objects_spanning: dict[PygameObject, tuple[int, int]] = {}
@@ -497,8 +497,8 @@ class LayoutObject(RectObject):
 
 
 class DebugOverlay(LayoutObject):
-    def __init__(self, transform: Transform, renderer: RectRenderer, services: DictCollection, layer: int = 0, anchor: Vec2 = Anchor.C):
-        super().__init__(transform, renderer, services, layer, anchor)
+    def __init__(self, transform: Transform, renderer: RectRenderer, services: DictCollection, sub_layer: int = 0, anchor: Vec2 = Anchor.C):
+        super().__init__(transform, renderer, services, sub_layer, anchor)
     
     def toggle(self) -> "LayoutObject":
         self.visible = not self.visible
@@ -518,10 +518,10 @@ class DebugPanelObject(LayoutObject):
             title_panel: RectObject,
             header: RectObject,
             title_text: TextObject,
-            layer: int = 0,
+            sub_layer: int = 0,
             anchor: Vec2 = Anchor.C
     ):
-        super().__init__(transform, renderer, services, layer, anchor)
+        super().__init__(transform, renderer, services, sub_layer, anchor)
         
         self._panel = panel
         self._title_panel = title_panel

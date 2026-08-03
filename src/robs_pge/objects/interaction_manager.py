@@ -73,10 +73,10 @@ class InteractionManager:
             camera = layer.camera
             mouse_pos = self._input.mouse.world_pos(camera)
             
-            objects = self._collect_objects(layer)
+            objects = self._collect_objects(layer.objects)
             objects.reverse()
             layer_hovered = [
-                obj for obj in sorted(objects, key=lambda c: c.layer, reverse=True)
+                obj for obj in sorted(objects, key=lambda c: c.sub_layer, reverse=True)
                 if obj.test_world_hit(mouse_pos) and obj.has_flag(ObjectFlags.INTERACTABLE)
             ]
             all_hovered.extend(layer_hovered)

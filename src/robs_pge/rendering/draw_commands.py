@@ -17,7 +17,7 @@ if TYPE_CHECKING:
 @dataclass
 class DrawCommand:
     transform: Transform
-    layer: int
+    sub_layer: int
     anchor: Vec2
     caching: bool
     clip_area: Optional[FRect]

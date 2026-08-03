@@ -8,8 +8,8 @@ from ...utils import Anchor, Color, DictCollection, Transform, Vec2
 
 
 class RectObject(PygameObject):
-    def __init__(self, transform: Transform, renderer: RectRenderer, services: DictCollection, layer: int = 0, anchor: Vec2 = Anchor.C):
-        super().__init__(transform, renderer, services, layer, anchor)
+    def __init__(self, transform: Transform, renderer: RectRenderer, services: DictCollection, sub_layer: int = 0, anchor: Vec2 = Anchor.C):
+        super().__init__(transform, renderer, services, sub_layer, anchor)
     
     # region PROPERTIES
     
@@ -84,8 +84,8 @@ class RectObject(PygameObject):
 
 
 class CircleObject(PygameObject):
-    def __init__(self, transform: Transform, renderer: CircleRenderer, services: DictCollection, layer: int = 0, anchor: Vec2 = Anchor.C):
-        super().__init__(transform, renderer, services, layer, anchor)
+    def __init__(self, transform: Transform, renderer: CircleRenderer, services: DictCollection, sub_layer: int = 0, anchor: Vec2 = Anchor.C):
+        super().__init__(transform, renderer, services, sub_layer, anchor)
     
     # region PROPERTIES
     
@@ -165,8 +165,8 @@ class CircleObject(PygameObject):
 
 
 class LineObject(PygameObject):
-    def __init__(self, transform: Transform, renderer: LineRenderer, services: DictCollection, layer: int = 0, anchor: Vec2 = Anchor.C):
-        super().__init__(transform, renderer, services, layer, anchor)
+    def __init__(self, transform: Transform, renderer: LineRenderer, services: DictCollection, sub_layer: int = 0, anchor: Vec2 = Anchor.C):
+        super().__init__(transform, renderer, services, sub_layer, anchor)
     
     # region PROPERTIES
     
@@ -205,8 +205,8 @@ class LineObject(PygameObject):
 
 
 class TextObject(PygameObject):
-    def __init__(self, transform: Transform, renderer: TextRenderer, services: DictCollection, layer: int = 0, anchor: Vec2 = Anchor.C):
-        super().__init__(transform, renderer, services, layer, anchor)
+    def __init__(self, transform: Transform, renderer: TextRenderer, services: DictCollection, sub_layer: int = 0, anchor: Vec2 = Anchor.C):
+        super().__init__(transform, renderer, services, sub_layer, anchor)
     
     # region PROPERTIES
     

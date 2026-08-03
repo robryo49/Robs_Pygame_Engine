@@ -86,7 +86,7 @@ class Renderer:
         self._cache_misses = 0
         self._cache_skips = 0
         
-        for cmd, camera, _ in sorted(self._commands, key=lambda x: (x[2], x[0].layer)):
+        for cmd, camera, _ in sorted(self._commands, key=lambda x: (x[2], x[0].sub_layer)):
             self._execute_command(cmd, camera)
         
         self.display.surface.blits(self._blit_calls)

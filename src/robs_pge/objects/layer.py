@@ -72,8 +72,16 @@ class Layer:
     def add_object(self, obj: ObjectLikeType | list[ObjectLikeType]):
         self.objects.add_object(obj)
         
+        if isinstance(obj, list):
+            for o in obj:
+                o.layer = self
+        
     def remove_object(self, obj: ObjectLikeType | list[ObjectLikeType]):
         self.objects.remove_object(obj)
+        
+        if isinstance(obj, list):
+            for o in obj:
+                o.layer = None
     
     def render(self, submit: Callable[[DrawCommand, Camera, float], Any]) -> "Layer":
         self.objects.render(lambda c: submit(c, self._camera, self._layer_value), self._camera)

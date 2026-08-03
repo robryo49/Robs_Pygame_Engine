@@ -10,8 +10,8 @@ from ...utils import Anchor, DictCollection, Transform, Vec2, ObjectFlags
 class WindowObject(LayoutObject):
     def __init__(self, transform: Transform, renderer: RectRenderer,
                  title: str, content_panel: LayoutObject, header: Optional[LayoutObject], title_panel: Optional[RectObject], title_object: Optional[TextObject], scrollbar: ScrollbarObject,
-                 services: DictCollection, layer: int = 0, anchor: Vec2 = Anchor.C):
-        super().__init__(transform, renderer, services, layer, anchor)
+                 services: DictCollection, sub_layer: int = 0, anchor: Vec2 = Anchor.C):
+        super().__init__(transform, renderer, services, sub_layer, anchor)
         
         
         self._id = title.lower().replace(" ", "_")

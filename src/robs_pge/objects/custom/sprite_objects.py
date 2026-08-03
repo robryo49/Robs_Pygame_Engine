@@ -8,8 +8,8 @@ from ...utils import Anchor, DictCollection, Rect, Transform, Vec2, Color
 
 
 class SpriteObject(PygameObject):
-    def __init__(self, transform: Transform, renderer: SpriteRenderer, services: DictCollection, layer: int = 0, anchor: Vec2 = Anchor.C):
-        super().__init__(transform, renderer, services, layer, anchor)
+    def __init__(self, transform: Transform, renderer: SpriteRenderer, services: DictCollection, sub_layer: int = 0, anchor: Vec2 = Anchor.C):
+        super().__init__(transform, renderer, services, sub_layer, anchor)
     
     # region PROPERTIES
     
@@ -33,8 +33,8 @@ class SpriteObject(PygameObject):
 
 
 class SubSurfaceSpriteObject(PygameObject):
-    def __init__(self, transform: Transform, renderer: SubSurfaceRenderer, services: DictCollection, layer: int = 0, anchor: Vec2 = Anchor.C):
-        super().__init__(transform, renderer, services, layer, anchor)
+    def __init__(self, transform: Transform, renderer: SubSurfaceRenderer, services: DictCollection, sub_layer: int = 0, anchor: Vec2 = Anchor.C):
+        super().__init__(transform, renderer, services, sub_layer, anchor)
     
     # region PROPERTIES
     
@@ -90,8 +90,8 @@ class SubSurfaceSpriteObject(PygameObject):
 
 
 class ChunkedSpriteObject(PygameObject):
-    def __init__(self, transform: Transform, renderer: ChunkedSpriteRenderer, services: DictCollection, layer: int = 0, anchor: Vec2 = Anchor.C):
-        super().__init__(transform, renderer, services, layer, anchor)
+    def __init__(self, transform: Transform, renderer: ChunkedSpriteRenderer, services: DictCollection, sub_layer: int = 0, anchor: Vec2 = Anchor.C):
+        super().__init__(transform, renderer, services, sub_layer, anchor)
     
     # region PROPERTIES
     @property
@@ -121,8 +121,8 @@ class ChunkedSpriteObject(PygameObject):
     
     
 class IconObject(SpriteObject):
-    def __init__(self, transform: Transform, renderer: IconRenderer, services: DictCollection, layer: int = 0, anchor: Vec2 = Anchor.C):
-        super().__init__(transform, renderer, services, layer, anchor)
+    def __init__(self, transform: Transform, renderer: IconRenderer, services: DictCollection, sub_layer: int = 0, anchor: Vec2 = Anchor.C):
+        super().__init__(transform, renderer, services, sub_layer, anchor)
     
     # region PROPERTIES
     

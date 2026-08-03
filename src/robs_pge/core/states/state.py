@@ -60,6 +60,7 @@ class State:
             .set_constant_padding(10)
         )
         self.debug_layer.add_object(self._debug_overlay)
+        self.debug_layer.disable_rendering()
         
         self.init_resources()
         self.init_keybinds()
@@ -410,8 +411,8 @@ class State:
         self._services.set(QuickDebugManager, self.quick_debug_manager)
     
     def init_keybinds(self) -> None:
-        self.add_keybind(pg.K_F3, lambda: self.debug_overlay.toggle_visible())
-        self.add_keybind(pg.K_F4, lambda: self.debug_overlay.toggle_freeze())
+        self.add_keybind(pg.K_F3, lambda: self.debug_layer.toggle_rendering())
+        self.add_keybind(pg.K_F4, lambda: self.debug_layer.toggle_frozen())
     
     def init_events(self):
         pass

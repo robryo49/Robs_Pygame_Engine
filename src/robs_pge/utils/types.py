@@ -10,6 +10,7 @@ from .math import Vec2, Vec3
 if TYPE_CHECKING:
     from ..core import Camera
     from ..rendering import DrawCommand
+    from ..objects import Layer
 
 
 type Vec2Like = Vec2 | np.ndarray | tuple[float, float]
@@ -34,7 +35,13 @@ class UpdatableType(Protocol):
     
 
 @runtime_checkable
-class ObjectLikeType(RenderableType, UpdatableType, Protocol): pass
+class ObjectLikeType(RenderableType, UpdatableType, Protocol):
+    
+    @property
+    def layer(self): pass
+    
+    @layer.setter
+    def layer(self, value: Layer): pass
 
 
 
