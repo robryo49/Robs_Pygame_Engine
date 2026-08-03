@@ -42,29 +42,38 @@ class BehaviorCollection(TypedCollection):
             behavior.owner = None
     
     def on_hover(self):
-        self.foreach(lambda b: b.on_hover())
+        for b in self:
+            b.on_hover()
         
     def on_hover_end(self):
-        self.foreach(lambda b: b.on_hover_end())
+        for b in self:
+            b.on_hover_end()
         
     def on_hover_start(self):
-        self.foreach(lambda b: b.on_hover_start())
+        for b in self:
+            b.on_hover_start()
         
     def on_click(self, button: int, pos: Vec2):
-        self.foreach(lambda b: b.on_click(button, pos))
+        for b in self:
+            b.on_click(button, pos)
         
     def on_hold(self, button: int, pos: Vec2):
-        self.foreach(lambda b: b.on_hold(button, pos))
+        for b in self:
+            b.on_hold(button, pos)
         
     def on_release(self, button: int, pos: Vec2):
-        self.foreach(lambda b: b.on_release(button, pos))
+        for b in self:
+            b.on_release(button, pos)
             
     def on_update(self, dt: float):
-        self.foreach(lambda b: b.on_update(dt))
+        for b in self:
+            b.on_update(dt)
             
     def on_event(self, event: Event):
-        self.foreach(lambda b: b.on_event(event))
+        for b in self:
+            b.on_event(event)
     
     def on_scroll(self, scroll: int, pos: Vec2):
-        self.foreach(lambda b: b.on_scroll(scroll, pos))
+        for b in self:
+            b.on_scroll(scroll, pos)
         

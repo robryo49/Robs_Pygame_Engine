@@ -99,14 +99,16 @@ class ObjectCollection(TypedCollection):
         self._handle_object_removals()
         
         if not self._frozen:
-            self.foreach(lambda o: o.update())
+            for o in self:
+                o.update()
             
         return self
             
     def render(self, submit: Callable[[DrawCommand], Any]) -> "ObjectCollection":
         
         if self.rendering_enabled:
-            self.foreach(lambda o: o.render(submit))
+            for o in self:
+                o.render(submit)
         
         return self
         
