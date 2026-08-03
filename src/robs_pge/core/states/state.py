@@ -340,23 +340,19 @@ class State:
             self.factory.ui.make_window(Vec2(), Vec2(400, 176), "RENDERING", style=blue_style)
             .stack_content_x(
                 self.factory.ui.layouts.make_vertical_layout(Vec2(), 180).skip_rendering()
-                .stack_y(self.factory.text.make_text(Vec2(), "Cache Size",            font_gray), anchor=Anchor.TL)
-                .stack_y(self.factory.text.make_text(Vec2(), "Cache Hits",            font_gray), anchor=Anchor.TL)
-                .stack_y(self.factory.text.make_text(Vec2(), "Cache Skips",           font_gray), anchor=Anchor.TL)
-                .stack_y(self.factory.text.make_text(Vec2(), "Cache Misses",          font_gray), anchor=Anchor.TL)
-                .stack_y(self.factory.text.make_text(Vec2(), "World Draw Commands",   font_gray), anchor=Anchor.TL)
-                .stack_y(self.factory.text.make_text(Vec2(), "UI Draw Commands",      font_gray), anchor=Anchor.TL)
-                .stack_y(self.factory.text.make_text(Vec2(), "Debug Draw Commands",   font_gray), anchor=Anchor.TL)
-                .stack_y(self.factory.text.make_text(Vec2(), "Blits",                 font_gray), anchor=Anchor.TL)
+                .stack_y(self.factory.text.make_text(Vec2(), "Cache Size",      font_gray), anchor=Anchor.TL)
+                .stack_y(self.factory.text.make_text(Vec2(), "Cache Hits",      font_gray), anchor=Anchor.TL)
+                .stack_y(self.factory.text.make_text(Vec2(), "Cache Skips",     font_gray), anchor=Anchor.TL)
+                .stack_y(self.factory.text.make_text(Vec2(), "Cache Misses",    font_gray), anchor=Anchor.TL)
+                .stack_y(self.factory.text.make_text(Vec2(), "Commands",        font_gray), anchor=Anchor.TL)
+                .stack_y(self.factory.text.make_text(Vec2(), "Blits",           font_gray), anchor=Anchor.TL)
             ).stack_content_x(
                 self.factory.ui.layouts.make_vertical_layout(Vec2(), 180).skip_rendering()
                 .stack_y(self.factory.text.make_dynamic_text(Vec2(), "{} ({}Mo)", lambda: (self.renderer.surface_cache_size, round(self.renderer.surface_cache_memory_size, 1)), font_white, cache=False), anchor=Anchor.TL)
                 .stack_y(self.factory.text.make_dynamic_text(Vec2(), "{}", lambda: self.renderer.cache_hits,            font_white), anchor=Anchor.TL)
                 .stack_y(self.factory.text.make_dynamic_text(Vec2(), "{}", lambda: self.renderer.cache_skips,           font_white), anchor=Anchor.TL)
                 .stack_y(self.factory.text.make_dynamic_text(Vec2(), "{}", lambda: self.renderer.cache_misses,          font_white), anchor=Anchor.TL)
-                .stack_y(self.factory.text.make_dynamic_text(Vec2(), "{}", lambda: self.renderer.world_commands_count,  font_white), anchor=Anchor.TL)
-                .stack_y(self.factory.text.make_dynamic_text(Vec2(), "{}", lambda: self.renderer.ui_commands_count,     font_white), anchor=Anchor.TL)
-                .stack_y(self.factory.text.make_dynamic_text(Vec2(), "{}", lambda: self.renderer.debug_commands_count,  font_white), anchor=Anchor.TL)
+                .stack_y(self.factory.text.make_dynamic_text(Vec2(), "{}", lambda: self.renderer.total_commands_count,  font_white), anchor=Anchor.TL)
                 .stack_y(self.factory.text.make_dynamic_text(Vec2(), "{}", lambda: self.renderer.blit_count,            font_white), anchor=Anchor.TL)
             )
         )
@@ -478,22 +474,10 @@ class State:
         self.frame_timer.time("Update.State.Camera",           lambda: self.camera.update(dt))
     
     def render(self) -> None:
-        # World-space objects use the state camera; UI and debug use the default camera.
-        # The renderer has separate queues for world/ui/debug — we route by layer.
-        # Layers with the game camera go to draw_world, others to draw_ui.
-        # The debug layer always goes to draw_debug.
-        debug_layer_id = "debug"
-        default_cam = self.engine.default_camera
-        
         for layer in self._layer_manager.sorted_layers:
-            if layer.id == debug_layer_id:
-                submit = self.renderer.draw_debug
-            elif layer.camera is default_cam:
-                submit = self.renderer.draw_ui
-            else:
-                submit = self.renderer.draw_world
-            
-            layer.render(submit)
-        
-        # Particle system always renders into the world queue with the game camera
-        self.particle_system.render(self.renderer.draw_world, self.camera)
+            layer.render(self.renderer.draw)
+    
+        self.particle_system.render(
+            lambda cmd: self.renderer.draw(cmd, self.camera, _LAYER_WORLD),
+            self.camera
+    )

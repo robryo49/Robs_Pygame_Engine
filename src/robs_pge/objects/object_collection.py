@@ -18,19 +18,31 @@ class ObjectCollection(TypedCollection):
         self._to_add: list[ObjectLikeType] = []
         
         self._frozen = False
-        self._render = True
+        self._rendering_enabled = True
+        
+    # region PROPERTIES
+    
+    @property
+    def frozen(self):
+        return self._frozen
+    
+    @property
+    def rendering_enabled(self):
+        return self._rendering_enabled
+    
+    # endregion
     
     
-    def toggle_render(self) -> "ObjectCollection":
-        self._render = not self._render
+    def toggle_rendering(self) -> "ObjectCollection":
+        self._rendering_enabled = not self._rendering_enabled
         return self
     
-    def enable_render(self) -> "ObjectCollection":
-        self._render = True
+    def enable_rendering(self) -> "ObjectCollection":
+        self._rendering_enabled = True
         return self
     
-    def disable_render(self) -> "ObjectCollection":
-        self._render = False
+    def disable_rendering(self) -> "ObjectCollection":
+        self._rendering_enabled = False
         return self
     
     
@@ -38,11 +50,11 @@ class ObjectCollection(TypedCollection):
         self._frozen = not self._frozen
         return self
     
-    def enable_frozen(self) -> "ObjectCollection":
+    def freeze(self) -> "ObjectCollection":
         self._frozen = True
         return self
     
-    def disable_frozen(self) -> "ObjectCollection":
+    def unfreeze(self) -> "ObjectCollection":
         self._frozen = False
         return self
     
@@ -85,11 +97,16 @@ class ObjectCollection(TypedCollection):
         self._handle_object_additions()
         self._handle_object_removals()
         
-        self.foreach(lambda o: o.update())
+        if not self._frozen:
+            self.foreach(lambda o: o.update())
+            
         return self
             
     def render(self, submit: Callable[[DrawCommand], Any], camera: Camera) -> "ObjectCollection":
-        self.foreach(lambda o: o.render(submit, camera))
+        
+        if self.rendering_enabled:
+            self.foreach(lambda o: o.render(submit, camera))
+        
         return self
         
     

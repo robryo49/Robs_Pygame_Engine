@@ -57,7 +57,7 @@ class LayerManager:
         return name.lower().replace(" ", "_") in self._layers
     
     def add_object(self, layer_name: str, obj) -> "LayerManager":
-        self.get_layer(layer_name).add(obj)
+        self.get_layer(layer_name).add_object(obj)
         return self
     
     def update(self, dt: float) -> "LayerManager":
