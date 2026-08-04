@@ -630,7 +630,6 @@ class PygameObject:
         return self.layer.camera_to_world_pos(camera_pos) if self.layer else camera_pos
     
     def camera_to_local(self, camera_pos: Vec2) -> Vec2:
-        # Bypassing the World skew! We use the camera_transform.
         return self.camera_transform.apply_inverse(camera_pos) + self.uv_to_local(self.anchor)
     
     def camera_to_uv(self, camera_pos: Vec2) -> Vec2:

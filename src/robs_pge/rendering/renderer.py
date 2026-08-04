@@ -90,7 +90,7 @@ class Renderer:
         for cmd in self._commands:
             self._execute_command(cmd)
         
-        self.display.surface.blits(self._blit_calls)
+        self.display.surface.fblits(self._blit_calls)
         
         self._total_commands_count = len(self._commands)
         self._blit_count = len(self._blit_calls)
