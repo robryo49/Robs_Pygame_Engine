@@ -704,12 +704,43 @@ class PygameObject:
         self.renderer.render(submit, self.world_transform, self.layer, self.sub_layer, self.anchor, self.get_world_clip_area())
         return self
     
-    def render(self, submit) -> PygameObject:
+    def _is_culled(self) -> bool:
+        layer = self.layer
+        if layer is None:
+            return False
+        
+        camera      = layer.camera
+        cam_t       = camera.transform
+        obj_wt      = self.world_transform
+        
+        obj_cam_pos = layer.world_to_camera_pos(obj_wt.pos)
+        
+        cam_radius = camera.display_dims.x * 0.5 * cam_t.scale
+        
+        diff            = obj_cam_pos - cam_t.pos
+        dist_sq         = diff.x * diff.x + diff.y * diff.y
+        
+        if dist_sq < cam_radius * cam_radius:
+            return False
+        
+        obj_world_radius = self.renderer.get_bounding_radius()
+        obj_cam_radius   = obj_world_radius / cam_t.scale
+        radius_sum      = obj_cam_radius + cam_radius
+        
+        return dist_sq > radius_sum * radius_sum
+    
+    def render(self, submit) -> "PygameObject":
+        if not self.visible:
+            return self
+        
+        if self.has_flag(ObjectFlags.CULLABLE) and self._is_culled():
+            self._culled = True
+            return self
+        
         self._culled = False
-        if self.visible:
-            if self.renderer and not self.has_flag(ObjectFlags.SKIP_RENDERING):
-                self._render_self(submit)
-            self.children.render(submit)
+        if self.renderer and not self.has_flag(ObjectFlags.SKIP_RENDERING):
+            self._render_self(submit)
+        self.children.render(submit)
         return self
             
             

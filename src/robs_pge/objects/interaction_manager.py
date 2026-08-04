@@ -37,7 +37,7 @@ class InteractionManager:
     
     # endregion
     
-    def _collect_objects(self, object_collection: ObjectCollection):
+    def _collect_objects(self, object_collection: ObjectCollection) -> list[PygameObject]:
         objects = []
         
         for obj in object_collection:
@@ -62,11 +62,6 @@ class InteractionManager:
         return None
     
     def _collect_hovered_from_layers(self, layer_manager: "LayerManager") -> list[PygameObject]:
-        """
-        Iterate interactable layers in descending z-order (topmost first).
-        Each layer uses its own camera for coordinate conversion.
-        Returns a flat list of all hovered interactable objects, topmost layer first.
-        """
         all_hovered: list[PygameObject] = []
         
         for layer in layer_manager.interactable_layers_reversed():
@@ -75,11 +70,8 @@ class InteractionManager:
             
             objects = self._collect_objects(layer.objects)
             objects.reverse()
-            layer_hovered = [
-                obj for obj in sorted(objects, key=lambda c: c.sub_layer, reverse=True)
-                if obj.test_world_hit(mouse_pos) and obj.has_flag(ObjectFlags.INTERACTABLE)
-            ]
-            all_hovered.extend(layer_hovered)
+            layer_hovered = [obj for obj in objects if obj.has_flag(ObjectFlags.INTERACTABLE) and obj.test_world_hit(mouse_pos)]
+            all_hovered.extend(sorted(layer_hovered, key=lambda c: c.sub_layer, reverse=True))
         
         return all_hovered
     

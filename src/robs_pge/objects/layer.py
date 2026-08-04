@@ -4,7 +4,7 @@ from typing import Optional, TYPE_CHECKING, Callable, Any
 
 from .object_collection import ObjectCollection
 from ..rendering import DrawCommand
-from ..utils import ObjectLikeType, CoordinateSystem, Vec2
+from ..utils import ObjectLikeType, CoordinateSystem, Vec2, FRect
 
 if TYPE_CHECKING:
     from ..core import Camera
@@ -54,6 +54,23 @@ class Layer:
         return self._coordinate_system
     
     # endregion
+    
+    def get_camera_world_aabb(self) -> FRect:
+        corners = [
+            Vec2(self.camera.top_left),
+            Vec2(self.camera.top_right),
+            Vec2(self.camera.bottom_left),
+            Vec2(self.camera.bottom_right)
+        ]
+        
+        world_corners = [self.camera_to_world_pos(corner) for corner in corners]
+        
+        min_x = min(corner.x for corner in world_corners)
+        max_x = max(corner.x for corner in world_corners)
+        min_y = min(corner.y for corner in world_corners)
+        max_y = max(corner.y for corner in world_corners)
+        
+        return FRect(min_x, min_y, max_x - min_x, max_y - min_y)
     
     # region Coordinates Conversion Methods
     

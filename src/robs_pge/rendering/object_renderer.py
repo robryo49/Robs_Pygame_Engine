@@ -13,11 +13,11 @@ class ObjectRenderer:
     
     # region PROPERTIES
     @property
-    def dims(self):
+    def dims(self) -> Vec2:
         raise NotImplementedError
     
     @property
-    def width(self):
+    def width(self) -> float:
         raise NotImplementedError
     
     @width.setter
@@ -25,7 +25,7 @@ class ObjectRenderer:
         raise NotImplementedError
     
     @property
-    def height(self):
+    def height(self) -> float:
         raise NotImplementedError
     
     @height.setter
@@ -34,8 +34,11 @@ class ObjectRenderer:
     
     # endregion
     
-    def get_aabb_size(self, rotation: float):
-        raise NotImplementedError
+    def get_aabb_size(self, rotation: float) -> Vec2:
+        return Vec2(self.dims.length()) if rotation else self.dims
+    
+    def get_bounding_radius(self) -> float:
+        return self.dims.length() * 0.5
     
     def render(self, submit, transform: Transform, layer: Layer, sub_layer: int, anchor: Vec2, clip_area: Optional[FRect] = None) -> None:
         raise NotImplementedError

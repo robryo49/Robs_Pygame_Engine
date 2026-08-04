@@ -136,6 +136,10 @@ class Camera:
         return self._world_aabb
     
     @property
+    def bounding_radius(self):
+        return self.display_dims.length() * 0.5
+    
+    @property
     def up(self) -> Vec2:
         return Vec2(0, -1).rotate(self.rotation) * self.transform.scale
     

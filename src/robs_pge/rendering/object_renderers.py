@@ -104,6 +104,7 @@ class RectRenderer(ObjectRenderer):
     def get_aabb_size(self, rotation: float):
         return Vec2(self.dims.length()) if rotation else self.dims
     
+    
     def test_hit(self, local_pos: Vec2) -> bool:
         x, y = local_pos
         w, h = self.dims

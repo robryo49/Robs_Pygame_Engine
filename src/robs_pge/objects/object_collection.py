@@ -1,13 +1,12 @@
 from __future__ import annotations
 
-from typing import Iterable, TYPE_CHECKING, Any, Callable
+from typing import Any, Callable, Iterable, TYPE_CHECKING
 
-from ..utils import TypedCollection, ObjectLikeType
 from ..rendering import DrawCommand
+from ..utils import ObjectLikeType, TypedCollection
 
 if TYPE_CHECKING:
-    from ..core import Camera
-    from .layer import Layer
+    pass
 
 
 class ObjectCollection(TypedCollection):
