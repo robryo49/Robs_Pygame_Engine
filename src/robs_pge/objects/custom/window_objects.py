@@ -4,13 +4,13 @@ from .primitive_objects import RectObject, TextObject
 from .ui_objects import LayoutObject, ScrollbarObject
 from ..object import PygameObject
 from ...rendering import RectRenderer
-from ...utils import Anchor, DictCollection, Transform, Vec2, ObjectFlags
+from ...utils import Anchor, DictCollection, Transform, vec2, ObjectFlags
 
 
 class WindowObject(LayoutObject):
     def __init__(self, transform: Transform, renderer: RectRenderer,
                  title: str, content_panel: LayoutObject, header: Optional[LayoutObject], title_panel: Optional[RectObject], title_object: Optional[TextObject], scrollbar: ScrollbarObject,
-                 services: DictCollection, sub_layer: int = 0, anchor: Vec2 = Anchor.C):
+                 services: DictCollection, sub_layer: int = 0, anchor: vec2 = Anchor.C):
         super().__init__(transform, renderer, services, sub_layer, anchor)
         
         
@@ -85,7 +85,7 @@ class WindowObject(LayoutObject):
         else:
             self._scrollbar.hide()
             self._scrollbar.value = 0.0
-            self.content.scroll_offset = Vec2()
+            self.content.scroll_offset = vec2()
             scrollbar_col_width = 0
             content_width = self.width
         
@@ -121,15 +121,15 @@ class WindowObject(LayoutObject):
     def close(self):
         self.hide()
     
-    def add_content(self, obj: PygameObject, x: int, y: int, span_x: int = 1, span_y: int = 1, anchor: Vec2 = Anchor.C):
+    def add_content(self, obj: PygameObject, x: int, y: int, span_x: int = 1, span_y: int = 1, anchor: vec2 = Anchor.C):
         self.content.add_object(obj, x, y, span_x, span_y, anchor)
         return self
         
-    def stack_content_x(self, obj: PygameObject, y: Optional[int] = None, span_y: Optional[int] = None, anchor: Vec2 = Anchor.C):
+    def stack_content_x(self, obj: PygameObject, y: Optional[int] = None, span_y: Optional[int] = None, anchor: vec2 = Anchor.C):
         self.content.stack_x(obj, y, span_y, anchor)
         return self
     
-    def stack_content_y(self, obj: PygameObject, x: Optional[int] = None, span_x: Optional[int] = None, anchor: Vec2 = Anchor.C):
+    def stack_content_y(self, obj: PygameObject, x: Optional[int] = None, span_x: Optional[int] = None, anchor: vec2 = Anchor.C):
         self.content.stack_y(obj, x, span_x, anchor)
         return self
         

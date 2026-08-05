@@ -2,17 +2,17 @@ from .primitive_objects import RectObject, TextObject
 from ..behaviors import *
 from ..object import PygameObject
 from ...rendering import RectRenderer
-from ...utils import Anchor, DictCollection, Transform, Vec2, clamp, inf
+from ...utils import Anchor, DictCollection, Transform, vec2, clamp, inf
 
 
 class LayoutObject(RectObject):
-    def __init__(self, transform: Transform, renderer: RectRenderer, services: DictCollection, sub_layer: int = 0, anchor: Vec2 = Anchor.C):
+    def __init__(self, transform: Transform, renderer: RectRenderer, services: DictCollection, sub_layer: int = 0, anchor: vec2 = Anchor.C):
         super().__init__(transform, renderer, services, sub_layer, anchor)
         
         self._grid_objects_grid_positions: dict[PygameObject, tuple[int, int]] = {}
         self._grid_objects_spanning: dict[PygameObject, tuple[int, int]] = {}
-        self._grid_objects_dims : dict[PygameObject, Vec2] = {}
-        self._grid_objects_positions : dict[PygameObject, Vec2] = {}
+        self._grid_objects_dims : dict[PygameObject, vec2] = {}
+        self._grid_objects_positions : dict[PygameObject, vec2] = {}
         
         
         self._fixed_cols: dict[int, bool] = {}
@@ -29,9 +29,9 @@ class LayoutObject(RectObject):
         self._row_offsets: dict[int, float] = {}
         
         
-        self._outer_padding: Vec2 = Vec2()
-        self._padding: Vec2 = Vec2()
-        self._cells_padding: dict[tuple[int, int], Vec2] = {}
+        self._outer_padding: vec2 = vec2()
+        self._padding: vec2 = vec2()
+        self._cells_padding: dict[tuple[int, int], vec2] = {}
         
         self._min_col = 0
         self._max_col = inf
@@ -47,7 +47,7 @@ class LayoutObject(RectObject):
         self._dirty = False
         self._dirty_check = True
         
-        self._scroll_offset: Vec2 = Vec2()
+        self._scroll_offset: vec2 = vec2()
         self._scroll_speed: float = 15.0
         
     
@@ -167,7 +167,7 @@ class LayoutObject(RectObject):
         return self._scroll_offset
     
     @scroll_offset.setter
-    def scroll_offset(self, value: Vec2):
+    def scroll_offset(self, value: vec2):
         if value != self._scroll_offset:
             self._scroll_offset = value
             self.mark_dirty()
@@ -248,16 +248,16 @@ class LayoutObject(RectObject):
         return self
     
     
-    def set_constant_padding(self, padding: Vec2 | int):
+    def set_constant_padding(self, padding: vec2 | int):
         self.set_cell_padding(padding / 2)
         self.set_outer_padding(padding / 2)
         return self
     
-    def set_cell_padding(self, padding: Vec2 | float, cell: Optional[tuple[int, int]] = None):
+    def set_cell_padding(self, padding: vec2 | float, cell: Optional[tuple[int, int]] = None):
         if cell is not None:
-            self._cells_padding[cell] = Vec2(padding)
+            self._cells_padding[cell] = vec2(padding)
         else:
-            self._padding = Vec2(padding)
+            self._padding = vec2(padding)
         
         self.mark_dirty()
         return self
@@ -269,19 +269,19 @@ class LayoutObject(RectObject):
         if cell is not None:
             self._cells_padding.pop(cell, 0)
         else:
-            self._padding = Vec2()
+            self._padding = vec2()
         
         self.mark_dirty()
         return self
     
-    def set_outer_padding(self, padding: Vec2 | float):
-        padding = Vec2(padding)
+    def set_outer_padding(self, padding: vec2 | float):
+        padding = vec2(padding)
         self._outer_padding = padding
         self.mark_dirty()
         return self
     
     def clear_outer_padding(self):
-        self._outer_padding = Vec2()
+        self._outer_padding = vec2()
         self.renderer.bd = 0
         self.mark_dirty()
         return self
@@ -295,7 +295,7 @@ class LayoutObject(RectObject):
     def apply_scroll(self, scroll: int):
         max_offset = self.get_scroll_range_y()
         new_y = clamp(self.scroll_offset.y + scroll * self._scroll_speed, 0, max_offset)
-        self.scroll_offset = Vec2(self.scroll_offset.x, new_y)
+        self.scroll_offset = vec2(self.scroll_offset.x, new_y)
     
     
     def get_col_width(self, grid_x: int, span: int = 0):
@@ -309,8 +309,8 @@ class LayoutObject(RectObject):
         span_x, span_y = self._grid_objects_spanning.get(obj, (0, 0))
         pad_x, pad_y = self._cells_padding.get(grid_pos, self._padding)
         
-        obj_offset_x = sum(self.get_col_width(col_x) for col_x in range(grid_x, grid_x + span_x)) * (obj.anchor.x if not self._invert_x_order else (1 - obj.anchor.x))
-        obj_offset_y = sum(self.get_row_height(row_y) for row_y in range(grid_y, grid_y + span_y)) * (obj.anchor.y if not self._invert_y_order else (1 - obj.anchor.y))
+        obj_offset_x = sum(self.get_col_width(col_x) for col_x in range(round(grid_x), round(grid_x + span_x))) * (obj.anchor.x if not self._invert_x_order else (1 - obj.anchor.x))
+        obj_offset_y = sum(self.get_row_height(row_y) for row_y in range(round(grid_y), round(grid_y + span_y))) * (obj.anchor.y if not self._invert_y_order else (1 - obj.anchor.y))
         
         cell_x =  self._col_offsets[grid_x] + obj_offset_x + pad_x * (1 - 2 * obj.anchor.x) * (1 if not self._invert_x_order else -1)
         cell_y = self._row_offsets[grid_y] + obj_offset_y + pad_y * (1 - 2 * obj.anchor.y) * (1 if not self._invert_y_order else -1)
@@ -322,15 +322,15 @@ class LayoutObject(RectObject):
             cell_y = self.height - self._outer_padding.y * 2 - cell_y
         
         
-        return Vec2(cell_x, cell_y) + self._outer_padding - self.get_anchor_offset(Anchor.C) - self._scroll_offset
+        return vec2(cell_x, cell_y) + self._outer_padding - self.get_anchor_offset(Anchor.C) - self._scroll_offset
     
     
     
-    def add_object(self, obj: PygameObject, x: int, y: int, span_x: int = 1, span_y: int = 1, anchor: Vec2 = Anchor.C):
+    def add_object(self, obj: PygameObject, x: int, y: int, span_x: int = 1, span_y: int = 1, anchor: vec2 = Anchor.C):
         self.add_child(obj)
         
         self._grid_objects_grid_positions[obj] = (clamp(x, self._min_col, self._max_col), clamp(y, self._min_row, self._max_row))
-        self._grid_objects_dims[obj] = Vec2(obj.dims)
+        self._grid_objects_dims[obj] = vec2(obj.dims)
         self._grid_objects_spanning[obj] = (span_x, span_y)
         
         obj.anchor = anchor
@@ -343,7 +343,7 @@ class LayoutObject(RectObject):
         
         self.mark_dirty()
     
-    def stack_y(self, obj: PygameObject, x: Optional[int] = None, span_x: Optional[int] = None, anchor: Vec2 = Anchor.C):
+    def stack_y(self, obj: PygameObject, x: Optional[int] = None, span_x: Optional[int] = None, anchor: vec2 = Anchor.C):
         
         min_x = (min(pos[0] for pos in self._grid_objects_grid_positions.values()) + 1) if self._grid_objects_grid_positions else 0
         max_x = (max(pos[0] for pos in self._grid_objects_grid_positions.values()) + 1) if self._grid_objects_grid_positions else 0
@@ -357,7 +357,7 @@ class LayoutObject(RectObject):
         self.add_object(obj, x, max_y, span_x, 1, anchor)
         return self
     
-    def stack_x(self, obj: PygameObject, y: Optional[int] = None, span_y: Optional[int] = None, anchor: Vec2 = Anchor.C):
+    def stack_x(self, obj: PygameObject, y: Optional[int] = None, span_y: Optional[int] = None, anchor: vec2 = Anchor.C):
         
         positions = list(pos for pos in self._grid_objects_grid_positions.values() if pos[1] == y or y is None)
         max_x = (max(pos[0] for pos in positions) + 1) if positions else 0
@@ -376,17 +376,17 @@ class LayoutObject(RectObject):
         for obj, grid_pos in self._grid_objects_grid_positions.items():
             grid_x, grid_y = grid_pos
             span_x, span_y = self._grid_objects_spanning.get(obj, (1, 1))
-            if self._grid_objects_dims.get(obj, Vec2()).x != obj.dims.x:
-                for col_x in range(grid_x, grid_x + span_x):
+            if self._grid_objects_dims.get(obj, vec2()).x != obj.dims.x:
+                for col_x in range(round(grid_x), round(grid_x + span_x)):
                     if not self._fixed_cols.get(col_x, False):
                         self.mark_dirty()
             
-            if self._grid_objects_dims.get(obj, Vec2()).y != obj.dims.y:
-                for row_y in range(grid_y, grid_y + span_y):
+            if self._grid_objects_dims.get(obj, vec2()).y != obj.dims.y:
+                for row_y in range(round(grid_y), round(grid_y + span_y)):
                     if not self._fixed_rows.get(row_y, False):
                         self.mark_dirty()
             
-            self._grid_objects_dims[obj] = Vec2(obj.dims)
+            self._grid_objects_dims[obj] = vec2(obj.dims)
         
         return self._dirty
     
@@ -427,23 +427,23 @@ class LayoutObject(RectObject):
         for obj, spanning in sorted(self._grid_objects_spanning.items(), key=lambda x: x[1][0] * x[1][1]):
             grid_x, grid_y = grid_pos = self._grid_objects_grid_positions.get(obj, (0, 0))
             pad_x, pad_y = self._cells_padding.get(grid_pos, self._padding)
-            width, height = self._grid_objects_dims.get(obj, Vec2(0, 0))
+            width, height = self._grid_objects_dims.get(obj, vec2(0, 0))
             span_x, span_y = spanning
             
-            free_columns = [col_x for col_x in range(grid_x, grid_x + span_x) if not self._fixed_cols.get(col_x, False)]
-            for col_x in range(grid_x, grid_x + span_x):
+            free_columns = [col_x for col_x in range(round(grid_x), round(grid_x + span_x)) if not self._fixed_cols.get(col_x, False)]
+            for col_x in range(round(grid_x), round(grid_x + span_x)):
                 self._col_widths.setdefault(col_x, 0)
             target = width + 2 * pad_x
-            missing = target - sum(self._col_widths.get(col_x, 0) for col_x in range(grid_x, grid_x + span_x))
+            missing = target - sum(self._col_widths.get(col_x, 0) for col_x in range(round(grid_x), round(grid_x + span_x)))
             if free_columns and missing > 0:
                 for col_x in free_columns:
                     self._col_widths[col_x] = self._col_widths.get(col_x, 0) + missing / len(free_columns)
             
-            free_rows = [row_y for row_y in range(grid_y, grid_y + span_y) if not self._fixed_rows.get(row_y, False)]
-            for row_y in range(grid_y, grid_y + span_y):
+            free_rows = [row_y for row_y in range(round(grid_y), round(grid_y + span_y)) if not self._fixed_rows.get(row_y, False)]
+            for row_y in range(round(grid_y), round(grid_y + span_y)):
                 self._row_heights.setdefault(row_y, 0)
             target = height + 2 * pad_y
-            missing = target - sum(self._row_heights.get(row_y, 0) for row_y in range(grid_y, grid_y + span_y))
+            missing = target - sum(self._row_heights.get(row_y, 0) for row_y in range(round(grid_y), round(grid_y + span_y)))
             if free_rows and missing > 0:
                 for row_y in free_rows:
                     self._row_heights[row_y] = self._row_heights.get(row_y, 0) + missing / len(free_rows)
@@ -497,7 +497,7 @@ class LayoutObject(RectObject):
 
 
 class DebugOverlay(LayoutObject):
-    def __init__(self, transform: Transform, renderer: RectRenderer, services: DictCollection, sub_layer: int = 0, anchor: Vec2 = Anchor.C):
+    def __init__(self, transform: Transform, renderer: RectRenderer, services: DictCollection, sub_layer: int = 0, anchor: vec2 = Anchor.C):
         super().__init__(transform, renderer, services, sub_layer, anchor)
     
     def toggle(self) -> "LayoutObject":
@@ -519,7 +519,7 @@ class DebugPanelObject(LayoutObject):
             header: RectObject,
             title_text: TextObject,
             sub_layer: int = 0,
-            anchor: Vec2 = Anchor.C
+            anchor: vec2 = Anchor.C
     ):
         super().__init__(transform, renderer, services, sub_layer, anchor)
         
@@ -568,15 +568,15 @@ class DebugPanelObject(LayoutObject):
         self.header.width = width
     
     
-    def stack_pannel_x(self, obj: PygameObject, y: Optional[int] = None, span_y: Optional[int] = None, anchor: Vec2 = Anchor.C):
+    def stack_pannel_x(self, obj: PygameObject, y: Optional[int] = None, span_y: Optional[int] = None, anchor: vec2 = Anchor.C):
         self.panel.stack_x(obj, y, span_y, anchor)
         return self
     
-    def stack_pannel_y(self, obj: PygameObject, x: Optional[int] = None, span_x: Optional[int] = None, anchor: Vec2 = Anchor.C):
+    def stack_pannel_y(self, obj: PygameObject, x: Optional[int] = None, span_x: Optional[int] = None, anchor: vec2 = Anchor.C):
         self.panel.stack_y(obj, x, span_x, anchor)
         return self
     
-    def add_pannel_object(self, obj: PygameObject, x: int, y: int, span_x: int = 1, span_y: int = 1, anchor: Vec2 = Anchor.C):
+    def add_pannel_object(self, obj: PygameObject, x: int, y: int, span_x: int = 1, span_y: int = 1, anchor: vec2 = Anchor.C):
         self.panel.add_object(obj, x, y, span_x, span_y, anchor)
         return self
     

@@ -3,15 +3,15 @@ from typing import Optional
 from .sub_factory import SubObjectFactory
 from ..custom import *
 from ...rendering import *
-from ...utils import Anchor, Transform, Vec2, inf, Color
+from ...utils import Anchor, Transform, inf, vec2
 
 
 class DebugObjectFactory(SubObjectFactory):
     
     def make_debug_panel(
-            self, position: Vec2, dims: Vec2, style: DebugPanelStyle | str, title: str,
+            self, position: vec2, dims: vec2, style: DebugPanelStyle | str, title: str,
             rotation: float = 0.0, scale: float = 1.0, layer: int = 0,
-            anchor: Vec2 = Anchor.C, cache: bool = True
+            anchor: vec2 = Anchor.C, cache: bool = True
     ) -> DebugPanelObject:
         
         style = self._get_resource(style, DebugPanelStyle)
@@ -22,16 +22,16 @@ class DebugObjectFactory(SubObjectFactory):
         title_height = 30
         panel_height = round(dims.y - title_height - header_height)
         
-        panel = self.factory.ui.layouts.make_grid_layout(Vec2(), width, panel_height, style=style.panel_style)
-        title_panel = self.factory.shape.make_rect(Vec2(), Vec2(width, title_height), style=style.title_panel_style)
-        header = self.factory.shape.make_rect(Vec2(), Vec2(width, header_height), style=style.header_style)
-        title_text = self.factory.text.make_text(Vec2(8, -1), title.upper(), style.title_font, anchor=Anchor.L)
+        panel = self.factory.ui.layouts.make_grid_layout(vec2(), width, panel_height, style=style.panel_style)
+        title_panel = self.factory.shape.make_rect(vec2(), vec2(width, title_height), style=style.title_panel_style)
+        header = self.factory.shape.make_rect(vec2(), vec2(width, header_height), style=style.header_style)
+        title_text = self.factory.text.make_text(vec2(8, -1), title.upper(), style.title_font, anchor=Anchor.L)
         
         title_panel.add_child(title_text, Anchor.L)
         
         layout = DebugPanelObject(
             Transform(position, rotation, scale),
-            RectRenderer(Vec2(), None, cache),
+            RectRenderer(vec2(), None, cache),
             self.factory.services,
             panel,
             title_panel,
@@ -52,12 +52,12 @@ class DebugObjectFactory(SubObjectFactory):
     
     
     def make_debug_overlay(
-            self, position: Vec2, width: Optional[float] = None, height: Optional[float] = None, min_col=0, max_col=inf, min_row=0, max_row=inf, invert_x=False, invert_y=False,
-            rotation: float = 0.0, scale: float = 1.0, layer: int = 0, anchor: Vec2 = Anchor.C, cache: bool=True
+            self, position: vec2, width: Optional[float] = None, height: Optional[float] = None, min_col=0, max_col=inf, min_row=0, max_row=inf, invert_x=False, invert_y=False,
+            rotation: float = 0.0, scale: float = 1.0, layer: int = 0, anchor: vec2 = Anchor.C, cache: bool=True
     ) -> DebugOverlay:
         obj = DebugOverlay(
             Transform(position, rotation, scale),
-            RectRenderer(Vec2(), None, cache),
+            RectRenderer(vec2(), None, cache),
             self.factory.services, layer, anchor
         ).skip_rendering()
         

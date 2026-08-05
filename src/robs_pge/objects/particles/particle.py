@@ -3,7 +3,7 @@ from enum import IntFlag, auto
 from typing import Optional
 
 from ...resources import Texture
-from ...utils import Color, Easing, EasingFunctionType, Transform, Vec2
+from ...utils import Color, Easing, EasingFunctionType, Transform, vec2
 
 
 class FadingTypes(IntFlag):
@@ -14,10 +14,10 @@ class FadingTypes(IntFlag):
 @dataclass
 class Particle:
     transform: Transform
-    vel: Vec2
+    vel: vec2
     ang_vel: float
     
-    gravity: Vec2
+    gravity: vec2
     
     life: float
     

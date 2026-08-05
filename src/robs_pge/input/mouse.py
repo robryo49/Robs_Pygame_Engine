@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING
 
 import pygame as pg
 
-from ..utils import Transform, Vec2
+from ..utils import Transform, vec2
 
 if TYPE_CHECKING:
     from ..core import Camera
@@ -12,8 +12,8 @@ if TYPE_CHECKING:
 class Mouse:
     def __init__(self):
         
-        self._transform: Transform = Transform(Vec2(pg.mouse.get_pos()))
-        self._movement: Vec2 = Vec2(pg.mouse.get_rel())
+        self._transform: Transform = Transform(vec2(pg.mouse.get_pos()))
+        self._movement: vec2 = vec2(pg.mouse.get_rel())
         self._scroll: int = 0
         
         self._pressed_buttons: set[int] = set()
@@ -27,11 +27,11 @@ class Mouse:
         return self._transform
     
     @property
-    def pos(self) -> Vec2:
+    def pos(self) -> vec2:
         return self.transform.pos
     
     @property
-    def movement(self) -> Vec2:
+    def movement(self) -> vec2:
         return self._movement
     
     @property
@@ -52,12 +52,12 @@ class Mouse:
     
     # endregion
     
-    def world_pos(self, camera: Camera) -> Vec2:
+    def world_pos(self, camera: Camera) -> vec2:
         return camera.screen_to_camera_pos(self.pos)
     
-    def update(self)  -> "Mouse":
-        self.transform.pos = Vec2(pg.mouse.get_pos())
-        self._movement = Vec2(pg.mouse.get_rel())
+    def update(self)  -> Mouse:
+        self.transform.pos = vec2(pg.mouse.get_pos())
+        self._movement = vec2(pg.mouse.get_rel())
         
         for button in list(self.held_buttons):
             self.held_buttons[button] += 1
@@ -71,7 +71,7 @@ class Mouse:
         self._scroll = 0
         return self
     
-    def process_event(self, event: pg.Event) -> "Mouse":
+    def process_event(self, event: pg.Event) -> Mouse:
         if event.type == pg.MOUSEBUTTONDOWN:
             self.pressed_buttons.add(event.button)
         elif event.type == pg.MOUSEBUTTONUP:

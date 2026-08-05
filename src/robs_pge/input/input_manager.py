@@ -1,7 +1,7 @@
 import pygame as pg
 
 from .mouse import Mouse
-from ..utils import Vec2
+from ..utils import vec2
 
 
 class InputManager:
@@ -44,11 +44,11 @@ class InputManager:
         return self._mouse
     
     @property
-    def mouse_pos(self) -> Vec2:
+    def mouse_pos(self) -> vec2:
         return self.mouse.pos
     
     @property
-    def mouse_movement(self) -> Vec2:
+    def mouse_movement(self) -> vec2:
         return self.mouse.movement
     
     @property

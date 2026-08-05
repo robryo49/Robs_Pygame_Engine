@@ -10,6 +10,7 @@ dependencies = [
     "numpy==2.5.1",
     "opensimplex>=0.4.5.1",
     "pygame-ce==2.5.7",
+    "pyglm>=2.8.3",
     "resvg>=0.2.0",
     "resvg-py>=0.3.3",
     "scikit-image>=0.26.0",

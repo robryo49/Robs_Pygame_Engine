@@ -4,7 +4,7 @@ from typing import Callable, Optional
 import numpy as np
 
 from ...resources import Texture
-from ...utils import Color, Colors, Vec2, random, EasingFunctionType
+from ...utils import Color, Colors, vec2, random, EasingFunctionType
 from .particle import FadingTypes
 from .particle_system import ParticleSystem
 
@@ -17,13 +17,13 @@ class ParticleEmitter:
 class BurstParticleEmitter(ParticleEmitter):
     def __init__(
             self,
-            position: Vec2,
+            position: vec2,
             rotation: float | tuple[float, float],
             count: int | tuple[int, int],
             size: float | tuple[float, float],
             speed: float | tuple[float, float],
             angular_speed: float | tuple[float, float],
-            gravity: float | Vec2,
+            gravity: float | vec2,
             angle: float,
             spread: float,
             lifetime: float | tuple[float, float],
@@ -42,7 +42,7 @@ class BurstParticleEmitter(ParticleEmitter):
         
         self.speed = speed
         self.angular_speed = angular_speed
-        self.gravity = gravity if isinstance(gravity, Vec2) else Vec2(0, gravity)
+        self.gravity = gravity if isinstance(gravity, vec2) else vec2(0, gravity)
         
         self.angle = angle
         self.spread = spread

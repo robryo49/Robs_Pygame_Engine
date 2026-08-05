@@ -3,12 +3,12 @@ from typing import Optional
 
 import noise
 import numpy as np
-from pygame import Vector2 as Vec2
+from glm import vec2
 
 
 def make_noise_array(
-        dims: Vec2 | tuple[int, int],
-        noise_offset: Vec2 | tuple[int, int] = (0, 0),
+        dims: vec2 | tuple[int, int],
+        noise_offset: vec2 | tuple[int, int] = (0, 0),
         seed: Optional[int] = None,
         scale: float = 1,
         amplitude: float = 1,
@@ -19,7 +19,7 @@ def make_noise_array(
 ) -> np.ndarray:
     scale *= 100
     seed = randrange(10_000) if seed is None else seed
-    width, height = (int(dims.x), int(dims.y)) if isinstance(dims, Vec2) else dims
+    width, height = (int(dims.x), int(dims.y)) if isinstance(dims, vec2) else dims
     inverse_scale = 1/scale
     
     ox, oy = noise_offset

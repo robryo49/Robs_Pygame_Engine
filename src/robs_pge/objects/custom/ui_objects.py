@@ -5,12 +5,12 @@ from .sprite_objects import SpriteObject, IconObject
 from .layout_objects import LayoutObject
 from ..behaviors import *
 from ...rendering import CircleRenderer, RectRenderer
-from ...utils import Anchor, DictCollection, Easing, Transform, Vec2, clamp, inf, invert_y
+from ...utils import Anchor, DictCollection, Easing, Transform, vec2, clamp, inf, invert_y
 from ...animation import SetterAnimation
 
 
 class ButtonObject(RectObject):
-    def __init__(self, transform: Transform, background: RectRenderer, text: TextObject, action: Optional[Callable | tuple[Callable, ...]], services: DictCollection, sub_layer: int = 0, anchor: Vec2 = Anchor.C):
+    def __init__(self, transform: Transform, background: RectRenderer, text: TextObject, action: Optional[Callable | tuple[Callable, ...]], services: DictCollection, sub_layer: int = 0, anchor: vec2 = Anchor.C):
         
         super().__init__(transform, background, services, sub_layer, anchor)
         
@@ -48,7 +48,7 @@ class ButtonObject(RectObject):
 
 
 class SpriteButtonObject(RectObject):
-    def __init__(self, transform: Transform, background: RectRenderer, sprite: SpriteObject, action: Optional[Callable | tuple[Callable, ...]], services: DictCollection, sub_layer: int = 0, anchor: Vec2 = Anchor.C):
+    def __init__(self, transform: Transform, background: RectRenderer, sprite: SpriteObject, action: Optional[Callable | tuple[Callable, ...]], services: DictCollection, sub_layer: int = 0, anchor: vec2 = Anchor.C):
         
         super().__init__(transform, background, services, sub_layer, anchor)
         
@@ -110,7 +110,7 @@ class IconButtonObject(SpriteButtonObject):
 
 
 class CycleButtonObject(ButtonObject):
-    def __init__(self, transform: Transform, background: RectRenderer, text: TextObject, texts: tuple[str, ...], values: tuple[Any, ...], callback: Optional[Callable[[Any], Any] | tuple[Callable[[Any], Any], ...]], services: DictCollection, sub_layer: int = 0, anchor: Vec2 = Anchor.C):
+    def __init__(self, transform: Transform, background: RectRenderer, text: TextObject, texts: tuple[str, ...], values: tuple[Any, ...], callback: Optional[Callable[[Any], Any] | tuple[Callable[[Any], Any], ...]], services: DictCollection, sub_layer: int = 0, anchor: vec2 = Anchor.C):
         super().__init__(transform, background, text, None, services, sub_layer, anchor)
         
         self._texts = texts
@@ -163,7 +163,7 @@ class CycleButtonObject(ButtonObject):
 
 class CheckBoxObject(RectObject):
     def __init__(self, transform: Transform, background: RectRenderer, checked_icon: IconObject, callback: Optional[Callable[[bool], Any] | tuple[Callable[[bool], Any], ...]],
-                 services: DictCollection, sub_layer: int = 0, anchor: Vec2 = Anchor.C):
+                 services: DictCollection, sub_layer: int = 0, anchor: vec2 = Anchor.C):
         super().__init__(transform, background, services, sub_layer, anchor)
         
         self._checked_icon = checked_icon
@@ -198,7 +198,7 @@ class CheckBoxObject(RectObject):
 
 class RadioButtonObject(CircleObject):
     def __init__(self, transform: Transform, background: CircleRenderer, tick: CircleObject, callback: Optional[Callable[[bool], Any] | tuple[Callable[[bool], Any], ...]],
-                 services: DictCollection, sub_layer: int = 0, anchor: Vec2 = Anchor.C):
+                 services: DictCollection, sub_layer: int = 0, anchor: vec2 = Anchor.C):
         super().__init__(transform, background, services, sub_layer, anchor)
         
         self._tick = tick
@@ -233,7 +233,7 @@ class RadioButtonObject(CircleObject):
 
 class ToggleButtonObject(RectObject):
     def __init__(self, transform: Transform, background: RectRenderer, toggle: RectObject, toggle_background: RectObject, toggle_movement_range: tuple[int, int], callback: Optional[Callable[[bool], Any] | tuple[Callable[[bool], Any], ...]],
-                 services: DictCollection, sub_layer: int = 0, anchor: Vec2 = Anchor.C):
+                 services: DictCollection, sub_layer: int = 0, anchor: vec2 = Anchor.C):
         super().__init__(transform, background, services, sub_layer, anchor)
         
         self._toggle_min_x = toggle_movement_range[0]
@@ -291,7 +291,7 @@ class ToggleButtonObject(RectObject):
 
 class SliderObject(LayoutObject):
     def __init__(self, transform: Transform, background: RectRenderer, bar: RectObject, handle: RectObject | CircleObject, text: TextObject, min_value: float, max_value: float, step: Optional[float],
-                 services: DictCollection, sub_layer: int = 0, anchor: Vec2 = Anchor.C):
+                 services: DictCollection, sub_layer: int = 0, anchor: vec2 = Anchor.C):
         super().__init__(transform, background, services, sub_layer, anchor)
         
         self._min_value = min_value
@@ -357,7 +357,7 @@ class SliderObject(LayoutObject):
 
 
 class ProgressBarObject(RectObject):
-    def __init__(self, transform: Transform, background: RectRenderer, bar: RectObject, services: DictCollection, sub_layer: int = 0, anchor: Vec2 = Anchor.C):
+    def __init__(self, transform: Transform, background: RectRenderer, bar: RectObject, services: DictCollection, sub_layer: int = 0, anchor: vec2 = Anchor.C):
         super().__init__(transform, background, services, sub_layer, anchor)
         
         self._value = 0.0
@@ -369,7 +369,7 @@ class ProgressBarObject(RectObject):
         
         self._bar = bar
         self._bar.anchor = Anchor.TL
-        self._bar.pos = invert_y(Vec2(self.bd))
+        self._bar.pos = invert_y(vec2(self.bd))
         self.add_child(bar, Anchor.TL)
     
     # region PROPERTIES
@@ -436,7 +436,7 @@ class ProgressBarObject(RectObject):
 
 class ScrollbarObject(RectObject):
     def __init__(self, transform: Transform, background: RectRenderer, handle: RectObject,
-                 services: DictCollection, sub_layer: int = 0, anchor: Vec2 = Anchor.C):
+                 services: DictCollection, sub_layer: int = 0, anchor: vec2 = Anchor.C):
         super().__init__(transform, background, services, sub_layer, anchor)
         
         self._handle = handle
@@ -503,7 +503,7 @@ class ScrollbarObject(RectObject):
 
 
 class LineChartObject(RectObject):
-    def __init__(self, transform: Transform, background: RectRenderer, line: LineObject, services: DictCollection, sub_layer: int = 0, anchor: Vec2 = Anchor.C):
+    def __init__(self, transform: Transform, background: RectRenderer, line: LineObject, services: DictCollection, sub_layer: int = 0, anchor: vec2 = Anchor.C):
         super().__init__(transform, background, services, sub_layer, anchor)
         
         self._pad_x = 0
@@ -624,7 +624,7 @@ class LineChartObject(RectObject):
     
     # endregion
     
-    def insert_point(self, point: Vec2):
+    def insert_point(self, point: vec2):
         
         i = 0
         n = len(self._data_points)
@@ -649,7 +649,7 @@ class LineChartObject(RectObject):
         
         self.mark_dirty()
     
-    def _update_data_range_from_removed_point(self, point: Vec2):
+    def _update_data_range_from_removed_point(self, point: vec2):
         if point.x == self._min_data_x:
             self._min_data_x = min(p.x for p in self._data_points) if self._data_points else 0
         if point.x == self._max_data_x:
@@ -661,7 +661,7 @@ class LineChartObject(RectObject):
             self._max_data_y = max(p.y for p in self._data_points) if self._data_points else 0
     
     
-    def remove_point(self, point: Vec2):
+    def remove_point(self, point: vec2):
         self._data_points.remove(point)
         self._update_data_range_from_removed_point(point)
         self.mark_dirty()
@@ -696,7 +696,7 @@ class LineChartObject(RectObject):
                 
                 for point in self._data_points:
                     if min_x_value <= point.x <= max_x_value and min_y_value <= point.y <= max_y_value:
-                        points.append(Vec2(
+                        points.append(vec2(
                             self._pad_x + (point.x - min_x_value) * x_fac,
                             (self.height - self._pad_y) - (point.y - min_y_value) * y_fac
                         ))

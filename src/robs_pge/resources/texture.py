@@ -7,7 +7,7 @@ import numpy as np
 import math
 
 
-from ..utils import Vec2, Vec2Like, colorize_array, invert_uv_y, Color, make_noise_array, normalize_array
+from ..utils import vec2, Vec2Like, colorize_array, invert_uv_y, Color, make_noise_array, normalize_array
 
 
 class Texture:
@@ -33,7 +33,7 @@ class Texture:
     
     @property
     def dims(self):
-        return Vec2(self.surface.get_size())
+        return vec2(self.surface.get_size())
     
     @property
     def lod_levels(self) -> int:
@@ -79,11 +79,11 @@ class Texture:
         self.get_lod_surface(scale)
     
     
-    def get_at_uv(self, uv: Vec2):
-        pos = self.dims.elementwise() * uv
+    def get_at_uv(self, uv: vec2):
+        pos = self.dims * uv
         return self.get_at_pos(pos)
     
-    def get_at_pos(self, pos: Vec2):
+    def get_at_pos(self, pos: vec2):
         x, y = pos.x, self.height - pos.y
         try:
             return self.surface.get_at((x, y))
@@ -101,7 +101,7 @@ class Texture:
         w = (h * ratio) if not w and h else w
         h = (w / ratio) if not h and w else h
         
-        return Vec2(w, h)
+        return vec2(w, h)
     
     def resize(self, dims=None, width=None, height=None):
         if dims or width or height:
@@ -110,24 +110,24 @@ class Texture:
             self._invalidate_lod()
         return self
     
-    def resized(self, dims: Optional[Vec2] = None, width: Optional[int] = None, height: Optional[int] = None):
+    def resized(self, dims: Optional[vec2] = None, width: Optional[int] = None, height: Optional[int] = None):
         return self.copy().resize(dims, width, height)
             
     def copy(self):
         return self.from_surface(self.surface.copy())
     
     @classmethod
-    def from_surface(cls, surface: pg.Surface, dims: Optional[Vec2]=None, width: Optional[int]=None, height: Optional[int]=None):
+    def from_surface(cls, surface: pg.Surface, dims: Optional[vec2]=None, width: Optional[int]=None, height: Optional[int]=None):
         texture = cls(surface.convert_alpha())
         texture.resize(dims, width, height)
         return texture
     
     @classmethod
-    def from_path(cls, path: Path, dims: Optional[Vec2] = None, width: Optional[int] = None, height: Optional[int] = None):
+    def from_path(cls, path: Path, dims: Optional[vec2] = None, width: Optional[int] = None, height: Optional[int] = None):
         return cls.from_surface(pg.image.load(path), dims, width, height)
     
     @classmethod
-    def from_color_array(cls, arr: np.ndarray, dims: Optional[Vec2]=None, width: Optional[int]=None, height: Optional[int]=None):
+    def from_color_array(cls, arr: np.ndarray, dims: Optional[vec2]=None, width: Optional[int]=None, height: Optional[int]=None):
         if not np.issubdtype(arr.dtype, np.integer):
             if arr.max() <= 1.0 and arr.min() >= 0.0:
                 arr = arr * 255.0
@@ -153,7 +153,7 @@ class Texture:
         return cls.from_surface(surface, dims, width, height)
     
     @classmethod
-    def from_grayscale_array(cls, arr: np.ndarray, normalize: bool | tuple[float, float]=False, cmap: str | Colormap="binary", dims: Optional[Vec2]=None, width: Optional[int]=None, height: Optional[int]=None):
+    def from_grayscale_array(cls, arr: np.ndarray, normalize: bool | tuple[float, float]=False, cmap: str | Colormap="binary", dims: Optional[vec2]=None, width: Optional[int]=None, height: Optional[int]=None):
         
         if normalize:
             min_v, max_v = (arr.min(), arr.max()) if normalize is True else normalize
@@ -177,13 +177,13 @@ class Texture:
         return cls.from_color_array(arr, dims, width, height)
     
     @classmethod
-    def from_array(cls, arr: np.ndarray, normalize: bool | tuple[float, float]=False, cmap: str | Colormap="binary", dims: Optional[Vec2]=None, width: Optional[int]=None, height: Optional[int]=None):
+    def from_array(cls, arr: np.ndarray, normalize: bool | tuple[float, float]=False, cmap: str | Colormap="binary", dims: Optional[vec2]=None, width: Optional[int]=None, height: Optional[int]=None):
         if len(arr.shape) == 3: return cls.from_color_array(arr, dims, width, height)
         if len(arr.shape) == 2: return cls.from_grayscale_array(arr, normalize, cmap, dims, width, height)
         raise ValueError("arr given isn't grayscale or color, shape :" + str(arr.shape))
     
     @classmethod
-    def from_noise(cls, dims: Vec2 | tuple[int, int], noise_offset: Vec2 | tuple[int, int] = (0, 0), seed: Optional[int] = None, scale: float = 1, amplitude: float = 1, value_offset: float = 0, octaves: int = 8, persistence: float = 0.5, lacunarity: float = 2.0, cmap="binary"):
+    def from_noise(cls, dims: vec2 | tuple[int, int], noise_offset: vec2 | tuple[int, int] = (0, 0), seed: Optional[int] = None, scale: float = 1, amplitude: float = 1, value_offset: float = 0, octaves: int = 8, persistence: float = 0.5, lacunarity: float = 2.0, cmap="binary"):
         return cls.from_grayscale_array(make_noise_array(dims, noise_offset, seed, scale, amplitude, value_offset, octaves, persistence, lacunarity), cmap=cmap)
     
     

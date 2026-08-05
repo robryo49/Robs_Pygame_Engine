@@ -1,10 +1,10 @@
 from __future__ import annotations
 
-from typing import Optional, TYPE_CHECKING, Callable, Any
+from typing import Any, Callable, Optional, TYPE_CHECKING
 
 from .object_collection import ObjectCollection
 from ..rendering import DrawCommand
-from ..utils import ObjectLikeType, CoordinateSystem, Vec2, FRect
+from ..utils import CoordinateSystem, vec2, ObjectLikeType
 
 if TYPE_CHECKING:
     from ..core import Camera
@@ -22,162 +22,226 @@ class Layer:
         self._objects = ObjectCollection()
         
         super().__init__()
-    
+        
     # region PROPERTIES
     
     @property
-    def id(self):
+    def id(self) -> str:
         return self._id
     
     @property
-    def layer_value(self):
+    def layer_value(self) -> float:
         return self._layer_value
     
     @property
-    def camera(self):
+    def camera(self) -> "Camera":
         return self._camera
     
     @property
-    def interactable(self):
+    def interactable(self) -> bool:
         return self._interactable
     
     @interactable.setter
-    def interactable(self, value: bool):
+    def interactable(self, value: bool) -> None:
         self._interactable = value
-        
+    
     @property
-    def objects(self):
+    def objects(self) -> ObjectCollection:
         return self._objects
     
     @property
-    def coordinate_system(self):
+    def coordinate_system(self) -> CoordinateSystem:
         return self._coordinate_system
     
     # endregion
     
-    def get_camera_world_aabb(self) -> FRect:
-        corners = [
-            Vec2(self.camera.top_left),
-            Vec2(self.camera.top_right),
-            Vec2(self.camera.bottom_left),
-            Vec2(self.camera.bottom_right)
-        ]
-        
-        world_corners = [self.camera_to_world_pos(corner) for corner in corners]
-        
-        min_x = min(corner.x for corner in world_corners)
-        max_x = max(corner.x for corner in world_corners)
-        min_y = min(corner.y for corner in world_corners)
-        max_y = max(corner.y for corner in world_corners)
-        
-        return FRect(min_x, min_y, max_x - min_x, max_y - min_y)
-    
     # region Coordinates Conversion Methods
     
-    def screen_to_camera_pos(self, screen_point: Vec2):
-        return self.camera.screen_to_camera_pos(screen_point)
+    # region Screen <-> World
     
-    def screen_to_camera_vec(self, screen_vec: Vec2):
-        return self.camera.screen_to_camera_vec(screen_vec)
+    def screen_to_world_pos(self, screen_pos: vec2) -> vec2:
+        return self.camera.screen_to_world_pos(screen_pos)
     
+    def screen_to_world_vec(self, screen_vec: vec2) -> vec2:
+        return self.camera.screen_to_world_vec(screen_vec)
     
-    def screen_to_world_pos(self, screen_point: Vec2):
-        return self.camera_to_world_pos(self.screen_to_camera_pos(screen_point))
+    def world_to_screen_pos(self, world_pos: vec2) -> vec2:
+        return self.camera.world_to_screen_pos(world_pos)
     
-    def screen_to_world_vec(self, screen_vec: Vec2):
-        return self.camera_to_world_vec(self.screen_to_camera_vec(screen_vec))
-    
-    
-    
-    def world_to_camera_pos(self, world_point: Vec2):
-        return (world_point.x - self.coordinate_system.origin.x) * self.coordinate_system.x_axis + (world_point.y - self.coordinate_system.origin.y) * self.coordinate_system.y_axis
-
-    def world_to_camera_vec(self, world_vec: Vec2):
-        return world_vec.x * self.coordinate_system.x_axis + world_vec.y * self.coordinate_system.y_axis
-    
-    
-    def world_to_screen_pos(self, world_point: Vec2):
-        return self.camera_to_screen_pos(self.world_to_camera_pos(world_point))
-
-    def world_to_screen_vec(self, world_vec: Vec2):
-        return self.camera_to_screen_vec(self.world_to_camera_vec(world_vec))
-    
-    
-    
-    def camera_to_screen_pos(self, camera_point: Vec2):
-        return self.camera.camera_to_screen_pos(camera_point)
-
-    def camera_to_screen_vec(self, camera_vec: Vec2):
-        return self.camera.camera_to_screen_vec(camera_vec)
-    
-    
-    def camera_to_world_pos(self, camera_point: Vec2):
-        local_point = camera_point - self.coordinate_system.origin
-    
-        a1, a2 = self.coordinate_system.x_axis.x, self.coordinate_system.x_axis.y
-        b1, b2 = self.coordinate_system.y_axis.x, self.coordinate_system.y_axis.y
-        c1, c2 = local_point.x, local_point.y
-        
-        det = a1 * b2 - a2 * b1
-        if det == 0:
-            raise ValueError("Basis vectors are collinear and cannot form a coordinate system!")
-        
-        x = (c1 * b2 - c2 * b1) / det
-        y = (a1 * c2 - a2 * c1) / det
-        
-        return Vec2(x, y)
-
-    def camera_to_world_vec(self, camera_vec: Vec2):
-        return Vec2(camera_vec.dot(self.coordinate_system.x_axis), camera_vec.dot(self.coordinate_system.y_axis))
+    def world_to_screen_vec(self, world_vec: vec2) -> vec2:
+        return self.camera.world_to_screen_vec(world_vec)
     
     # endregion
     
-    def freeze(self):
+    
+    # region Viewport <-> World
+    
+    def viewport_to_world_pos(self, viewport_pos: vec2) -> vec2:
+        return self.camera.viewport_to_world_pos(viewport_pos)
+    
+    def viewport_to_world_vec(self, viewport_vec: vec2) -> vec2:
+        return self.camera.viewport_to_world_vec(viewport_vec)
+    
+    def world_to_viewport_pos(self, world_pos: vec2) -> vec2:
+        return self.camera.world_to_viewport_pos(world_pos)
+    
+    def world_to_viewport_vec(self, world_vec: vec2) -> vec2:
+        return self.camera.world_to_viewport_vec(world_vec)
+    
+    # endregion
+    
+    
+    # region Camera <-> World
+    
+    def camera_to_world_pos(self, camera_pos: vec2) -> vec2:
+        return self.camera.camera_to_world_pos(camera_pos)
+    
+    def camera_to_world_vec(self, camera_vec: vec2) -> vec2:
+        return self.camera.camera_to_world_vec(camera_vec)
+    
+    def world_to_camera_pos(self, world_pos: vec2) -> vec2:
+        return self.camera.world_to_camera_pos(world_pos)
+    
+    def world_to_camera_vec(self, world_vec: vec2) -> vec2:
+        return self.camera.world_to_camera_vec(world_vec)
+    
+    # endregion
+    
+    
+    # region World <-> Local
+    
+    def world_to_local_pos(self, world_pos: vec2) -> vec2:
+        return self.coordinate_system.world_to_local_pos(world_pos)
+    
+    def world_to_local_vec(self, world_vec: vec2) -> vec2:
+        return self.coordinate_system.world_to_local_vec(world_vec)
+    
+    def local_to_world_pos(self, local_pos: vec2) -> vec2:
+        return self.coordinate_system.local_to_world_pos(local_pos)
+    
+    def local_to_world_vec(self, local_vec: vec2) -> vec2:
+        return self.coordinate_system.local_to_world_vec(local_vec)
+    
+    # endregion
+    
+    
+    # region Camera <-> Local
+    
+    def camera_to_local_pos(self, camera_pos: vec2) -> vec2:
+        world_pos = self.camera_to_world_pos(camera_pos)
+        return self.world_to_local_pos(world_pos)
+    
+    def camera_to_local_vec(self, camera_vec: vec2) -> vec2:
+        world_vec = self.camera_to_world_vec(camera_vec)
+        return self.world_to_local_vec(world_vec)
+    
+    def local_to_camera_pos(self, local_pos: vec2) -> vec2:
+        world_pos = self.local_to_world_pos(local_pos)
+        return self.world_to_camera_pos(world_pos)
+    
+    def local_to_camera_vec(self, local_vec: vec2) -> vec2:
+        world_vec = self.local_to_world_vec(local_vec)
+        return self.world_to_camera_vec(world_vec)
+    
+    # endregion
+    
+    
+    # region Viewport <-> Local
+    
+    def viewport_to_local_pos(self, viewport_pos: vec2) -> vec2:
+        world_pos = self.viewport_to_world_pos(viewport_pos)
+        return self.world_to_local_pos(world_pos)
+    
+    def viewport_to_local_vec(self, viewport_vec: vec2) -> vec2:
+        world_vec = self.viewport_to_world_vec(viewport_vec)
+        return self.world_to_local_vec(world_vec)
+    
+    def local_to_viewport_pos(self, local_pos: vec2) -> vec2:
+        world_pos = self.local_to_world_pos(local_pos)
+        return self.world_to_viewport_pos(world_pos)
+    
+    def local_to_viewport_vec(self, local_vec: vec2) -> vec2:
+        world_vec = self.local_to_world_vec(local_vec)
+        return self.world_to_viewport_vec(world_vec)
+    
+    # endregion
+    
+    
+    # region Screen <-> Local
+    
+    def screen_to_local_pos(self, screen_pos: vec2) -> vec2:
+        world_pos = self.screen_to_world_pos(screen_pos)
+        return self.world_to_local_pos(world_pos)
+    
+    def screen_to_local_vec(self, screen_vec: vec2) -> vec2:
+        world_vec = self.screen_to_world_vec(screen_vec)
+        return self.world_to_local_vec(world_vec)
+    
+    def local_to_screen_pos(self, local_pos: vec2) -> vec2:
+        world_pos = self.local_to_world_pos(local_pos)
+        return self.world_to_screen_pos(world_pos)
+    
+    def local_to_screen_vec(self, local_vec: vec2) -> vec2:
+        world_vec = self.local_to_world_vec(local_vec)
+        return self.world_to_screen_vec(world_vec)
+    
+    # endregion
+    
+    # endregion
+    
+    # region Object Management
+    
+    def add_object(self, obj: ObjectLikeType | list[ObjectLikeType]) -> None:
+        self.objects.add_object(obj)
+        targets = obj if isinstance(obj, (list, tuple)) else [obj]
+        for o in targets:
+            o.layer = self
+    
+    def remove_object(self, obj: ObjectLikeType | list[ObjectLikeType]) -> None:
+        self.objects.remove_object(obj)
+        targets = obj if isinstance(obj, (list, tuple)) else [obj]
+        for o in targets:
+            o.layer = None
+    
+    # endregion
+    
+    # region State & Visibility Controls
+    
+    def freeze(self) -> None:
         self.objects.freeze()
     
-    def unfreeze(self):
+    def unfreeze(self) -> None:
         self.objects.unfreeze()
-        
-    def toggle_frozen(self):
+    
+    def toggle_frozen(self) -> None:
         self.objects.toggle_frozen()
-        
-        
-    def enable_rendering(self):
+    
+    def enable_rendering(self) -> None:
         self.objects.enable_rendering()
-        
-    def disable_rendering(self):
+    
+    def disable_rendering(self) -> None:
         self.objects.disable_rendering()
-        
-    def toggle_rendering(self):
+    
+    def toggle_rendering(self) -> None:
         self.objects.toggle_rendering()
-        
     
-    def add_object(self, obj: ObjectLikeType | list[ObjectLikeType]):
-        self.objects.add_object(obj)
-        
-        if isinstance(obj, list):
-            for o in obj:
-                o.layer = self
-        else:
-            obj.layer = self
-        
-    def remove_object(self, obj: ObjectLikeType | list[ObjectLikeType]):
-        self.objects.remove_object(obj)
-        
-        if isinstance(obj, list):
-            for o in obj:
-                o.layer = None
+    # endregion
     
-    def render(self, submit: Callable[[DrawCommand], Any]) -> "Layer":
-        self.objects.render(submit)
-        return self
+    # region Lifecycle Methods
     
-    def update(self, dt: float) -> "Layer":
+    def update(self, dt: float) -> Layer:
         self.objects.update(dt)
         return self
     
-    def __iter__(self):
-        return self.objects.__iter__()
+    def render(self, submit: Callable[[DrawCommand], Any]) -> Layer:
+        self.objects.render(submit)
+        return self
     
-    def __repr__(self):
-        return f"Layer('{self._id}', z={self._layer_value})"
+    # endregion
+    
+    def __iter__(self):
+        return iter(self.objects)
+    
+    def __repr__(self) -> str:
+        return f"Layer('{self._id}')"
+    

@@ -4,7 +4,7 @@ import pygame as pg
 from resvg_py import svg_to_bytes
 
 from .texture import Texture
-from ..utils import Color, Vec2
+from ..utils import Color, vec2
 
 
 class Icons:
@@ -210,7 +210,7 @@ class Icons:
         if Icons._cache.get(key, None) is None:
             svg_string = _SVGS[icon]
             
-            size = Vec2(size)
+            size = vec2(size)
             width, height = round(size.x), round(size.y)
             
             color = color.hex

@@ -2,7 +2,7 @@ from random import Random, randrange
 from typing import Optional
 
 import numpy as np
-from pygame import Vector2 as Vec2
+from glm import vec2
 
 
 def generate_grid_points(
@@ -41,15 +41,15 @@ def generate_grid_points(
 
 
 def make_voronoi_array(
-        dims: Vec2 | tuple[int, int],
-        grid_dims: Vec2 | tuple[int, int],
+        dims: vec2 | tuple[int, int],
+        grid_dims: vec2 | tuple[int, int],
         jitter: float = 0.7,
         metric: str = 'euclidean',
         seed: Optional[int] = None,
 ) -> np.ndarray:
     """Metric is Euclidean / manhattan / chebyshev"""
-    width, height = (int(dims.x), int(dims.y)) if isinstance(dims, Vec2) else dims
-    grid_dims = (int(grid_dims.x), int(grid_dims.y)) if isinstance(grid_dims, Vec2) else grid_dims
+    width, height = (int(dims.x), int(dims.y)) if isinstance(dims, vec2) else dims
+    grid_dims = (int(grid_dims.x), int(grid_dims.y)) if isinstance(grid_dims, vec2) else grid_dims
     
     seed= randrange(10_000) if seed is None else seed
     rng = Random(seed)
@@ -83,13 +83,13 @@ def make_voronoi_array(
 
 
 def make_bfs_voronoi_array(
-        dims: Vec2 | tuple[int, int],
-        grid_dims: Vec2 | tuple[int, int],
+        dims: vec2 | tuple[int, int],
+        grid_dims: vec2 | tuple[int, int],
         jitter: float = 0.7,
         seed: Optional[int] = None,
 ) -> np.ndarray:
-    width, height = (int(dims.x), int(dims.y)) if isinstance(dims, Vec2) else dims
-    grid_dims = (int(grid_dims.x), int(grid_dims.y)) if isinstance(grid_dims, Vec2) else grid_dims
+    width, height = (int(dims.x), int(dims.y)) if isinstance(dims, vec2) else dims
+    grid_dims = (int(grid_dims.x), int(grid_dims.y)) if isinstance(grid_dims, vec2) else grid_dims
     
     seed = randrange(10_000) if seed is None else seed
     rng = Random(seed)

@@ -6,7 +6,7 @@ import pygame as pg
 
 from ..rendering import DrawCommand
 from ..resources import SurfaceCache
-from ..utils import Vec2
+from ..utils import vec2
 
 if TYPE_CHECKING:
     from ..core import Camera, Display
@@ -30,7 +30,7 @@ class Renderer:
         self._total_commands_count: int = 0
         self._blit_count: int = 0
         
-        self._blit_calls: list[tuple[pg.Surface, Vec2]] = []
+        self._blit_calls: list[tuple[pg.Surface, vec2]] = []
     
     # region PROPERTIES
     

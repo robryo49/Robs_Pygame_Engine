@@ -10,7 +10,7 @@ from ..custom import LineChartObject, ProgressBarObject, SliderObject, WindowObj
 from ..object import PygameObject
 from ...rendering import CircleStyle, LineChartStyle, LineStyle, ProgressBarStyle, RectRenderer, RectStyle, SliderStyle, WindowStyle, ScrollbarStyle, IconButtonStyle
 from ...resources import Icons
-from ...utils import Anchor, StyleOrName, Vec2, clamp
+from ...utils import Anchor, StyleOrName, length, vec2, clamp
 
 
 class UIObjectFactory(SubObjectFactory):
@@ -22,8 +22,8 @@ class UIObjectFactory(SubObjectFactory):
         self.debug = DebugObjectFactory(object_factory)
     
     def make_slider(
-            self, position: Vec2, dims: Vec2, min_value: float, max_value: float, step: Optional[float] = None, start_value=None, style: StyleOrName[SliderStyle] = None,
-            rotation: float = 0.0, scale: float = 1.0, layer: int = 0, anchor: Vec2 = Anchor.C, cache: bool = True
+            self, position: vec2, dims: vec2, min_value: float, max_value: float, step: Optional[float] = None, start_value=None, style: StyleOrName[SliderStyle] = None,
+            rotation: float = 0.0, scale: float = 1.0, layer: int = 0, anchor: vec2 = Anchor.C, cache: bool = True
     ) -> SliderObject:
         
         slider_style = self._get_resource(style, SliderStyle)
@@ -40,17 +40,17 @@ class UIObjectFactory(SubObjectFactory):
         content_height = max(bar_width, text_height)
         margin = round((dims.y - content_height) * 0.5)
         
-        bar = self.factory.shape.make_rect(Vec2(), Vec2(dims.x - margin*3 - max_text_width, bar_width), bar_style, layer=layer)
+        bar = self.factory.shape.make_rect(vec2(), vec2(dims.x - margin*3 - max_text_width, bar_width), bar_style, layer=layer)
         
         if isinstance(handle_style, RectStyle):
-            handle_size: Vec2 = Vec2(handle_size)
-            handle = self.factory.shape.make_rect(Vec2(), Vec2(handle_size), handle_style, layer=layer)
+            handle_size: vec2 = vec2(handle_size)
+            handle = self.factory.shape.make_rect(vec2(), vec2(handle_size), handle_style, layer=layer)
         else:
-            handle_size: int = handle_size if isinstance(handle_size, int) else round(handle_size.magnitude())
-            handle = self.factory.shape.make_circle(Vec2(), handle_size, handle_style, layer=layer)
+            handle_size: int = handle_size if isinstance(handle_size, int) else round(length(handle_size))
+            handle = self.factory.shape.make_circle(vec2(), handle_size, handle_style, layer=layer)
         
         start_value = start_value if start_value is not None else min_value
-        text = self.factory.text.make_text(Vec2(), str(start_value), font, layer=layer)
+        text = self.factory.text.make_text(vec2(), str(start_value), font, layer=layer)
         
         obj = self._make_object(SliderObject, position, rotation, scale, RectRenderer(dims, bg_style, cache), layer, anchor, bar, handle, text, min_value, max_value, step)
         obj.fix_width(dims.x).fix_height(dims.y)
@@ -73,30 +73,30 @@ class UIObjectFactory(SubObjectFactory):
     
     
     def make_progress_bar(
-            self, position: Vec2, dims: Vec2, style: StyleOrName[ProgressBarStyle] = None,
-            rotation: float = 0.0, scale: float = 1.0, layer: int = 0, anchor: Vec2 = Anchor.C, cache: bool = True, cache_bar: bool = False
+            self, position: vec2, dims: vec2, style: StyleOrName[ProgressBarStyle] = None,
+            rotation: float = 0.0, scale: float = 1.0, layer: int = 0, anchor: vec2 = Anchor.C, cache: bool = True, cache_bar: bool = False
     ) -> ProgressBarObject:
         
         progress_bar_style = self._get_resource(style, ProgressBarStyle)
         bg_style = progress_bar_style.bg_style
         bar_style = RectStyle(progress_bar_style.color, bd_radius=(bg_style.bd_radius-bg_style.bd) if bg_style.bd_radius > 0 else 0)
         
-        bar = self.factory.shape.make_rect(Vec2(), Vec2(0, dims.y), bar_style, 0.0, 1.0, layer, Anchor.C, cache_bar)
+        bar = self.factory.shape.make_rect(vec2(), vec2(0, dims.y), bar_style, 0.0, 1.0, layer, Anchor.C, cache_bar)
         obj = self._make_object(ProgressBarObject, position, rotation, scale, RectRenderer(dims, bg_style, cache), layer, anchor, bar)
         
         return obj
     
     def make_line_chart(
-            self, position: Vec2, dims: Vec2, style: StyleOrName[LineChartStyle] = None, pad_x=0, pad_y=0, min_x=None, max_x=None, min_y=None, max_y=None,
+            self, position: vec2, dims: vec2, style: StyleOrName[LineChartStyle] = None, pad_x=0, pad_y=0, min_x=None, max_x=None, min_y=None, max_y=None,
             max_data_points=None, max_data_x_range=None, update_action: Optional[Callable[[PygameObject], Any] | tuple[Callable[[PygameObject], Any], ...]]=None,
-            rotation: float = 0.0, scale: float = 1.0, layer: int = 0, anchor: Vec2 = Anchor.C, cache: bool = True, cache_line: bool = False
+            rotation: float = 0.0, scale: float = 1.0, layer: int = 0, anchor: vec2 = Anchor.C, cache: bool = True, cache_line: bool = False
     ) -> LineChartObject:
         
         line_chart_style = self._get_resource(style, LineChartStyle)
         bg_style = line_chart_style.bg_style
         line_style = LineStyle(line_chart_style.line_color, line_chart_style.line_width)
         
-        line = self.factory.shape.make_line(Vec2(), [], line_style, 0.0, 1.0, layer, Anchor.C, cache_line)
+        line = self.factory.shape.make_line(vec2(), [], line_style, 0.0, 1.0, layer, Anchor.C, cache_line)
         obj: LineChartObject = self._make_object(LineChartObject, position, rotation, scale, RectRenderer(dims, bg_style, cache), layer, anchor, line)
         
         if pad_x: obj.pad_x = pad_x
@@ -112,8 +112,8 @@ class UIObjectFactory(SubObjectFactory):
         
         return obj
 
-    def make_window(self, position: Vec2, dims: Vec2, title: str, draggable: bool = False, style: StyleOrName[WindowStyle] = None,
-                    rotation: float = 0.0, scale: float = 1.0, layer: int = 0, anchor: Vec2 = Anchor.C, cache: bool = True) -> WindowObject:
+    def make_window(self, position: vec2, dims: vec2, title: str, draggable: bool = False, style: StyleOrName[WindowStyle] = None,
+                    rotation: float = 0.0, scale: float = 1.0, layer: int = 0, anchor: vec2 = Anchor.C, cache: bool = True) -> WindowObject:
         
         window_style = self._get_resource(style, WindowStyle)
         bg_style = window_style.bg_style
@@ -126,13 +126,13 @@ class UIObjectFactory(SubObjectFactory):
         
         title_panel_height = 0
         if window_style.show_title:
-            title_object: TextObject = self.factory.text.make_text(Vec2(), title, window_style.title_font, layer=layer)
+            title_object: TextObject = self.factory.text.make_text(vec2(), title, window_style.title_font, layer=layer)
             
             if not window_style.title_in_header:
                 title_panel_height = window_style.title_panel_height or (title_object.height + window_style.title_panel_margin)
-                title_panel: RectObject = self.factory.shape.make_rect(Vec2(), Vec2(dims.x, title_panel_height), style=window_style.title_panel_style, layer=layer)
+                title_panel: RectObject = self.factory.shape.make_rect(vec2(), vec2(dims.x, title_panel_height), style=window_style.title_panel_style, layer=layer)
                 
-                title_offset = window_style.title_panel_margin * (Vec2(1) - window_style.title_align * 2)
+                title_offset = window_style.title_panel_margin * (vec2(1) - window_style.title_align * 2)
                 title_object.pos = title_offset
                 title_object.anchor = window_style.title_align
                 title_panel.add_child(title_object, window_style.title_align)
@@ -152,24 +152,24 @@ class UIObjectFactory(SubObjectFactory):
                     raise ValueError("cannot determine header height when creating window, must specify title or header height")
             
             header_style = self._get_resource(window_style.header_style, RectStyle)
-            header: LayoutObject = self.factory.ui.layouts.make_horizontal_layout(Vec2(), dims.x, header_height, style=header_style, layer=layer)
+            header: LayoutObject = self.factory.ui.layouts.make_horizontal_layout(vec2(), dims.x, header_height, style=header_style, layer=layer)
             header.set_constant_padding(window_style.header_margin)
             
             buttons_width = (header_height - window_style.header_margin * 2) * 1.5
             header.fix_col_width(0, dims.x - buttons_width - window_style.header_margin * 2)
             
             if window_style.title_in_header and title_object is not None:
-                title_offset = window_style.header_margin * (Vec2(1) - window_style.title_align * 2)
+                title_offset = window_style.header_margin * (vec2(1) - window_style.title_align * 2)
                 title_object.pos = title_offset
                 title_object.anchor = window_style.title_align
                 header.add_object(title_object, 0, 0, anchor=window_style.title_align)
             
             if window_style.show_header_buttons:
                 icon_buttons_style = self._get_resource(window_style.icon_buttons_style, IconButtonStyle)
-                button_dims = Vec2(buttons_width, header_height - window_style.header_margin * 2)
+                button_dims = vec2(buttons_width, header_height - window_style.header_margin * 2)
                 
                 x_button = self.factory.ui.buttons.make_icon_button(
-                    Vec2(), Icons.XMARK, button_dims * 0.5, lambda: obj.close(), button_dims, style=icon_buttons_style, layer=layer
+                    vec2(), Icons.XMARK, button_dims * 0.5, lambda: obj.close(), button_dims, style=icon_buttons_style, layer=layer
                 )
                 header.add_object(x_button, 1, 0)
         else:
@@ -185,13 +185,13 @@ class UIObjectFactory(SubObjectFactory):
         panel_height = dims.y - title_panel_height - header_height
         panel_width = dims.x - scrollbar_col_width
         
-        panel = self.factory.ui.layouts.make_grid_layout(Vec2(), panel_width, panel_height, layer=layer)
+        panel = self.factory.ui.layouts.make_grid_layout(vec2(), panel_width, panel_height, layer=layer)
         panel.set_children_clip_area(
             FRect(margin - panel_width * 0.5, margin - panel_height * 0.5, panel_width - margin * 2, panel_height - margin * 2), True
         )
         
         scrollbar = self.make_scrollbar(
-            Vec2(), Vec2(window_style.scrollbar_width, panel_height - window_style.scrollbar_edge_margin * 2),
+            vec2(), vec2(window_style.scrollbar_width, panel_height - window_style.scrollbar_edge_margin * 2),
             scrollbar_style, layer=layer + 1
         )
         
@@ -217,19 +217,19 @@ class UIObjectFactory(SubObjectFactory):
         
         obj.add_object(scrollbar, 1, row, anchor=Anchor.R)
         obj.fix_col_width(1, scrollbar_col_width)
-        obj.set_cell_padding(Vec2(window_style.scrollbar_edge_margin, 0), (1, row))
+        obj.set_cell_padding(vec2(window_style.scrollbar_edge_margin, 0), (1, row))
         
         # endregion
         
         # region WIRING
         
-        def _on_panel_scroll(o: PygameObject, scroll: int, pos: Vec2):
+        def _on_panel_scroll(o: PygameObject, scroll: int, pos: vec2):
             max_offset = panel.get_scroll_range_y()
             if max_offset > 0:
                 scrollbar.set_value(clamp(scrollbar.value - scroll * 40 / max_offset, 0.0, 1.0))
         
         panel.do_on_scroll(_on_panel_scroll)
-        panel.make_attribute_dynamic("scroll_offset", lambda: Vec2(0, scrollbar.value * panel.get_scroll_range_y()), strength=0.2)
+        panel.make_attribute_dynamic("scroll_offset", lambda: vec2(0, scrollbar.value * panel.get_scroll_range_y()), strength=0.2)
         
         if draggable:
             drag_handle = header if header is not None else (title_panel if title_panel is not None else obj)
@@ -242,9 +242,9 @@ class UIObjectFactory(SubObjectFactory):
         return obj
     
     def make_scrollbar(
-            self, position: Vec2, dims: Vec2, style: ScrollbarStyle,
+            self, position: vec2, dims: vec2, style: ScrollbarStyle,
             start_value: float = 0.0, handle_height: Optional[float] = None,
-            rotation: float = 0.0, scale: float = 1.0, layer: int = 0, anchor: Vec2 = Anchor.C, cache: bool = True
+            rotation: float = 0.0, scale: float = 1.0, layer: int = 0, anchor: vec2 = Anchor.C, cache: bool = True
     ) -> ScrollbarObject:
         
         scrollbar_style = self._get_resource(style, ScrollbarStyle)
@@ -255,7 +255,7 @@ class UIObjectFactory(SubObjectFactory):
         
         handle_height = min(handle_height, dims.y - margin*2) if handle_height is not None else dims.y * 0.2
         
-        handle = self.factory.shape.make_rect(Vec2(), Vec2(dims.x - margin*2, handle_height), handle_style, layer=layer)
+        handle = self.factory.shape.make_rect(vec2(), vec2(dims.x - margin*2, handle_height), handle_style, layer=layer)
         
         obj = self._make_object(ScrollbarObject, position, rotation, scale, RectRenderer(dims, bg_style, cache), layer, anchor, handle)
         

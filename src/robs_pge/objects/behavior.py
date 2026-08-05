@@ -3,7 +3,7 @@ from __future__ import annotations
 import inspect
 from typing import Any, Callable, Optional, TYPE_CHECKING, overload
 
-from ..utils import Vec2
+from ..utils import vec2
 from ..events import Event
 
 if TYPE_CHECKING:
@@ -58,9 +58,9 @@ class ObjectBehavior:
     def _evaluate(val_or_getter):
         return val_or_getter() if callable(val_or_getter) else val_or_getter
     
-    def on_click(self, button: int, pos: Vec2): pass
-    def on_hold(self, button: int, pos: Vec2): pass
-    def on_release(self, button: int, pos: Vec2): pass
+    def on_click(self, button: int, pos: vec2): pass
+    def on_hold(self, button: int, pos: vec2): pass
+    def on_release(self, button: int, pos: vec2): pass
     
     def on_hover_start(self): pass
     def on_hover(self): pass
@@ -73,4 +73,4 @@ class ObjectBehavior:
     
     def on_update(self, dt: float): pass
     
-    def on_scroll(self, scroll: int, pos: Vec2): pass
+    def on_scroll(self, scroll: int, pos: vec2): pass

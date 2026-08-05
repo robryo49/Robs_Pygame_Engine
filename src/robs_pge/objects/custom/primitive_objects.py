@@ -4,11 +4,11 @@ from typing import cast
 
 from ..object import PygameObject
 from ...rendering import CircleRenderer, LineRenderer, RectRenderer, TextRenderer
-from ...utils import Anchor, Color, DictCollection, Transform, Vec2
+from ...utils import Anchor, Color, DictCollection, Transform, vec2
 
 
 class RectObject(PygameObject):
-    def __init__(self, transform: Transform, renderer: RectRenderer, services: DictCollection, sub_layer: int = 0, anchor: Vec2 = Anchor.C):
+    def __init__(self, transform: Transform, renderer: RectRenderer, services: DictCollection, sub_layer: int = 0, anchor: vec2 = Anchor.C):
         super().__init__(transform, renderer, services, sub_layer, anchor)
     
     # region PROPERTIES
@@ -23,7 +23,7 @@ class RectObject(PygameObject):
         return self.renderer.dims
     
     @dims.setter
-    def dims(self, value: Vec2):
+    def dims(self, value: vec2):
         self.renderer.dims = value
     
     
@@ -84,7 +84,7 @@ class RectObject(PygameObject):
 
 
 class CircleObject(PygameObject):
-    def __init__(self, transform: Transform, renderer: CircleRenderer, services: DictCollection, sub_layer: int = 0, anchor: Vec2 = Anchor.C):
+    def __init__(self, transform: Transform, renderer: CircleRenderer, services: DictCollection, sub_layer: int = 0, anchor: vec2 = Anchor.C):
         super().__init__(transform, renderer, services, sub_layer, anchor)
     
     # region PROPERTIES
@@ -165,7 +165,7 @@ class CircleObject(PygameObject):
 
 
 class LineObject(PygameObject):
-    def __init__(self, transform: Transform, renderer: LineRenderer, services: DictCollection, sub_layer: int = 0, anchor: Vec2 = Anchor.C):
+    def __init__(self, transform: Transform, renderer: LineRenderer, services: DictCollection, sub_layer: int = 0, anchor: vec2 = Anchor.C):
         super().__init__(transform, renderer, services, sub_layer, anchor)
     
     # region PROPERTIES
@@ -180,7 +180,7 @@ class LineObject(PygameObject):
         return self.renderer.points
     
     @points.setter
-    def points(self, value: list[Vec2]):
+    def points(self, value: list[vec2]):
         self.renderer.points = value
     
     
@@ -205,7 +205,7 @@ class LineObject(PygameObject):
 
 
 class TextObject(PygameObject):
-    def __init__(self, transform: Transform, renderer: TextRenderer, services: DictCollection, sub_layer: int = 0, anchor: Vec2 = Anchor.C):
+    def __init__(self, transform: Transform, renderer: TextRenderer, services: DictCollection, sub_layer: int = 0, anchor: vec2 = Anchor.C):
         super().__init__(transform, renderer, services, sub_layer, anchor)
     
     # region PROPERTIES

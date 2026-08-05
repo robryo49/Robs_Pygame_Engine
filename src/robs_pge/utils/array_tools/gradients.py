@@ -2,16 +2,16 @@ from math import pi
 from typing import Optional
 
 import numpy as np
-from pygame import Vector2 as Vec2
+from glm import vec2
 
 
 def make_linear_gradient_array(
-        dims: Vec2 | tuple[int, int],
+        dims: vec2 | tuple[int, int],
         start: float = 0.0,
         end: float = 1.0,
         axis: int = 0,
 ) -> np.ndarray:
-    width, height = (int(dims.x), int(dims.y)) if isinstance(dims, Vec2) else dims
+    width, height = (int(dims.x), int(dims.y)) if isinstance(dims, vec2) else dims
     
     line = np.linspace(start, end, width if axis == 0 else height, dtype=np.float32)
     
@@ -22,14 +22,14 @@ def make_linear_gradient_array(
 
 
 def make_radial_gradient_array(
-        dims: Vec2 | tuple[int, int],
-        center: Optional[Vec2 | tuple[float, float]] = None,
+        dims: vec2 | tuple[int, int],
+        center: Optional[vec2 | tuple[float, float]] = None,
         inner: float = 0.0,
         outer: float = 1.0,
         clamp: bool = True,
 ) -> np.ndarray:
-    width, height = (int(dims.x), int(dims.y)) if isinstance(dims, Vec2) else dims
-    cx, cy = (center.x, center.y) if isinstance(center, Vec2) else (center or (width / 2, height / 2))
+    width, height = (int(dims.x), int(dims.y)) if isinstance(dims, vec2) else dims
+    cx, cy = (center.x, center.y) if isinstance(center, vec2) else (center or (width / 2, height / 2))
     
     xs = np.arange(width, dtype=np.float32)
     ys = np.arange(height, dtype=np.float32)
@@ -46,14 +46,14 @@ def make_radial_gradient_array(
 
 
 def make_angular_gradient_array(
-        dims: Vec2 | tuple[int, int],
-        center: Optional[Vec2 | tuple[float, float]] = None,
+        dims: vec2 | tuple[int, int],
+        center: Optional[vec2 | tuple[float, float]] = None,
         start_angle: float = 0.0,
         start: float = 0.0,
         end: float = 1.0,
 ) -> np.ndarray:
-    width, height = (int(dims.x), int(dims.y)) if isinstance(dims, Vec2) else dims
-    cx, cy = (center.x, center.y) if isinstance(center, Vec2) else (center or (width / 2, height / 2))
+    width, height = (int(dims.x), int(dims.y)) if isinstance(dims, vec2) else dims
+    cx, cy = (center.x, center.y) if isinstance(center, vec2) else (center or (width / 2, height / 2))
     
     xs = np.arange(width, dtype=np.float32)
     ys = np.arange(height, dtype=np.float32)

@@ -1,7 +1,7 @@
 from dataclasses import dataclass, field, replace
 from typing import Optional
 
-from ..utils import Color, Font, Vec2, Colors, Anchor, StyleOrName
+from ..utils import Color, Font, vec2, Colors, Anchor, StyleOrName
 
 
 @dataclass
@@ -255,7 +255,7 @@ class SliderStyle(Style):
     bar_style: RectStyle = field(default_factory=RectStyle)
     bar_width: int = 10
     handle_style: RectStyle | CircleStyle = field(default_factory=CircleStyle)
-    handle_size: int | Vec2 = 10
+    handle_size: int | vec2 = 10
     font: Font = field(default_factory=Font)
     text_position: str = "right"
     hide_bg: bool = False
@@ -343,7 +343,7 @@ class WindowStyle(Style):
     title_panel_margin: int = 0
     
     title_font: Optional[Font] = field(default_factory=Font)
-    title_align: Vec2 = field(default_factory=lambda: Anchor.C)
+    title_align: vec2 = field(default_factory=lambda: Anchor.C)
     title_in_header: bool = False
     
     scrollbar_style: Optional[ScrollbarStyle] = field(default_factory=ScrollbarStyle)

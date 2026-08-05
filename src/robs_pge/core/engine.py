@@ -2,26 +2,26 @@ import logging
 import sys
 
 import pygame as pg
+from pyglm.glm import vec2
 
-
-from ..debug import FrameTimer
-from ..input import InputManager
-from ..objects import InteractionManager
-from ..rendering import WindowStyle, LineChartStyle, ProgressBarStyle, RectStyle, Renderer
-from ..resources import ResourceManager
-from ..utils import Colors, Vec2, Vec2Like, Color, Anchor, ScreenAnchor
 from .camera import Camera
 from .clock import Clock
 from .display import Display
-from .states import StateManager, State
+from .states import State, StateManager
+from ..debug import FrameTimer
+from ..input import InputManager
+from ..objects import InteractionManager
+from ..rendering import LineChartStyle, ProgressBarStyle, RectStyle, Renderer, WindowStyle
+from ..resources import ResourceManager
+from ..utils import Anchor, Color, Colors
 
 
 class Engine:
-    def __init__(self, name: str, resolution: Vec2Like = Vec2(1920, 1080), fullscreen: bool = True):
+    def __init__(self, name: str, resolution: vec2 = vec2(1920, 1080)):
         self._name: str = name
         logging.basicConfig(level=logging.INFO, stream=sys.stdout, format='%(name)s - %(levelname)s : %(message)s')
         
-        self._display: Display = self._create_display(resolution, fullscreen)
+        self._display: Display = self._create_display(resolution)
         
         self._clock: Clock = self._create_clock()
         self._input: InputManager = self._create_input_manager()
@@ -31,7 +31,7 @@ class Engine:
         
         self._frame_timer: FrameTimer = self._create_frame_timer()
         
-        self._default_camera: Camera = Camera(self._display).move(self._display.dims*0.5).update(self.clock.dtime)
+        self._default_camera: Camera = Camera(self._display).move(self._display.viewport_dims*0.5).update(self.clock.dtime)
         
         self._state_manager: StateManager = self._create_state_manager()
         self._renderer: Renderer = self._create_renderer(self.display, self._default_camera)
@@ -99,9 +99,8 @@ class Engine:
     # region SERVICES CREATION
     
     @staticmethod
-    def _create_display(dims: Vec2Like, fullscreen: bool = True) -> Display:
-        ScreenAnchor.set_screen_dims(Vec2(dims))
-        return Display(dims, fullscreen, True, Color(20, 26, 40))
+    def _create_display(dims: vec2) -> Display:
+        return Display(dims, True, Color(20, 26, 40))
     
     @staticmethod
     def _create_clock() -> Clock:

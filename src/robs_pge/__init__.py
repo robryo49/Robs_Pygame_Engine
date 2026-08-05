@@ -12,7 +12,8 @@ from .objects import (
 )
 from .objects.custom import TextObject
 from .utils import (
-    Vec2, Vec3, Transform, Easing, Anchor, Rect,
+    vec2,
+    Transform, Easing, Anchor, Rect,
     Color, Colors,
     Font,
     Keybinds, ObjectFlags, KeybindFlags,
@@ -43,7 +44,7 @@ __all__ = [
     "ObjectFactory", "ObjectCollection", "ObjectBehavior",
     "Layer",
     # utils (commonly needed at top level)
-    "Vec2", "Vec3", "Transform", "Easing", "Anchor", "Rect",
+    "vec2", "Transform", "Easing", "Anchor", "Rect",
     "Color", "Colors",
     "Font",
     "Keybinds", "ObjectFlags", "KeybindFlags",

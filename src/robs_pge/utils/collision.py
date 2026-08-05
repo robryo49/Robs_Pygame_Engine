@@ -2,22 +2,22 @@ from dataclasses import dataclass
 from math import cos, sin, radians, hypot
 from typing import Optional, Union, cast
 
-from .math import Vec2, Transform
+from .math_tools import vec2, Transform
 
 
 @dataclass
 class RectCollisionBox:
-    center: Vec2
-    half_extents: Vec2
+    center: vec2
+    half_extents: vec2
     rotation: float = 0.0
     
-    def get_axes(self) -> tuple[Vec2, Vec2]:
+    def get_axes(self) -> tuple[vec2, vec2]:
         rad = radians(self.rotation)
-        x_axis = Vec2(cos(rad), sin(rad))
-        y_axis = Vec2(-sin(rad), cos(rad))
+        x_axis = vec2(cos(rad), sin(rad))
+        y_axis = vec2(-sin(rad), cos(rad))
         return x_axis, y_axis
     
-    def get_corners(self) -> list[Vec2]:
+    def get_corners(self) -> list[vec2]:
         x_axis, y_axis = self.get_axes()
         hx, hy = self.half_extents
         return [
@@ -30,18 +30,18 @@ class RectCollisionBox:
 
 @dataclass
 class CircleCollisionBox:
-    center: Vec2
+    center: vec2
     radius: float
 
 
 @dataclass
 class CollisionBox:
     type: str  # "rect" or "circle"
-    half_extents: Optional[Vec2] = None
+    half_extents: Optional[vec2] = None
     radius: Optional[float] = None
     rotation_offset: float = 0.0
     
-    def to_world_shape(self, world_pos: Vec2, world_rotation: float, world_scale: float = 1.0) -> Union[RectCollisionBox, CircleCollisionBox]:
+    def to_world_shape(self, world_pos: vec2, world_rotation: float, world_scale: float = 1.0) -> Union[RectCollisionBox, CircleCollisionBox]:
         if self.type == "circle" and self.radius is not None:
             return CircleCollisionBox(world_pos, self.radius * world_scale)
         elif self.type == "rect" and self.half_extents is not None:
@@ -50,7 +50,7 @@ class CollisionBox:
         raise ValueError(f"Cant create collision box of type {self.type} with dims {(self.half_extents.x, self.half_extents.y) if self.half_extents is not None else None} or radius {self.radius}")
     
 
-def project_rect_onto_axis(corners: list[Vec2], axis: Vec2) -> tuple[float, float]:
+def project_rect_onto_axis(corners: list[vec2], axis: vec2) -> tuple[float, float]:
     projections = [corner.dot(axis) for corner in corners]
     return min(projections), max(projections)
 

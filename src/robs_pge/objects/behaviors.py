@@ -5,7 +5,7 @@ from typing import Any, Callable, Optional, TYPE_CHECKING
 from .behavior import ObjectBehavior
 from ..animation import AdderAnimation, Animation, AnimationManager, MultiplierAnimation, SetterAnimation
 from ..events import Event
-from ..utils import ObjectFlags, Vec2, clamp, inf, lerp, EasingFunctionType
+from ..utils import ObjectFlags, vec2, clamp, inf, lerp, EasingFunctionType
 
 if TYPE_CHECKING:
     from ..core import Camera
@@ -60,13 +60,13 @@ class ActionOnClickBehavior(ObjectBehavior):
     def on_attach(self):
         self.owner.add_flag(ObjectFlags.CLICKABLE)
     
-    def on_click(self, button: int, pos: Vec2):
+    def on_click(self, button: int, pos: vec2):
         self._exec(self._on_click, self.owner)
         
-    def on_hold(self, button: int, pos: Vec2):
+    def on_hold(self, button: int, pos: vec2):
         self._exec(self._on_hold, self.owner)
     
-    def on_release(self, button: int, pos: Vec2):
+    def on_release(self, button: int, pos: vec2):
         self._exec(self._on_release, self.owner)
         
 class ActionOnHoverBehavior(ObjectBehavior):
@@ -90,7 +90,7 @@ class ActionOnHoverBehavior(ObjectBehavior):
         self._exec(self._on_hover_end, self.owner)
         
 class ActionOnScrollBehavior(ObjectBehavior):
-    def __init__(self, action: Optional[Callable[[PygameObject, int, Vec2], Any] | tuple[Callable[[PygameObject, int, Vec2], Any], ...]] = None):
+    def __init__(self, action: Optional[Callable[[PygameObject, int, vec2], Any] | tuple[Callable[[PygameObject, int, vec2], Any], ...]] = None):
         super().__init__()
         
         self._action = action
@@ -98,7 +98,7 @@ class ActionOnScrollBehavior(ObjectBehavior):
     def on_attach(self):
         self.owner.add_flag(ObjectFlags.SCROLLABLE)
         
-    def on_scroll(self, scroll: int, pos: Vec2):
+    def on_scroll(self, scroll: int, pos: vec2):
         self._exec(self._action, self.owner, scroll, pos)
 
 
@@ -122,12 +122,12 @@ class AnimationOnClickBehavior(ObjectBehavior):
         self._animation_manager = self.owner.get_service(AnimationManager)
         self.owner.add_flag(ObjectFlags.CLICKABLE)
     
-    def on_click(self, button: int, pos: Vec2):
+    def on_click(self, button: int, pos: vec2):
         if not self._animation_manager or not self._click_animation: return
         if button == self._button:
             self._animation_manager.play(self._click_animation())
     
-    def on_release(self, button: int, pos: Vec2):
+    def on_release(self, button: int, pos: vec2):
         if not self._animation_manager or not self._release_animation: return
         if button == self._button:
             self._animation_manager.play(self._release_animation())
@@ -351,30 +351,30 @@ class HideOnCameraZoomBehavior(ObjectBehavior):
 
 
 class DraggableBehavior(ObjectBehavior):
-    def __init__(self, button: int = 1, target: Optional["PygameObject"] = None):
+    def __init__(self, button: int = 1, target: Optional[PygameObject] = None):
         super().__init__()
         self._button = button
         self._target = target
         self._dragging = False
-        self._offset = Vec2(0, 0)
+        self._offset = vec2(0, 0)
     
     @property
-    def target(self) -> "PygameObject":
+    def target(self) -> PygameObject:
         return self._target if self._target is not None else self.owner
     
     def on_attach(self):
         self.owner.add_flag(ObjectFlags.DRAGGABLE)
     
-    def on_click(self, button: int, pos: Vec2):
+    def on_click(self, button: int, pos: vec2):
         if button == self._button:
             self._dragging = True
             self._offset = self.target.pos - self.target.world_to_parent_local(pos)
     
-    def on_hold(self, button: int, pos: Vec2):
+    def on_hold(self, button: int, pos: vec2):
         if self._dragging and button == self._button:
             self.target.pos = self.target.world_to_parent_local(pos) + self._offset
     
-    def on_release(self, button: int, pos: Vec2):
+    def on_release(self, button: int, pos: vec2):
         if button == self._button:
             self._dragging = False
     

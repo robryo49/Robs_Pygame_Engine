@@ -3,7 +3,7 @@ from typing import Optional, TYPE_CHECKING
 
 import numpy as np
 
-from ...utils import Vec2, Transform, Anchor, Colors
+from ...utils import vec2, Transform, Anchor, Colors
 from ...rendering import CircleStyle, DrawCircle, DrawTexture
 
 from .particle import Particle, FadingTypes
@@ -111,7 +111,7 @@ class ParticleSystem:
             
             for i, pos in enumerate(pool.positions):
                 submit(DrawTexture(
-                    Transform(Vec2(pos), pool.rotations[i], pool.sizes[i] * scale_factors[i]),
+                    Transform(vec2(pos), pool.rotations[i], pool.sizes[i] * scale_factors[i]),
                     pool.layer, Anchor.C, True,
                     pool.texture
                 ))

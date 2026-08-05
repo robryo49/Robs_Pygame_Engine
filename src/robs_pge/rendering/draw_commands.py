@@ -4,11 +4,12 @@ import math
 from dataclasses import dataclass
 from typing import Optional, TYPE_CHECKING
 
+from pyglm import glm
 import pygame as pg
 
 from .styles import CircleStyle, LineStyle, RectStyle
 from ..resources import SurfaceCache, Texture
-from ..utils import FRect, Font, Rect, Transform, Vec2, surface_pos_from_uv_pos
+from ..utils import FRect, Font, Rect, Transform, vec2, surface_pos_from_uv_pos
 
 if TYPE_CHECKING:
     from ..objects import Layer
@@ -19,7 +20,7 @@ class DrawCommand:
     transform: Transform
     layer: Layer
     sub_layer: int
-    anchor: Vec2
+    anchor: vec2
     caching: bool
     clip_area: Optional[FRect]
     
@@ -27,8 +28,8 @@ class DrawCommand:
         if self.clip_area is None:
             return None
         
-        p1 = self.layer.world_to_screen_pos(Vec2(self.clip_area.left, self.clip_area.top))
-        p2 = self.layer.world_to_screen_pos(Vec2(self.clip_area.right, self.clip_area.bottom))
+        p1 = self.layer.world_to_screen_pos(vec2(self.clip_area.left, self.clip_area.top))
+        p2 = self.layer.world_to_screen_pos(vec2(self.clip_area.right, self.clip_area.bottom))
         
         x0, x1 = sorted((p1.x, p2.x))
         y0, y1 = sorted((p1.y, p2.y))
@@ -43,12 +44,12 @@ class DrawCommand:
         
         return screen_pos, rotation, scale
     
-    def draw(self, blit_call_queue: list[tuple[pg.Surface, Vec2]], surface_cache, font_cache) -> bool | None:
+    def draw(self, blit_call_queue: list[tuple[pg.Surface, vec2]], surface_cache, font_cache) -> bool | None:
         raise NotImplementedError("Draw command doesnt have a defined draw method")
     
     @staticmethod
-    def add_blit(blit_call_queue: list[tuple[pg.Surface, Vec2]], surface: pg.Surface, screen_pos: Vec2, offset: Optional[Vec2] = None, clip_rect: Optional[pg.Rect] = None):
-        top_left = screen_pos - (offset or Vec2())
+    def add_blit(blit_call_queue: list[tuple[pg.Surface, vec2]], surface: pg.Surface, screen_pos: vec2, offset: Optional[vec2] = None, clip_rect: Optional[pg.Rect] = None):
+        top_left = screen_pos - (offset or vec2())
         
         if clip_rect is not None:
             surf_rect = pg.Rect(round(top_left.x), round(top_left.y), surface.get_width(), surface.get_height())
@@ -60,7 +61,7 @@ class DrawCommand:
             if visible.topleft != surf_rect.topleft or visible.size != surf_rect.size:
                 local_rect = pg.Rect(visible.x - surf_rect.x, visible.y - surf_rect.y, visible.width, visible.height)
                 surface = surface.subsurface(local_rect)
-                top_left = Vec2(visible.x, visible.y)
+                top_left = vec2(visible.x, visible.y)
         
         blit_call_queue.append((surface, top_left))
     
@@ -109,7 +110,7 @@ class DrawTexture(DrawCommand):
     
     def draw(
             self,
-            blit_call_queue: list[tuple[pg.Surface, Vec2]],
+            blit_call_queue: list[tuple[pg.Surface, vec2]],
             surface_cache,
             font_cache,
     ):
@@ -122,7 +123,7 @@ class DrawTexture(DrawCommand):
         
         target_w = max(1, round(self.texture.width * scale))
         target_h = max(1, round(self.texture.height * scale))
-        base_dims = Vec2(target_w, target_h)
+        base_dims = vec2(target_w, target_h)
         
         key = (id(self.texture.surface), lod_level, rotation, scale)
         surface, cached = self.get_surface(surface_cache, key, lod_surface, rotation, target_w, target_h)
@@ -135,7 +136,7 @@ class DrawTexture(DrawCommand):
 
 @dataclass
 class DrawRect(DrawCommand):
-    dims: Vec2
+    dims: vec2
     style: RectStyle
     
     def make_surface(self, key, *args):
@@ -159,7 +160,7 @@ class DrawRect(DrawCommand):
         
         return surface
     
-    def draw(self, blit_call_queue: list[tuple[pg.Surface, Vec2]], surface_cache, font_cache):
+    def draw(self, blit_call_queue: list[tuple[pg.Surface, vec2]], surface_cache, font_cache):
         screen_pos, rotation, scale = self.get_composed_transform()
         
         bg_color =  tuple(self.style.bg_color)
@@ -167,7 +168,7 @@ class DrawRect(DrawCommand):
         bd_color =  tuple(self.style.bd_color)
         bd_radius = tuple(round(corner_radius * scale) for corner_radius in self.style.bd_radius) if isinstance(self.style.bd_radius, tuple) else round(self.style.bd_radius * scale)
         
-        dims =      round(self.dims * scale)
+        dims =      self.dims * scale
         key =       (tuple(dims), bg_color, bd, bd_color, bd_radius, rotation, scale)
         
         if dims[0] <= 0 or dims[1] <= 0:
@@ -195,7 +196,7 @@ class DrawCircle(DrawCommand):
             
         return surface
     
-    def draw(self, blit_call_queue: list[tuple[pg.Surface, Vec2]], surface_cache, font_cache):
+    def draw(self, blit_call_queue: list[tuple[pg.Surface, vec2]], surface_cache, font_cache):
         screen_pos, rotation, scale = self.get_composed_transform()
         
         radius =    round(self.radius * scale)
@@ -203,7 +204,7 @@ class DrawCircle(DrawCommand):
         bd =    round(self.style.bd * scale)
         bd_color =  tuple(self.style.bd_color)
         
-        dims =      Vec2(radius*2, radius*2)
+        dims =      vec2(radius*2, radius*2)
         key =       (radius, bg_color, bd, bd_color, scale)
         
         if radius <= 0:
@@ -277,7 +278,7 @@ class DrawText(DrawCommand):
             unrotated_h += h + base_spacing
         unrotated_h -= base_spacing
         
-        base_dims = Vec2(unrotated_w * scale, unrotated_h * scale)
+        base_dims = vec2(unrotated_w * scale, unrotated_h * scale)
         
         # 2. Include scale in the cache key so we don't recalculate it every frame
         key = (self.text, font_key, color, base_spacing, rotation, scale)
@@ -293,12 +294,12 @@ class DrawText(DrawCommand):
     
 @dataclass
 class DrawLine(DrawCommand):
-    points: list[Vec2]
+    points: list[vec2]
     style: LineStyle
     
     def make_surface(self, key, *args):
         points, color, width, rotation, scale = key
-        screen_points: list[Vec2] = args[0]
+        screen_points: list[vec2] = args[0]
         
         h_width = width * 0.5
         pad     = round(width + 1)
@@ -312,13 +313,13 @@ class DrawLine(DrawCommand):
         surf_h = max(1, round(max_y - min_y) + pad * 2)
         surface = pg.Surface((surf_w, surf_h), pg.SRCALPHA)
         
-        local_points = [Vec2(xs[i] - min_x + pad, ys[i] - min_y + pad) for i in range(len(xs))]
+        local_points = [vec2(xs[i] - min_x + pad, ys[i] - min_y + pad) for i in range(len(xs))]
         
         if width > 4:
             pg.draw.circle(surface, color, local_points[0], h_width)
             for i in range(len(local_points) - 1):
                 a, b = local_points[i: i+2]
-                side = Vec2(a.y - b.y, b.x - a.x).normalize() * h_width
+                side = glm.normalize(vec2(a.y - b.y, b.x - a.x)) * h_width
                 pg.draw.polygon(surface, color, [a + side, a - side, b - side, b + side])
                 pg.draw.circle(surface, color, b, h_width)
         else:
@@ -334,7 +335,7 @@ class DrawLine(DrawCommand):
         color = tuple(self.style.color)
         width = max(1, round(self.style.width * scale))
         
-        screen_points = [self.layer.world_to_screen_pos(self.transform.apply(p)) for p in self.points]
+        screen_points = [self.layer.world_to_screen_pos(self.transform.apply_on_point(p)) for p in self.points]
         
         xs = [p.x for p in screen_points]
         ys = [p.y for p in screen_points]
@@ -344,7 +345,7 @@ class DrawLine(DrawCommand):
         key     = (tuple((p.x, p.y) for p in self.points), color, width, rotation, scale)
         surface, cached = self.get_surface(surface_cache, key, screen_points)
         
-        self.add_blit(blit_call_queue, surface, Vec2(min_x - pad, min_y - pad), None, self.get_screen_clip_rect())
+        self.add_blit(blit_call_queue, surface, vec2(min_x - pad, min_y - pad), None, self.get_screen_clip_rect())
         
         return cached
 
@@ -353,7 +354,7 @@ class DrawLine(DrawCommand):
 class DrawSubSurface(DrawCommand):
     texture: Texture
     sub_rect: Rect
-    target_dims: Vec2
+    target_dims: vec2
     
     def make_surface(self, key, *args):
         _, _, lod_level, sx, sy, sw, sh, view_w, view_h = key
@@ -387,12 +388,12 @@ class DrawSubSurface(DrawCommand):
         
         return surface
     
-    def draw(self, blit_call_queue: list[tuple[pg.Surface, Vec2]], surface_cache, font_cache):
+    def draw(self, blit_call_queue: list[tuple[pg.Surface, vec2]], surface_cache, font_cache):
         screen_pos, rotation, scale = self.get_composed_transform()
         
         view_w = max(1, round(self.target_dims.x * scale))
         view_h = max(1, round(self.target_dims.y * scale))
-        base_dims = Vec2(view_w, view_h)
+        base_dims = vec2(view_w, view_h)
         
         lod_surface, lod_level = self.texture.get_lod_surface(scale)
         
@@ -446,7 +447,7 @@ class DrawChunkedSprite(DrawCommand):
         
         return sub_surf.convert_alpha()
     
-    def draw(self, blit_call_queue: list[tuple[pg.Surface, Vec2]], surface_cache, font_cache):
+    def draw(self, blit_call_queue: list[tuple[pg.Surface, vec2]], surface_cache, font_cache):
         screen_pos, rotation, scale = self.get_composed_transform()
         
         if scale <= 0:
@@ -459,7 +460,7 @@ class DrawChunkedSprite(DrawCommand):
         cw = self.chunk_size
         ch = self.chunk_size
 
-        screen_w, screen_h = self.layer.camera.display_dims
+        screen_w, screen_h = self.layer.camera.viewport_dims
 
         anchor_offset_x = self.anchor.x * base_w
         anchor_offset_y = self.anchor.y * base_h
@@ -501,7 +502,7 @@ class DrawChunkedSprite(DrawCommand):
                     blit_x = round(chunk_center_x - final_dims[0] / 2.0)
                     blit_y = round(chunk_center_y - final_dims[1] / 2.0)
                     
-                    blit_call_queue.append((surface, Vec2(blit_x, blit_y)))
+                    blit_call_queue.append((surface, vec2(blit_x, blit_y)))
             
             return cached_all
         
@@ -534,6 +535,6 @@ class DrawChunkedSprite(DrawCommand):
                 blit_x = round(chunk_center_x - final_dims[0] / 2.0)
                 blit_y = round(chunk_center_y - final_dims[1] / 2.0)
                 
-                blit_call_queue.append((surface, Vec2(blit_x, blit_y)))
+                blit_call_queue.append((surface, vec2(blit_x, blit_y)))
         
         return cached_all

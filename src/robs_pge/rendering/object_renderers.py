@@ -4,7 +4,7 @@ from .draw_commands import DrawCircle, DrawLine, DrawRect, DrawText, DrawTexture
 from .styles import *
 from .object_renderer import ObjectRenderer
 from ..resources import Icons, Texture
-from ..utils import Anchor, Color, Font, Transform, Vec2, Rect, FRect
+from ..utils import Anchor, Color, Font, Transform, length, vec2, Rect, FRect
 
 from typing import TYPE_CHECKING
 
@@ -13,7 +13,7 @@ if TYPE_CHECKING:
 
 
 class RectRenderer(ObjectRenderer):
-    def __init__(self, dims: Vec2, style: Optional[RectStyle] = None, cache=True):
+    def __init__(self, dims: vec2, style: Optional[RectStyle] = None, cache=True):
         super().__init__(cache)
         
         self._dims = dims
@@ -38,7 +38,7 @@ class RectRenderer(ObjectRenderer):
         return self._dims
     
     @dims.setter
-    def dims(self, value: Vec2):
+    def dims(self, value: vec2):
         self._dims = value
     
     @property
@@ -102,10 +102,10 @@ class RectRenderer(ObjectRenderer):
     # endregion
     
     def get_aabb_size(self, rotation: float):
-        return Vec2(self.dims.length()) if rotation else self.dims
+        return vec2(length(self.dims)) if rotation else self.dims
     
     
-    def test_hit(self, local_pos: Vec2) -> bool:
+    def test_hit(self, local_pos: vec2) -> bool:
         x, y = local_pos
         w, h = self.dims
         
@@ -135,7 +135,7 @@ class RectRenderer(ObjectRenderer):
         
         return (r - dx) ** 2 + (r - dy) ** 2 <= r ** 2
     
-    def render(self, submit, transform: Transform, layer: Layer, sub_layer: int, anchor: Vec2, clip_area: Optional[FRect] = None):
+    def render(self, submit, transform: Transform, layer: Layer, sub_layer: int, anchor: vec2, clip_area: Optional[FRect] = None):
         submit(DrawRect(transform, layer, sub_layer, anchor, self._cache, clip_area, self.dims, self.style))
 
 
@@ -178,7 +178,7 @@ class CircleRenderer(ObjectRenderer):
     
     @property
     def dims(self):
-        return Vec2(self.diameter)
+        return vec2(self.diameter)
     
     @property
     def width(self):
@@ -233,16 +233,16 @@ class CircleRenderer(ObjectRenderer):
     def get_aabb_size(self, rotation: float):
         return self.diameter
     
-    def test_hit(self, local_pos: Vec2):
+    def test_hit(self, local_pos: vec2):
         pos = local_pos - self.get_offset(Anchor.C)
-        return pos.length_squared() <= self.radius ** 2
+        return length(pos) <= self.radius
     
-    def render(self, submit, transform: Transform, layer: Layer, sub_layer: int, anchor: Vec2, clip_area: Optional[FRect] = None):
+    def render(self, submit, transform: Transform, layer: Layer, sub_layer: int, anchor: vec2, clip_area: Optional[FRect] = None):
         submit(DrawCircle(transform, layer, sub_layer, anchor, self._cache, clip_area, self.radius, self.style))
 
 
 class LineRenderer(ObjectRenderer):
-    def __init__(self, points: list[Vec2], style: Optional[LineStyle]=None, cache=True):
+    def __init__(self, points: list[vec2], style: Optional[LineStyle]=None, cache=True):
         super().__init__(cache)
         
         self._points = points
@@ -256,7 +256,7 @@ class LineRenderer(ObjectRenderer):
     
     @property
     def dims(self):
-        return Vec2(self._max_x, self._max_y)
+        return vec2(self._max_x, self._max_y)
     
     # region points
     @property
@@ -264,7 +264,7 @@ class LineRenderer(ObjectRenderer):
         return self._points
     
     @points.setter
-    def points(self, value: list[Vec2]):
+    def points(self, value: list[vec2]):
         self._points = value
         self._max_x = max(p.x for p in value) if value else 0
         self._max_y = max(p.y for p in value) if value else 0
@@ -303,12 +303,12 @@ class LineRenderer(ObjectRenderer):
     # endregion
     
     def get_aabb_size(self, rotation: float):
-        return Vec2(self._max_x, self._max_y).length() * 2 if rotation else Vec2(self._max_x, self._max_y) * 2
+        return length(vec2(self._max_x, self._max_y)) * 2 if rotation else vec2(self._max_x, self._max_y) * 2
     
-    def test_hit(self, local_pos: Vec2):
+    def test_hit(self, local_pos: vec2):
         return False
     
-    def render(self, submit, transform: Transform, layer: Layer, sub_layer: int, anchor: Vec2, clip_area: Optional[FRect] = None):
+    def render(self, submit, transform: Transform, layer: Layer, sub_layer: int, anchor: vec2, clip_area: Optional[FRect] = None):
         submit(DrawLine(transform, layer, sub_layer, anchor, self._cache, clip_area, self.points, self.style))
 
 
@@ -342,9 +342,9 @@ class SpriteRenderer(ObjectRenderer):
     # endregion
     
     def get_aabb_size(self, rotation: float):
-        return Vec2(self.dims.length()) if rotation else self.dims
+        return vec2(length(self.dims)) if rotation else self.dims
     
-    def test_hit(self, local_pos: Vec2):
+    def test_hit(self, local_pos: vec2):
         
         x, y = local_pos
         if x < 0 or x >= self.width or y < 0 or y >= self.height:
@@ -352,7 +352,7 @@ class SpriteRenderer(ObjectRenderer):
         
         return self.texture.get_at_pos(local_pos).a > 0
     
-    def render(self, submit, transform: Transform, layer: Layer, sub_layer: int, anchor: Vec2, clip_area: Optional[FRect] = None):
+    def render(self, submit, transform: Transform, layer: Layer, sub_layer: int, anchor: vec2, clip_area: Optional[FRect] = None):
         submit(DrawTexture(transform, layer, sub_layer, anchor, self._cache, clip_area, self.texture))
 
 
@@ -413,7 +413,7 @@ class TextRenderer(ObjectRenderer):
         
         self._font = font or Font()
         
-        self._dims = Vec2(self.font.get_render_size(self.text))
+        self._dims = vec2(self.font.get_render_size(self.text))
     
     # region PROPERTIES
     
@@ -425,7 +425,7 @@ class TextRenderer(ObjectRenderer):
     @text.setter
     def text(self, value):
         self._text = value
-        self._dims = Vec2(self.font.get_render_size(self.text))
+        self._dims = vec2(self.font.get_render_size(self.text))
     # endregion
     
     @property
@@ -435,7 +435,7 @@ class TextRenderer(ObjectRenderer):
     @property
     def dims(self):
         all_dims = list(self.font.get_render_size(txt) for txt in self.text.split("\n"))
-        return Vec2(max(v.x for v in all_dims), sum(v.y for v in all_dims) + self.font.line_spacing * (len(all_dims) - 1))
+        return vec2(max(v.x for v in all_dims), sum(v.y for v in all_dims) + self.font.line_spacing * (len(all_dims) - 1))
     
     # region color
     @property
@@ -458,18 +458,18 @@ class TextRenderer(ObjectRenderer):
     # endregion
     
     def get_aabb_size(self, rotation: float):
-        return Vec2(self.dims.length()) if rotation else self.dims
+        return vec2(length(self.dims)) if rotation else self.dims
     
-    def test_hit(self, local_pos: Vec2):
+    def test_hit(self, local_pos: vec2):
         x, y = local_pos
         return 0 <= x < self.width and 0 <= y < self.height
     
-    def render(self, submit, transform: Transform, layer: Layer, sub_layer: int, anchor: Vec2, clip_area: Optional[FRect] = None):
+    def render(self, submit, transform: Transform, layer: Layer, sub_layer: int, anchor: vec2, clip_area: Optional[FRect] = None):
         submit(DrawText(transform, layer, sub_layer, anchor, self._cache, clip_area, self.text, self.font))
 
 
 class SubSurfaceRenderer(ObjectRenderer):
-    def __init__(self, texture: Texture, sub_rect: Rect, target_dims: Vec2, cache=True):
+    def __init__(self, texture: Texture, sub_rect: Rect, target_dims: vec2, cache=True):
         super().__init__(cache)
         self._texture = texture
         self._sub_rect = Rect(sub_rect)
@@ -493,7 +493,7 @@ class SubSurfaceRenderer(ObjectRenderer):
         return self._target_dims
     
     @target_dims.setter
-    def target_dims(self, value: Vec2):
+    def target_dims(self, value: vec2):
         self._target_dims = value
     
     @property
@@ -521,7 +521,7 @@ class SubSurfaceRenderer(ObjectRenderer):
         # Returns the fixed target size (like the screen size) instead of the bounding box of the cropped texture
         return self._target_dims
     
-    def test_hit(self, local_pos: Vec2):
+    def test_hit(self, local_pos: vec2):
         x, y = local_pos
         # Fast initial check against our screen canvas boundaries
         if x < 0 or x >= self.width or y < 0 or y >= self.height:
@@ -544,12 +544,12 @@ class SubSurfaceRenderer(ObjectRenderer):
         
         # 5. If the hit position lands inside the raw texture boundaries, check alpha transparency
         if texture_rect.collidepoint(orig_x, orig_y):
-            return self.texture.get_at_pos(Vec2(orig_x, orig_y)).a > 0
+            return self.texture.get_at_pos(vec2(orig_x, orig_y)).a > 0
         
         # Click was in the out-of-bounds transparent gutter area
         return False
     
-    def render(self, submit, transform: Transform, layer: Layer, sub_layer: int, anchor: Vec2, clip_area: Optional[FRect] = None):
+    def render(self, submit, transform: Transform, layer: Layer, sub_layer: int, anchor: vec2, clip_area: Optional[FRect] = None):
         submit(DrawSubSurface(
             transform, layer, sub_layer, anchor, self._cache, clip_area, self.texture, self.sub_rect, self.target_dims
         ))
@@ -590,14 +590,14 @@ class ChunkedSpriteRenderer(ObjectRenderer):
     # endregion
     
     def get_aabb_size(self, rotation: float):
-        return Vec2(self.dims.length()) if rotation else self.dims
+        return vec2(length(self.dims)) if rotation else self.dims
     
-    def test_hit(self, local_pos: Vec2):
+    def test_hit(self, local_pos: vec2):
         x, y = local_pos
         if x < 0 or x >= self.width or y < 0 or y >= self.height:
             return False
         
         return self.texture.get_at_pos(local_pos).a > 0
     
-    def render(self, submit, transform: Transform, layer: Layer, sub_layer: int, anchor: Vec2, clip_area: Optional[FRect] = None):
+    def render(self, submit, transform: Transform, layer: Layer, sub_layer: int, anchor: vec2, clip_area: Optional[FRect] = None):
         submit(DrawChunkedSprite(transform, layer, sub_layer, anchor, self._cache, clip_area, self.texture, self.chunk_size))

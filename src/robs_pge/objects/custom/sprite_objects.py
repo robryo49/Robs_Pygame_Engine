@@ -4,11 +4,11 @@ from typing import cast
 
 from ..object import PygameObject
 from ...rendering import ChunkedSpriteRenderer, SpriteRenderer, SubSurfaceRenderer, IconRenderer
-from ...utils import Anchor, DictCollection, Rect, Transform, Vec2, Color
+from ...utils import Anchor, DictCollection, Rect, Transform, vec2, Color
 
 
 class SpriteObject(PygameObject):
-    def __init__(self, transform: Transform, renderer: SpriteRenderer, services: DictCollection, sub_layer: int = 0, anchor: Vec2 = Anchor.C):
+    def __init__(self, transform: Transform, renderer: SpriteRenderer, services: DictCollection, sub_layer: int = 0, anchor: vec2 = Anchor.C):
         super().__init__(transform, renderer, services, sub_layer, anchor)
     
     # region PROPERTIES
@@ -33,7 +33,7 @@ class SpriteObject(PygameObject):
 
 
 class SubSurfaceSpriteObject(PygameObject):
-    def __init__(self, transform: Transform, renderer: SubSurfaceRenderer, services: DictCollection, sub_layer: int = 0, anchor: Vec2 = Anchor.C):
+    def __init__(self, transform: Transform, renderer: SubSurfaceRenderer, services: DictCollection, sub_layer: int = 0, anchor: vec2 = Anchor.C):
         super().__init__(transform, renderer, services, sub_layer, anchor)
     
     # region PROPERTIES
@@ -50,24 +50,24 @@ class SubSurfaceSpriteObject(PygameObject):
     def sub_rect(self, value: Rect):
         self.renderer.sub_rect = value
     
-    def move_subrect(self, vec: Vec2):
+    def move_subrect(self, vec: vec2):
         self.sub_rect.x = self.sub_rect.x + vec.x
         self.sub_rect.y = self.sub_rect.y + vec.y
     
     @property
-    def target_dims(self) -> Vec2:
+    def target_dims(self) -> vec2:
         return self.renderer.target_dims
     
     @target_dims.setter
-    def target_dims(self, value: Vec2):
+    def target_dims(self, value: vec2):
         self.renderer.target_dims = value
     
     @property
-    def dims(self) -> Vec2:
+    def dims(self) -> vec2:
         return self.renderer.dims
     
     @dims.setter
-    def dims(self, value: Vec2):
+    def dims(self, value: vec2):
         self.renderer.target_dims = value
     
     @property
@@ -90,7 +90,7 @@ class SubSurfaceSpriteObject(PygameObject):
 
 
 class ChunkedSpriteObject(PygameObject):
-    def __init__(self, transform: Transform, renderer: ChunkedSpriteRenderer, services: DictCollection, sub_layer: int = 0, anchor: Vec2 = Anchor.C):
+    def __init__(self, transform: Transform, renderer: ChunkedSpriteRenderer, services: DictCollection, sub_layer: int = 0, anchor: vec2 = Anchor.C):
         super().__init__(transform, renderer, services, sub_layer, anchor)
     
     # region PROPERTIES
@@ -121,7 +121,7 @@ class ChunkedSpriteObject(PygameObject):
     
     
 class IconObject(SpriteObject):
-    def __init__(self, transform: Transform, renderer: IconRenderer, services: DictCollection, sub_layer: int = 0, anchor: Vec2 = Anchor.C):
+    def __init__(self, transform: Transform, renderer: IconRenderer, services: DictCollection, sub_layer: int = 0, anchor: vec2 = Anchor.C):
         super().__init__(transform, renderer, services, sub_layer, anchor)
     
     # region PROPERTIES

@@ -5,7 +5,7 @@ from typing import Any, Callable, Optional, Protocol, TYPE_CHECKING, runtime_che
 
 import numpy as np
 
-from .math import Vec2, Vec3
+from .math_tools import vec2, vec3
 
 if TYPE_CHECKING:
     from ..core import Camera
@@ -13,8 +13,8 @@ if TYPE_CHECKING:
     from ..objects import Layer
 
 
-type Vec2Like = Vec2 | np.ndarray | tuple[float, float]
-type Vec3Like = Vec3 | np.ndarray | tuple[float, float, float]
+type Vec2Like = vec2 | np.ndarray | tuple[float, float]
+type Vec3Like = vec3 | np.ndarray | tuple[float, float, float]
 
 
 type CallbackLike = Callable | tuple[Callable, ...] | None

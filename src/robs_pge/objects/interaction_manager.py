@@ -1,16 +1,15 @@
 from __future__ import annotations
-from typing import Callable, TYPE_CHECKING
-from typing import Optional
 
-from .object_collection import ObjectCollection
-from .object import PygameObject
-from ..input import InputManager
-from ..utils import ObjectFlags, Vec2
+from typing import Callable, Optional, TYPE_CHECKING
 
 import pygame as pg
 
+from .object import PygameObject
+from .object_collection import ObjectCollection
+from ..input import InputManager
+from ..utils import ObjectFlags, vec2
+
 if TYPE_CHECKING:
-    from ..core import Camera
     from ..objects import LayerManager
 
 
@@ -21,7 +20,7 @@ class InteractionManager:
         self._hovered: list[PygameObject] = []
         self._top_hovered: Optional[PygameObject] = None
         
-        self._mouse_pos = Vec2()
+        self._mouse_pos = vec2()
         
         self._active: dict[int, Optional[PygameObject]] = {1: None, 2: None, 3: None}
     

@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import Any, Optional, TYPE_CHECKING
 
 from ..resources import Texture
-from ..utils import Color, ColorPalette, Font, TypedDictCollection, Vec2
+from ..utils import Color, ColorPalette, Font, TypedDictCollection, vec2
 
 if TYPE_CHECKING:
     from ..core import Camera
@@ -58,13 +58,13 @@ class ResourceManager:
     
     # region TEXTURES
     
-    def load_texture(self, name: str, path: str, folder: str, dims: Optional[Vec2] = None, width: Optional[int] = None, height: Optional[int] = None) -> Texture:
+    def load_texture(self, name: str, path: str, folder: str, dims: Optional[vec2] = None, width: Optional[int] = None, height: Optional[int] = None) -> Texture:
         full_path = self.get_path(folder).joinpath(path)
         texture = Texture.from_path(full_path, dims, width, height)
         self.set_texture(name, texture)
         return texture
     
-    def load_lod_texture(self, name: str, path: str, folder: str, dims: Optional[Vec2] = None, width: Optional[int] = None, height: Optional[int] = None,
+    def load_lod_texture(self, name: str, path: str, folder: str, dims: Optional[vec2] = None, width: Optional[int] = None, height: Optional[int] = None,
                          min_scale: Optional[float] = None, lod_factor: Optional[float] = None, camera: Optional[Camera] = None) -> Texture:
         full_path = self.get_path(folder).joinpath(path)
         texture = Texture.from_path(full_path, dims, width, height)

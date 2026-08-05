@@ -3,7 +3,7 @@ from typing import Optional
 import pygame as pg
 
 from .color import Color
-from .math import Vec2
+from .math_tools import vec2
 
 
 class Font:
@@ -39,5 +39,5 @@ class Font:
         return Font(self.name, self.size, self.color, self.bold, self.italic, self.line_spacing)
     
     def get_render_size(self, text):
-        return Vec2(self._pg_font.size(text))
+        return vec2(self._pg_font.size(text))
     

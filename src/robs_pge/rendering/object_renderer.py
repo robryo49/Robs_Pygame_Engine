@@ -1,6 +1,8 @@
 from __future__ import annotations
-from ..utils import Transform, Vec2, FRect
+from ..utils import Transform, vec2, FRect
 from typing import Optional, TYPE_CHECKING
+
+from pyglm import glm
 
 if TYPE_CHECKING:
     from ..objects import Layer
@@ -13,7 +15,7 @@ class ObjectRenderer:
     
     # region PROPERTIES
     @property
-    def dims(self) -> Vec2:
+    def dims(self) -> vec2:
         raise NotImplementedError
     
     @property
@@ -34,26 +36,26 @@ class ObjectRenderer:
     
     # endregion
     
-    def get_aabb_size(self, rotation: float) -> Vec2:
-        return Vec2(self.dims.length()) if rotation else self.dims
+    def get_aabb_size(self, rotation: float) -> vec2:
+        return vec2(glm.length(self.dims)) if rotation else self.dims
     
     def get_bounding_radius(self) -> float:
-        return self.dims.length() * 0.5
+        return glm.length(self.dims) * 0.5
     
-    def render(self, submit, transform: Transform, layer: Layer, sub_layer: int, anchor: Vec2, clip_area: Optional[FRect] = None) -> None:
+    def render(self, submit, transform: Transform, layer: Layer, sub_layer: int, anchor: vec2, clip_area: Optional[FRect] = None) -> None:
         raise NotImplementedError
     
-    def test_hit(self, local_pos: Vec2) -> bool:
+    def test_hit(self, local_pos: vec2) -> bool:
         raise NotImplementedError
     
-    def get_offset(self, anchor: Vec2) -> Vec2:
+    def get_offset(self, anchor: vec2) -> vec2:
         return self.uv_to_local(anchor)
     
-    def uv_to_local(self, uv: Vec2):
-        return uv.elementwise() * self.dims
+    def uv_to_local(self, uv: vec2):
+        return uv * self.dims
     
-    def local_to_uv(self, local: Vec2):
-        return local.elementwise() / self.dims
+    def local_to_uv(self, local: vec2):
+        return local / self.dims
     
     def update(self, dt: float):
         pass

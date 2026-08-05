@@ -1,6 +1,6 @@
 from .behaviors import ObjectBehavior
 from ..events import Event
-from ..utils import TypedCollection, Vec2
+from ..utils import TypedCollection, vec2
 
 
 class BehaviorCollection(TypedCollection):
@@ -53,15 +53,15 @@ class BehaviorCollection(TypedCollection):
         for b in self:
             b.on_hover_start()
         
-    def on_click(self, button: int, pos: Vec2):
+    def on_click(self, button: int, pos: vec2):
         for b in self:
             b.on_click(button, pos)
         
-    def on_hold(self, button: int, pos: Vec2):
+    def on_hold(self, button: int, pos: vec2):
         for b in self:
             b.on_hold(button, pos)
         
-    def on_release(self, button: int, pos: Vec2):
+    def on_release(self, button: int, pos: vec2):
         for b in self:
             b.on_release(button, pos)
             
@@ -73,7 +73,7 @@ class BehaviorCollection(TypedCollection):
         for b in self:
             b.on_event(event)
     
-    def on_scroll(self, scroll: int, pos: Vec2):
+    def on_scroll(self, scroll: int, pos: vec2):
         for b in self:
             b.on_scroll(scroll, pos)
         
