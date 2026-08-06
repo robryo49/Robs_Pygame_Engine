@@ -25,7 +25,6 @@ class AnimationManager:
     # endregion
     
     def play(self, anim: Animation):
-        anim.start()
         self.scheduled.append((anim, self.time))
     
     def update(self, dt: float):

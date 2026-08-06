@@ -84,9 +84,8 @@ class Texture:
         return self.get_at_pos(pos)
     
     def get_at_pos(self, pos: vec2):
-        x, y = pos.x, self.height - pos.y
         try:
-            return self.surface.get_at((x, y))
+            return self.surface.get_at(pos)
         except IndexError:
             return Color(0, 0, 0, 0)
     

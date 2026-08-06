@@ -49,10 +49,10 @@ class Transform:
     
 
     def get_matrix(self) -> glm.mat4:
-        return get_transformation_matrix(self.pos, self.rotation, self.scale)
+        return get_transformation_matrix(self.pos, -self.rotation, self.scale)
     
     def get_inverse_matrix(self) -> glm.mat4:
-        return get_inverse_transformation_matrix(self.pos, self.rotation, self.scale)
+        return get_inverse_transformation_matrix(self.pos, -self.rotation, self.scale)
     
     
     def apply_on_point(self, point: vec2) -> vec2:

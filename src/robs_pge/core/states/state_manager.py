@@ -30,10 +30,12 @@ class StateManager:
     def update(self, dt: float):
         if self._state_request:
             
+            if self._state is not None:
+                self._state.trigger_event(Event(Events.STATE_EXIT, state_id=self._state.id))
+                
             self._state = self.states[self._state_request]
             
             if self._state is not None:
-                self._state.trigger_event(Event(Events.STATE_EXIT, state_id=self._state.id))
                 self._state.trigger_event(Event(Events.STATE_ENTER, state_id=self._state.id))
                 
             self._state_request = None

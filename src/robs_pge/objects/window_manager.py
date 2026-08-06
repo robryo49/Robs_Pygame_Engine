@@ -31,7 +31,7 @@ class WindowManager:
     
     def is_open(self, window_id: str) -> bool:
         win = self._windows.get(window_id)
-        return win is not None and not win.opened
+        return win is not None and win.opened
     
     def open(self, window_id: str):
         window = self._windows.get(window_id)
