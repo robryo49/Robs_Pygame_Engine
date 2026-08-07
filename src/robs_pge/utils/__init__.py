@@ -1,4 +1,4 @@
-from .math_tools import *
+from .math import *
 from .font import Font
 from .color import Color, Colors, ColorPalette
 from .flags import ObjectFlags, KeybindFlags

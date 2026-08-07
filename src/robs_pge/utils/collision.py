@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from math import cos, sin, radians, hypot
 from typing import Optional, Union, cast
 
-from .math_tools import vec2, Transform
+from .math import vec2, Transform
 
 
 @dataclass

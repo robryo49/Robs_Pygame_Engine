@@ -5,7 +5,7 @@ from typing import Any, Callable, Optional, Protocol, TYPE_CHECKING, runtime_che
 
 import numpy as np
 
-from .math_tools import vec2, vec3
+from .math import vec2, vec3
 
 if TYPE_CHECKING:
     from ..core import Camera

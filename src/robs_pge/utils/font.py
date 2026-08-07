@@ -3,7 +3,7 @@ from typing import Optional
 import pygame as pg
 
 from .color import Color
-from .math_tools import vec2
+from .math import vec2
 
 
 class Font:
