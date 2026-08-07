@@ -210,11 +210,6 @@ class State:
     
     # region INIT METHODS
     
-    def init_layers(self) -> None:
-        self.layer_manager.create_layer("world", _LAYER_WORLD, self.camera)
-        self.layer_manager.create_layer("ui", _LAYER_UI, self.engine.default_camera)
-        
-    
     def init_debug_overlay_objects(self) -> None:
         
         green_style  = self.resources.get(WindowStyle, "debug_teal_panel_style")

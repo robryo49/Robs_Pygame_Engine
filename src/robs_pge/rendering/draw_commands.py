@@ -28,8 +28,8 @@ class DrawCommand:
         if self.clip_area is None:
             return None
         
-        p1 = self.layer.world_to_screen_pos(vec2(self.clip_area.left, self.clip_area.top))
-        p2 = self.layer.world_to_screen_pos(vec2(self.clip_area.right, self.clip_area.bottom))
+        p1 = self.layer.world_to_viewport_pos(vec2(self.clip_area.left, self.clip_area.top))
+        p2 = self.layer.world_to_viewport_pos(vec2(self.clip_area.right, self.clip_area.bottom))
         
         x0, x1 = sorted((p1.x, p2.x))
         y0, y1 = sorted((p1.y, p2.y))
@@ -40,9 +40,9 @@ class DrawCommand:
         camera_transform: Transform =   self.layer.camera.transform
         rotation =  round((self.transform.rotation - camera_transform.rotation)%360, 2)
         scale =     round(self.transform.scale / camera_transform.scale, 4)
-        screen_pos = self.layer.world_to_screen_pos(self.transform.pos)
+        viewport_pos = self.layer.world_to_viewport_pos(self.transform.pos)
         
-        return screen_pos, rotation, scale
+        return viewport_pos, rotation, scale
     
     def draw(self, blit_call_queue: list[tuple[pg.Surface, vec2]], surface_cache, font_cache) -> bool | None:
         raise NotImplementedError("Draw command doesnt have a defined draw method")

@@ -18,6 +18,8 @@ class Renderer:
         self._display: Display = display
         self._default_camera: Camera = default_camera
         
+        self._draw_surface: pg.Surface = pg.Surface(self.display.viewport_dims)
+        
         self._surface_cache: SurfaceCache = SurfaceCache(max_cache_size)
         self._font_cache: dict[tuple, pg.Font] = {}
         
@@ -80,8 +82,12 @@ class Renderer:
         self._commands.append(cmd)
         return self
     
+    def clear(self):
+        self._draw_surface.fill(self.display.clear_color)
+    
     def render(self, _camera: Optional[Camera] = None) -> "Renderer":
-        self.display.clear()
+        self.clear()
+        
         self._cache_hits = 0
         self._cache_misses = 0
         self._cache_skips = 0
@@ -90,7 +96,8 @@ class Renderer:
         for cmd in self._commands:
             self._execute_command(cmd)
         
-        self.display.surface.fblits(self._blit_calls)
+        self._draw_surface.fblits(self._blit_calls)
+        pg.transform.scale(self._draw_surface, self.display.screen_dims, self.display.surface)
         
         self._total_commands_count = len(self._commands)
         self._blit_count = len(self._blit_calls)

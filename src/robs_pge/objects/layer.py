@@ -118,14 +118,12 @@ class Layer:
     
     def add_object(self, obj: ObjectLikeType | list[ObjectLikeType]) -> None:
         self.objects.add_object(obj)
-        targets = obj if isinstance(obj, (list, tuple)) else [obj]
-        for o in targets:
+        for o in obj if isinstance(obj, list) else [obj]:
             o.layer = self
     
     def remove_object(self, obj: ObjectLikeType | list[ObjectLikeType]) -> None:
         self.objects.remove_object(obj)
-        targets = obj if isinstance(obj, (list, tuple)) else [obj]
-        for o in targets:
+        for o in obj if isinstance(obj, list) else [obj]:
             o.layer = None
     
     # endregion
