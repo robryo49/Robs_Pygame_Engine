@@ -92,7 +92,7 @@ class Renderer:
         self._cache_misses = 0
         self._cache_skips = 0
         
-        self._commands.sort(key=lambda c: (c.layer.layer_value, c.sub_layer))
+        #self._commands.sort(key=lambda c: (c.layer.layer_value, c.sub_layer))
         for cmd in self._commands:
             self._execute_command(cmd)
         

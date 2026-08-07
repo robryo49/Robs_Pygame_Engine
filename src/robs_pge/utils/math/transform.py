@@ -1,18 +1,79 @@
-from dataclasses import dataclass, field
-from typing import Any, Iterable
+from typing import Any, Iterable, Optional, cast
 
 from glm import vec2
-from pyglm import glm
 from pygame import FRect
+from pyglm import glm
 
 from .functions import apply_transformation_matrix_on_point, apply_transformation_matrix_on_vec, get_inverse_transformation_matrix, get_transformation_matrix
 
 
-@dataclass
 class Transform:
-    pos: vec2 = field(default_factory=lambda : vec2())
-    rotation: float = 0
-    scale: float = 1
+    def __init__(self, pos: Optional[vec2] = None, rotation: float = 0, scale: float = 1):
+        self._pos = pos or vec2()
+        self._rotation = rotation
+        self._scale = scale
+        
+        self._dirty = True
+        self._matrix: Optional[glm.mat4] = None
+        self._inverse_matrix: Optional[glm.mat4] = None
+        
+    # region PROPERTIES
+    
+    # region pos
+    @property
+    def pos(self):
+        return self._pos
+    
+    @pos.setter
+    def pos(self, value: vec2):
+        self._pos = value
+        self.mark_dirty()
+    
+    # region x_pos
+    @property
+    def x_pos(self):
+        return self.pos.x
+    
+    @x_pos.setter
+    def x_pos(self, value):
+        self.pos.x = value
+        self.mark_dirty()
+    # endregion
+    
+    # region y_pos
+    @property
+    def y_pos(self):
+        return self.pos.y
+    
+    @y_pos.setter
+    def y_pos(self, value):
+        self.pos.y = value
+        self.mark_dirty()
+    # endregion
+    
+    # endregion
+    
+    # region rotation
+    @property
+    def rotation(self):
+        return self._rotation
+    
+    @rotation.setter
+    def rotation(self, value):
+        self._rotation = value
+    # endregion
+    
+    # region scale
+    @property
+    def scale(self):
+        return self._scale
+    
+    @scale.setter
+    def scale(self, value):
+        self._scale = value
+    # endregion
+    
+    # endregion
     
     def __add__(self, other: "Transform") -> "Transform":
         return Transform(self.pos + other.pos, self.rotation + other.rotation, self.scale * other.scale)
@@ -47,12 +108,23 @@ class Transform:
         self.scale *= factor
         return self
     
-
+    def update_matrices(self):
+        self._matrix = get_transformation_matrix(self.pos, -self.rotation, self.scale)
+        self._inverse_matrix = get_inverse_transformation_matrix(self.pos, -self.rotation, self.scale)
+        self._dirty = False
+    
+    def mark_dirty(self):
+        self._dirty = True
+    
     def get_matrix(self) -> glm.mat4:
-        return get_transformation_matrix(self.pos, -self.rotation, self.scale)
+        if self._dirty or self._matrix is None:
+            self.update_matrices()
+        return cast(glm.mat4, self._matrix)
     
     def get_inverse_matrix(self) -> glm.mat4:
-        return get_inverse_transformation_matrix(self.pos, -self.rotation, self.scale)
+        if self._dirty or self._inverse_matrix is None:
+            self.update_matrices()
+        return cast(glm.mat4, self._inverse_matrix)
     
     
     def apply_on_point(self, point: vec2) -> vec2:

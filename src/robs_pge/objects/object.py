@@ -50,6 +50,11 @@ class PygameObject:
         
         self._children_clip_area: Optional[FRect] = None
         self._children_clip_area_relative = True
+        
+        self._cached_world_transform: Optional[Transform] = None
+        self._world_transform_dirty = True
+        self._cached_visible = True
+        self._visible_dirty = True
 
     # region PROPERTIES
     
@@ -77,13 +82,32 @@ class PygameObject:
     def transform(self):
         return self._transform
     
+    def _invalidate_world_transform(self):
+        self._world_transform_dirty = True
+        for child in self._children:
+            # noinspection protected-member
+            child._invalidate_world_transform()
+
+    def _invalidate_visible(self):
+        self._visible_dirty = True
+        for child in self._children:
+            # noinspection protected-member
+            child._invalidate_visible()
+
     @property
     def world_transform(self) -> Transform:
+        if not self._world_transform_dirty:
+            return cast(Transform, self._cached_world_transform)
+        
         parent = self.parent
         if parent is None:
-            return self.transform.with_position(self.layer.local_to_world_pos(self.pos))
+            result = self.transform.with_position(self.layer.local_to_world_pos(self.pos)) # type: ignore
         else:
-            return parent.world_transform * (self.transform + Transform(parent.get_anchor_offset(self._parent_anchor - parent.anchor)))
+            result = parent.world_transform * (self.transform + Transform(parent.get_anchor_offset(self._parent_anchor - parent.anchor)))
+        
+        self._cached_world_transform = result
+        self._world_transform_dirty = False
+        return result
     
     @property
     def camera_transform(self) -> Transform:
@@ -118,6 +142,7 @@ class PygameObject:
     @pos.setter
     def pos(self, value: vec2):
         self.transform.pos = value
+        self._invalidate_world_transform()
     
     @property
     def x_pos(self):
@@ -126,6 +151,7 @@ class PygameObject:
     @x_pos.setter
     def x_pos(self, value: float):
         self.transform.pos.x = value
+        self._invalidate_world_transform()
     
     @property
     def y_pos(self):
@@ -134,6 +160,7 @@ class PygameObject:
     @y_pos.setter
     def y_pos(self, value: float):
         self.transform.pos.y = value
+        self._invalidate_world_transform()
         
     def move(self, vec: vec2):
         self.pos += vec
@@ -154,6 +181,7 @@ class PygameObject:
     @rotation.setter
     def rotation(self, value: int):
         self.transform.rotation = value
+        self._invalidate_world_transform()
         
     def rotate(self, value: float):
         self.rotation += value
@@ -167,6 +195,7 @@ class PygameObject:
     @scale.setter
     def scale(self, value):
         self.transform.scale = value
+        self._invalidate_world_transform()
         
     def scale_by(self, value: float):
         self.scale *= value
@@ -307,6 +336,8 @@ class PygameObject:
         
         self._parent = obj
         self._parent_anchor = anchor
+        self._invalidate_world_transform()
+        self._invalidate_visible()
         
         return self
     # endregion
@@ -334,8 +365,13 @@ class PygameObject:
     
     @property
     def visible(self):
+        if not self._visible_dirty:
+            return self._cached_visible
+        
         parent = self.parent
-        return not self.has_flag(ObjectFlags.HIDDEN) and (parent is None or parent.visible)
+        self._cached_visible = not self.has_flag(ObjectFlags.HIDDEN) and (parent is None or parent.visible)
+        self._visible_dirty = False
+        return self._cached_visible
     
     @visible.setter
     def visible(self, value: bool):
@@ -409,14 +445,18 @@ class PygameObject:
     
     def add_flag(self, flag):
         self._flags |= flag
+        if flag & ObjectFlags.HIDDEN:
+            self._invalidate_visible()
         return self
         
     def remove_flag(self, flag):
         self._flags &= ~flag
+        if flag & ObjectFlags.HIDDEN:
+            self._invalidate_visible()
         return self
     
     def has_flag(self, flag):
-        return flag == flag & self.flags
+        return (int(self._flags) & int(flag)) == int(flag)
     
     @property
     def behaviors(self):
@@ -591,9 +631,9 @@ class PygameObject:
     # region COORDINATES CONVERSION METHODS
     
     # region From Screen
-    def screen_to_viewport(self, pos: vec2) -> vec2: return self.layer.screen_to_viewport_pos(pos)
-    def screen_to_camera(self, pos: vec2) -> vec2: return self.layer.screen_to_camera_pos(pos)
-    def screen_to_world(self, pos: vec2) -> vec2: return self.layer.screen_to_world_pos(pos)
+    def screen_to_viewport(self, pos: vec2) -> vec2: return self.layer.screen_to_viewport_pos(pos) # type: ignore
+    def screen_to_camera(self, pos: vec2) -> vec2: return self.layer.screen_to_camera_pos(pos) # type: ignore
+    def screen_to_world(self, pos: vec2) -> vec2: return self.layer.screen_to_world_pos(pos) # type: ignore
     def screen_to_layer(self, pos: vec2) -> vec2: return self.world_to_layer(self.screen_to_world(pos))
     def screen_to_local(self, pos: vec2) -> vec2: return self.world_to_local(self.screen_to_world(pos))
     def screen_to_pixel(self, pos: vec2) -> vec2: return self.local_to_pixel(self.screen_to_local(pos))
@@ -602,9 +642,9 @@ class PygameObject:
     # endregion
     
     # region From Viewport
-    def viewport_to_screen(self, pos: vec2) -> vec2: return self.layer.viewport_to_screen_pos(pos)
-    def viewport_to_camera(self, pos: vec2) -> vec2: return self.layer.viewport_to_camera_pos(pos)
-    def viewport_to_world(self, pos: vec2) -> vec2: return self.layer.viewport_to_world_pos(pos)
+    def viewport_to_screen(self, pos: vec2) -> vec2: return self.layer.viewport_to_screen_pos(pos) # type: ignore
+    def viewport_to_camera(self, pos: vec2) -> vec2: return self.layer.viewport_to_camera_pos(pos) # type: ignore
+    def viewport_to_world(self, pos: vec2) -> vec2: return self.layer.viewport_to_world_pos(pos) # type: ignore
     def viewport_to_layer(self, pos: vec2) -> vec2: return self.world_to_layer(self.viewport_to_world(pos))
     def viewport_to_local(self, pos: vec2) -> vec2: return self.world_to_local(self.viewport_to_world(pos))
     def viewport_to_pixel(self, pos: vec2) -> vec2: return self.local_to_pixel(self.viewport_to_local(pos))
@@ -613,9 +653,9 @@ class PygameObject:
     # endregion
     
     # region From Camera
-    def camera_to_screen(self, pos: vec2) -> vec2: return self.layer.camera_to_screen_pos(pos)
-    def camera_to_viewport(self, pos: vec2) -> vec2: return self.layer.camera_to_viewport_pos(pos)
-    def camera_to_world(self, pos: vec2) -> vec2: return self.layer.camera_to_world_pos(pos)
+    def camera_to_screen(self, pos: vec2) -> vec2: return self.layer.camera_to_screen_pos(pos) # type: ignore
+    def camera_to_viewport(self, pos: vec2) -> vec2: return self.layer.camera_to_viewport_pos(pos) # type: ignore
+    def camera_to_world(self, pos: vec2) -> vec2: return self.layer.camera_to_world_pos(pos) # type: ignore
     def camera_to_layer(self, pos: vec2) -> vec2: return self.world_to_layer(self.camera_to_world(pos))
     def camera_to_local(self, pos: vec2) -> vec2: return self.world_to_local(self.camera_to_world(pos))
     def camera_to_pixel(self, pos: vec2) -> vec2: return self.local_to_pixel(self.camera_to_local(pos))
@@ -624,10 +664,10 @@ class PygameObject:
     # endregion
     
     # region From World
-    def world_to_screen(self, pos: vec2) -> vec2: return self.layer.world_to_screen_pos(pos)
-    def world_to_viewport(self, pos: vec2) -> vec2: return self.layer.world_to_viewport_pos(pos)
-    def world_to_camera(self, pos: vec2) -> vec2: return self.layer.world_to_camera_pos(pos)
-    def world_to_layer(self, pos: vec2) -> vec2: return self.layer.world_to_local_pos(pos)
+    def world_to_screen(self, pos: vec2) -> vec2: return self.layer.world_to_screen_pos(pos) # type: ignore
+    def world_to_viewport(self, pos: vec2) -> vec2: return self.layer.world_to_viewport_pos(pos) # type: ignore
+    def world_to_camera(self, pos: vec2) -> vec2: return self.layer.world_to_camera_pos(pos) # type: ignore
+    def world_to_layer(self, pos: vec2) -> vec2: return self.layer.world_to_local_pos(pos) # type: ignore
     def world_to_local(self, pos: vec2) -> vec2: return self.world_transform.apply_inverse_on_point(pos)
     def world_to_pixel(self, pos: vec2) -> vec2: return self.local_to_pixel(self.world_to_local(pos))
     def world_to_children_local(self, pos: vec2, children_anchor: vec2) -> vec2: return self.pixel_to_children_local(self.world_to_pixel(pos), children_anchor)
@@ -638,7 +678,7 @@ class PygameObject:
     def layer_to_screen(self, pos: vec2) -> vec2: return self.world_to_screen(self.layer_to_world(pos))
     def layer_to_viewport(self, pos: vec2) -> vec2: return self.world_to_viewport(self.layer_to_world(pos))
     def layer_to_camera(self, pos: vec2) -> vec2: return self.world_to_camera(self.layer_to_world(pos))
-    def layer_to_world(self, pos: vec2) -> vec2: return self.layer.local_to_world_pos(pos)
+    def layer_to_world(self, pos: vec2) -> vec2: return self.layer.local_to_world_pos(pos) # type: ignore
     def layer_to_local(self, pos: vec2) -> vec2: return self.world_to_local(self.layer_to_world(pos))
     def layer_to_pixel(self, pos: vec2) -> vec2: return self.local_to_pixel(self.layer_to_local(pos))
     def layer_to_children_local(self, pos: vec2, children_anchor: vec2) -> vec2: return self.pixel_to_children_local(self.layer_to_pixel(pos), children_anchor)
@@ -691,9 +731,9 @@ class PygameObject:
     
     # region Coordinates Helpers
     def get_anchor_offset(self, anchor: vec2) -> vec2: return self.uv_to_pixel(anchor)
-    def world_to_parent_local(self, pos: vec2) -> vec2: return self.parent.world_to_local(pos) if self.parent else pos
-    def world_to_parent_children_local(self, pos: vec2) -> vec2: return self.parent.world_to_children_local(pos, self._parent_anchor) if self.parent else pos
-    def parent_children_local_to_world(self, pos: vec2) -> vec2: return self.parent.children_local_to_world(pos, self._parent_anchor) if self.parent else pos
+    def world_to_parent_local(self, pos: vec2) -> vec2: return self.parent.world_to_local(pos) if self.parent else pos # type: ignore
+    def world_to_parent_children_local(self, pos: vec2) -> vec2: return self.parent.world_to_children_local(pos, self._parent_anchor) if self.parent else pos # type: ignore
+    def parent_children_local_to_world(self, pos: vec2) -> vec2: return self.parent.children_local_to_world(pos, self._parent_anchor) if self.parent else pos # type: ignore
     # endregion
     
     # endregion
@@ -713,15 +753,27 @@ class PygameObject:
         return self
     
     # endregion
-    
     def _render_self(self, submit: Callable[[DrawCommand], Any]):
-        self.renderer.render(submit, self.world_transform, self.layer, self.sub_layer, self.anchor, self.get_world_clip_area())
+        self.renderer.render(submit, self.world_transform, self.layer, self.sub_layer, self.anchor, self.get_world_clip_area()) # type: ignore
         return self
     
+    # noinspection method-may-be-static
     def _is_culled(self) -> bool:
         return False
     
     def render(self, submit) -> "PygameObject":
+        if self._flags == ObjectFlags.CULLABLE:
+            if not self.visible:
+                return self
+            if self._is_culled():
+                self._culled = True
+                return self
+            self._culled = False
+            if self.renderer:
+                self._render_self(submit)
+            self.children.render(submit)
+            return self
+        
         if not self.visible:
             return self
         
@@ -741,6 +793,13 @@ class PygameObject:
         return self
         
     def update(self, dt: float=0.0) -> PygameObject:
+        if self._flags == ObjectFlags.CULLABLE:
+            self.children.update(dt)
+            self._update_self(dt)
+            if self.renderer:
+                self.renderer.update(dt)
+            return self
+        
         if not self.frozen:
             self.children.update(dt)
             if not self.has_flag(ObjectFlags.SKIP_UPDATE):

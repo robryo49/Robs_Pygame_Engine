@@ -15,6 +15,11 @@ if TYPE_CHECKING:
     from ..objects import Layer
 
 
+_camera_cache_layer: object = None
+_camera_cache_transform: Transform = None
+_camera_cache_center: vec2 = None
+
+
 @dataclass
 class DrawCommand:
     transform: Transform
@@ -23,25 +28,34 @@ class DrawCommand:
     anchor: vec2
     caching: bool
     clip_area: Optional[FRect]
-    
+
     def get_screen_clip_rect(self) -> Optional[pg.Rect]:
         if self.clip_area is None:
             return None
-        
+
         p1 = self.layer.world_to_viewport_pos(vec2(self.clip_area.left, self.clip_area.top))
         p2 = self.layer.world_to_viewport_pos(vec2(self.clip_area.right, self.clip_area.bottom))
-        
+
         x0, x1 = sorted((p1.x, p2.x))
         y0, y1 = sorted((p1.y, p2.y))
-        
+
         return pg.Rect(round(x0), round(y0), round(x1 - x0), round(y1 - y0))
-    
+
     def get_composed_transform(self):
-        camera_transform: Transform =   self.layer.camera.transform
-        rotation =  round((self.transform.rotation - camera_transform.rotation)%360, 2)
-        scale =     round(self.transform.scale / camera_transform.scale, 4)
-        viewport_pos = self.layer.world_to_viewport_pos(self.transform.pos)
-        
+        global _camera_cache_layer, _camera_cache_transform, _camera_cache_center
+        if self.layer is not _camera_cache_layer:
+            _camera_cache_layer = self.layer
+            _camera_cache_transform = self.layer.camera.transform
+            _camera_cache_center = self.layer.camera.viewport_center
+
+        ct = _camera_cache_transform
+        vc = _camera_cache_center
+        rotation = round((self.transform.rotation - ct.rotation) % 360, 2)
+        scale = round(self.transform.scale / ct.scale, 4)
+        if ct.rotation == 0 and ct.scale == 1:
+            viewport_pos = self.transform.pos - ct.pos + vc
+        else:
+            viewport_pos = ct.apply_inverse_on_point(self.transform.pos) + vc
         return viewport_pos, rotation, scale
     
     def draw(self, blit_call_queue: list[tuple[pg.Surface, vec2]], surface_cache, font_cache) -> bool | None:
