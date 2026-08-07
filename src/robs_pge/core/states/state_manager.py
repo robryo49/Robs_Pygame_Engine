@@ -34,11 +34,11 @@ class StateManager:
                 self._state.trigger_event(Event(Events.STATE_EXIT, state_id=self._state.id))
                 
             self._state = self.states[self._state_request]
+            self._state_request = None
             
             if self._state is not None:
                 self._state.trigger_event(Event(Events.STATE_ENTER, state_id=self._state.id))
                 
-            self._state_request = None
         
         if self.state:
             self.state.update(dt)

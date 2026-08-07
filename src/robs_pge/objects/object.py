@@ -146,20 +146,20 @@ class PygameObject:
     
     @property
     def x_pos(self):
-        return self.transform.pos.x
+        return self.transform.x_pos
     
     @x_pos.setter
     def x_pos(self, value: float):
-        self.transform.pos.x = value
+        self.transform.x_pos = value
         self._invalidate_world_transform()
     
     @property
     def y_pos(self):
-        return self.transform.pos.y
+        return self.transform.y_pos
     
     @y_pos.setter
     def y_pos(self, value: float):
-        self.transform.pos.y = value
+        self.transform.y_pos = value
         self._invalidate_world_transform()
         
     def move(self, vec: vec2):
@@ -757,9 +757,21 @@ class PygameObject:
         self.renderer.render(submit, self.world_transform, self.layer, self.sub_layer, self.anchor, self.get_world_clip_area()) # type: ignore
         return self
     
-    # noinspection method-may-be-static
     def _is_culled(self) -> bool:
-        return False
+        layer = self.layer
+        if layer is None:
+            return False
+        camera = layer.camera
+        cam_pos = camera.pos
+        obj_pos = self.world_transform.pos
+        dx = obj_pos.x - cam_pos.x
+        dy = obj_pos.y - cam_pos.y
+        dist_sq = dx * dx + dy * dy
+        if dist_sq <= camera.bounding_radius_squared:
+            return False
+        obj_radius = self.renderer.get_bounding_radius() * self.world_transform.scale if self.renderer else 0
+        radius_sum = camera.bounding_radius + obj_radius
+        return dist_sq > radius_sum * radius_sum
     
     def render(self, submit) -> "PygameObject":
         if self._flags == ObjectFlags.CULLABLE:

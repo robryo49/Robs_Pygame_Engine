@@ -12,7 +12,10 @@ if TYPE_CHECKING:
 class ObjectRenderer:
     def __init__(self, cache=True):
         self._cache = cache
-    
+        self._cached_bounding_radius: float = 0.0
+        self._bounding_radius_dirty: bool = True
+        self._cached_dims: Optional[vec2] = None
+
     # region PROPERTIES
     @property
     def dims(self) -> vec2:
@@ -40,7 +43,15 @@ class ObjectRenderer:
         return vec2(glm.length(self.dims)) if rotation else self.dims
     
     def get_bounding_radius(self) -> float:
-        return glm.length(self.dims) * 0.5
+        dims = self.dims
+        if self._bounding_radius_dirty or dims != self._cached_dims:
+            self._cached_bounding_radius = glm.length(dims) * 0.5
+            self._cached_dims = dims
+            self._bounding_radius_dirty = False
+        return self._cached_bounding_radius
+
+    def _invalidate_bounding_radius(self):
+        self._bounding_radius_dirty = True
     
     def render(self, submit, transform: Transform, layer: Layer, sub_layer: int, anchor: vec2, clip_area: Optional[FRect] = None) -> None:
         raise NotImplementedError

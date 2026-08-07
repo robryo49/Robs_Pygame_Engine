@@ -19,6 +19,10 @@ class Camera:
         self._min_zoom: Optional[float] = None
         self._max_zoom: Optional[float] = None
 
+        self._cached_bounding_radius: float = 0.0
+        self._cached_bounding_radius_squared: float = 0.0
+        self._bounding_radius_dirty: bool = True
+
     # region PROPERTIES
     
     @property
@@ -92,16 +96,36 @@ class Camera:
     def pos(self, value: vec2) -> None:
         self.transform.pos = value
         
+    # region x_pos
+    @property
+    def x_pos(self):
+        return self.transform.x_pos
+    
+    @x_pos.setter
+    def x_pos(self, value):
+        self.transform.x_pos = value
+    # endregion
+    
+    # region y_pos
+    @property
+    def y_pos(self):
+        return self.transform.y_pos
+    
+    @y_pos.setter
+    def y_pos(self, value):
+        self.transform.y_pos = value
+    # endregion
+        
     def move(self, translation: vec2) -> "Camera":
         self.pos += translation
         return self
     
     def move_x(self, dx: float) -> "Camera":
-        self.pos.x += dx
+        self.x_pos += dx
         return self
     
     def move_y(self, dy: float) -> "Camera":
-        self.pos.y += dy
+        self.y_pos += dy
         return self
     # endregion
         
@@ -133,6 +157,7 @@ class Camera:
         if min_zoom is not None and value < min_zoom:
             value = min_zoom
         self.transform.scale = 1 / value
+        self._invalidate_bounding_radius()
     
     def zoom_in(self, fact: float, point: Optional[vec2]=None) -> "Camera":
         prev = self.zoom
@@ -169,6 +194,21 @@ class Camera:
         self._max_zoom = value
     # endregion
     
+    @property
+    def bounding_radius(self) -> float:
+        if self._bounding_radius_dirty:
+            self._cached_bounding_radius = glm.length(self.viewport_dims * self.transform.scale) * 0.5
+            self._cached_bounding_radius_squared = self._cached_bounding_radius ** 2
+            self._bounding_radius_dirty = False
+        return self._cached_bounding_radius
+
+    def _invalidate_bounding_radius(self):
+        self._bounding_radius_dirty = True
+        
+    @property
+    def bounding_radius_squared(self):
+        return self._cached_bounding_radius_squared
+
     @property
     def up(self) -> vec2:
         return self.transform.apply_on_vec(vec2(0, -1))

@@ -99,7 +99,7 @@ class ObjectCollection(TypedCollection):
         
         if not self._frozen:
             for o in self:
-                o.update()
+                o.update(dt)
             
         return self
             
