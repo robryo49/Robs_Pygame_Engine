@@ -1,13 +1,11 @@
 from __future__ import annotations
 
-from typing import cast
-
 from ..object import PygameObject
 from ...rendering import CircleRenderer, LineRenderer, RectRenderer, TextRenderer
 from ...utils import Anchor, Color, DictCollection, Transform, vec2
 
 
-class RectObject(PygameObject):
+class RectObject(PygameObject[RectRenderer]):
     def __init__(self, transform: Transform, renderer: RectRenderer, services: DictCollection, sub_layer: int = 0, anchor: vec2 = Anchor.C):
         super().__init__(transform, renderer, services, sub_layer, anchor)
     
@@ -15,7 +13,7 @@ class RectObject(PygameObject):
     
     @property
     def renderer(self) -> RectRenderer:
-        return cast(RectRenderer, self._renderer)
+        return self._renderer
     
     
     @property
@@ -83,7 +81,7 @@ class RectObject(PygameObject):
     # endregion
 
 
-class CircleObject(PygameObject):
+class CircleObject(PygameObject[CircleRenderer]):
     def __init__(self, transform: Transform, renderer: CircleRenderer, services: DictCollection, sub_layer: int = 0, anchor: vec2 = Anchor.C):
         super().__init__(transform, renderer, services, sub_layer, anchor)
     
@@ -91,7 +89,7 @@ class CircleObject(PygameObject):
     
     @property
     def renderer(self) -> CircleRenderer:
-        return cast(CircleRenderer, self._renderer)
+        return self._renderer
     
     
     @property
@@ -164,7 +162,7 @@ class CircleObject(PygameObject):
     # endregion
 
 
-class LineObject(PygameObject):
+class LineObject(PygameObject[LineRenderer]):
     def __init__(self, transform: Transform, renderer: LineRenderer, services: DictCollection, sub_layer: int = 0, anchor: vec2 = Anchor.C):
         super().__init__(transform, renderer, services, sub_layer, anchor)
     
@@ -172,7 +170,7 @@ class LineObject(PygameObject):
     
     @property
     def renderer(self) -> LineRenderer:
-        return cast(LineRenderer, self._renderer)
+        return self._renderer
     
     
     @property
@@ -204,7 +202,7 @@ class LineObject(PygameObject):
     # endregion
 
 
-class TextObject(PygameObject):
+class TextObject(PygameObject[TextRenderer]):
     def __init__(self, transform: Transform, renderer: TextRenderer, services: DictCollection, sub_layer: int = 0, anchor: vec2 = Anchor.C):
         super().__init__(transform, renderer, services, sub_layer, anchor)
     
@@ -212,7 +210,7 @@ class TextObject(PygameObject):
     
     @property
     def renderer(self) -> TextRenderer:
-        return cast(TextRenderer, self._renderer)
+        return self._renderer
     
     @property
     def text(self):

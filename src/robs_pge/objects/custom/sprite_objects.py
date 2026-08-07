@@ -1,21 +1,24 @@
 from __future__ import annotations
 
-from typing import cast
+from typing import TypeVar, cast
 
 from ..object import PygameObject
 from ...rendering import ChunkedSpriteRenderer, SpriteRenderer, SubSurfaceRenderer, IconRenderer
 from ...utils import Anchor, DictCollection, Rect, Transform, vec2, Color
 
 
-class SpriteObject(PygameObject):
+SR = TypeVar("SR", bound=SpriteRenderer)
+
+
+class SpriteObject[SR](PygameObject[SR]):
     def __init__(self, transform: Transform, renderer: SpriteRenderer, services: DictCollection, sub_layer: int = 0, anchor: vec2 = Anchor.C):
         super().__init__(transform, renderer, services, sub_layer, anchor)
     
     # region PROPERTIES
     
     @property
-    def renderer(self) -> SpriteRenderer:
-        return cast(SpriteRenderer, self._renderer)
+    def renderer(self) -> SR:
+        return self._renderer
     
     @property
     def dims(self):
@@ -32,7 +35,7 @@ class SpriteObject(PygameObject):
     # endregion
 
 
-class SubSurfaceSpriteObject(PygameObject):
+class SubSurfaceSpriteObject(PygameObject[SubSurfaceRenderer]):
     def __init__(self, transform: Transform, renderer: SubSurfaceRenderer, services: DictCollection, sub_layer: int = 0, anchor: vec2 = Anchor.C):
         super().__init__(transform, renderer, services, sub_layer, anchor)
     
@@ -40,7 +43,7 @@ class SubSurfaceSpriteObject(PygameObject):
     
     @property
     def renderer(self) -> SubSurfaceRenderer:
-        return cast(SubSurfaceRenderer, self._renderer)
+        return self._renderer
     
     @property
     def sub_rect(self) -> Rect:
@@ -89,14 +92,14 @@ class SubSurfaceSpriteObject(PygameObject):
     # endregion
 
 
-class ChunkedSpriteObject(PygameObject):
+class ChunkedSpriteObject(PygameObject[ChunkedSpriteRenderer]):
     def __init__(self, transform: Transform, renderer: ChunkedSpriteRenderer, services: DictCollection, sub_layer: int = 0, anchor: vec2 = Anchor.C):
         super().__init__(transform, renderer, services, sub_layer, anchor)
     
     # region PROPERTIES
     @property
     def renderer(self) -> ChunkedSpriteRenderer:
-        return cast(ChunkedSpriteRenderer, self._renderer)
+        return self._renderer
     
     @property
     def chunk_size(self) -> int:
@@ -120,7 +123,7 @@ class ChunkedSpriteObject(PygameObject):
     # endregion
     
     
-class IconObject(SpriteObject):
+class IconObject(SpriteObject[IconRenderer]):
     def __init__(self, transform: Transform, renderer: IconRenderer, services: DictCollection, sub_layer: int = 0, anchor: vec2 = Anchor.C):
         super().__init__(transform, renderer, services, sub_layer, anchor)
     
@@ -128,7 +131,7 @@ class IconObject(SpriteObject):
     
     @property
     def renderer(self) -> IconRenderer:
-        return cast(IconRenderer, self._renderer)
+        return self._renderer
     
     # region icon
     @property

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import inspect
-from typing import Union, cast
+from typing import TypeVar, Union, cast
 
 from .behavior_collection import BehaviorCollection
 from .behaviors import *
@@ -19,10 +19,13 @@ if TYPE_CHECKING:
     ObjectCallBackType = Optional[Callable[[PygameObject], Any] | tuple[Callable[[PygameObject], Any], ...] | Callable | tuple[Callable, ...]]
 
 
-class PygameObject:
+R = TypeVar('R', bound=ObjectRenderer)
+
+
+class PygameObject[R]:
     DEFAULT_FLAGS = ObjectFlags.CULLABLE
     
-    def __init__(self, transform: Transform, renderer: ObjectRenderer, services: DictCollection, sub_layer: int=0, anchor: vec2=Anchor.C):
+    def __init__(self, transform: Transform, renderer: R, services: DictCollection, sub_layer: int=0, anchor: vec2=Anchor.C):
         self._transform = transform
         self._anchor = anchor
         
@@ -75,7 +78,7 @@ class PygameObject:
         return self._culled
     
     @property
-    def renderer(self) -> ObjectRenderer:
+    def renderer(self) -> R:
         return self._renderer
     
     @property

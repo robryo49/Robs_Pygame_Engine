@@ -27,6 +27,7 @@ class ResourceManager:
         
         logging.info(f"Registering {resource_type.__name__} : {resource_name}")
         self._resources[resource_type].set(resource_name, resource)
+        return resource
     
     def get(self, resource_type: type, name: str) -> Any:
         if resource_type not in self._resources:

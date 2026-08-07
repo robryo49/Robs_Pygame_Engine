@@ -6,7 +6,7 @@ from ..custom import *
 from ..object import PygameObject
 from ...rendering import ButtonStyle, CircleRenderer, CircleStyle, IconButtonStyle, RadioButtonStyle, RectRenderer, SpriteButtonStyle, ToggleButtonStyle
 from ...resources import Icons, Texture
-from ...utils import Anchor, Easing, StyleOrName, vec2, Color
+from ...utils import Anchor, Easing, StyleOrName, vec2, Color, Font
 
 CallBackType = Optional[Callable | tuple[Callable, ...]]
 ObjectCallBackType = Optional[Callable[[PygameObject], Any] | tuple[Callable[[PygameObject], Any], ...] | CallBackType]
@@ -49,7 +49,7 @@ class ButtonObjectFactory(SubObjectFactory):
         button_style = self._get_resource(style, ButtonStyle)
         bg_style = button_style.bg_style
         margin = vec2(button_style.margin)
-        font = button_style.font
+        font = self._get_resource(button_style.font, Font)
         dims = dims or font.get_render_size(text) + vec2(margin*2)
         
         obj = self._make_object(ButtonObject, position, rotation, scale, RectRenderer(dims, bg_style, cache), layer, anchor,
