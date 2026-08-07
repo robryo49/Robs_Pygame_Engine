@@ -88,18 +88,11 @@ class Display:
     
     # region Coordinate Conversion Methods
     
-    def screen_to_viewport_pos(self, screen_pos: vec2) -> vec2:
-        return screen_pos * self._s2v_ratios
+    def screen_to_viewport_pos(self, screen_pos: vec2) -> vec2: return screen_pos * self._s2v_ratios
+    def screen_to_viewport_vec(self, screen_vec: vec2) -> vec2: return screen_vec * self._s2v_ratios
     
-    def screen_to_viewport_vec(self, screen_vec: vec2) -> vec2:
-        return screen_vec * self._s2v_ratios
-    
-    
-    def viewport_to_screen_pos(self, viewport_pos: vec2) -> vec2:
-        return viewport_pos * self._v2s_ratios
-    
-    def viewport_to_screen_vec(self, viewport_vec: vec2) -> vec2:
-        return viewport_vec * self._v2s_ratios
+    def viewport_to_screen_pos(self, viewport_pos: vec2) -> vec2: return viewport_pos * self._v2s_ratios
+    def viewport_to_screen_vec(self, viewport_vec: vec2) -> vec2: return viewport_vec * self._v2s_ratios
     
     # endregion
     

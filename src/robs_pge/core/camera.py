@@ -187,110 +187,42 @@ class Camera:
     
     # endregion
     
-    # region Coordinates Conversion Methods
+    # region COORDINATES CONVERSION METHODS
     
-    # region Screen <-> Viewport
-    
-    def screen_to_viewport_pos(self, screen_pos: vec2) -> vec2:
-        return self.display.screen_to_viewport_pos(screen_pos)
-    
-    def screen_to_viewport_vec(self, screen_vec: vec2) -> vec2:
-        return self.display.screen_to_viewport_vec(screen_vec)
-    
-    def viewport_to_screen_pos(self, viewport_pos: vec2) -> vec2:
-        return self.display.viewport_to_screen_pos(viewport_pos)
-    
-    def viewport_to_screen_vec(self, viewport_vec: vec2) -> vec2:
-        return self.display.viewport_to_screen_vec(viewport_vec)
-    
+    # region From Screen
+    def screen_to_viewport_pos(self, pos: vec2) -> vec2: return self.display.screen_to_viewport_pos(pos)
+    def screen_to_viewport_vec(self, vec: vec2) -> vec2: return self.display.screen_to_viewport_vec(vec)
+    def screen_to_camera_pos(self, pos: vec2) -> vec2: return self.viewport_to_camera_pos(self.screen_to_viewport_pos(pos))
+    def screen_to_camera_vec(self, vec: vec2) -> vec2: return self.viewport_to_camera_vec(self.screen_to_viewport_vec(vec))
+    def screen_to_world_pos(self, pos: vec2) -> vec2: return self.viewport_to_world_pos(self.screen_to_viewport_pos(pos))
+    def screen_to_world_vec(self, vec: vec2) -> vec2: return self.viewport_to_world_vec(self.screen_to_viewport_vec(vec))
     # endregion
     
-    # region Screen <-> World
-    
-    def screen_to_world_pos(self, screen_pos: vec2) -> vec2:
-        viewport_pos = self.display.screen_to_viewport_pos(screen_pos)
-        return self.viewport_to_world_pos(viewport_pos)
-    
-    def screen_to_world_vec(self, screen_vec: vec2) -> vec2:
-        viewport_vec = self.display.screen_to_viewport_vec(screen_vec)
-        return self.viewport_to_world_vec(viewport_vec)
-    
-    def world_to_screen_pos(self, world_pos: vec2) -> vec2:
-        viewport_pos = self.world_to_viewport_pos(world_pos)
-        return self.display.viewport_to_screen_pos(viewport_pos)
-    
-    def world_to_screen_vec(self, world_vec: vec2) -> vec2:
-        viewport_vec = self.world_to_viewport_vec(world_vec)
-        return self.display.viewport_to_screen_vec(viewport_vec)
-    
+    # region From Viewport
+    def viewport_to_screen_pos(self, pos: vec2) -> vec2: return self.display.viewport_to_screen_pos(pos)
+    def viewport_to_screen_vec(self, vec: vec2) -> vec2: return self.display.viewport_to_screen_vec(vec)
+    def viewport_to_camera_pos(self, pos: vec2) -> vec2: return pos - self.viewport_center
+    def viewport_to_camera_vec(self, vec: vec2) -> vec2: return vec
+    def viewport_to_world_pos(self, pos: vec2) -> vec2: return self.camera_to_world_pos(self.viewport_to_camera_pos(pos))
+    def viewport_to_world_vec(self, vec: vec2) -> vec2: return self.camera_to_world_vec(self.viewport_to_camera_vec(vec))
     # endregion
     
-    # region Screen <-> Camera
-    
-    def screen_to_camera_pos(self, screen_pos: vec2) -> vec2:
-        viewport_pos = self.display.screen_to_viewport_pos(screen_pos)
-        return self.viewport_to_camera_pos(viewport_pos)
-    
-    def screen_to_camera_vec(self, screen_vec: vec2) -> vec2:
-        viewport_vec = self.display.screen_to_viewport_vec(screen_vec)
-        return self.viewport_to_camera_vec(viewport_vec)
-    
-    def camera_to_screen_pos(self, camera_pos: vec2) -> vec2:
-        viewport_pos = self.camera_to_viewport_pos(camera_pos)
-        return self.display.viewport_to_screen_pos(viewport_pos)
-    
-    def camera_to_screen_vec(self, camera_vec: vec2) -> vec2:
-        viewport_vec = self.camera_to_viewport_vec(camera_vec)
-        return self.display.viewport_to_screen_vec(viewport_vec)
-    
+    # region From Camera
+    def camera_to_screen_pos(self, pos: vec2) -> vec2: return self.display.viewport_to_screen_pos(self.camera_to_viewport_pos(pos))
+    def camera_to_screen_vec(self, vec: vec2) -> vec2: return self.display.viewport_to_screen_vec(self.camera_to_viewport_vec(vec))
+    def camera_to_viewport_pos(self, pos: vec2) -> vec2: return pos + self.viewport_center
+    def camera_to_viewport_vec(self, vec: vec2) -> vec2: return vec
+    def camera_to_world_pos(self, pos: vec2) -> vec2: return self.transform.apply_on_point(pos)
+    def camera_to_world_vec(self, vec: vec2) -> vec2: return self.transform.apply_on_vec(vec)
     # endregion
     
-    # region Viewport <-> Camera
-    
-    def viewport_to_camera_pos(self, viewport_pos: vec2) -> vec2:
-        return viewport_pos - self.viewport_center
-    
-    def viewport_to_camera_vec(self, viewport_vec: vec2) -> vec2:
-        return viewport_vec
-    
-    def camera_to_viewport_pos(self, camera_pos: vec2) -> vec2:
-        return camera_pos + self.viewport_center
-    
-    def camera_to_viewport_vec(self, camera_vec: vec2) -> vec2:
-        return camera_vec
-    
-    # endregion
-    
-    # region Viewport <-> World
-    
-    def viewport_to_world_pos(self, viewport_pos: vec2) -> vec2:
-        return self.camera_to_world_pos(self.viewport_to_camera_pos(viewport_pos))
-    
-    def viewport_to_world_vec(self, viewport_vec: vec2) -> vec2:
-        return self.camera_to_world_vec(self.viewport_to_camera_vec(viewport_vec))
-    
-    def world_to_viewport_pos(self, world_pos: vec2) -> vec2:
-        return self.camera_to_viewport_pos(self.world_to_camera_pos(world_pos))
-    
-    def world_to_viewport_vec(self, world_vec: vec2) -> vec2:
-        return self.camera_to_viewport_vec(self.world_to_camera_vec(world_vec))
-    
-    # endregion
-    
-    # region Camera <-> World
-    
-    def camera_to_world_pos(self, camera_pos: vec2) -> vec2:
-        return self.transform.apply_on_point(camera_pos)
-    
-    def camera_to_world_vec(self, camera_vec: vec2) -> vec2:
-        return self.transform.apply_on_vec(camera_vec)
-    
-    def world_to_camera_pos(self, world_pos: vec2) -> vec2:
-        return self.transform.apply_inverse_on_point(world_pos)
-    
-    def world_to_camera_vec(self, world_vec: vec2) -> vec2:
-        return self.transform.apply_inverse_on_vec(world_vec)
-    
+    # region From World
+    def world_to_screen_pos(self, pos: vec2) -> vec2: return self.display.viewport_to_screen_pos(self.world_to_viewport_pos(pos))
+    def world_to_screen_vec(self, vec: vec2) -> vec2: return self.display.viewport_to_screen_vec(self.world_to_viewport_vec(vec))
+    def world_to_viewport_pos(self, pos: vec2) -> vec2: return self.camera_to_viewport_pos(self.world_to_camera_pos(pos))
+    def world_to_viewport_vec(self, vec: vec2) -> vec2: return self.camera_to_viewport_vec(self.world_to_camera_vec(vec))
+    def world_to_camera_pos(self, pos: vec2) -> vec2: return self.transform.apply_inverse_on_point(pos)
+    def world_to_camera_vec(self, vec: vec2) -> vec2: return self.transform.apply_inverse_on_vec(vec)
     # endregion
     
     # endregion

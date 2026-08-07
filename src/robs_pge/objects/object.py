@@ -1,20 +1,18 @@
 from __future__ import annotations
 
-from typing import Any, Callable, Optional, TYPE_CHECKING, Union, cast
 import inspect
+from typing import Union, cast
 
 from .behavior_collection import BehaviorCollection
-from .behaviors import ActionOnClickBehavior, ActionOnHoverBehavior, ActionOnScrollBehavior, ActionOnUpdateBehavior, AttributeClampingBehavior, AttributeFixingBehavior, AttributeGridSnappingBehavior, \
-    AttributeValueSnappingBehavior, DraggableBehavior, DynamicAttributeBehavior, ObjectBehavior
+from .behaviors import *
 from .object_collection import ObjectCollection
 from ..animation import Animation, AnimationManager
 from ..debug import QuickDebugManager
 from ..events import Event, EventManager
-from ..rendering import CircleRenderer, ObjectRenderer, DrawCommand
-from ..utils import Anchor, CircleCollisionBox, CollisionBox, DictCollection, ObjectFlags, Rect, RectCollisionBox, Transform, vec2, test_collision_box_overlap, FRect
+from ..rendering import CircleRenderer, DrawCommand, ObjectRenderer
+from ..utils import Anchor, CircleCollisionBox, CollisionBox, DictCollection, FRect, ObjectFlags, RectCollisionBox, Transform, test_collision_box_overlap, vec2
 
 if TYPE_CHECKING:
-    from ..core import Camera
     from ..objects import PygameObject
     from .layer import Layer
     
@@ -66,10 +64,6 @@ class PygameObject:
     @property
     def height(self):
         return 0 if self.renderer is None else self.renderer.height
-    
-    @property
-    def aabb_dims(self):
-        return vec2(self.renderer.get_aabb_size(self.world_transform.rotation)) * self.scale if self.renderer else vec2()
     
     @property
     def culled(self):
@@ -442,11 +436,6 @@ class PygameObject:
     def collision_box(self) -> Optional[CollisionBox]:
         return self._collision_box
     
-    def get_world_aabb(self):
-        w, h = self.aabb_dims
-        x, y = self.uv_to_world(Anchor.C)
-        return Rect(x - w*0.5, y - h*0.5, w, h)
-    
     # endregion
     
     def get_service[T](self, cls: type[T]) -> T:
@@ -583,8 +572,6 @@ class PygameObject:
             world_pos = self.camera_to_world(camera_pos)
             if not clip.collidepoint(world_pos.x, world_pos.y):
                 return False
-        
-        # Texture hit tests are native to Pixel Space (top-left)
         return self.test_pixel_hit(self.camera_to_pixel(camera_pos))
     
     def test_world_hit(self, world: vec2) -> bool:
@@ -599,265 +586,114 @@ class PygameObject:
     def test_uv_hit(self, uv: vec2) -> bool:
         return self.test_pixel_hit(self.uv_to_pixel(uv))
     
-    def test_aabb_object_hit(self, other: "PygameObject") -> bool:
-        return self.get_world_aabb().colliderect(other.get_world_aabb())
-    
     # endregion
     
     # region COORDINATES CONVERSION METHODS
     
-    # region Screen <-> World / Camera / Viewport
-    
-    def screen_to_viewport(self, screen_pos: vec2) -> vec2:
-        return self.layer.screen_to_viewport_pos(screen_pos)
-    
-    def viewport_to_screen(self, viewport_pos: vec2) -> vec2:
-        return self.layer.viewport_to_screen_pos(viewport_pos)
-    
-    def viewport_to_camera(self, viewport_pos: vec2) -> vec2:
-        return self.layer.viewport_to_camera_pos(viewport_pos)
-    
-    def camera_to_viewport(self, camera_pos: vec2) -> vec2:
-        return self.layer.camera_to_viewport_pos(camera_pos)
-    
-    def viewport_to_world(self, viewport_pos: vec2) -> vec2:
-        return self.layer.viewport_to_world_pos(viewport_pos)
-    
-    def world_to_viewport(self, world_pos: vec2) -> vec2:
-        return self.layer.world_to_viewport_pos(world_pos)
-    
-    def screen_to_camera(self, screen: vec2) -> vec2:
-        return self.layer.screen_to_camera_pos(screen)
-    
-    def camera_to_screen(self, camera_pos: vec2) -> vec2:
-        return self.layer.camera_to_screen_pos(camera_pos)
-    
-    def screen_to_world(self, screen: vec2) -> vec2:
-        return self.layer.screen_to_world_pos(screen)
-    
-    def world_to_screen(self, world: vec2) -> vec2:
-        return self.layer.world_to_screen_pos(world)
-    
-    def camera_to_world(self, camera_pos: vec2) -> vec2:
-        return self.layer.camera_to_world_pos(camera_pos)
-    
-    def world_to_camera(self, world: vec2) -> vec2:
-        return self.layer.world_to_camera_pos(world)
-    
+    # region From Screen
+    def screen_to_viewport(self, pos: vec2) -> vec2: return self.layer.screen_to_viewport_pos(pos)
+    def screen_to_camera(self, pos: vec2) -> vec2: return self.layer.screen_to_camera_pos(pos)
+    def screen_to_world(self, pos: vec2) -> vec2: return self.layer.screen_to_world_pos(pos)
+    def screen_to_layer(self, pos: vec2) -> vec2: return self.world_to_layer(self.screen_to_world(pos))
+    def screen_to_local(self, pos: vec2) -> vec2: return self.world_to_local(self.screen_to_world(pos))
+    def screen_to_pixel(self, pos: vec2) -> vec2: return self.local_to_pixel(self.screen_to_local(pos))
+    def screen_to_children_local(self, pos: vec2, children_anchor: vec2) -> vec2: return self.pixel_to_children_local(self.screen_to_pixel(pos), children_anchor)
+    def screen_to_uv(self, pos: vec2) -> vec2: return self.pixel_to_uv(self.screen_to_pixel(pos))
     # endregion
     
-    # region Screen / Viewport / Camera / World <-> Layer
-    
-    def world_to_layer(self, world_pos: vec2) -> vec2:
-        return self.layer.world_to_local_pos(world_pos)
-    
-    def layer_to_world(self, layer_pos: vec2) -> vec2:
-        return self.layer.local_to_world_pos(layer_pos)
-    
-    def screen_to_layer(self, screen_pos: vec2) -> vec2:
-        return self.world_to_layer(self.screen_to_world(screen_pos))
-    
-    def layer_to_screen(self, layer_pos: vec2) -> vec2:
-        return self.world_to_screen(self.layer_to_world(layer_pos))
-    
-    def viewport_to_layer(self, viewport_pos: vec2) -> vec2:
-        return self.world_to_layer(self.viewport_to_world(viewport_pos))
-    
-    def layer_to_viewport(self, layer_pos: vec2) -> vec2:
-        return self.world_to_viewport(self.layer_to_world(layer_pos))
-    
-    def camera_to_layer(self, camera_pos: vec2) -> vec2:
-        return self.world_to_layer(self.camera_to_world(camera_pos))
-    
-    def layer_to_camera(self, layer_pos: vec2) -> vec2:
-        return self.world_to_camera(self.layer_to_world(layer_pos))
-    
+    # region From Viewport
+    def viewport_to_screen(self, pos: vec2) -> vec2: return self.layer.viewport_to_screen_pos(pos)
+    def viewport_to_camera(self, pos: vec2) -> vec2: return self.layer.viewport_to_camera_pos(pos)
+    def viewport_to_world(self, pos: vec2) -> vec2: return self.layer.viewport_to_world_pos(pos)
+    def viewport_to_layer(self, pos: vec2) -> vec2: return self.world_to_layer(self.viewport_to_world(pos))
+    def viewport_to_local(self, pos: vec2) -> vec2: return self.world_to_local(self.viewport_to_world(pos))
+    def viewport_to_pixel(self, pos: vec2) -> vec2: return self.local_to_pixel(self.viewport_to_local(pos))
+    def viewport_to_children_local(self, pos: vec2, children_anchor: vec2) -> vec2: return self.pixel_to_children_local(self.viewport_to_pixel(pos), children_anchor)
+    def viewport_to_uv(self, pos: vec2) -> vec2: return self.pixel_to_uv(self.viewport_to_pixel(pos))
     # endregion
     
-    # region Local <-> Pixel Bridge
-    
-    def local_to_pixel(self, local_pos: vec2) -> vec2:
-        return local_pos + self.get_anchor_offset(self.anchor)
-    
-    def pixel_to_local(self, pixel_pos: vec2) -> vec2:
-        return pixel_pos - self.get_anchor_offset(self.anchor)
-    
+    # region From Camera
+    def camera_to_screen(self, pos: vec2) -> vec2: return self.layer.camera_to_screen_pos(pos)
+    def camera_to_viewport(self, pos: vec2) -> vec2: return self.layer.camera_to_viewport_pos(pos)
+    def camera_to_world(self, pos: vec2) -> vec2: return self.layer.camera_to_world_pos(pos)
+    def camera_to_layer(self, pos: vec2) -> vec2: return self.world_to_layer(self.camera_to_world(pos))
+    def camera_to_local(self, pos: vec2) -> vec2: return self.world_to_local(self.camera_to_world(pos))
+    def camera_to_pixel(self, pos: vec2) -> vec2: return self.local_to_pixel(self.camera_to_local(pos))
+    def camera_to_children_local(self, pos: vec2, children_anchor: vec2) -> vec2: return self.pixel_to_children_local(self.camera_to_pixel(pos), children_anchor)
+    def camera_to_uv(self, pos: vec2) -> vec2: return self.pixel_to_uv(self.camera_to_pixel(pos))
     # endregion
     
-    # region Screen / Viewport / Camera / World / Layer <-> Local
-    
-    def world_to_local(self, world_pos: vec2) -> vec2:
-        return self.world_transform.apply_inverse_on_point(world_pos)
-    
-    def local_to_world(self, local_pos: vec2) -> vec2:
-        return self.world_transform.apply_on_point(local_pos)
-    
-    def screen_to_local(self, screen_pos: vec2) -> vec2:
-        return self.world_to_local(self.screen_to_world(screen_pos))
-    
-    def local_to_screen(self, local_pos: vec2) -> vec2:
-        return self.world_to_screen(self.local_to_world(local_pos))
-    
-    def viewport_to_local(self, viewport_pos: vec2) -> vec2:
-        return self.world_to_local(self.viewport_to_world(viewport_pos))
-    
-    def local_to_viewport(self, local_pos: vec2) -> vec2:
-        return self.world_to_viewport(self.local_to_world(local_pos))
-    
-    def camera_to_local(self, camera_pos: vec2) -> vec2:
-        return self.world_to_local(self.camera_to_world(camera_pos))
-    
-    def local_to_camera(self, local_pos: vec2) -> vec2:
-        return self.world_to_camera(self.local_to_world(local_pos))
-    
-    def layer_to_local(self, layer_pos: vec2) -> vec2:
-        return self.world_to_local(self.layer_to_world(layer_pos))
-    
-    def local_to_layer(self, local_pos: vec2) -> vec2:
-        return self.world_to_layer(self.local_to_world(local_pos))
-    
-    def world_to_parent_local(self, world_pos: vec2) -> vec2:
-        parent = self.parent
-        return parent.world_to_local(world_pos) if parent else world_pos
-    
+    # region From World
+    def world_to_screen(self, pos: vec2) -> vec2: return self.layer.world_to_screen_pos(pos)
+    def world_to_viewport(self, pos: vec2) -> vec2: return self.layer.world_to_viewport_pos(pos)
+    def world_to_camera(self, pos: vec2) -> vec2: return self.layer.world_to_camera_pos(pos)
+    def world_to_layer(self, pos: vec2) -> vec2: return self.layer.world_to_local_pos(pos)
+    def world_to_local(self, pos: vec2) -> vec2: return self.world_transform.apply_inverse_on_point(pos)
+    def world_to_pixel(self, pos: vec2) -> vec2: return self.local_to_pixel(self.world_to_local(pos))
+    def world_to_children_local(self, pos: vec2, children_anchor: vec2) -> vec2: return self.pixel_to_children_local(self.world_to_pixel(pos), children_anchor)
+    def world_to_uv(self, pos: vec2) -> vec2: return self.pixel_to_uv(self.world_to_pixel(pos))
     # endregion
     
-    # region Screen / Viewport / Camera / World / Layer <-> Pixel
-    
-    def world_to_pixel(self, world_pos: vec2) -> vec2:
-        return self.local_to_pixel(self.world_to_local(world_pos))
-    
-    def pixel_to_world(self, pixel_pos: vec2) -> vec2:
-        return self.local_to_world(self.pixel_to_local(pixel_pos))
-    
-    def screen_to_pixel(self, screen_pos: vec2) -> vec2:
-        return self.world_to_pixel(self.screen_to_world(screen_pos))
-    
-    def pixel_to_screen(self, pixel_pos: vec2) -> vec2:
-        return self.world_to_screen(self.pixel_to_world(pixel_pos))
-    
-    def viewport_to_pixel(self, viewport_pos: vec2) -> vec2:
-        return self.world_to_pixel(self.viewport_to_world(viewport_pos))
-    
-    def pixel_to_viewport(self, pixel_pos: vec2) -> vec2:
-        return self.world_to_viewport(self.pixel_to_world(pixel_pos))
-    
-    def camera_to_pixel(self, camera_pos: vec2) -> vec2:
-        return self.world_to_pixel(self.camera_to_world(camera_pos))
-    
-    def pixel_to_camera(self, pixel_pos: vec2) -> vec2:
-        return self.world_to_camera(self.pixel_to_world(pixel_pos))
-    
-    def layer_to_pixel(self, layer_pos: vec2) -> vec2:
-        return self.world_to_pixel(self.layer_to_world(layer_pos))
-    
-    def pixel_to_layer(self, pixel_pos: vec2) -> vec2:
-        return self.world_to_layer(self.pixel_to_world(pixel_pos))
-    
+    # region From Layer
+    def layer_to_screen(self, pos: vec2) -> vec2: return self.world_to_screen(self.layer_to_world(pos))
+    def layer_to_viewport(self, pos: vec2) -> vec2: return self.world_to_viewport(self.layer_to_world(pos))
+    def layer_to_camera(self, pos: vec2) -> vec2: return self.world_to_camera(self.layer_to_world(pos))
+    def layer_to_world(self, pos: vec2) -> vec2: return self.layer.local_to_world_pos(pos)
+    def layer_to_local(self, pos: vec2) -> vec2: return self.world_to_local(self.layer_to_world(pos))
+    def layer_to_pixel(self, pos: vec2) -> vec2: return self.local_to_pixel(self.layer_to_local(pos))
+    def layer_to_children_local(self, pos: vec2, children_anchor: vec2) -> vec2: return self.pixel_to_children_local(self.layer_to_pixel(pos), children_anchor)
+    def layer_to_uv(self, pos: vec2) -> vec2: return self.pixel_to_uv(self.layer_to_pixel(pos))
     # endregion
     
-    # region UV Conversions
-    
-    def pixel_to_uv(self, pixel_pos: vec2) -> vec2:
-        return self.renderer.local_to_uv(pixel_pos) if self.renderer else vec2()
-    
-    def uv_to_pixel(self, uv: vec2) -> vec2:
-        return self.renderer.uv_to_local(uv) if self.renderer else vec2()
-    
-    def local_to_uv(self, local_pos: vec2) -> vec2:
-        return self.pixel_to_uv(self.local_to_pixel(local_pos))
-    
-    def uv_to_local(self, uv: vec2) -> vec2:
-        return self.pixel_to_local(self.uv_to_pixel(uv))
-    
-    def uv_to_world(self, uv: vec2) -> vec2:
-        return self.pixel_to_world(self.uv_to_pixel(uv))
-    
-    def world_to_uv(self, world_pos: vec2) -> vec2:
-        return self.pixel_to_uv(self.world_to_pixel(world_pos))
-    
-    def uv_to_layer(self, uv: vec2) -> vec2:
-        return self.pixel_to_layer(self.uv_to_pixel(uv))
-    
-    def layer_to_uv(self, layer_pos: vec2) -> vec2:
-        return self.pixel_to_uv(self.layer_to_pixel(layer_pos))
-    
-    def uv_to_camera(self, uv: vec2) -> vec2:
-        return self.pixel_to_camera(self.uv_to_pixel(uv))
-    
-    def camera_to_uv(self, camera_pos: vec2) -> vec2:
-        return self.pixel_to_uv(self.camera_to_pixel(camera_pos))
-    
-    def uv_to_viewport(self, uv: vec2) -> vec2:
-        return self.pixel_to_viewport(self.uv_to_pixel(uv))
-    
-    def viewport_to_uv(self, viewport_pos: vec2) -> vec2:
-        return self.pixel_to_uv(self.viewport_to_pixel(viewport_pos))
-    
-    def uv_to_screen(self, uv: vec2) -> vec2:
-        return self.pixel_to_screen(self.uv_to_pixel(uv))
-    
-    def screen_to_uv(self, screen_pos: vec2) -> vec2:
-        return self.pixel_to_uv(self.screen_to_pixel(screen_pos))
-    
-    def get_anchor_offset(self, anchor: vec2):
-        # The offset is distance from the Top-Left corner (Pixel Space)
-        return self.uv_to_pixel(anchor)
-    
+    # region From Local
+    def local_to_screen(self, pos: vec2) -> vec2: return self.world_to_screen(self.local_to_world(pos))
+    def local_to_viewport(self, pos: vec2) -> vec2: return self.world_to_viewport(self.local_to_world(pos))
+    def local_to_camera(self, pos: vec2) -> vec2: return self.world_to_camera(self.local_to_world(pos))
+    def local_to_world(self, pos: vec2) -> vec2: return self.world_transform.apply_on_point(pos)
+    def local_to_layer(self, pos: vec2) -> vec2: return self.world_to_layer(self.local_to_world(pos))
+    def local_to_pixel(self, pos: vec2) -> vec2: return pos + self.get_anchor_offset(self.anchor)
+    def local_to_children_local(self, pos: vec2, children_anchor: vec2) -> vec2: return self.pixel_to_children_local(self.local_to_pixel(pos), children_anchor)
+    def local_to_uv(self, pos: vec2) -> vec2: return self.pixel_to_uv(self.local_to_pixel(pos))
     # endregion
     
-    # region Children Local <-> Pixel / Local / UV / Screen / Viewport / Camera / World / Layer
-    
-    def pixel_to_children_local(self, pixel_pos: vec2, children_anchor: vec2) -> vec2:
-        return pixel_pos - self.get_anchor_offset(children_anchor)
-    
-    def children_local_to_pixel(self, children_local_pos: vec2, children_anchor: vec2) -> vec2:
-        return children_local_pos + self.get_anchor_offset(children_anchor)
-    
-    def local_to_children_local(self, local_pos: vec2, children_anchor: vec2) -> vec2:
-        return self.pixel_to_children_local(self.local_to_pixel(local_pos), children_anchor)
-    
-    def children_local_to_local(self, children_local_pos: vec2, children_anchor: vec2) -> vec2:
-        return self.pixel_to_local(self.children_local_to_pixel(children_local_pos, children_anchor))
-    
-    def world_to_children_local(self, world_pos: vec2, children_anchor: vec2) -> vec2:
-        return self.pixel_to_children_local(self.world_to_pixel(world_pos), children_anchor)
-    
-    def children_local_to_world(self, children_local_pos: vec2, children_anchor: vec2) -> vec2:
-        return self.pixel_to_world(self.children_local_to_pixel(children_local_pos, children_anchor))
-    
-    def screen_to_children_local(self, screen_pos: vec2, children_anchor: vec2) -> vec2:
-        return self.pixel_to_children_local(self.screen_to_pixel(screen_pos), children_anchor)
-    
-    def children_local_to_screen(self, children_local_pos: vec2, children_anchor: vec2) -> vec2:
-        return self.pixel_to_screen(self.children_local_to_pixel(children_local_pos, children_anchor))
-    
-    def viewport_to_children_local(self, viewport_pos: vec2, children_anchor: vec2) -> vec2:
-        return self.pixel_to_children_local(self.viewport_to_pixel(viewport_pos), children_anchor)
-    
-    def children_local_to_viewport(self, children_local_pos: vec2, children_anchor: vec2) -> vec2:
-        return self.pixel_to_viewport(self.children_local_to_pixel(children_local_pos, children_anchor))
-    
-    def camera_to_children_local(self, camera_pos: vec2, children_anchor: vec2) -> vec2:
-        return self.pixel_to_children_local(self.camera_to_pixel(camera_pos), children_anchor)
-    
-    def children_local_to_camera(self, children_local_pos: vec2, children_anchor: vec2) -> vec2:
-        return self.pixel_to_camera(self.children_local_to_pixel(children_local_pos, children_anchor))
-    
-    def layer_to_children_local(self, layer_pos: vec2, children_anchor: vec2) -> vec2:
-        return self.pixel_to_children_local(self.layer_to_pixel(layer_pos), children_anchor)
-    
-    def children_local_to_layer(self, children_local_pos: vec2, children_anchor: vec2) -> vec2:
-        return self.pixel_to_layer(self.children_local_to_pixel(children_local_pos, children_anchor))
-    
-    def children_local_to_uv(self, children_local_pos: vec2, children_anchor: vec2) -> vec2:
-        return self.pixel_to_uv(self.children_local_to_pixel(children_local_pos, children_anchor))
-    
-    def uv_to_children_local(self, uv: vec2, children_anchor: vec2) -> vec2:
-        return self.pixel_to_children_local(self.uv_to_pixel(uv), children_anchor)
-    
+    # region From Pixel
+    def pixel_to_screen(self, pos: vec2) -> vec2: return self.local_to_screen(self.pixel_to_local(pos))
+    def pixel_to_viewport(self, pos: vec2) -> vec2: return self.local_to_viewport(self.pixel_to_local(pos))
+    def pixel_to_camera(self, pos: vec2) -> vec2: return self.local_to_camera(self.pixel_to_local(pos))
+    def pixel_to_world(self, pos: vec2) -> vec2: return self.local_to_world(self.pixel_to_local(pos))
+    def pixel_to_layer(self, pos: vec2) -> vec2: return self.local_to_layer(self.pixel_to_local(pos))
+    def pixel_to_local(self, pos: vec2) -> vec2: return pos - self.get_anchor_offset(self.anchor)
+    def pixel_to_children_local(self, pos: vec2, children_anchor: vec2) -> vec2: return pos - self.get_anchor_offset(children_anchor)
+    def pixel_to_uv(self, pos: vec2) -> vec2: return self.renderer.local_to_uv(pos) if self.renderer else vec2()
     # endregion
     
+    # region From Children Local
+    def children_local_to_screen(self, pos: vec2, children_anchor: vec2) -> vec2: return self.pixel_to_screen(self.children_local_to_pixel(pos, children_anchor))
+    def children_local_to_viewport(self, pos: vec2, children_anchor: vec2) -> vec2: return self.pixel_to_viewport(self.children_local_to_pixel(pos, children_anchor))
+    def children_local_to_camera(self, pos: vec2, children_anchor: vec2) -> vec2: return self.pixel_to_camera(self.children_local_to_pixel(pos, children_anchor))
+    def children_local_to_world(self, pos: vec2, children_anchor: vec2) -> vec2: return self.pixel_to_world(self.children_local_to_pixel(pos, children_anchor))
+    def children_local_to_layer(self, pos: vec2, children_anchor: vec2) -> vec2: return self.pixel_to_layer(self.children_local_to_pixel(pos, children_anchor))
+    def children_local_to_local(self, pos: vec2, children_anchor: vec2) -> vec2: return self.pixel_to_local(self.children_local_to_pixel(pos, children_anchor))
+    def children_local_to_pixel(self, pos: vec2, children_anchor: vec2) -> vec2: return pos + self.get_anchor_offset(children_anchor)
+    def children_local_to_uv(self, pos: vec2, children_anchor: vec2) -> vec2: return self.pixel_to_uv(self.children_local_to_pixel(pos, children_anchor))
+    # endregion
+    
+    # region From UV
+    def uv_to_screen(self, pos: vec2) -> vec2: return self.pixel_to_screen(self.uv_to_pixel(pos))
+    def uv_to_viewport(self, pos: vec2) -> vec2: return self.pixel_to_viewport(self.uv_to_pixel(pos))
+    def uv_to_camera(self, pos: vec2) -> vec2: return self.pixel_to_camera(self.uv_to_pixel(pos))
+    def uv_to_world(self, pos: vec2) -> vec2: return self.pixel_to_world(self.uv_to_pixel(pos))
+    def uv_to_layer(self, pos: vec2) -> vec2: return self.pixel_to_layer(self.uv_to_pixel(pos))
+    def uv_to_local(self, pos: vec2) -> vec2: return self.pixel_to_local(self.uv_to_pixel(pos))
+    def uv_to_pixel(self, pos: vec2) -> vec2: return self.renderer.uv_to_local(pos) if self.renderer else vec2()
+    def uv_to_children_local(self, pos: vec2, children_anchor: vec2) -> vec2: return self.pixel_to_children_local(self.uv_to_pixel(pos), children_anchor)
+    # endregion
+    
+    # region Coordinates Helpers
+    def get_anchor_offset(self, anchor: vec2) -> vec2: return self.uv_to_pixel(anchor)
+    def world_to_parent_local(self, pos: vec2) -> vec2: return self.parent.world_to_local(pos) if self.parent else pos
+    def world_to_parent_children_local(self, pos: vec2) -> vec2: return self.parent.world_to_children_local(pos, self._parent_anchor) if self.parent else pos
+    def parent_children_local_to_world(self, pos: vec2) -> vec2: return self.parent.children_local_to_world(pos, self._parent_anchor) if self.parent else pos
     # endregion
     
     # endregion
