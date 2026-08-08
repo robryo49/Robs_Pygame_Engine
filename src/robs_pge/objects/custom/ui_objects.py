@@ -118,8 +118,8 @@ class CycleButtonObject(ButtonObject):
         
         self._index = 0
         
-        self.do_on_click(1, self.cycle_forward)
-        self.do_on_click(3, self.cycle_backward)
+        self.do_on_click(1, lambda: self.cycle_forward())
+        self.do_on_click(3, lambda: self.cycle_backward())
         
         if callback is not None:
             self.do_on_click(1, lambda: callback(self.value))
@@ -254,7 +254,8 @@ class ToggleButtonObject(RectObject):
         self.do_on_click(1, self.toggle)
         
         self._toggle_background.make_attribute_dynamic("width", lambda: self._toggle.x_pos + self._toggle.width * 0.5)
-        self.do_on_click(1, lambda: callback(self.enabled))
+        if callback is not None:
+            self.do_on_click(1, lambda: callback(self.enabled))
     
     # region PROPERTIES
     

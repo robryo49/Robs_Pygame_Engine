@@ -4,19 +4,20 @@ from .sub_factory import SubObjectFactory
 from ..custom import SpriteObject, SubSurfaceSpriteObject, ChunkedSpriteObject, IconObject
 from ...rendering import ChunkedSpriteRenderer, SpriteRenderer, SubSurfaceRenderer, IconRenderer
 from ...resources import Texture
-from ...utils import Anchor, Rect, vec2, Color, Colors
+from ...utils import Anchor, Rect, get_object_dims, vec2, Color, Colors
 
 
 class SpriteObjectFactory(SubObjectFactory):
     
     def make_sprite(
-            self, position: vec2, texture: Texture | str, dims: Optional[vec2] = None,
+            self, position: vec2, texture: Texture | str, dims: Optional[vec2] = None, width: Optional[int] = None, height: Optional[int] = None,
             rotation: float = 0.0, scale: float = 1.0, layer: int = 1, anchor: vec2 = Anchor.C, cache: bool = True
     ) -> SpriteObject:
         
         texture = self._get_resource(texture, Texture)
         
-        if dims is not None and dims != texture.dims:
+        dims = get_object_dims(dims, width, height, texture.dims)
+        if dims != texture.dims:
             texture = texture.resized(dims)
         
         obj = self._make_object(SpriteObject, position, rotation, scale, SpriteRenderer(texture, cache), layer, anchor)
@@ -38,11 +39,16 @@ class SpriteObjectFactory(SubObjectFactory):
         return obj
     
     def make_chunked_sprite(
-            self, position: vec2, texture: Texture | str, chunk_size: int = 256,
+            self, position: vec2, texture: Texture | str, dims: Optional[vec2] = None, width: Optional[int] = None, height: Optional[int] = None, chunk_size: int = 256,
             rotation: float = 0.0, scale: float = 1.0, layer: int = 1, anchor: vec2 = Anchor.C, cache: bool = True
     ) -> ChunkedSpriteObject:
         
         texture = self._get_resource(texture, Texture)
+        
+        dims = get_object_dims(dims, width, height, texture.dims)
+        if dims != texture.dims:
+            texture = texture.resized(dims)
+            
         obj = self._make_object(ChunkedSpriteObject, position, rotation, scale, ChunkedSpriteRenderer(texture, chunk_size, cache), layer, anchor)
         
         return obj

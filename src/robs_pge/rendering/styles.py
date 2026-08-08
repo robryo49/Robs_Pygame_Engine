@@ -256,7 +256,7 @@ class SliderStyle(Style):
     bar_width: int = 10
     handle_style: RectStyle | CircleStyle = field(default_factory=CircleStyle)
     handle_size: int | vec2 = 10
-    font: Font = field(default_factory=Font)
+    font:StyleOrName [Font] = field(default_factory=Font)
     text_position: str = "right"
     hide_bg: bool = False
     hide_text: bool = False
@@ -300,7 +300,7 @@ class DebugPanelStyle(Style):
     header_style: RectStyle
     title_panel_style: RectStyle
     panel_style: RectStyle
-    title_font: Font
+    title_font:StyleOrName [Font]
 
 
 @dataclass
@@ -360,7 +360,7 @@ class WindowStyle(Style):
     def with_icons(self, icon_buttons_style: Optional[IconButtonStyle]):
         return self.with_(show_icons = True, icon_buttons_style = icon_buttons_style if icon_buttons_style is not None else self.icon_buttons_style)
     
-    def with_title(self, title_panel_style: Optional[RectStyle] = None, title_font: Optional[Font] = None, title_in_header: Optional[bool] = None):
+    def with_title(self, title_panel_style: Optional[RectStyle] = None, title_font: Optional[StyleOrName[Font]] = None, title_in_header: Optional[bool] = None):
         return self.with_(
             show_title = True,
             title_panel_style = title_panel_style if title_panel_style is not None else self.title_panel_style,

@@ -1,7 +1,7 @@
 import operator
 from math import cos, pi, sin
 from random import random as rand
-from typing import cast
+from typing import Optional, cast
 
 from glm import vec1, vec2, vec3, vec4
 from pygame import Color
@@ -39,6 +39,18 @@ def invert_x(vec: vec2):
 def invert_uv_x(uv: vec2):
     return vec2(1-uv.x, uv.y)
 
+
+def get_object_dims(dims: Optional[vec2] = None, width: Optional[float] = None, height: Optional[float] = None,
+                    content_dims: Optional[vec2] = None, margin: Optional[float] = None) -> vec2:
+    if content_dims is None:
+        margined_dims = vec2()
+    else:
+        margined_dims = content_dims + vec2(2*margin if margin is not None else 0)
+    
+    width = width if width is not None else max(margined_dims.x, dims.x if dims is not None else 0)
+    height = height if height is not None else max(margined_dims.y, dims.y if dims is not None else 0)
+    
+    return vec2(width, height)
 
 def rotated_surface_dims(dims: vec2, rotation: float):
     return vec2(

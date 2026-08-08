@@ -6,7 +6,7 @@ from ..custom import *
 from ..object import PygameObject
 from ...rendering import ButtonStyle, CircleRenderer, CircleStyle, IconButtonStyle, RadioButtonStyle, RectRenderer, SpriteButtonStyle, ToggleButtonStyle
 from ...resources import Icons, Texture
-from ...utils import Anchor, Easing, StyleOrName, vec2, Color, Font
+from ...utils import Anchor, Easing, StyleOrName, get_object_dims, vec2, Color, Font
 
 CallBackType = Optional[Callable | tuple[Callable, ...]]
 ObjectCallBackType = Optional[Callable[[PygameObject], Any] | tuple[Callable[[PygameObject], Any], ...] | CallBackType]
@@ -42,15 +42,15 @@ class ButtonObjectFactory(SubObjectFactory):
     
     
     def make_button(
-            self, position: vec2, text: str, action: ObjectCallBackType = None, dims: Optional[vec2] = None, style: StyleOrName[ButtonStyle] = None,
+            self, position: vec2, text: str, action: ObjectCallBackType = None, dims: Optional[vec2] = None, width: Optional[float] = None, height: Optional[float] = None, style: StyleOrName[ButtonStyle] = None,
             rotation: float = 0.0, scale: float = 1.0, layer: int = 0, anchor: vec2 = Anchor.C, cache: bool = True
     ) -> ButtonObject:
         
         button_style = self._get_resource(style, ButtonStyle)
         bg_style = button_style.bg_style
-        margin = vec2(button_style.margin)
+        margin = button_style.margin
         font = self._get_resource(button_style.font, Font)
-        dims = dims or font.get_render_size(text) + vec2(margin*2)
+        dims = get_object_dims(dims, width, height, font.get_render_size(text), margin)
         
         obj = self._make_object(ButtonObject, position, rotation, scale, RectRenderer(dims, bg_style, cache), layer, anchor,
                                 self.factory.text.make_text(vec2(), text, font, 0.0, 1.0, layer, Anchor.C, cache), action
@@ -64,7 +64,7 @@ class ButtonObjectFactory(SubObjectFactory):
         return obj
     
     def make_cycle_button(
-            self, position: vec2, texts: tuple[str, ...], values: Optional[tuple[Any, ...]] = None, default_index: int = 0, callback: ObjectCallBackType = None, dims: Optional[vec2] = None, style: StyleOrName[ButtonStyle] = None,
+            self, position: vec2, texts: tuple[str, ...], values: Optional[tuple[Any, ...]] = None, default_index: int = 0, callback: ObjectCallBackType = None, dims: Optional[vec2] = None, width: Optional[float] = None, height: Optional[float] = None, style: StyleOrName[ButtonStyle] = None,
             rotation: float = 0.0, scale: float = 1.0, layer: int = 0, anchor: vec2 = Anchor.C, cache: bool = True
     ) -> CycleButtonObject:
         
@@ -75,10 +75,12 @@ class ButtonObjectFactory(SubObjectFactory):
         
         button_style = self._get_resource(style, ButtonStyle)
         bg_style = button_style.bg_style
-        margin = vec2(button_style.margin)
-        font = button_style.font
+        margin = button_style.margin
+        font = self._get_resource(button_style.font, Font)
         text_dims = [font.get_render_size(t) for t in texts]
-        dims = dims or vec2(max(d[0] for d in text_dims), max(d[1] for d in text_dims)) + vec2(margin*2)
+        
+        max_text_dims = vec2(max(d[0] for d in text_dims), max(d[1] for d in text_dims))
+        dims = get_object_dims(dims, width, height, max_text_dims, margin)
         
         obj = self._make_object(CycleButtonObject, position, rotation, scale, RectRenderer(dims, bg_style, cache), layer, anchor,
                                 self.factory.text.make_text(vec2(), text, font, 0.0, 1.0, layer, Anchor.C, cache), texts, values, callback
@@ -92,17 +94,17 @@ class ButtonObjectFactory(SubObjectFactory):
         return obj
     
     def make_sprite_button(
-            self, position: vec2, texture: Texture, action: ObjectCallBackType = None, dims: Optional[vec2] = None, style: StyleOrName[SpriteButtonStyle] = None,
+            self, position: vec2, texture: Texture, action: ObjectCallBackType = None, dims: Optional[vec2] = None, width: Optional[float] = None, height: Optional[float] = None, style: StyleOrName[SpriteButtonStyle] = None,
             rotation: float = 0.0, scale: float = 1.0, layer: int = 0, anchor: vec2 = Anchor.C, cache: bool = True
     ) -> SpriteButtonObject:
         
         button_style = self._get_resource(style, SpriteButtonStyle)
         bg_style = button_style.bg_style
-        margin = vec2(button_style.margin)
+        margin = button_style.margin
         
         sprite = self.factory.sprite.make_sprite(vec2(), texture)
         
-        dims = dims or texture.dims + vec2(margin*2)
+        dims = get_object_dims(dims, width, height, texture.dims, margin)
         
         obj = self._make_object(SpriteButtonObject, position, rotation, scale, RectRenderer(dims, bg_style, cache), layer, anchor, sprite, action)
         
@@ -114,18 +116,18 @@ class ButtonObjectFactory(SubObjectFactory):
         return obj
     
     def make_icon_button(
-            self, position: vec2, icon: str, icon_size: int, action: ObjectCallBackType = None, dims: Optional[vec2] = None, style: StyleOrName[IconButtonStyle] = None,
+            self, position: vec2, icon: str, icon_size: int, action: ObjectCallBackType = None, dims: Optional[vec2] = None, width: Optional[float] = None, height: Optional[float] = None, style: StyleOrName[IconButtonStyle] = None,
             rotation: float = 0.0, scale: float = 1.0, layer: int = 0, anchor: vec2 = Anchor.C, cache: bool = True
     ) -> IconButtonObject:
         
         icon_button_style = self._get_resource(style, IconButtonStyle)
         button_style = icon_button_style.button_style
         bg_style = button_style.bg_style
-        margin = vec2(button_style.margin)
+        margin = button_style.margin
         
         sprite: IconObject = self.factory.sprite.make_icon_object(vec2(), icon, icon_size, icon_button_style.icon_color)
         
-        dims = dims or sprite.dims + vec2(margin*2)
+        dims =get_object_dims(dims, width, height, sprite.dims, margin)
         
         obj = self._make_object(IconButtonObject, position, rotation, scale, RectRenderer(dims, bg_style, cache), layer, anchor, sprite, action)
         
@@ -138,7 +140,7 @@ class ButtonObjectFactory(SubObjectFactory):
         return obj
     
     def make_checkbox(
-            self, position: vec2, icon_size, dims: Optional[vec2] = None, callback: ObjectCallBackType = None, checked_icon: str = Icons.CHECK, checked=False, style: StyleOrName[IconButtonStyle] = None,
+            self, position: vec2, icon_size, size: Optional[float] = None, callback: ObjectCallBackType = None, checked_icon: str = Icons.CHECK, checked=False, style: StyleOrName[IconButtonStyle] = None,
             rotation: float = 0.0, scale: float = 1.0, layer: int = 0, anchor: vec2 = Anchor.C, cache: bool = True
     ) -> CheckBoxObject:
         
@@ -146,12 +148,12 @@ class ButtonObjectFactory(SubObjectFactory):
         button_style = icon_button_style.button_style
         
         bg_style = button_style.bg_style
-        margin = vec2(button_style.margin)
+        margin = button_style.margin
         
         icon = Icons.get(checked_icon, icon_size, icon_button_style.icon_color)
         sprite = self.factory.sprite.make_sprite(vec2(), icon)
         
-        dims = dims or vec2(icon_size) + vec2(margin*2)
+        dims = get_object_dims(vec2(size), None, None, sprite.dims, margin)
         
         obj = self._make_object(CheckBoxObject, position, rotation, scale, RectRenderer(dims, bg_style, cache), layer, anchor, sprite, callback)
         

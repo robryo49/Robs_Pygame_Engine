@@ -1,5 +1,5 @@
 from .core import Engine, Camera, Clock, State
-from .resources import Texture, ResourceManager, SurfaceCache
+from .resources import Texture, ResourceManager, SurfaceCache, Icons
 from .animation import Animation, AdderAnimation, SetterAnimation, MultiplierAnimation, AnimationManager
 from .input import Keybind, KeybindsManager
 from .objects import (
@@ -22,7 +22,8 @@ from .utils import (
 from .rendering import (
     Style, RectStyle, LineStyle, ButtonStyle, CircleStyle, ShapeStyle, LineChartStyle,
     PolygonStyle, ProgressBarStyle, DebugPanelStyle, SliderStyle, IconButtonStyle,
-    RadioButtonStyle, SpriteButtonStyle, ToggleButtonStyle, WindowStyle
+    RadioButtonStyle, SpriteButtonStyle, ToggleButtonStyle, WindowStyle,
+    ScrollbarStyle
 )
 
 __all__ = [
@@ -31,7 +32,7 @@ __all__ = [
     # state
     "State",
     # resources
-    "Texture", "ResourceManager", "SurfaceCache",
+    "Texture", "ResourceManager", "SurfaceCache", "Icons",
     # animation
     "Animation", "AdderAnimation", "SetterAnimation", "MultiplierAnimation", "AnimationManager",
     # input
@@ -53,5 +54,6 @@ __all__ = [
     "Style", "RectStyle", "LineStyle", "ButtonStyle", "CircleStyle",
     "ShapeStyle", "LineChartStyle", "PolygonStyle", "ProgressBarStyle", "DebugPanelStyle",
     "SliderStyle", "IconButtonStyle", "RadioButtonStyle", "SpriteButtonStyle", "ToggleButtonStyle",
-    "WindowStyle"
+    "WindowStyle",
+    "ScrollbarStyle"
 ]
