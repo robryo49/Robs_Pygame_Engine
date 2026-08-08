@@ -1,13 +1,12 @@
+import math
 from pathlib import Path
 from typing import Optional
+
+import numpy as np
+import pygame as pg
 from matplotlib.colors import Colormap
 
-import pygame as pg
-import numpy as np
-import math
-
-
-from ..utils import vec2, Vec2Like, colorize_array, invert_uv_y, Color, make_noise_array, normalize_array
+from ..utils import Color, Vec2Like, colorize_array, make_noise_array, normalize_array, vec2
 
 
 class Texture:
