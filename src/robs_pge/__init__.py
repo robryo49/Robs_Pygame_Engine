@@ -5,7 +5,7 @@ from .input import Keybind, KeybindsManager
 from .objects import (
     PygameObject,
     RectObject, CircleObject, SpriteObject, LineObject, CycleButtonObject,
-    LayoutObject, DebugOverlay, DebugPanelObject,
+    LayoutObject, DebugOverlay,
     ButtonObject, ProgressBarObject, LineChartObject,
     ObjectFactory, ObjectCollection, ObjectBehavior,
     Layer

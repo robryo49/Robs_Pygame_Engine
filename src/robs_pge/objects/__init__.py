@@ -22,7 +22,7 @@ from .object_factory import ObjectFactory
 from .custom import (
     RectObject, CircleObject, SpriteObject, LineObject, CycleButtonObject,
     SubSurfaceSpriteObject, ChunkedSpriteObject,
-    LayoutObject, DebugOverlay, DebugPanelObject,
+    LayoutObject, DebugOverlay,
     ButtonObject, ProgressBarObject, LineChartObject, TextObject, WindowObject
 )
 from .object import PygameObject
@@ -53,7 +53,7 @@ __all__ = [
     "PygameObject",
     "RectObject", "CircleObject", "TextObject", "SpriteObject", "LineObject", "CycleButtonObject",
     "SubSurfaceSpriteObject", "ChunkedSpriteObject",
-    "LayoutObject", "DebugOverlay", "DebugPanelObject",
+    "LayoutObject", "DebugOverlay",
     "ButtonObject", "ProgressBarObject", "LineChartObject", "WindowObject",
     # particles
     "Particle", "ParticleEmitter", "BurstParticleEmitter",
