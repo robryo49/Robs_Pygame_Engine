@@ -10,11 +10,15 @@ from ...utils import Anchor, Rect, vec2, Color, Colors
 class SpriteObjectFactory(SubObjectFactory):
     
     def make_sprite(
-            self, position: vec2, texture: Texture | str,
+            self, position: vec2, texture: Texture | str, dims: Optional[vec2] = None,
             rotation: float = 0.0, scale: float = 1.0, layer: int = 1, anchor: vec2 = Anchor.C, cache: bool = True
     ) -> SpriteObject:
         
         texture = self._get_resource(texture, Texture)
+        
+        if dims is not None and dims != texture.dims:
+            texture = texture.resized(dims)
+        
         obj = self._make_object(SpriteObject, position, rotation, scale, SpriteRenderer(texture, cache), layer, anchor)
         
         return obj

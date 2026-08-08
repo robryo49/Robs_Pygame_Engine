@@ -154,8 +154,8 @@ class Texture:
     @classmethod
     def from_grayscale_array(cls, arr: np.ndarray, normalize: bool | tuple[float, float]=False, cmap: str | Colormap="binary", dims: Optional[vec2]=None, width: Optional[int]=None, height: Optional[int]=None):
         
-        if normalize:
-            min_v, max_v = (arr.min(), arr.max()) if normalize is True else normalize
+        if normalize is not False:
+            min_v, max_v = (arr.min(), arr.max()) if isinstance(normalize, bool) else normalize
             arr = normalize_array(arr, min_v, max_v)
         
         if not np.issubdtype(arr.dtype, np.integer):
