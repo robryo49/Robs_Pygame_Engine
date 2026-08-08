@@ -30,10 +30,10 @@ class BehaviorCollection(TypedCollection):
             behavior.on_attach()
         
     def remove(self, behavior: "ObjectBehavior | list[ObjectBehavior] | BehaviorCollection"):
-        
+
         if isinstance(behavior, list):
             for b in behavior:
-                self.add_behavior(b)
+                self.remove(b)
             return
         
         super().remove(behavior)

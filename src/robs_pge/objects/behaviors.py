@@ -306,7 +306,7 @@ class AttributeClampingBehavior(ObjectBehavior):
         setattr(self.owner, self._attribute, target_value)
 
 class AttributeFixingBehavior(ObjectBehavior):
-    def __init__(self, attribute: str, value = Optional[Any | Callable[[], Any]], strength: float = 1):
+    def __init__(self, attribute: str, value: Optional[Any | Callable[[], Any]] = None, strength: float = 1):
         super().__init__()
         self._attribute = attribute
         self._value = value
