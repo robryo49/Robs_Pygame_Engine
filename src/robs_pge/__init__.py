@@ -39,7 +39,7 @@ __all__ = [
     # objects
     "PygameObject",
     "RectObject", "CircleObject", "TextObject", "SpriteObject", "LineObject", "CycleButtonObject",
-    "LayoutObject", "DebugOverlay", "DebugPanelObject",
+    "LayoutObject", "DebugOverlay",
     "ButtonObject", "ProgressBarObject", "LineChartObject",
     "ObjectFactory", "ObjectCollection", "ObjectBehavior",
     "Layer",

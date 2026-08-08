@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import inspect
-from typing import TypeVar, Union, cast
+from typing import TypeVar, cast
 
 from .behavior_collection import BehaviorCollection
 from .behaviors import *
@@ -9,8 +9,8 @@ from .object_collection import ObjectCollection
 from ..animation import Animation, AnimationManager
 from ..debug import QuickDebugManager
 from ..events import Event, EventManager
-from ..rendering import CircleRenderer, DrawCommand, ObjectRenderer
-from ..utils import Anchor, CircleCollisionBox, CollisionBox, DictCollection, FRect, ObjectFlags, RectCollisionBox, Transform, test_collision_box_overlap, vec2
+from ..rendering import DrawCommand, ObjectRenderer
+from ..utils import Anchor, DictCollection, FRect, ObjectFlags, Transform, vec2
 
 if TYPE_CHECKING:
     from ..objects import PygameObject
@@ -39,7 +39,6 @@ class PygameObject[R]:
         self._properties: DictCollection = DictCollection()
         
         self._renderer = renderer
-        self._collision_box = None
         
         self._children = ObjectCollection()
         
@@ -471,17 +470,11 @@ class PygameObject[R]:
     
     def add_behavior(self, behavior: ObjectBehavior | list[ObjectBehavior] | BehaviorCollection):
         self.behaviors.add_behavior(behavior)
-        
         return self
         
     def remove_behavior(self, behavior: ObjectBehavior | list[ObjectBehavior] | BehaviorCollection):
         self.behaviors.remove(behavior)
-        
         return self
-    
-    @property
-    def collision_box(self) -> Optional[CollisionBox]:
-        return self._collision_box
     
     # endregion
     
@@ -546,39 +539,6 @@ class PygameObject[R]:
     def make_draggable(self, button: int = 1, target: Optional["PygameObject"] = None):
         self.add_behavior(DraggableBehavior(button, target))
         return self
-    
-    # endregion
-    
-    # region COLLISION METHODS
-
-    def add_collision_box(self, kind: Optional[str] = None, dims: Optional[vec2] = None, radius: Optional[float] = None, rotation_offset: float = 0.0) -> "PygameObject":
-        if kind is None:
-                kind = "circle" if isinstance(self.renderer, CircleRenderer) else "rect"
-
-        if kind == "circle":
-            if radius is None:
-                radius = cast(CircleRenderer, self.renderer).radius if isinstance(self.renderer, CircleRenderer) else max(self.dims) / 2
-            self._collision_box = CollisionBox("circle", radius=radius, rotation_offset=rotation_offset)
-        else:
-            half_extents = (dims / 2) if dims is not None else (self.dims / 2)
-            self._collision_box = CollisionBox("rect", half_extents=half_extents, rotation_offset=rotation_offset)
-
-        return self
-
-    def remove_collision_box(self) -> "PygameObject":
-        self._collision_box = None
-        return self
-
-    def get_world_collision_shape(self) -> Optional[Union[RectCollisionBox, CircleCollisionBox]]:
-        if self._collision_box is None:
-            return None
-        wt = self.world_transform
-        return self._collision_box.to_world_shape(wt.pos, wt.rotation, wt.scale)
-
-    def test_object_collision(self, other: "PygameObject") -> bool:
-        if self._collision_box is None or other.collision_box is None:
-            return False
-        return test_collision_box_overlap(self._collision_box, self.world_transform, cast(CollisionBox, other.collision_box), other.world_transform)
     
     # endregion
     
