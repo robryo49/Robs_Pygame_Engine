@@ -96,9 +96,13 @@ class PygameObject[R]:
         for child in self._children:
             # noinspection protected-member
             child._invalidate_visible()
-
+    
     @property
     def world_transform(self) -> Transform:
+        # noinspection protected-member
+        if self._transform._dirty:
+            self._invalidate_world_transform()
+        
         if not self._world_transform_dirty:
             return cast(Transform, self._cached_world_transform)
         
