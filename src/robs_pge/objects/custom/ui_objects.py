@@ -118,12 +118,12 @@ class CycleButtonObject(ButtonObject):
         
         self._index = 0
         
-        self.do_on_click(1, lambda: self.cycle_forward())
-        self.do_on_click(3, lambda: self.cycle_backward())
+        self.do_on_click(1, lambda o: self.cycle_forward())
+        self.do_on_click(3, lambda o: self.cycle_backward())
         
         if callback is not None:
-            self.do_on_click(1, lambda: callback(self.value))
-            self.do_on_click(3, lambda: callback(self.value))
+            self.do_on_click(1, lambda o: callback(self.value))
+            self.do_on_click(3, lambda o: callback(self.value))
     
     
     # region PROPERTIES
@@ -162,7 +162,7 @@ class CycleButtonObject(ButtonObject):
 
 
 class CheckBoxObject(RectObject):
-    def __init__(self, transform: Transform, background: RectRenderer, checked_icon: IconObject, callback: Callback[[bool], Any],
+    def __init__(self, transform: Transform, background: RectRenderer, checked_icon: IconObject, callback: Callback[[PygameObject], Any],
                  services: DictCollection, sub_layer: int = 0, anchor: vec2 = Anchor.C):
         super().__init__(transform, background, services, sub_layer, anchor)
         
@@ -170,9 +170,9 @@ class CheckBoxObject(RectObject):
         self.add_child(self._checked_icon)
         self._checked_icon.hide()
         
-        self.do_on_click(1, self.toggle)
+        self.do_on_click(1, lambda o: o.toggle())
         if callback is not None:
-            self.do_on_click(1, lambda: callback(self.checked))
+            self.do_on_click(1, callback)
         
     # region PROPERTIES
     
@@ -197,7 +197,7 @@ class CheckBoxObject(RectObject):
 
 
 class RadioButtonObject(CircleObject):
-    def __init__(self, transform: Transform, background: CircleRenderer, tick: CircleObject, callback: Callback[[bool], Any],
+    def __init__(self, transform: Transform, background: CircleRenderer, tick: CircleObject, callback: Callback[[PygameObject], Any],
                  services: DictCollection, sub_layer: int = 0, anchor: vec2 = Anchor.C):
         super().__init__(transform, background, services, sub_layer, anchor)
         
@@ -205,9 +205,9 @@ class RadioButtonObject(CircleObject):
         self.add_child(self._tick)
         self._tick.hide()
         
-        self.do_on_click(1, self.toggle)
+        self.do_on_click(1, lambda o: o.toggle())
         if callback is not None:
-            self.do_on_click(1, lambda: callback(self.checked))
+            self.do_on_click(1, callback)
     
     # region PROPERTIES
     
@@ -232,7 +232,7 @@ class RadioButtonObject(CircleObject):
         
 
 class ToggleButtonObject(RectObject):
-    def __init__(self, transform: Transform, background: RectRenderer, toggle: RectObject, toggle_background: RectObject, toggle_movement_range: tuple[int, int], callback: Callback[[bool], Any],
+    def __init__(self, transform: Transform, background: RectRenderer, toggle: RectObject, toggle_background: RectObject, toggle_movement_range: tuple[int, int], callback: Callback[[PygameObject], Any],
                  services: DictCollection, sub_layer: int = 0, anchor: vec2 = Anchor.C):
         super().__init__(transform, background, services, sub_layer, anchor)
         
@@ -251,11 +251,11 @@ class ToggleButtonObject(RectObject):
         toggle.anchor = Anchor.L
         toggle_background.anchor = Anchor.L
         
-        self.do_on_click(1, self.toggle)
+        self.do_on_click(1, lambda o: o.toggle())
         
         self._toggle_background.make_attribute_dynamic("width", lambda: self._toggle.x_pos + self._toggle.width * 0.5)
         if callback is not None:
-            self.do_on_click(1, lambda: callback(self.enabled))
+            self.do_on_click(1, callback)
     
     # region PROPERTIES
     
