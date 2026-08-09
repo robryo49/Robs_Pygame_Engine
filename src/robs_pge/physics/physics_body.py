@@ -221,10 +221,10 @@ class PhysicsBody:
 
     @staticmethod
     def _to_pymunk_angle(angle_deg: float) -> float:
-        return math.radians(angle_deg)
+        return math.radians(-angle_deg)
 
     @staticmethod
     def _from_pymunk_angle(angle_rad: float) -> float:
-        return math.degrees(angle_rad)
+        return math.degrees(-angle_rad)
 
     # endregion
