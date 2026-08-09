@@ -8,9 +8,9 @@ from .object_collection import ObjectCollection
 from ..animation import Animation, AnimationManager
 from ..debug import QuickDebugManager
 from ..events import Event, EventManager
-from ..physics import PhysicsBody, ShapeTypes
+from ..physics import BodyTypes, PhysicsBody, ShapeTypes
 from ..rendering import DrawCommand, ObjectRenderer
-from ..utils import Anchor, Callback, DictCollection, FRect, ObjectFlags, ObjectTags, Transform, vec2
+from ..utils import Anchor, Callback, DictCollection, FRect, ObjectFlags, ObjectTags, Transform, length, vec2
 
 if TYPE_CHECKING:
     from .layer import Layer
@@ -584,6 +584,10 @@ class PygameObject[R]:
     # endregion
 
     # region PHYSICS
+    
+    @staticmethod
+    def get_default_shape_type() -> Literal["box", "circle"]:
+        return ShapeTypes.BOX
 
     @property
     def physics_body(self) -> Optional[PhysicsBody]:
@@ -593,18 +597,29 @@ class PygameObject[R]:
     def has_physics(self) -> bool:
         return self._physics_body is not None
 
-    def add_physics_body(self, shape_type: Literal["box", "circle"] = ShapeTypes.BOX, sensor: bool = False, **kwargs) -> PhysicsBody:
-        body = PhysicsBody(self, sensor=sensor, **kwargs)
+    def add_physics_body(self, shape_type: Optional[Literal["box", "circle"]] = None, sensor: bool = False,
+                         dims: Optional[vec2] = None, radius: Optional[float] = None,
+                         body_type: int = BodyTypes.DYNAMIC, mass: float = 1, moment: Optional[float] = None, friction: float = 0.5,
+                         elasticity: float = 0.0, collision_layer: int = 1, collision_mask: int = 0xFFFFFFFF) -> PhysicsBody:
+        body = PhysicsBody(self, body_type, mass, moment, friction, elasticity, sensor, collision_layer, collision_mask)
 
+        shape_type = shape_type or self.get_default_shape_type()
+        
+        dims = self.dims if dims is None else dims
+        radius = radius if radius is not None else getattr(self, "radius") if hasattr(self, "radius") else length(dims)
+        
         if shape_type == ShapeTypes.BOX:
-            body.add_box_shape(kwargs.get("size", None))
+            body.add_box_shape(dims.to_tuple())
         elif shape_type == ShapeTypes.CIRCLE:
-            body.add_circle_shape(kwargs.get("radius", None))
+            body.add_circle_shape(radius)
 
         self._physics_body = body
         self.add_flag(ObjectFlags.COLLIDABLE if sensor else ObjectFlags.PHYSICS)
         self._register_body_with_layer()
         return body
+    
+    def add_collision_box(self, shape_type: Optional[Literal["box", "circle"]] = None):
+        self.add_physics_body(shape_type, True, body_type=BodyTypes.STATIC)
 
     def remove_physics_body(self):
         if self._physics_body is not None:

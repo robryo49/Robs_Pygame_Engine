@@ -1,4 +1,5 @@
-from typing import cast
+from __future__ import annotations
+from typing import cast, TYPE_CHECKING
 
 from .layout_objects import LayoutObject
 from .primitive_objects import CircleObject, LineObject, RectObject, TextObject
@@ -7,6 +8,9 @@ from ..behaviors import *
 from ...animation import SetterAnimation
 from ...rendering import CircleRenderer, RectRenderer
 from ...utils import Anchor, Callback, DictCollection, Easing, Transform, clamp, inf, invert_y, vec2
+
+if TYPE_CHECKING:
+    from ..object import PygameObject
 
 
 class ButtonObject(RectObject):

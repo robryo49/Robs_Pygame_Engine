@@ -1,6 +1,9 @@
 from __future__ import annotations
 
+from typing import Literal
+
 from ..object import PygameObject
+from ...physics import ShapeTypes
 from ...rendering import CircleRenderer, LineRenderer, RectRenderer, TextRenderer
 from ...utils import Anchor, Color, DictCollection, Transform, vec2
 
@@ -160,6 +163,10 @@ class CircleObject(PygameObject[CircleRenderer]):
         self.renderer.bd = value
     
     # endregion
+    
+    @staticmethod
+    def get_default_shape_type() -> Literal["box", "circle"]:
+        return ShapeTypes.CIRCLE
 
 
 class LineObject(PygameObject[LineRenderer]):
