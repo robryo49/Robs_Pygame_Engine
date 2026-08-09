@@ -27,6 +27,8 @@ class PhysicsWorld:
         self._bodies: list[PhysicsBody] = []
         self._to_add: list[PhysicsBody] = []
 
+        self._constraints: list[PhysicsConstraint] = []
+
         self._fixed_dt = 1.0 / 120.0
         self._time_accumulator = 0.0
 
@@ -68,6 +70,9 @@ class PhysicsWorld:
         return self
 
     def clear(self) -> "PhysicsWorld":
+        for constraint in list(self._constraints):
+            constraint.remove()
+        self._constraints.clear()
         for body in list(self._bodies):
             body.remove()
         self._bodies.clear()
@@ -81,6 +86,10 @@ class PhysicsWorld:
             body.create_body(self._space)
             self._bodies.append(body)
         self._to_add.clear()
+        self._handle_constraint_additions()
+
+    def _handle_constraint_additions(self):
+        pass
 
     # endregion
 

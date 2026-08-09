@@ -1,11 +1,11 @@
 from __future__ import annotations
 
 import math
-from typing import Optional, TYPE_CHECKING
+from typing import Optional, TYPE_CHECKING, cast
 
 import pymunk
 
-from ..utils import vec2
+from ..utils import Anchor, vec2
 
 if TYPE_CHECKING:
     from ..objects import PygameObject
@@ -51,6 +51,9 @@ class PhysicsBody:
         self._world: Optional[pymunk.Space] = None
 
         self._shape_configs: list[tuple[str, dict]] = []
+        self._constraints: list[pymunk.Constraint] = []
+
+        self._anchor_offset = self._compute_anchor_offset()
 
     # region PROPERTIES
 
@@ -78,6 +81,10 @@ class PhysicsBody:
     def is_dynamic(self) -> bool:
         return self._body is not None and self._body.body_type == pymunk.Body.DYNAMIC
 
+    @property
+    def constraints(self) -> list[pymunk.Constraint]:
+        return self._constraints
+
     # endregion
 
     # region SHAPE DEFERRED CREATION
@@ -104,6 +111,7 @@ class PhysicsBody:
 
     def create_body(self, world: pymunk.Space):
         self._world = world
+        self._anchor_offset = self._compute_anchor_offset()
 
         if self._body_type == BodyTypes.DYNAMIC:
             if self._moment is None:
@@ -112,7 +120,7 @@ class PhysicsBody:
         else:
             self._body = pymunk.Body(body_type=self._body_type)
 
-        self._body.position = self._to_pymunk_pos(self._owner.world_transform.pos)
+        self._body.position = self._to_pymunk_pos(self._get_center_pos())
         self._body.angle = self._to_pymunk_angle(self._owner.world_transform.rotation)
         world.add(self._body)  # type: ignore
 
@@ -153,6 +161,10 @@ class PhysicsBody:
         self._apply_shape_properties(shape)
 
     def remove(self):
+        for constraint in list(self._constraints):
+            constraint.remove()
+        self._constraints.clear()
+
         for shape in self._shapes:
             if shape in self._world.shapes:
                 self._world.remove(shape)
@@ -171,14 +183,14 @@ class PhysicsBody:
         if self._body is None:
             return
 
-        self._body.position = self._to_pymunk_pos(self._owner.world_transform.pos)
+        self._body.position = self._to_pymunk_pos(self._get_center_pos())
         self._body.angle = self._to_pymunk_angle(self._owner.world_transform.rotation)
 
     def sync_from_physics(self):
         if self._body is None or not self.is_dynamic:
             return
 
-        self._owner.set_world_position(self._from_pymunk_pos(self._body.position))
+        self._owner.set_world_position(self._from_pymunk_pos(self._body.position) - self._get_anchor_offset_world())
         self._owner.set_world_rotation(self._from_pymunk_angle(self._body.angle))
 
     # endregion
@@ -227,4 +239,156 @@ class PhysicsBody:
     def _from_pymunk_angle(angle_rad: float) -> float:
         return math.degrees(-angle_rad)
 
+    # endregion
+
+    # region ANCHOR OFFSET
+
+    def _compute_anchor_offset(self) -> vec2:
+        center = self._owner.get_anchor_offset(Anchor.C)
+        anchor = self._owner.get_anchor_offset(self._owner.anchor)
+        return center - anchor
+
+    def _get_anchor_offset_world(self) -> vec2:
+        offset = self._anchor_offset
+        angle = self._owner.world_transform.rotation
+        rad = math.radians(-angle)
+        c, s = math.cos(rad), math.sin(rad)
+        return vec2(offset.x * c - offset.y * s, offset.x * s + offset.y * c)
+
+    def _get_center_pos(self) -> vec2:
+        return self._owner.world_transform.pos + self._get_anchor_offset_world()
+
+    # endregion
+
+    # endregion
+    
+    # region CONSTRAINTS
+    
+    def _get_target_body(self, other: Optional[PygameObject]) -> pymunk.Body:
+        """Helper to validate state and resolve the second body for constraints."""
+        if self._body is None or self._world is None:
+            raise RuntimeError("Body must be created and added to a world before adding constraints")
+        
+        if other is None:
+            return self._world.static_body
+        
+        if other.physics_body is None or cast(PhysicsBody, other.physics_body).body is None:
+            raise ValueError("Other object has no physics body")
+        
+        return cast(pymunk.Body, cast(PhysicsBody, other.physics_body).body)
+    
+    def add_pin_joint(self, pos_a: vec2, pos_b: vec2, distance: Optional[float] = 0.0, other: Optional[PygameObject] = None) -> pymunk.PinJoint:
+        body_b = self._get_target_body(other)
+        anchor_a = (pos_a.x, pos_a.y)
+        anchor_b = (pos_b.x, pos_b.y)
+        
+        constraint = pymunk.PinJoint(cast(pymunk.Body, self._body), body_b, anchor_a, anchor_b)
+        if distance:
+            constraint.distance = distance
+        
+        self._constraints.append(constraint)
+        self._world.add(constraint) # type: ignore
+        return constraint
+    
+    def add_slide_joint(self, pos_a: vec2, pos_b: vec2, min_v: Optional[float] = None, max_v: Optional[float] = None, other: Optional[PygameObject] = None) -> pymunk.SlideJoint:
+        body_b = self._get_target_body(other)
+        anchor_a = (pos_a.x, pos_a.y)
+        anchor_b = (pos_b.x, pos_b.y)
+        
+        min_dist = min_v if min_v is not None else 0.0
+        max_dist = max_v if max_v is not None else self._body.position.get_distance(body_b.position)
+        
+        constraint = pymunk.SlideJoint(cast(pymunk.Body, self._body), body_b, anchor_a, anchor_b, min_dist, max_dist)
+        
+        self._constraints.append(constraint)
+        self._world.add(constraint) # type: ignore
+        return constraint
+    
+    def add_pivot_joint(self, pos_a: vec2, pos_b: vec2, other: Optional[PygameObject] = None) -> pymunk.PivotJoint:
+        body_b = self._get_target_body(other)
+        anchor_a = (pos_a.x, pos_a.y)
+        anchor_b = (pos_b.x, pos_b.y)
+        
+        constraint = pymunk.PivotJoint(cast(pymunk.Body, self._body), body_b, anchor_a, anchor_b)
+        
+        self._constraints.append(constraint)
+        self._world.add(constraint) # type: ignore
+        return constraint
+    
+    def add_groove_joint(self, groove_a: vec2, groove_b: vec2, pos_b: vec2, other: Optional[PygameObject] = None, ) -> pymunk.GrooveJoint:
+        body_b = self._get_target_body(other)
+        anchor_b = (pos_b.x, pos_b.y)
+        groove_a = groove_a.to_tuple()
+        groove_b = groove_b.to_tuple()
+        
+        constraint = pymunk.GrooveJoint(cast(pymunk.Body, self._body), body_b, groove_a, groove_b, anchor_b)
+        
+        self._constraints.append(constraint)
+        self._world.add(constraint) # type: ignore
+        return constraint
+    
+    def add_damped_spring(self, pos_a: vec2, pos_b: vec2, rest_length: Optional[float] = None, stiffness: float = 0.0, damping: float = 0.0, other: Optional[PygameObject] = None) -> pymunk.DampedSpring:
+        body_b = self._get_target_body(other)
+        anchor_a = (pos_a.x, pos_a.y)
+        anchor_b = (pos_b.x, pos_b.y)
+        
+        rest_length = rest_length if rest_length is not None else self._body.position.get_distance(body_b.position)
+        
+        constraint = pymunk.DampedSpring(cast(pymunk.Body, self._body), body_b, anchor_a, anchor_b, rest_length, stiffness, damping)
+        
+        self._constraints.append(constraint)
+        self._world.add(constraint) # type: ignore
+        return constraint
+    
+    def add_damped_rotary_spring(self, rest_angle: float = 0.0, stiffness: float = 0.0, damping: float = 0.0, other: Optional[PygameObject] = None) -> pymunk.DampedRotarySpring:
+        body_b = self._get_target_body(other)
+        
+        constraint = pymunk.DampedRotarySpring(cast(pymunk.Body, self._body), body_b, rest_angle, stiffness, damping)
+        
+        self._constraints.append(constraint)
+        self._world.add(constraint) # type: ignore
+        return constraint
+    
+    def add_rotary_limit_joint(self, min_limit: float = 0.0, max_limit: float = 0.0, other: Optional[PygameObject] = None) -> pymunk.RotaryLimitJoint:
+        body_b = self._get_target_body(other)
+        
+        constraint = pymunk.RotaryLimitJoint(cast(pymunk.Body, self._body), body_b, min_limit, max_limit)
+        
+        self._constraints.append(constraint)
+        self._world.add(constraint) # type: ignore
+        return constraint
+    
+    def add_ratchet_joint(self, phase: float = 0.0, ratchet: float = 0.0, other: Optional[PygameObject] = None) -> pymunk.RatchetJoint:
+        body_b = self._get_target_body(other)
+        
+        constraint = pymunk.RatchetJoint(cast(pymunk.Body, self._body), body_b, phase, ratchet)
+        
+        self._constraints.append(constraint)
+        self._world.add(constraint) # type: ignore
+        return constraint
+    
+    def add_gear_joint(self, phase: float = 0.0, ratio: float = 0.0, other: Optional[PygameObject] = None) -> pymunk.GearJoint:
+        body_b = self._get_target_body(other)
+        
+        constraint = pymunk.GearJoint(cast(pymunk.Body, self._body), body_b, phase, ratio)
+        
+        self._constraints.append(constraint)
+        self._world.add(constraint) # type: ignore
+        return constraint
+    
+    def add_simple_motor(self, rate: float = 0.0, other: Optional[PygameObject] = None) -> pymunk.SimpleMotor:
+        body_b = self._get_target_body(other)
+    
+        constraint = pymunk.SimpleMotor(cast(pymunk.Body, self._body), body_b, rate)
+        
+        self._constraints.append(constraint)
+        self._world.add(constraint) # type: ignore
+        return constraint
+    
+    def remove_constraint(self, constraint: pymunk.Constraint):
+        if constraint in self._constraints:
+            if self._world is not None and constraint in self._world.constraints:
+                self._world.remove(constraint)
+            self._constraints.remove(constraint)
+    
     # endregion
