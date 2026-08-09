@@ -61,16 +61,18 @@ class Transform:
     @rotation.setter
     def rotation(self, value):
         self._rotation = value
+        self.mark_dirty()
     # endregion
-    
+
     # region scale
     @property
     def scale(self):
         return self._scale
-    
+
     @scale.setter
     def scale(self, value):
         self._scale = value
+        self.mark_dirty()
     # endregion
     
     # endregion

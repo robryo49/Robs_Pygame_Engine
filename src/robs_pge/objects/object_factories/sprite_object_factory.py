@@ -12,7 +12,7 @@ class SpriteObjectFactory(SubObjectFactory):
     def make_sprite(
             self, position: vec2, texture: Texture | str, dims: Optional[vec2] = None, width: Optional[int] = None, height: Optional[int] = None,
             rotation: float = 0.0, scale: float = 1.0, layer: int = 1, anchor: vec2 = Anchor.C, cache: bool = True
-    ) -> SpriteObject:
+    ) -> SpriteObject[SpriteRenderer]:
         
         texture = self._get_resource(texture, Texture)
         

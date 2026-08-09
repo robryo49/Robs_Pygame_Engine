@@ -1,7 +1,13 @@
+from __future__ import annotations
+
+from typing import Iterator, TYPE_CHECKING
+
 from .behaviors import ObjectBehavior
 from ..events import Event
 from ..utils import TypedCollection, vec2
 
+if TYPE_CHECKING:
+    from .object import PygameObject
 
 class BehaviorCollection(TypedCollection):
     def __init__(self, owner):
@@ -14,6 +20,9 @@ class BehaviorCollection(TypedCollection):
     @property
     def owner(self):
         return self._owner
+    
+    def __iter__(self) -> Iterator[ObjectBehavior]:
+        return super().__iter__()
     
     # endregion
     
@@ -76,4 +85,12 @@ class BehaviorCollection(TypedCollection):
     def on_scroll(self, scroll: int, pos: vec2):
         for b in self:
             b.on_scroll(scroll, pos)
+            
+    def on_collision(self, obj: PygameObject):
+        for b in self:
+            b.on_collision(obj)
+    
+    def on_collision_end(self, obj: PygameObject):
+        for b in self:
+            b.on_collision_end(obj)
         

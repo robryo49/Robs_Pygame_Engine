@@ -1,16 +1,19 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Callable, Any, Optional
+from typing import Any, Callable, TYPE_CHECKING
 
 from .layer import Layer
 from ..rendering import DrawCommand
+from ..utils import DictCollection
 
 if TYPE_CHECKING:
     from ..core import Camera
 
 
 class LayerManager:
-    def __init__(self):
+    def __init__(self, services: DictCollection):
+        self._services = services
+        
         self._layers: dict[str, Layer] = {}
         self._sorted_layers: list[Layer] = []  # maintained in ascending z-order
     
@@ -34,7 +37,7 @@ class LayerManager:
         layer_id = name.lower().replace(" ", "_")
         if layer_id in self._layers:
             raise ValueError(f"Layer '{layer_id}' already exists")
-        layer = Layer(name, layer_value, camera, interactable)
+        layer = Layer(name, layer_value, camera, self._services, interactable)
         self._layers[layer_id] = layer
         self._rebuild_sorted()
         return layer

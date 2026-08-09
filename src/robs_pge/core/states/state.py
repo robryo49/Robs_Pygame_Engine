@@ -12,10 +12,11 @@ from ...input import InputManager, Keybind, KeybindsManager
 from ...objects import InteractionManager, Layer, LayerManager, ObjectFactory, ParticleSystem, WindowManager, WindowObject
 from ...rendering import LineChartStyle, WindowStyle
 from ...resources import ResourceManager
-from ...utils import Anchor, AsyncProcess, AsyncProcessManager, DictCollection, ObjectLikeType, vec2
+from ...utils import Anchor, AsyncProcess, AsyncProcessManager, DictCollection, vec2, Callback
 
 if TYPE_CHECKING:
     from ..engine import Engine
+    from ...objects import PygameObject
     
     
 
@@ -48,7 +49,7 @@ class State:
         self._services: DictCollection = DictCollection()
         self._factory.services = self._services
         
-        self._layer_manager: LayerManager = LayerManager()
+        self._layer_manager: LayerManager = LayerManager(self._services)
         
         self._debug_layer = self.create_layer("debug", _LAYER_DEBUG, self.engine.default_camera, interactable=False)
         self._ui_layer = self.create_layer("ui", _LAYER_UI, self.engine.default_camera, interactable=True)
@@ -412,13 +413,13 @@ class State:
     
     # region REGISTRATION METHODS
     
-    def add_keybind(self, key: int | tuple[int, ...], action: Callable | tuple[Callable, ...], *args) -> None:
+    def add_keybind(self, key: int | tuple[int, ...], action: Callback[[], Any], *args) -> None:
         self.keybinds.add(Keybind(key, action, *args))
-    
-    def register_event_callback(self, event_type: str, callback: Callable[[Event], Any], condition: Optional[Callable[[Event], bool]] = None) -> None:
+
+    def register_event_callback(self, event_type: str, callback: Callback[[Event], Any], condition: Optional[Callable[[Event], bool]] = None) -> None:
         self.event_manager.register(event_type, callback, condition)
     
-    def add_object(self, layer: str, *obj: ObjectLikeType | list[ObjectLikeType]) -> None:
+    def add_object(self, layer: str, *obj: PygameObject | list[PygameObject]) -> None:
         for o in obj:
             self._layer_manager.add_object(layer, o)
     
@@ -468,4 +469,13 @@ class State:
     def render(self) -> None:
         for layer in self._layer_manager.sorted_layers:
             layer.render(self.renderer.draw)
+
+    # region PHYSICS
+
+    def enable_physics(self, layer_name: str = "world", gravity: vec2 = vec2(0, 980)):
+        layer = self._layer_manager.get_layer(layer_name)
+        pw = layer.enable_physics(gravity)
+        return pw
+
+    # endregion
     

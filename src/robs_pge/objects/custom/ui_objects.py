@@ -1,16 +1,16 @@
 from typing import cast
 
-from .primitive_objects import LineObject, RectObject, CircleObject, TextObject
-from .sprite_objects import SpriteObject, IconObject
 from .layout_objects import LayoutObject
+from .primitive_objects import CircleObject, LineObject, RectObject, TextObject
+from .sprite_objects import IconObject, SpriteObject
 from ..behaviors import *
-from ...rendering import CircleRenderer, RectRenderer
-from ...utils import Anchor, DictCollection, Easing, Transform, vec2, clamp, inf, invert_y
 from ...animation import SetterAnimation
+from ...rendering import CircleRenderer, RectRenderer
+from ...utils import Anchor, Callback, DictCollection, Easing, Transform, clamp, inf, invert_y, vec2
 
 
 class ButtonObject(RectObject):
-    def __init__(self, transform: Transform, background: RectRenderer, text: TextObject, action: Optional[Callable | tuple[Callable, ...]], services: DictCollection, sub_layer: int = 0, anchor: vec2 = Anchor.C):
+    def __init__(self, transform: Transform, background: RectRenderer, text: TextObject, action: Callback[..., Any], services: DictCollection, sub_layer: int = 0, anchor: vec2 = Anchor.C):
         
         super().__init__(transform, background, services, sub_layer, anchor)
         
@@ -48,7 +48,7 @@ class ButtonObject(RectObject):
 
 
 class SpriteButtonObject(RectObject):
-    def __init__(self, transform: Transform, background: RectRenderer, sprite: SpriteObject, action: Optional[Callable | tuple[Callable, ...]], services: DictCollection, sub_layer: int = 0, anchor: vec2 = Anchor.C):
+    def __init__(self, transform: Transform, background: RectRenderer, sprite: SpriteObject, action: Callback[..., Any], services: DictCollection, sub_layer: int = 0, anchor: vec2 = Anchor.C):
         
         super().__init__(transform, background, services, sub_layer, anchor)
         
@@ -110,7 +110,7 @@ class IconButtonObject(SpriteButtonObject):
 
 
 class CycleButtonObject(ButtonObject):
-    def __init__(self, transform: Transform, background: RectRenderer, text: TextObject, texts: tuple[str, ...], values: tuple[Any, ...], callback: Optional[Callable[[Any], Any] | tuple[Callable[[Any], Any], ...]], services: DictCollection, sub_layer: int = 0, anchor: vec2 = Anchor.C):
+    def __init__(self, transform: Transform, background: RectRenderer, text: TextObject, texts: tuple[str, ...], values: tuple[Any, ...], callback: Callback[[Any], Any], services: DictCollection, sub_layer: int = 0, anchor: vec2 = Anchor.C):
         super().__init__(transform, background, text, None, services, sub_layer, anchor)
         
         self._texts = texts
@@ -162,7 +162,7 @@ class CycleButtonObject(ButtonObject):
 
 
 class CheckBoxObject(RectObject):
-    def __init__(self, transform: Transform, background: RectRenderer, checked_icon: IconObject, callback: Optional[Callable[[bool], Any] | tuple[Callable[[bool], Any], ...]],
+    def __init__(self, transform: Transform, background: RectRenderer, checked_icon: IconObject, callback: Callback[[bool], Any],
                  services: DictCollection, sub_layer: int = 0, anchor: vec2 = Anchor.C):
         super().__init__(transform, background, services, sub_layer, anchor)
         
@@ -197,7 +197,7 @@ class CheckBoxObject(RectObject):
 
 
 class RadioButtonObject(CircleObject):
-    def __init__(self, transform: Transform, background: CircleRenderer, tick: CircleObject, callback: Optional[Callable[[bool], Any] | tuple[Callable[[bool], Any], ...]],
+    def __init__(self, transform: Transform, background: CircleRenderer, tick: CircleObject, callback: Callback[[bool], Any],
                  services: DictCollection, sub_layer: int = 0, anchor: vec2 = Anchor.C):
         super().__init__(transform, background, services, sub_layer, anchor)
         
@@ -232,7 +232,7 @@ class RadioButtonObject(CircleObject):
         
 
 class ToggleButtonObject(RectObject):
-    def __init__(self, transform: Transform, background: RectRenderer, toggle: RectObject, toggle_background: RectObject, toggle_movement_range: tuple[int, int], callback: Optional[Callable[[bool], Any] | tuple[Callable[[bool], Any], ...]],
+    def __init__(self, transform: Transform, background: RectRenderer, toggle: RectObject, toggle_background: RectObject, toggle_movement_range: tuple[int, int], callback: Callback[[bool], Any],
                  services: DictCollection, sub_layer: int = 0, anchor: vec2 = Anchor.C):
         super().__init__(transform, background, services, sub_layer, anchor)
         

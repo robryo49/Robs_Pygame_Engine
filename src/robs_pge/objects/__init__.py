@@ -13,7 +13,8 @@ from .behaviors import (
     AttributeGridSnappingBehavior,
     AttributeValueSnappingBehavior,
     AttributeClampingBehavior,
-    AttributeFixingBehavior
+    AttributeFixingBehavior,
+    ActionOnCollisionBehavior
 )
 from .behavior_collection import BehaviorCollection
 from .interaction_manager import InteractionManager
@@ -43,6 +44,7 @@ __all__ = [
     "AddToAttributeOnClickBehavior", "AddToAttributeOnHoverBehavior",
     "SetAttributeOnClickBehavior", "SetAttributeOnHoverBehavior",
     "DynamicAttributeBehavior", "DraggableBehavior", "AttributeClampingBehavior", "AttributeGridSnappingBehavior", "AttributeValueSnappingBehavior", "AttributeFixingBehavior",
+    "ActionOnCollisionBehavior",
     "BehaviorCollection",
     # core
     "InteractionManager",

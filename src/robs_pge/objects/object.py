@@ -1,7 +1,6 @@
 from __future__ import annotations
 
-import inspect
-from typing import TypeVar, cast
+from typing import Literal, TypeVar, cast
 
 from .behavior_collection import BehaviorCollection
 from .behaviors import *
@@ -9,14 +8,12 @@ from .object_collection import ObjectCollection
 from ..animation import Animation, AnimationManager
 from ..debug import QuickDebugManager
 from ..events import Event, EventManager
+from ..physics import PhysicsBody, ShapeTypes
 from ..rendering import DrawCommand, ObjectRenderer
-from ..utils import Anchor, DictCollection, FRect, ObjectFlags, Transform, vec2
+from ..utils import Anchor, Callback, DictCollection, FRect, ObjectFlags, ObjectTags, Transform, vec2
 
 if TYPE_CHECKING:
-    from ..objects import PygameObject
     from .layer import Layer
-    
-    ObjectCallBackType = Optional[Callable[[PygameObject], Any] | tuple[Callable[[PygameObject], Any], ...] | Callable | tuple[Callable, ...]]
 
 
 R = TypeVar('R', bound=ObjectRenderer)
@@ -24,6 +21,7 @@ R = TypeVar('R', bound=ObjectRenderer)
 
 class PygameObject[R]:
     DEFAULT_FLAGS = ObjectFlags.CULLABLE
+    DEFAULT_TAGS = ObjectTags.NONE
     
     def __init__(self, transform: Transform, renderer: R, services: DictCollection, sub_layer: int=0, anchor: vec2=Anchor.C):
         self._transform = transform
@@ -32,7 +30,9 @@ class PygameObject[R]:
         self._layer: Optional[Layer] = None
         self._sub_layer = sub_layer
         
-        self._flags = PygameObject.DEFAULT_FLAGS
+        self._flags = self.DEFAULT_FLAGS
+        self._tags = self.DEFAULT_TAGS
+        
         self._behaviors = BehaviorCollection(self)
         self._services = services
         
@@ -58,22 +58,24 @@ class PygameObject[R]:
         self._cached_visible = True
         self._visible_dirty = True
 
+        self._physics_body: Optional[PhysicsBody] = None
+
     # region PROPERTIES
     
     @property
-    def dims(self):
+    def dims(self) -> vec2:
         return vec2() if self.renderer is None else self.renderer.dims
     
     @property
-    def width(self):
+    def width(self) -> float:
         return 0 if self.renderer is None else self.renderer.width
     
     @property
-    def height(self):
+    def height(self) -> float:
         return 0 if self.renderer is None else self.renderer.height
     
     @property
-    def culled(self):
+    def culled(self) -> bool:
         return self._culled
     
     @property
@@ -81,7 +83,7 @@ class PygameObject[R]:
         return self._renderer
     
     @property
-    def transform(self):
+    def transform(self) -> Transform:
         return self._transform
     
     def _invalidate_world_transform(self):
@@ -101,7 +103,8 @@ class PygameObject[R]:
         # noinspection protected-member
         if self._transform._dirty:
             self._invalidate_world_transform()
-        
+            self._transform._dirty = False
+
         if not self._world_transform_dirty:
             return cast(Transform, self._cached_world_transform)
         
@@ -446,23 +449,44 @@ class PygameObject[R]:
         
     
     @property
-    def flags(self):
+    def flags(self) -> ObjectFlags:
         return self._flags
     
-    def add_flag(self, flag):
+    def add_flag(self, flag: ObjectFlags):
         self._flags |= flag
         if flag & ObjectFlags.HIDDEN:
             self._invalidate_visible()
         return self
         
-    def remove_flag(self, flag):
+    def remove_flag(self, flag: ObjectFlags):
         self._flags &= ~flag
         if flag & ObjectFlags.HIDDEN:
             self._invalidate_visible()
         return self
     
-    def has_flag(self, flag):
+    def has_flag(self, flag: ObjectFlags):
         return (int(self._flags) & int(flag)) == int(flag)
+    
+    
+    @property
+    def tags(self) -> ObjectTags:
+        return self._tags
+    
+    def add_tag(self, tag: ObjectTags):
+        self._tags |= tag
+        if tag & ObjectFlags.HIDDEN:
+            self._invalidate_visible()
+        return self
+        
+    def remove_tag(self, tag: ObjectTags):
+        self._tags &= ~tag
+        if tag & ObjectFlags.HIDDEN:
+            self._invalidate_visible()
+        return self
+    
+    def has_tag(self, tag: ObjectTags):
+        return (int(self._tags) & int(tag)) == int(tag)
+    
     
     @property
     def behaviors(self):
@@ -478,44 +502,61 @@ class PygameObject[R]:
     
     # endregion
     
+    def set_world_position(self, world_pos):
+        parent = self.parent
+        if parent is None:
+            layer = self.layer
+            if layer:
+                local_pos = layer.world_to_local_pos(world_pos)
+                self.transform.pos = local_pos
+        else:
+            local_pos = parent.world_transform.apply_inverse_on_point(world_pos)
+            anchor_offset = parent.get_anchor_offset(self._parent_anchor - parent.anchor)
+            self.transform.pos = local_pos - anchor_offset
+    
+    def set_world_rotation(self, world_rotation: float):
+        parent = self.parent
+        if parent is None:
+            self.transform.rotation = world_rotation
+        else:
+            self.transform.rotation = world_rotation - parent.world_transform.rotation
+    
     def get_service[T](self, cls: type[T]) -> T:
         return self._services.get(cls)
     
     # region REGISTRATION METHODS
     
-    def register_event_callback(self, event_type: str, callback: Callable[[Event], Any]):
+    def register_event_callback(self, event_type: str, callback: Callback[[Event], Any]):
         self.get_service(EventManager).register(event_type, callback)
         return self
-        
-    def add_quick_debug(self, getter: Callable[[], Any] | Callable[[PygameObject], Any], template: str = "{}"):
-        arg_count = len(inspect.signature(getter).parameters)
-        if arg_count == 0:
-            self.get_service(QuickDebugManager).add_listener(getter, template)
-        if arg_count == 1:
-            self.get_service(QuickDebugManager).add_listener(lambda: getter(self), template)
-        else:
-            raise AttributeError("Can't accept method with more than 1 parameter")
+
+    def add_quick_debug(self, getter: Callable[[PygameObject], Any], template: str = "{}"):
+        self.get_service(QuickDebugManager).add_listener(lambda: getter(self), template)
         return self
-        
-    def do_on_update(self, action: ObjectCallBackType):
+
+    def do_on_update(self, action: Callback[[PygameObject], Any]):
         self.add_behavior(ActionOnUpdateBehavior(action))
         return self
-        
-    def do_on_click(self, button: int, on_click: Optional[ObjectCallBackType] = None, on_hold: Optional[ObjectCallBackType] = None, on_release: Optional[ObjectCallBackType] = None):
+
+    def do_on_click(self, button: int, on_click: Callback[[PygameObject], Any] = None, on_hold: Callback[[PygameObject], Any] = None, on_release: Callback[[PygameObject], Any] = None):
         if on_click or on_hold or on_release:
             self.add_behavior(ActionOnClickBehavior(button, on_click, on_hold, on_release))
         return self
-            
-    def do_on_hover(self, hover_start: ObjectCallBackType = None, while_hovered: ObjectCallBackType = None, hover_end: ObjectCallBackType = None):
+
+    def do_on_hover(self, hover_start: Callback[[PygameObject], Any] = None, while_hovered: Callback[[PygameObject], Any] = None, hover_end: Callback[[PygameObject], Any] = None):
         if hover_start or while_hovered or hover_end:
             self.add_behavior(ActionOnHoverBehavior(hover_start, while_hovered, hover_end))
         return self
-    
-    def do_on_scroll(self, action: Optional[Callable[[PygameObject, int, vec2], Any] | tuple[Callable[[PygameObject, int, vec2], Any], ...]]):
+
+    def do_on_scroll(self, action: Callback[[PygameObject, int, vec2], Any]):
         if action is not None:
             self.add_behavior(ActionOnScrollBehavior(action))
         return self
-            
+
+    def do_on_collision(self, on_collision: Callback[[PygameObject, PygameObject], Any] = None, while_colliding: Callback[[PygameObject, PygameObject], Any] = None, on_collision_end: Callback[[PygameObject, PygameObject], Any] = None, condition_on_other: Optional[Callable[[PygameObject], bool]] = None):
+        if on_collision or while_colliding or on_collision_end:
+            self.add_behavior(ActionOnCollisionBehavior(on_collision, while_colliding, on_collision_end, condition_on_other))
+    
     def make_attribute_dynamic(self, attribute: str, getter: Any | Callable[[], Any | tuple[Any, ...]], template: Optional[str] = None, strength: float = 1):
         self.add_behavior(DynamicAttributeBehavior(attribute, getter, template, strength))
         return self
@@ -539,7 +580,47 @@ class PygameObject[R]:
     def make_draggable(self, button: int = 1, target: Optional["PygameObject"] = None):
         self.add_behavior(DraggableBehavior(button, target))
         return self
-    
+
+    # endregion
+
+    # region PHYSICS
+
+    @property
+    def physics_body(self) -> Optional[PhysicsBody]:
+        return self._physics_body
+
+    @property
+    def has_physics(self) -> bool:
+        return self._physics_body is not None
+
+    def add_physics_body(self, shape_type: Literal["box", "circle"] = ShapeTypes.BOX, sensor: bool = False, **kwargs) -> PhysicsBody:
+        body = PhysicsBody(self, sensor=sensor, **kwargs)
+
+        if shape_type == ShapeTypes.BOX:
+            body.add_box_shape(kwargs.get("size", None))
+        elif shape_type == ShapeTypes.CIRCLE:
+            body.add_circle_shape(kwargs.get("radius", None))
+
+        self._physics_body = body
+        self.add_flag(ObjectFlags.COLLIDABLE if sensor else ObjectFlags.PHYSICS)
+        self._register_body_with_layer()
+        return body
+
+    def remove_physics_body(self):
+        if self._physics_body is not None:
+            self._unregister_body_from_layer()
+            self._physics_body.remove()
+            self._physics_body = None
+            self.remove_flag(ObjectFlags.COLLIDABLE | ObjectFlags.PHYSICS)
+
+    def _register_body_with_layer(self):
+        if self._physics_body and self._layer and self._layer.physics_world:
+            self._layer.physics_world.add_body(self._physics_body)
+
+    def _unregister_body_from_layer(self):
+        if self._physics_body and self._layer and self._layer.physics_world:
+            self._layer.physics_world.remove_body(self._physics_body)
+
     # endregion
     
     # region BEHAVIOR METHODS
@@ -564,6 +645,12 @@ class PygameObject[R]:
         
     def on_scroll(self, scroll: int, pos: vec2):
         self.behaviors.on_scroll(scroll, pos)
+        
+    def on_collision(self, obj: PygameObject):
+        self.behaviors.on_collision(obj)
+    
+    def on_collision_end(self, obj: PygameObject):
+        self.behaviors.on_collision_end(obj)
     
     # endregion
     

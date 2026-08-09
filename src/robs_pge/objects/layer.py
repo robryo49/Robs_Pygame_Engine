@@ -1,26 +1,33 @@
 from __future__ import annotations
 
-from typing import Any, Callable, Optional, TYPE_CHECKING
+from typing import Any, Callable, Optional, TYPE_CHECKING, cast
 
 from .object_collection import ObjectCollection
+from .object import PygameObject
+from ..physics import PhysicsWorld
+from ..events import EventManager
 from ..rendering import DrawCommand
-from ..utils import CoordinateSystem, vec2, ObjectLikeType
+from ..utils import CoordinateSystem, DictCollection, vec2
 
 if TYPE_CHECKING:
     from ..core import Camera
 
 
 class Layer:
-    def __init__(self, name: str, layer_value: float, camera: Camera, interactable: bool = True, coordinate_system: Optional[CoordinateSystem] = None):
+    def __init__(self, name: str, layer_value: float, camera: Camera, services: DictCollection, interactable: bool = True, coordinate_system: Optional[CoordinateSystem] = None):
         self._id = name.lower().replace(" ", "_")
         self._layer_value = layer_value
         self._interactable = interactable
         
+        self._services = services
+        
         self._coordinate_system = coordinate_system or CoordinateSystem()
         self._camera: Camera = camera
-        
+
         self._objects = ObjectCollection()
-        
+
+        self._physics_world: Optional[PhysicsWorld] = None
+
         super().__init__()
         
     # region PROPERTIES
@@ -53,6 +60,18 @@ class Layer:
     def coordinate_system(self) -> CoordinateSystem:
         return self._coordinate_system
     
+    @property
+    def event_manager(self) -> EventManager:
+        return cast(EventManager, self._services.get(EventManager))
+
+    @property
+    def physics_world(self) -> Optional[PhysicsWorld]:
+        return self._physics_world
+
+    @property
+    def has_physics(self) -> bool:
+        return self._physics_world is not None
+
     # endregion
     
     # region COORDINATES CONVERSION METHODS
@@ -116,12 +135,17 @@ class Layer:
     
     # region Object Management
     
-    def add_object(self, obj: ObjectLikeType | list[ObjectLikeType]) -> None:
+    def add_object(self, obj: PygameObject | list[PygameObject]) -> None:
         self.objects.add_object(obj)
         for o in obj if isinstance(obj, list) else [obj]:
             o.layer = self
-    
-    def remove_object(self, obj: ObjectLikeType | list[ObjectLikeType]) -> None:
+            if self._physics_world and o.has_physics and (body := o.physics_body) is not None:
+                self._physics_world.add_body(body)
+
+    def remove_object(self, obj: PygameObject | list[PygameObject]) -> None:
+        for o in obj if isinstance(obj, list) else [obj]:
+            if self._physics_world and o.has_physics and (body := o.physics_body) is not None:
+                self._physics_world.remove_body(body)
         self.objects.remove_object(obj)
         for o in obj if isinstance(obj, list) else [obj]:
             o.layer = None
@@ -151,15 +175,41 @@ class Layer:
     # endregion
     
     # region Lifecycle Methods
-    
+
     def update(self, dt: float) -> Layer:
         self.objects.update(dt)
+        if self._physics_world:
+            self._physics_world.update(dt)
         return self
-    
+
     def render(self, submit: Callable[[DrawCommand], Any]) -> Layer:
         self.objects.render(submit)
         return self
-    
+
+    # endregion
+
+    # region PHYSICS
+
+    def enable_physics(self, gravity: vec2 = vec2(0, 980)) -> PhysicsWorld:
+        if self._physics_world is None:
+            self._physics_world = PhysicsWorld(self, gravity=gravity)
+            self._register_existing_bodies()
+        return cast(PhysicsWorld, self._physics_world)
+
+    def _register_existing_bodies(self):
+        if not self._physics_world:
+            return
+        # noinspection protected-member
+        self.objects._handle_object_additions()
+        for obj in self.objects:
+            if obj.has_physics:
+                self._physics_world.add_body(obj.physics_body)
+
+    def disable_physics(self):
+        if self._physics_world:
+            self._physics_world.clear()
+            self._physics_world = None
+
     # endregion
     
     def __iter__(self):

@@ -1,8 +1,8 @@
-from .primitive_objects import RectObject, TextObject
+from .primitive_objects import RectObject
 from ..behaviors import *
 from ..object import PygameObject
 from ...rendering import RectRenderer
-from ...utils import Anchor, DictCollection, Transform, vec2, clamp, inf
+from ...utils import Anchor, DictCollection, Transform, clamp, inf, vec2
 
 
 class LayoutObject(RectObject):

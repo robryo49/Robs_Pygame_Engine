@@ -3,7 +3,7 @@ from typing import Optional
 from pyglm import glm
 
 from .display import Display
-from ..utils import FRect, Transform, rotate, vec2
+from ..utils import Transform, vec2
 
 
 class Camera:

@@ -1,7 +1,7 @@
-from typing import Callable, Optional
+from typing import Optional
 
 from .tween import Tween
-from ..utils import Easing, add, subtract, multiply, power, EasingFunctionType
+from ..utils import Easing, EasingFunctionType, add, multiply, power, subtract
 
 
 class Animation:

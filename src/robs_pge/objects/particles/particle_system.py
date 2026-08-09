@@ -1,13 +1,13 @@
 from __future__ import annotations
-from typing import Optional, TYPE_CHECKING
+
+from typing import TYPE_CHECKING
 
 import numpy as np
 
-from ...utils import vec2, Transform, Anchor, Colors
-from ...rendering import CircleStyle, DrawCircle, DrawTexture
-
-from .particle import Particle, FadingTypes
+from .particle import FadingTypes, Particle
 from .particle_pool import ParticlePool
+from ...rendering import CircleStyle, DrawCircle, DrawTexture
+from ...utils import Anchor, Colors, Transform, vec2
 
 if TYPE_CHECKING:
     from ...objects import Layer

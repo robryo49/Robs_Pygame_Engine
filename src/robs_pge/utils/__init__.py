@@ -2,13 +2,10 @@ from .math import *
 from .font import Font
 from .color import Color, Colors, ColorPalette
 from .flags import ObjectFlags, KeybindFlags
+from .tags import ObjectTags
 from .keys import Keybinds
 from .collection import Collection, DictCollection, TypedCollection, TypedDictCollection
-from .types import (
-    Vec2Like, Vec3Like, validate_signature, CallbackLike,
-    RenderableType, UpdatableType, ObjectLikeType,
-    EasingFunctionType, StyleOrName, ValueOrGetter
-)
+from .types import Vec2Like, Vec3Like, Callback, EasingFunctionType, StyleOrName, ValueOrGetter, validate_signature
 from .array_tools import *
 from .async_tools import *
 
@@ -29,15 +26,13 @@ __all__ = [
     # color
     "Color", "Colors", "ColorPalette",
     # flags
-    "ObjectFlags", "KeybindFlags",
+    "ObjectFlags", "KeybindFlags", "ObjectTags",
     # keys
     "Keybinds",
     # collection
     "Collection", "DictCollection", "TypedDictCollection", "TypedCollection",
     # types
-    "Vec2Like", "Vec3Like", "validate_signature", "CallbackLike",
-    "RenderableType", "UpdatableType", "ObjectLikeType",
-    "EasingFunctionType", "StyleOrName", "ValueOrGetter",
+    "Vec2Like", "Vec3Like", "Callback", "EasingFunctionType", "StyleOrName", "ValueOrGetter", "validate_signature",
     # array_tools
     "make_linear_gradient_array", "make_angular_gradient_array", "make_radial_gradient_array",
     "make_circle_mask", "make_rect_mask",

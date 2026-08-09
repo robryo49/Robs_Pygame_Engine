@@ -1,12 +1,12 @@
 from random import randrange
-from typing import Callable, Optional
+from typing import Optional
 
 import numpy as np
 
-from ...resources import Texture
-from ...utils import Color, Colors, vec2, random, EasingFunctionType
 from .particle import FadingTypes
 from .particle_system import ParticleSystem
+from ...resources import Texture
+from ...utils import Color, Colors, EasingFunctionType, random, vec2
 
 
 class ParticleEmitter:

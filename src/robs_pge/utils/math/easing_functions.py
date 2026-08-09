@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING
 from .functions import clamp
 
 if TYPE_CHECKING:
-    from robs_pge.utils.types import EasingFunctionType
+    from ..types import EasingFunctionType
 
 
 class Easing:

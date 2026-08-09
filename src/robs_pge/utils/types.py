@@ -17,7 +17,7 @@ type Vec2Like = vec2 | np.ndarray | tuple[float, float]
 type Vec3Like = vec3 | np.ndarray | tuple[float, float, float]
 
 
-type CallbackLike = Callable | tuple[Callable, ...] | None
+type Callback[**P, T] = Callable[P, T] | tuple[Callable[P, T], ...] | None
 
 type EasingFunctionType = Callable[[float], float]
 type StyleOrName[T] = Optional[T | str]

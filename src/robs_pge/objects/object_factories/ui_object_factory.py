@@ -1,4 +1,4 @@
-from typing import Any, Callable, Optional
+from typing import Any, Optional
 
 from pygame import FRect
 
@@ -11,6 +11,7 @@ from ..object import PygameObject
 from ...rendering import CircleStyle, LineChartStyle, LineStyle, ProgressBarStyle, RectRenderer, RectStyle, SliderStyle, WindowStyle, ScrollbarStyle, IconButtonStyle
 from ...resources import Icons
 from ...utils import Anchor, StyleOrName, length, vec2, clamp
+from ...utils.types import Callback
 
 
 class UIObjectFactory(SubObjectFactory):
@@ -88,7 +89,7 @@ class UIObjectFactory(SubObjectFactory):
     
     def make_line_chart(
             self, position: vec2, dims: vec2, style: StyleOrName[LineChartStyle] = None, pad_x=0, pad_y=0, min_x=None, max_x=None, min_y=None, max_y=None,
-            max_data_points=None, max_data_x_range=None, update_action: Optional[Callable[[PygameObject], Any] | tuple[Callable[[PygameObject], Any], ...]]=None,
+            max_data_points=None, max_data_x_range=None, update_action: Callback[[PygameObject], Any] = None,
             rotation: float = 0.0, scale: float = 1.0, layer: int = 0, anchor: vec2 = Anchor.C, cache: bool = True, cache_line: bool = False
     ) -> LineChartObject:
         

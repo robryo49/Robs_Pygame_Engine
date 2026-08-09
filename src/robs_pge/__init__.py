@@ -8,9 +8,9 @@ from .objects import (
     LayoutObject, DebugOverlay,
     ButtonObject, ProgressBarObject, LineChartObject,
     ObjectFactory, ObjectCollection, ObjectBehavior,
-    Layer
+    Layer, TextObject
 )
-from .objects.custom import TextObject
+from .physics import PhysicsBody, BodyTypes, PhysicsWorld
 from .utils import (
     vec2,
     Transform, Easing, Anchor, Rect,
@@ -55,5 +55,9 @@ __all__ = [
     "ShapeStyle", "LineChartStyle", "PolygonStyle", "ProgressBarStyle", "DebugPanelStyle",
     "SliderStyle", "IconButtonStyle", "RadioButtonStyle", "SpriteButtonStyle", "ToggleButtonStyle",
     "WindowStyle",
-    "ScrollbarStyle"
+    "ScrollbarStyle",
+    # collision
+    "PhysicsBody",
+    "BodyTypes",
+    "PhysicsWorld"
 ]

@@ -5,25 +5,23 @@ from typing import Any, Callable, Optional, TYPE_CHECKING
 from .behavior import ObjectBehavior
 from ..animation import AdderAnimation, Animation, AnimationManager, MultiplierAnimation, SetterAnimation
 from ..events import Event
-from ..utils import ObjectFlags, vec2, clamp, inf, lerp, EasingFunctionType
+from ..utils import ObjectFlags, vec2, clamp, inf, lerp, EasingFunctionType, Callback
 
 if TYPE_CHECKING:
     from ..core import Camera
     from ..objects import PygameObject
-    
-    ObjectCallBackType = Optional[Callable[[PygameObject], Any] | tuple[Callable[[PygameObject], Any], ...] | Callable | tuple[Callable, ...]]
 
 
 # region ACTION BEHAVIORS
 
 
 class ActionOnEventBehavior(ObjectBehavior):
-    def __init__(self, event: str | Event | tuple[str | Event, ...], action: ObjectCallBackType):
+    def __init__(self, event: str | Event | tuple[str | Event, ...], action: Callback[[PygameObject], Any]):
         super().__init__()
-        
+
         self._event = event
-        
-        self._action = self._normalize_action(action) # type: ignore
+
+        self._action = action
     
     def on_event(self, event: str | Event):
         
@@ -39,23 +37,23 @@ class ActionOnEventBehavior(ObjectBehavior):
         self._exec(self._action, self.owner)
         
 class ActionOnUpdateBehavior(ObjectBehavior):
-    def __init__(self, action: ObjectCallBackType):
+    def __init__(self, action: Callback[[PygameObject], Any]):
         super().__init__()
-        
-        self._action = self._normalize_action(action) # type: ignore
-        
+
+        self._action = action
+
     def on_update(self, dt: float):
         self._exec(self._action, self.owner)
-    
+
 class ActionOnClickBehavior(ObjectBehavior):
-    def __init__(self, button: int, on_click: ObjectCallBackType = None, on_hold: ObjectCallBackType = None, on_release: ObjectCallBackType = None):
+    def __init__(self, button: int, on_click: Callback[[PygameObject], Any] = None, on_hold: Callback[[PygameObject], Any] = None, on_release: Callback[[PygameObject], Any] = None):
         super().__init__()
-        
+
         self._button = button
-        
-        self._on_click = self._normalize_action(on_click) # type: ignore
-        self._on_hold = self._normalize_action(on_hold) # type: ignore
-        self._on_release = self._normalize_action(on_release) # type: ignore
+
+        self._on_click = on_click
+        self._on_hold = on_hold
+        self._on_release = on_release
         
     def on_attach(self):
         self.owner.add_flag(ObjectFlags.CLICKABLE)
@@ -70,12 +68,12 @@ class ActionOnClickBehavior(ObjectBehavior):
         self._exec(self._on_release, self.owner)
         
 class ActionOnHoverBehavior(ObjectBehavior):
-    def __init__(self, hover_start: ObjectCallBackType = None, while_hovered: ObjectCallBackType = None, hover_end: ObjectCallBackType = None):
+    def __init__(self, hover_start: Callback[[PygameObject], Any] = None, while_hovered: Callback[[PygameObject], Any] = None, hover_end: Callback[[PygameObject], Any] = None):
         super().__init__()
-        
-        self._on_hover_start = self._normalize_action(hover_start) # type: ignore
-        self._on_hover = self._normalize_action(while_hovered) # type: ignore
-        self._on_hover_end = self._normalize_action(hover_end) # type: ignore
+
+        self._on_hover_start = hover_start
+        self._on_hover = while_hovered
+        self._on_hover_end = hover_end
         
     def on_attach(self):
         self.owner.add_flag(ObjectFlags.HOVERABLE)
@@ -90,16 +88,47 @@ class ActionOnHoverBehavior(ObjectBehavior):
         self._exec(self._on_hover_end, self.owner)
         
 class ActionOnScrollBehavior(ObjectBehavior):
-    def __init__(self, action: Optional[Callable[[PygameObject, int, vec2], Any] | tuple[Callable[[PygameObject, int, vec2], Any], ...]] = None):
+    def __init__(self, action: Callback[[PygameObject, int, vec2], Any] = None):
         super().__init__()
-        
+
         self._action = action
-        
+
     def on_attach(self):
         self.owner.add_flag(ObjectFlags.SCROLLABLE)
-        
+
     def on_scroll(self, scroll: int, pos: vec2):
         self._exec(self._action, self.owner, scroll, pos)
+
+class ActionOnCollisionBehavior(ObjectBehavior):
+    def __init__(self, on_collision: Callback[[PygameObject, PygameObject], Any] = None, while_colliding: Callback[[PygameObject, PygameObject], Any] = None, on_collision_end: Callback[[PygameObject, PygameObject], Any] = None,
+                 condition_on_other: Optional[Callable[[PygameObject], bool]] = None):
+        super().__init__()
+
+        self._on_collision_action = on_collision
+        self._while_colliding_action = while_colliding
+        self._on_collision_end_action = on_collision_end
+
+        self._condition_on_other = condition_on_other
+        
+        self._colliding_objects: list[PygameObject] = []
+        
+    def _validate(self, obj: PygameObject) -> bool:
+        return self._condition_on_other is None or self._condition_on_other(obj)
+        
+    def on_collision(self, obj: PygameObject):
+        if self._validate(obj):
+            self._exec(self._on_collision_action, self.owner, obj)
+            self._colliding_objects.append(obj)
+        
+    def on_update(self, dt: float):
+        if self._colliding_objects:
+            for obj in self._colliding_objects:
+                self._exec(self._while_colliding_action, self.owner, obj)
+        
+    def on_collision_end(self, obj: PygameObject):
+        if self._validate(obj):
+            self._exec(self._on_collision_end_action, self.owner, obj)
+            self._colliding_objects.remove(obj)
 
 
 # endregion

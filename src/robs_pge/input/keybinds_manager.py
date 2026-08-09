@@ -76,10 +76,11 @@ class KeybindsManager:
         for keybinds in self._keybinds.values():
             for keybind in keybinds:
                 if self._test_keybind(keybind):
-                    if isinstance(keybind.action, tuple):
-                        for action in keybind.action:
-                            action()
-                    else:
-                        keybind.action()
-                    
+                    if keybind.action is not None:
+                        if isinstance(keybind.action, tuple):
+                            for action in keybind.action:
+                                action()
+                        else:
+                            keybind.action()
+
         return self

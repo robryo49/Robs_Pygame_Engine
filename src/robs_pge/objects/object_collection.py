@@ -3,19 +3,20 @@ from __future__ import annotations
 from typing import Any, Callable, Iterable, TYPE_CHECKING
 
 from ..rendering import DrawCommand
-from ..utils import ObjectLikeType, TypedCollection
+from ..utils import TypedCollection
 
 if TYPE_CHECKING:
-    pass
-
+    from ..objects import PygameObject
+    
 
 class ObjectCollection(TypedCollection):
-    def __init__(self, objects: Iterable[ObjectLikeType] = ()):
+    def __init__(self, objects: Iterable[PygameObject] = ()):
+        from ..objects import PygameObject
         
-        super().__init__(ObjectLikeType, objects)
+        super().__init__(PygameObject, objects)
         
-        self._to_remove: list[ObjectLikeType] = []
-        self._to_add: list[ObjectLikeType] = []
+        self._to_remove: list[PygameObject] = []
+        self._to_add: list[PygameObject] = []
         
         self._frozen = False
         self._rendering_enabled = True
@@ -76,7 +77,7 @@ class ObjectCollection(TypedCollection):
         self._to_remove.clear()
         return self
     
-    def add_object(self, obj: ObjectLikeType | list[ObjectLikeType]) -> "ObjectCollection":
+    def add_object(self, obj: PygameObject | list[PygameObject]) -> "ObjectCollection":
         if isinstance(obj, list):
             for o in obj:
                 self.add(o)
@@ -84,7 +85,7 @@ class ObjectCollection(TypedCollection):
             self._to_add.append(obj)
         return self
         
-    def remove_object(self, obj: ObjectLikeType | list[ObjectLikeType]) -> "ObjectCollection":
+    def remove_object(self, obj: PygameObject | list[PygameObject]) -> "ObjectCollection":
         if isinstance(obj, list):
             for o in obj:
                 self.remove_object(o)

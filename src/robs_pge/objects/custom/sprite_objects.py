@@ -1,11 +1,10 @@
 from __future__ import annotations
 
-from typing import TypeVar, cast
+from typing import TypeVar
 
 from ..object import PygameObject
-from ...rendering import ChunkedSpriteRenderer, SpriteRenderer, SubSurfaceRenderer, IconRenderer
-from ...utils import Anchor, DictCollection, Rect, Transform, vec2, Color
-
+from ...rendering import ChunkedSpriteRenderer, IconRenderer, SpriteRenderer, SubSurfaceRenderer
+from ...utils import Anchor, Color, DictCollection, Rect, Transform, vec2
 
 SR = TypeVar("SR", bound=SpriteRenderer)
 
