@@ -493,7 +493,7 @@ class PygameObject[R]:
         return self._behaviors
     
     def add_behavior(self, behavior: ObjectBehavior | list[ObjectBehavior] | BehaviorManager):
-        self.behaviors.add_behavior(behavior)
+        self.behaviors.add(behavior)
         return self
         
     def remove_behavior(self, behavior: ObjectBehavior | list[ObjectBehavior] | BehaviorManager):

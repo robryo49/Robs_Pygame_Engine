@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Iterator, TYPE_CHECKING
+from typing import Iterator, TYPE_CHECKING, overload
 
 from .behaviors import ObjectBehavior
 from ..events import Event
@@ -26,29 +26,23 @@ class BehaviorManager(TypedCollection):
     
     # endregion
     
-    def add_behavior(self, behavior: "ObjectBehavior | list[ObjectBehavior] | BehaviorManager"):
+    def add(self, item: ObjectBehavior) -> ObjectBehavior:
+        super().add(item)
         
-        if isinstance(behavior, list):
-            for b in behavior:
-                self.add_behavior(b)
-            return
+        if isinstance(item, ObjectBehavior):
+            item.owner = self.owner
+            item.on_attach()
+            
+        return item
+    
+    def remove(self, item: ObjectBehavior) -> ObjectBehavior:
+        super().remove(item)
         
-        super().add(behavior)
-        if isinstance(behavior, ObjectBehavior):
-            behavior.owner = self.owner
-            behavior.on_attach()
-        
-    def remove(self, behavior: "ObjectBehavior | list[ObjectBehavior] | BehaviorManager"):
-
-        if isinstance(behavior, list):
-            for b in behavior:
-                self.remove(b)
-            return
-        
-        super().remove(behavior)
-        if isinstance(behavior, ObjectBehavior):
-            behavior.on_detach()
-            behavior.owner = None
+        if isinstance(item, ObjectBehavior):
+            item.on_detach()
+            item.owner = None
+            
+        return item
     
     def on_hover(self):
         for b in self:

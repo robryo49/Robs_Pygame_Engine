@@ -15,13 +15,13 @@ class Collection(list[T], Generic[T]):
     def has(self, item: T) -> bool:
         return item in self
     
-    def add(self, *items: T) -> None:
-        self.extend(items)
-    
-    def remove_items(self, *items: T) -> None:
-        for item in items:
-            if item in self:
-                super().remove(item)
+    def add(self, item: T) -> T:
+        super().append(item)
+        return item
+        
+    def remove(self, item: T) -> T:
+        super().remove(item)
+        return item
     
     def copy(self) -> "Collection[T]":
         return self._new(self)
@@ -85,8 +85,12 @@ class DictCollection(dict[K, V], Generic[K, V]):
     def has(self, key: K) -> bool:
         return key in self
     
-    def set(self, key: K, value: V) -> None:
+    def set(self, key: K, value: V) -> V:
         self[key] = value
+        return value
+    
+    def remove(self, key: K) -> V:
+        return self.pop(key)
     
     def copy(self) -> "DictCollection[K, V]":
         return self._new(self)

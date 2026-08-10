@@ -4,6 +4,7 @@ from typing import Any, Callable, Iterable, TYPE_CHECKING
 
 from ..rendering import DrawCommand
 from ..utils import TypedCollection
+from ..utils.management_tools.collection import T
 
 if TYPE_CHECKING:
     from ..objects import PygameObject
@@ -77,21 +78,28 @@ class ObjectCollection(TypedCollection):
         self._to_remove.clear()
         return self
     
-    def add_object(self, obj: PygameObject | Iterable[PygameObject]) -> "ObjectCollection":
-        if isinstance(obj, Iterable):
-            for o in obj:
-                self.add(o)
-        else:
-            self._to_add.append(obj)
+    def add(self, item: PygameObject) -> PygameObject:
+        self._to_add.append(item)
+        return item
+    
+    def add_object(self, *obj: PygameObject | Iterable[PygameObject]) -> "ObjectCollection":
+        for o in obj:
+            if isinstance(o, Iterable):
+                self.add_object(*o)
+            else:
+                self._to_add.append(o)
         return self
+    
+    def remove(self, item: PygameObject) -> PygameObject:
+        self._to_remove.append(item)
+        return item
         
-    def remove_object(self, obj: PygameObject | Iterable[PygameObject]) -> "ObjectCollection":
-        if isinstance(obj, Iterable):
-            for o in obj:
-                self.remove_object(o)
-                
-        elif self.has(obj):
-            self._to_remove.append(obj)
+    def remove_object(self, *obj: PygameObject | Iterable[PygameObject]) -> "ObjectCollection":
+        for o in obj:
+            if isinstance(o, Iterable):
+                self.remove_object(*o)
+            else:
+                self._to_remove.append(o)
         return self
         
     def update(self, dt: float) -> "ObjectCollection":
