@@ -4,7 +4,6 @@ from typing import Any, Callable, Iterable, TYPE_CHECKING
 
 from ..rendering import DrawCommand
 from ..utils import TypedCollection
-from ..utils.management_tools.collection import T
 
 if TYPE_CHECKING:
     from ..objects import PygameObject
