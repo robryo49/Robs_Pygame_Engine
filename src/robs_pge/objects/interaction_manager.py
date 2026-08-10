@@ -17,7 +17,7 @@ class InteractionManager:
     def __init__(self, input_manager: InputManager):
         self._input = input_manager
         
-        self._hovered: list[PygameObject] = []
+        self._all_hovered: list[PygameObject] = []
         self._top_hovered: Optional[PygameObject] = None
         
         self._mouse_pos = vec2()

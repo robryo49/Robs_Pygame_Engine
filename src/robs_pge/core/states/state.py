@@ -12,7 +12,7 @@ from ...input import InputManager, Keybind, KeybindsManager
 from ...objects import InteractionManager, Layer, LayerManager, ObjectFactory, ParticleSystem, WindowManager, WindowObject
 from ...rendering import LineChartStyle, WindowStyle
 from ...resources import ResourceManager
-from ...utils import Anchor, AsyncProcess, AsyncProcessManager, DictCollection, vec2, Callback
+from ...utils import Anchor, AsyncProcess, AsyncProcessManager, DictCollection, vec2, Callback, ScreenAnchor
 
 if TYPE_CHECKING:
     from ..engine import Engine
@@ -57,7 +57,7 @@ class State:
         
         self._debug_overlay = (
             self.create_object.ui.debug
-            .debug_overlay(vec2(), width=self.engine.display.viewport_dims.x, anchor=Anchor.TL)
+            .debug_overlay(ScreenAnchor.TL, width=self.engine.display.viewport_dims.x, anchor=Anchor.TL)
             .set_constant_padding(10)
         )
         self.debug_layer.add_object(self._debug_overlay)
@@ -226,36 +226,21 @@ class State:
         font_blue_title = self.resources.get_font("debug_blue_title")
         font_gray       = self.resources.get_font("debug_gray_text")
         font_white      = self.resources.get_font("debug_white_text")
-        
-        c1 = self.create_object.ui.layouts.vertical_layout(vec2()).skip_rendering().set_cell_padding(10)
-        c2 = self.create_object.ui.layouts.vertical_layout(vec2()).skip_rendering().set_cell_padding(10)
-        
+
         # region ENGINE PANEL
         
         engine_pannel = self.create_object.window.regular(vec2(), vec2(400, 190), "ENGINE", style=green_style)
         
-        engine_c1 = (
-            self.create_object.ui.layouts.vertical_layout(vec2(), 400)
-            .skip_rendering().set_constant_padding(10)
+        engine_pannel.stack_content_y(
+            self.create_object.text.dynamic_label(vec2(), "{} FPS    |    {} ms", lambda: (round(self.clock.fps), round(self.clock.dtime * 1000, 1)), font_blue_title, cache=False)
         )
-        engine_c1.stack_y(
-            self.create_object.text.dynamic_label(
-                vec2(), "{} FPS    |    {} ms",
-                lambda: (round(self.clock.fps), round(self.clock.dtime * 1000, 1)),
-                font_blue_title, cache=False
-            ),
-            anchor=Anchor.T
-        )
-        fps_line_chart = self.create_object.ui.line_chart(
-            vec2(), vec2(380, 100), blue_line_chart_style, 10, 10, None, None, 0, 120, None, 5,
-            update_action=lambda o: fps_line_chart.insert_point(vec2(self.clock.time, self.clock.fps))
-        )
-        engine_c1.stack_y(fps_line_chart, anchor=Anchor.TL)
-        engine_pannel.content.stack_x(engine_c1)
+        
+        self.debug_overlay.add_object(engine_pannel, 0, 0, anchor=Anchor.C)
+        self.debug_overlay.enable_rendering()
         
         # endregion
         
-        # region FRAME PANEL
+        """# region FRAME PANEL
         
         frame_pannel = (
             self.create_object.window.regular(vec2(), vec2(400, 200), "FRAME TIMER", style=yellow_style)
@@ -390,7 +375,7 @@ class State:
         self.debug_overlay.stack_x(c1, anchor=Anchor.TL)
         self.debug_overlay.stack_x(c2, anchor=Anchor.TR)
         
-        self.debug_overlay.fix_col_width(0, 420)
+        self.debug_overlay.set_column_fixed(0, 420)"""
     
     def init_resources(self) -> None:
         pass

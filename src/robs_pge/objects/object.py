@@ -577,7 +577,7 @@ class PygameObject[R]:
         self.add_behavior(AttributeGridSnappingBehavior(attribute, step, offset, strength))
         return self
     
-    def create_draggable(self, button: int = 1, target: Optional["PygameObject"] = None):
+    def make_draggable(self, button: int = 1, target: Optional["PygameObject"] = None):
         self.add_behavior(DraggableBehavior(button, target))
         return self
 

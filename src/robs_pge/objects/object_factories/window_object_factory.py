@@ -54,17 +54,17 @@ class WindowObjectFactory(SubObjectFactory):
                     raise ValueError("cannot determine header height when creating window, must specify title or header height")
             
             header_style = self._get_resource(window_style.header_style, RectStyle)
-            header: LayoutObject = self.factory.ui.layouts.horizontal_layout(vec2(), dims.x, header_height, style=header_style, layer=layer)
+            header: LayoutObject = self.factory.ui.layouts.grid_layout(vec2(), dims.x, header_height, style=header_style, layer=layer)
             header.set_constant_padding(window_style.header_margin)
             
             buttons_width = (header_height - window_style.header_margin * 2) * 1.5
-            header.fix_col_width(0, dims.x - buttons_width - window_style.header_margin * 2)
+            header.set_column_fixed(0, dims.x - buttons_width - window_style.header_margin * 2)
             
             if window_style.title_in_header and title_object is not None:
                 title_offset = window_style.header_margin * (vec2(1) - window_style.title_align * 2)
                 title_object.pos = title_offset
                 title_object.anchor = window_style.title_align
-                header.add_object(title_object, 0, 0, anchor=window_style.title_align)
+                header.add(title_object, 0, 0, anchor=window_style.title_align)
             
             if window_style.show_header_buttons:
                 icon_buttons_style = self._get_resource(window_style.icon_buttons_style, IconButtonStyle)
@@ -73,7 +73,7 @@ class WindowObjectFactory(SubObjectFactory):
                 x_button = self.factory.ui.button.icon_button(
                     vec2(), Icons.XMARK, button_dims * 0.5, lambda: obj.close(), button_dims, style=icon_buttons_style, layer=layer
                 )
-                header.add_object(x_button, 1, 0)
+                header.add(x_button, 1, 0)
         else:
             header_height = 0
         
@@ -88,9 +88,7 @@ class WindowObjectFactory(SubObjectFactory):
         panel_width = dims.x - scrollbar_col_width
         
         panel = self.factory.ui.layouts.grid_layout(vec2(), panel_width, panel_height, layer=layer)
-        panel.set_children_clip_area(
-            FRect(margin - panel_width * 0.5, margin - panel_height * 0.5, panel_width - margin * 2, panel_height - margin * 2), True
-        )
+        panel.set_outer_padding(margin)
         
         scrollbar = self.factory.ui.scrollbar(
             vec2(), vec2(window_style.scrollbar_width, panel_height - window_style.scrollbar_edge_margin * 2),
@@ -108,17 +106,17 @@ class WindowObjectFactory(SubObjectFactory):
         
         row = 0
         if header is not None:
-            obj.add_object(header, 0, row, span_x=2)
+            obj.add(header, 0, row, span_x=2)
             row += 1
         if title_panel is not None:
-            obj.add_object(title_panel, 0, row, span_x=2)
+            obj.add(title_panel, 0, row, span_x=2)
             row += 1
-        
-        obj.add_object(panel, 0, row)
-        obj.fix_col_width(0, panel_width)
-        
-        obj.add_object(scrollbar, 1, row, anchor=Anchor.R)
-        obj.fix_col_width(1, scrollbar_col_width)
+
+        obj.add(panel, 0, row)
+        obj.set_column_fixed(0, panel_width)
+
+        obj.add(scrollbar, 1, row, anchor=Anchor.R)
+        obj.set_column_fixed(1, scrollbar_col_width)
         obj.set_cell_padding(vec2(window_style.scrollbar_edge_margin, 0), (1, row))
         
         # endregion
@@ -135,7 +133,7 @@ class WindowObjectFactory(SubObjectFactory):
         
         if draggable:
             drag_handle = header if header is not None else (title_panel if title_panel is not None else obj)
-            drag_handle.create_draggable(1, target=obj)
+            drag_handle.make_draggable(1, target=obj)
         
         obj.sync_scrollbar()
         

@@ -50,13 +50,12 @@ class UIObjectFactory(SubObjectFactory):
         text = self.factory.text.label(vec2(), str(start_value), font, layer=layer)
         
         obj = self._create_object(SliderObject, position, rotation, scale, RectRenderer(dims, bg_style, cache), layer, anchor, bar, handle, text, min_value, max_value, step)
-        obj.fix_width(dims.x).fix_height(dims.y)
+        obj.set_fixed_width(dims.x).set_fixed_height(dims.y)
         obj.set_constant_padding(margin)
-        obj.fix_col_width(0 if slider_style.text_position.lower() in ["left", "l"] else 1, max_text_width+margin*0.5)
-        
-        
-        obj.add_object(bar, 1 if slider_style.text_position.lower() in ["left", "l"] else 0, 0)
-        obj.add_object(text, 0 if slider_style.text_position.lower() in ["left", "l"] else 1, 0)
+        obj.set_column_fixed(0 if slider_style.text_position.lower() in ["left", "l"] else 1, max_text_width + margin * 0.5)
+
+        obj.add(bar, 1 if slider_style.text_position.lower() in ["left", "l"] else 0, 0)
+        obj.add(text, 0 if slider_style.text_position.lower() in ["left", "l"] else 1, 0)
         
         if slider_style.hide_bg:
             obj.skip_rendering()

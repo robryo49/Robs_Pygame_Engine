@@ -312,7 +312,7 @@ class SliderObject(LayoutObject):
         if step is not None:
             step = self._handle_movement_range * step / (max_value - min_value)
         
-        self._handle.create_draggable(1)
+        self._handle.make_draggable(1)
         self._handle.create_attribute_fixed("y_pos")
         self._handle.create_attribute_clamped("x_pos", -self._handle_movement_range*0.5, self._handle_movement_range*0.5)
         if step is not None:
@@ -451,7 +451,7 @@ class ScrollbarObject(RectObject):
         
         self.add_child(self._handle, Anchor.C)
         
-        self._handle.create_draggable(1)
+        self._handle.make_draggable(1)
         self._handle.create_attribute_fixed("x_pos")
         
         self.update_movement_range()
