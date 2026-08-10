@@ -9,7 +9,7 @@ from ..utils import TypedCollection, vec2
 if TYPE_CHECKING:
     from .object import PygameObject
 
-class BehaviorCollection(TypedCollection):
+class BehaviorManager(TypedCollection):
     def __init__(self, owner):
         super().__init__(ObjectBehavior)
         
@@ -26,7 +26,7 @@ class BehaviorCollection(TypedCollection):
     
     # endregion
     
-    def add_behavior(self, behavior: "ObjectBehavior | list[ObjectBehavior] | BehaviorCollection"):
+    def add_behavior(self, behavior: "ObjectBehavior | list[ObjectBehavior] | BehaviorManager"):
         
         if isinstance(behavior, list):
             for b in behavior:
@@ -38,7 +38,7 @@ class BehaviorCollection(TypedCollection):
             behavior.owner = self.owner
             behavior.on_attach()
         
-    def remove(self, behavior: "ObjectBehavior | list[ObjectBehavior] | BehaviorCollection"):
+    def remove(self, behavior: "ObjectBehavior | list[ObjectBehavior] | BehaviorManager"):
 
         if isinstance(behavior, list):
             for b in behavior:

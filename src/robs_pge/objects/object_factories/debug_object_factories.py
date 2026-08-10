@@ -8,7 +8,7 @@ from ...utils import Anchor, Transform, inf, vec2
 
 class DebugObjectFactory(SubObjectFactory):
     
-    def make_debug_overlay(
+    def debug_overlay(
             self, position: vec2, width: Optional[float] = None, height: Optional[float] = None, min_col=0, max_col=inf, min_row=0, max_row=inf, invert_x=False, invert_y=False,
             rotation: float = 0.0, scale: float = 1.0, layer: int = 0, anchor: vec2 = Anchor.C, cache: bool=True
     ) -> DebugOverlay:

@@ -265,16 +265,18 @@ class PhysicsBody:
     # region CONSTRAINTS
     
     def _get_target_body(self, other: Optional[PygameObject]) -> pymunk.Body:
-        """Helper to validate state and resolve the second body for constraints."""
-        if self._body is None or self._world is None:
-            raise RuntimeError("Body must be created and added to a world before adding constraints")
-        
+        if self._world is None:
+            raise RuntimeError(
+                "Body must be added to a world before adding constraints. "
+                "Ensure the object is added to a layer with physics enabled."
+            )
+
         if other is None:
             return self._world.static_body
-        
-        if other.physics_body is None or cast(PhysicsBody, other.physics_body).body is None:
+
+        if other.physics_body is None:
             raise ValueError("Other object has no physics body")
-        
+
         return cast(pymunk.Body, cast(PhysicsBody, other.physics_body).body)
     
     def add_pin_joint(self, pos_a: vec2, pos_b: vec2, distance: Optional[float] = 0.0, other: Optional[PygameObject] = None) -> pymunk.PinJoint:

@@ -7,7 +7,7 @@ from ...utils import Anchor, Font, StyleOrName, vec2
 
 
 class TextObjectFactory(SubObjectFactory):
-    def make_text(
+    def label(
             self, position: vec2, text: str, font: StyleOrName[Font] = None,
             rotation: float = 0.0, scale: float = 1.0, layer: int = 0, anchor: vec2 = Anchor.C, cache: bool = True
     ) -> TextObject:
@@ -17,13 +17,13 @@ class TextObjectFactory(SubObjectFactory):
         
         return obj
     
-    def make_dynamic_text(
+    def dynamic_label(
             self, position: vec2, template: str, getter: Callable[[], Any | tuple[Any, ...]], font: StyleOrName[Font] = None,
             rotation: float = 0.0, scale: float = 1.0, layer: int = 0, anchor: vec2 = Anchor.C, cache: bool = True
     ) -> TextObject:
         
         font = self._get_resource(font, Font)
-        obj = self.make_text(position, "", font, rotation, scale, layer, anchor, cache)
+        obj = self.label(position, "", font, rotation, scale, layer, anchor, cache)
         obj.make_attribute_dynamic("text", getter, template)
         
         return obj

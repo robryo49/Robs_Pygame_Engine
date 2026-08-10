@@ -9,7 +9,7 @@ from ...utils import Anchor, Rect, get_object_dims, vec2, Color, Colors
 
 class SpriteObjectFactory(SubObjectFactory):
     
-    def make_sprite(
+    def sprite(
             self, position: vec2, texture: Texture | str, dims: Optional[vec2] = None, width: Optional[int] = None, height: Optional[int] = None,
             rotation: float = 0.0, scale: float = 1.0, layer: int = 1, anchor: vec2 = Anchor.C, cache: bool = True
     ) -> SpriteObject[SpriteRenderer]:
@@ -25,7 +25,7 @@ class SpriteObjectFactory(SubObjectFactory):
         return obj
     
     
-    def make_subsurface_sprite(
+    def subsurface_sprite(
             self, position: vec2, texture: Texture | str, sub_rect: Optional[Rect] = None, target_dims: Optional[vec2] = None,
             rotation: float = 0.0, scale: float = 1.0, layer: int = 1, anchor: vec2 = Anchor.C, cache: bool = True
     ) -> SubSurfaceSpriteObject:
@@ -38,7 +38,7 @@ class SpriteObjectFactory(SubObjectFactory):
         
         return obj
     
-    def make_chunked_sprite(
+    def chunked_sprite(
             self, position: vec2, texture: Texture | str, dims: Optional[vec2] = None, width: Optional[int] = None, height: Optional[int] = None, chunk_size: int = 256,
             rotation: float = 0.0, scale: float = 1.0, layer: int = 1, anchor: vec2 = Anchor.C, cache: bool = True
     ) -> ChunkedSpriteObject:
@@ -53,7 +53,7 @@ class SpriteObjectFactory(SubObjectFactory):
         
         return obj
     
-    def make_icon_object(
+    def icon_object(
         self, position: vec2, icon: str, icon_size: int, icon_color: Color = Colors.WHITE,
         rotation: float = 0.0, scale: float = 1.0, layer: int = 1, anchor: vec2 = Anchor.C, cache: bool = True
     ) -> IconObject:

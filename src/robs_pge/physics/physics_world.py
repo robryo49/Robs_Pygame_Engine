@@ -25,9 +25,8 @@ class PhysicsWorld:
         self._space.collision_bias = pow(1.0 - 0.1, 60.0)
 
         self._bodies: list[PhysicsBody] = []
-        self._to_add: list[PhysicsBody] = []
 
-        self._constraints: list[PhysicsConstraint] = []
+        self._constraints: list[pymunk.Constraint] = []
 
         self._fixed_dt = 1.0 / 120.0
         self._time_accumulator = 0.0
@@ -58,15 +57,15 @@ class PhysicsWorld:
     # region BODY MANAGEMENT
 
     def add_body(self, body: PhysicsBody) -> "PhysicsWorld":
-        self._to_add.append(body)
+        if body not in self._bodies:
+            body.create_body(self._space)
+            self._bodies.append(body)
         return self
 
     def remove_body(self, body: PhysicsBody) -> "PhysicsWorld":
         if body in self._bodies:
             body.remove()
             self._bodies.remove(body)
-        elif body in self._to_add:
-            self._to_add.remove(body)
         return self
 
     def clear(self) -> "PhysicsWorld":
@@ -76,20 +75,7 @@ class PhysicsWorld:
         for body in list(self._bodies):
             body.remove()
         self._bodies.clear()
-        self._to_add.clear()
         return self
-
-    def _handle_additions(self):
-        if not self._to_add:
-            return
-        for body in self._to_add:
-            body.create_body(self._space)
-            self._bodies.append(body)
-        self._to_add.clear()
-        self._handle_constraint_additions()
-
-    def _handle_constraint_additions(self):
-        pass
 
     # endregion
 
@@ -136,11 +122,11 @@ class PhysicsWorld:
     # region UPDATE
 
     def sync_to_physics(self):
-        for body in self._bodies:
+        for body in list(self._bodies):
             body.sync_to_physics()
 
     def sync_from_physics(self):
-        for body in self._bodies:
+        for body in list(self._bodies):
             body.sync_from_physics()
         self._space.reindex_static()
 
@@ -157,7 +143,6 @@ class PhysicsWorld:
                 self._time_accumulator = 0.0
 
     def update(self, dt: float):
-        self._handle_additions()
         self.sync_to_physics()
         self.step(dt)
         self.sync_from_physics()

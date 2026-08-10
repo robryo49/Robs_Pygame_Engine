@@ -28,7 +28,7 @@ class LayoutObjectFactory(SubObjectFactory):
         return item, 1, 1
     
     
-    def make_grid_layout(
+    def grid_layout(
             self, position: vec2, width: Optional[float] = None, height: Optional[float] = None, min_col=0, max_col=inf, min_row=0, max_row=inf,
             invert_x=False, invert_y=False, style: StyleOrName[RectStyle] = None,
             rotation: float = 0.0, scale: float = 1.0, layer: int = 0, anchor: vec2 = Anchor.C, cache: bool=True
@@ -58,25 +58,25 @@ class LayoutObjectFactory(SubObjectFactory):
         
         return obj
     
-    def make_vertical_layout(
+    def vertical_layout(
             self, position: vec2, width: Optional[float] = None, height: Optional[float] = None, min_row=0, max_row=inf, invert_y=False, style: StyleOrName[RectStyle] = None,
             rotation: float = 0.0, scale: float = 1.0, layer: int = 0, anchor: vec2 = Anchor.C, cache: bool=True
     ) -> LayoutObject:
-        return self.make_grid_layout(
+        return self.grid_layout(
             position, width, height, 0, 0, min_row, max_row, False, invert_y,
             style, rotation, scale, layer, anchor, cache
         )
     
-    def make_horizontal_layout(
+    def horizontal_layout(
             self, position: vec2, width: Optional[float] = None, height: Optional[float] = None, min_col=0, max_col=inf, invert_x=False, style: StyleOrName[RectStyle] = None,
             rotation: float = 0.0, scale: float = 1.0, layer: int = 0, anchor: vec2 = Anchor.C, cache: bool=True
     ) -> LayoutObject:
-        return self.make_grid_layout(
+        return self.grid_layout(
             position, width, height, min_col, max_col, 0, 0, invert_x, False,
             style, rotation, scale, layer, anchor, cache
         )
     
-    def make_object_stack[T: PygameObject](
+    def object_stack[T: PygameObject](
             self, position: vec2, object_constructor: Callable[..., T], data: dict[str, list[Any]], horizontal: bool = False, invert_y: bool = False, invert_x=False,
             width: Optional[float] = None, height: Optional[float] = None, spacing: int = 10, margin: Optional[int] = None, style: StyleOrName[RectStyle] = None, object_grid_anchors: vec2 = Anchor.C,
             rotation: float = 0.0, scale: float = 1.0, layer: int = 0, anchor: vec2 = Anchor.C, cache: bool=True
@@ -86,9 +86,9 @@ class LayoutObjectFactory(SubObjectFactory):
         
         length = max((len(d) for d in data.values()), default=0)
         
-        layout = self.make_vertical_layout(
+        layout = self.vertical_layout(
             position, width, height, 0, inf, invert_y, style, rotation, scale, layer, anchor, cache
-        ) if not horizontal else self.make_horizontal_layout(
+        ) if not horizontal else self.horizontal_layout(
             position, width, height, 0, inf, invert_x, style, rotation, scale, layer, anchor, cache
         )
         
@@ -123,7 +123,7 @@ class LayoutObjectFactory(SubObjectFactory):
             raise ValueError("align_columns and align_rows can't both be False")
         
         if align_columns and align_rows:
-            layout = self.make_grid_layout(position, width, height, 0, inf, 0, inf, invert_x, invert_y, style, rotation, scale, layer, anchor, cache)
+            layout = self.grid_layout(position, width, height, 0, inf, 0, inf, invert_x, invert_y, style, rotation, scale, layer, anchor, cache)
             
             for y, row_objects in enumerate(objects):
                 for x, item in enumerate(row_objects):
@@ -140,7 +140,7 @@ class LayoutObjectFactory(SubObjectFactory):
             return layout
         
         elif align_rows:
-            layout = self.make_vertical_layout(position, width, height, 0, inf, invert_y, style, rotation, scale, layer, anchor, cache)
+            layout = self.vertical_layout(position, width, height, 0, inf, invert_y, style, rotation, scale, layer, anchor, cache)
             
             for row_objects in objects:
                 row_objects_no_span = list(self._unpack_grid_item(item)[0] for item in row_objects)
@@ -156,7 +156,7 @@ class LayoutObjectFactory(SubObjectFactory):
             return layout
         
         else:
-            layout = self.make_horizontal_layout(position, width, height, 0, inf, invert_x, style, rotation, scale, layer, anchor, cache)
+            layout = self.horizontal_layout(position, width, height, 0, inf, invert_x, style, rotation, scale, layer, anchor, cache)
             
             num_cols = max((len(r) for r in objects), default=0)
             for col in range(num_cols):
@@ -180,7 +180,7 @@ class LayoutObjectFactory(SubObjectFactory):
             rotation: float = 0.0, scale: float = 1.0, layer: int = 0, anchor: vec2 = Anchor.C, cache: bool = True
     ) -> LayoutObject:
         
-        layout = self.make_vertical_layout(position, width, height, 0, inf, invert_y, style, rotation, scale, layer, anchor, cache)
+        layout = self.vertical_layout(position, width, height, 0, inf, invert_y, style, rotation, scale, layer, anchor, cache)
         
         for item in objects:
             obj, span_x = self._unpack_stack_item(item)
@@ -201,7 +201,7 @@ class LayoutObjectFactory(SubObjectFactory):
             rotation: float = 0.0, scale: float = 1.0, layer: int = 0, anchor: vec2 = Anchor.C, cache: bool = True
     ) -> LayoutObject:
         
-        layout = self.make_horizontal_layout(position, width, height, 0, inf, invert_x, style, rotation, scale, layer, anchor, cache)
+        layout = self.horizontal_layout(position, width, height, 0, inf, invert_x, style, rotation, scale, layer, anchor, cache)
         
         for item in objects:
             obj, span_y = self._unpack_stack_item(item)

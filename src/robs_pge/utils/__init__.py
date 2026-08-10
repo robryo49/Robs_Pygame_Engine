@@ -1,11 +1,8 @@
 from .math import *
 from .font import Font
 from .color import Color, Colors, ColorPalette
-from .flags import ObjectFlags, KeybindFlags
-from .tags import ObjectTags
-from .keys import Keybinds
-from .collection import Collection, DictCollection, TypedCollection, TypedDictCollection
-from .types import Vec2Like, Vec3Like, Callback, EasingFunctionType, StyleOrName, ValueOrGetter, validate_signature
+from .keybinds import Keybinds
+from .management_tools import ObjectTags, Vec2Like, Vec3Like, Callback, EasingFunctionType, StyleOrName, ValueOrGetter, validate_signature, ObjectFlags, KeybindFlags, Collection, DictCollection, TypedCollection, TypedDictCollection
 from .array_tools import *
 from .async_tools import *
 

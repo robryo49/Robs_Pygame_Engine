@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Literal, TypeVar, cast
 
-from .behavior_collection import BehaviorCollection
+from .behavior_manager import BehaviorManager
 from .behaviors import *
 from .object_collection import ObjectCollection
 from ..animation import Animation, AnimationManager
@@ -33,7 +33,7 @@ class PygameObject[R]:
         self._flags = self.DEFAULT_FLAGS
         self._tags = self.DEFAULT_TAGS
         
-        self._behaviors = BehaviorCollection(self)
+        self._behaviors = BehaviorManager(self)
         self._services = services
         
         self._properties: DictCollection = DictCollection()
@@ -492,11 +492,11 @@ class PygameObject[R]:
     def behaviors(self):
         return self._behaviors
     
-    def add_behavior(self, behavior: ObjectBehavior | list[ObjectBehavior] | BehaviorCollection):
+    def add_behavior(self, behavior: ObjectBehavior | list[ObjectBehavior] | BehaviorManager):
         self.behaviors.add_behavior(behavior)
         return self
         
-    def remove_behavior(self, behavior: ObjectBehavior | list[ObjectBehavior] | BehaviorCollection):
+    def remove_behavior(self, behavior: ObjectBehavior | list[ObjectBehavior] | BehaviorManager):
         self.behaviors.remove(behavior)
         return self
     

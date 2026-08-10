@@ -16,7 +16,7 @@ from .behaviors import (
     AttributeFixingBehavior,
     ActionOnCollisionBehavior
 )
-from .behavior_collection import BehaviorCollection
+from .behavior_manager import BehaviorManager
 from .interaction_manager import InteractionManager
 from .object_collection import ObjectCollection
 from .object_factory import ObjectFactory
@@ -45,7 +45,7 @@ __all__ = [
     "SetAttributeOnClickBehavior", "SetAttributeOnHoverBehavior",
     "DynamicAttributeBehavior", "DraggableBehavior", "AttributeClampingBehavior", "AttributeGridSnappingBehavior", "AttributeValueSnappingBehavior", "AttributeFixingBehavior",
     "ActionOnCollisionBehavior",
-    "BehaviorCollection",
+    "BehaviorManager",
     # core
     "InteractionManager",
     "ObjectCollection",

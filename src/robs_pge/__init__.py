@@ -14,7 +14,7 @@ from .objects import (
     SetAttributeOnClickBehavior, SetAttributeOnHoverBehavior, DynamicAttributeBehavior,
     DraggableBehavior, AttributeGridSnappingBehavior, AttributeValueSnappingBehavior,
     AttributeClampingBehavior, AttributeFixingBehavior, ActionOnCollisionBehavior,
-    BehaviorCollection, InteractionManager, WindowManager, LayerManager,
+    BehaviorManager, InteractionManager, WindowManager, LayerManager,
     Particle, ParticleEmitter, BurstParticleEmitter, ParticleSystem, ParticlePool,
 )
 from .physics import PhysicsBody, BodyTypes, PhysicsWorld, ShapeTypes
@@ -78,7 +78,7 @@ __all__ = [
     "DraggableBehavior", "AttributeGridSnappingBehavior", "AttributeValueSnappingBehavior",
     "AttributeClampingBehavior", "AttributeFixingBehavior", "ActionOnCollisionBehavior",
     # object managers/collections
-    "BehaviorCollection", "InteractionManager", "WindowManager", "LayerManager",
+    "BehaviorManager", "InteractionManager", "WindowManager", "LayerManager",
     # particles
     "Particle", "ParticleEmitter", "BurstParticleEmitter", "ParticleSystem", "ParticlePool",
     # physics

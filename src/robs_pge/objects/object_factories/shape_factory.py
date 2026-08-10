@@ -6,7 +6,7 @@ from ...utils import Anchor, StyleOrName, vec2
 
 class ShapeFactory(SubObjectFactory):
     
-    def make_rect(
+    def rect(
             self, position: vec2, dims: vec2, style: StyleOrName[RectStyle] = None,
             rotation: float = 0.0, scale: float = 1.0, layer: int = 0, anchor: vec2 = Anchor.C, cache: bool = True
     ) -> RectObject:
@@ -16,7 +16,7 @@ class ShapeFactory(SubObjectFactory):
         
         return obj
     
-    def make_circle(
+    def circle(
             self, position: vec2, radius: int, style: StyleOrName[CircleStyle] = None,
             rotation: float = 0.0, scale: float = 1.0, layer: int = 0, anchor: vec2 = Anchor.C, cache: bool = True
     ) -> CircleObject:
@@ -26,7 +26,7 @@ class ShapeFactory(SubObjectFactory):
         
         return obj
     
-    def make_line(
+    def line(
             self, position: vec2, points: list[vec2], style: StyleOrName[LineStyle] = None,
             rotation: float = 0.0, scale: float = 1.0, layer: int = 0, anchor: vec2 = Anchor.C, cache: bool = True
     ) -> LineObject:
