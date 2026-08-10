@@ -14,7 +14,7 @@ class UIObjectFactory(SubObjectFactory):
     def __init__(self, object_factory):
         super().__init__(object_factory)
         
-        self.buttons = ButtonObjectFactory(object_factory)
+        self.button = ButtonObjectFactory(object_factory)
         self.layouts = LayoutObjectFactory(object_factory)
         self.debug = DebugObjectFactory(object_factory)
     

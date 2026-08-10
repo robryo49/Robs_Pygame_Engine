@@ -70,7 +70,7 @@ class WindowObjectFactory(SubObjectFactory):
                 icon_buttons_style = self._get_resource(window_style.icon_buttons_style, IconButtonStyle)
                 button_dims = vec2(buttons_width, header_height - window_style.header_margin * 2)
                 
-                x_button = self.factory.ui.buttons.icon_button(
+                x_button = self.factory.ui.button.icon_button(
                     vec2(), Icons.XMARK, button_dims * 0.5, lambda: obj.close(), button_dims, style=icon_buttons_style, layer=layer
                 )
                 header.add_object(x_button, 1, 0)
