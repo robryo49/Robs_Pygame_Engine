@@ -6,7 +6,7 @@ import numpy as np
 from glm import vec2
 
 
-def make_noise_array(
+def create_noise_array(
         dims: vec2 | tuple[int, int],
         noise_offset: vec2 | tuple[int, int] = (0, 0),
         seed: Optional[int] = None,

@@ -41,7 +41,7 @@ class ResourceManager:
     
     # region FOLDERS
     
-    def add_folder(self, name: str, path: Path):
+    def register_folder(self, name: str, path: Path):
         path = path.resolve()
         if not path.exists():
             raise FileNotFoundError(f"Folder '{path}' does not exist")

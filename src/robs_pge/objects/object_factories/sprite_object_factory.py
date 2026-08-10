@@ -9,7 +9,7 @@ from ...utils import Anchor, Rect, get_object_dims, vec2, Color, Colors
 
 class SpriteObjectFactory(SubObjectFactory):
     
-    def sprite(
+    def regular(
             self, position: vec2, texture: Texture | str, dims: Optional[vec2] = None, width: Optional[int] = None, height: Optional[int] = None,
             rotation: float = 0.0, scale: float = 1.0, layer: int = 1, anchor: vec2 = Anchor.C, cache: bool = True
     ) -> SpriteObject[SpriteRenderer]:
@@ -20,7 +20,7 @@ class SpriteObjectFactory(SubObjectFactory):
         if dims != texture.dims:
             texture = texture.resized(dims)
         
-        obj = self._make_object(SpriteObject, position, rotation, scale, SpriteRenderer(texture, cache), layer, anchor)
+        obj = self._create_object(SpriteObject, position, rotation, scale, SpriteRenderer(texture, cache), layer, anchor)
         
         return obj
     
@@ -34,7 +34,7 @@ class SpriteObjectFactory(SubObjectFactory):
         if target_dims is None: target_dims = vec2(texture.dims)
         if sub_rect is None: sub_rect = Rect(0, 0, target_dims.x, target_dims.y)
         
-        obj = self._make_object(SubSurfaceSpriteObject, position, rotation, scale, SubSurfaceRenderer(texture, sub_rect, target_dims, cache), layer, anchor)
+        obj = self._create_object(SubSurfaceSpriteObject, position, rotation, scale, SubSurfaceRenderer(texture, sub_rect, target_dims, cache), layer, anchor)
         
         return obj
     
@@ -49,7 +49,7 @@ class SpriteObjectFactory(SubObjectFactory):
         if dims != texture.dims:
             texture = texture.resized(dims)
             
-        obj = self._make_object(ChunkedSpriteObject, position, rotation, scale, ChunkedSpriteRenderer(texture, chunk_size, cache), layer, anchor)
+        obj = self._create_object(ChunkedSpriteObject, position, rotation, scale, ChunkedSpriteRenderer(texture, chunk_size, cache), layer, anchor)
         
         return obj
     
@@ -58,7 +58,7 @@ class SpriteObjectFactory(SubObjectFactory):
         rotation: float = 0.0, scale: float = 1.0, layer: int = 1, anchor: vec2 = Anchor.C, cache: bool = True
     ) -> IconObject:
         
-        obj = self._make_object(IconObject, position, rotation, scale, IconRenderer(icon, icon_size, icon_color, cache), layer, anchor)
+        obj = self._create_object(IconObject, position, rotation, scale, IconRenderer(icon, icon_size, icon_color, cache), layer, anchor)
         
         return obj
 

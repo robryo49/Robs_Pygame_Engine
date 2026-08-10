@@ -37,7 +37,7 @@ class LayoutObjectFactory(SubObjectFactory):
         no_bg = style is None
         
         style = self._get_resource(style, RectStyle)
-        obj = self._make_object(LayoutObject, position, rotation, scale, RectRenderer(vec2(), style, cache), layer, anchor)
+        obj = self._create_object(LayoutObject, position, rotation, scale, RectRenderer(vec2(), style, cache), layer, anchor)
         
         obj.min_col = min_col
         obj.max_col = max_col

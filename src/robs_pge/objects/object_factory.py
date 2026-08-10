@@ -1,8 +1,8 @@
 from typing import Any, Optional
 
-from .object_factories import ShapeFactory, SpriteObjectFactory, TextObjectFactory, UIObjectFactory
-from robs_pge.resources import ResourceManager
-from robs_pge.utils import DictCollection, Transform
+from .object_factories import ShapeFactory, SpriteObjectFactory, TextObjectFactory, UIObjectFactory, WindowObjectFactory
+from ..resources import ResourceManager
+from ..utils import DictCollection, Transform
 
 
 class ObjectFactory:
@@ -13,7 +13,7 @@ class ObjectFactory:
         self.text = TextObjectFactory(self)
         self.ui = UIObjectFactory(self)
         self.sprite = SpriteObjectFactory(self)
-        
+        self.window = WindowObjectFactory(self)
     
     # region PROPERTIES
     
@@ -35,6 +35,6 @@ class ObjectFactory:
         else:
             return style_type()
     
-    def make_object[T](self, object_type: type[T], position, rotation, scale, renderer, layer, anchor, *args) -> T:
+    def create_object[T](self, object_type: type[T], position, rotation, scale, renderer, layer, anchor, *args) -> T:
         return object_type(Transform(position, rotation, scale), renderer, *args, self._services, layer, anchor)
     

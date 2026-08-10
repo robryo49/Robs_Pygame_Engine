@@ -83,16 +83,16 @@ class DrawCommand:
     def get_cached(surface_cache: SurfaceCache, key: tuple):
         return surface_cache.get(key)
     
-    def make_surface(self, key, *args):
-        raise NotImplementedError("Draw command doesn't have a defined make_surface method")
+    def create_surface(self, key, *args):
+        raise NotImplementedError("Draw command doesn't have a defined create_surface method")
     
     def get_surface(self, surface_cache: SurfaceCache, key: tuple, *args):
         if not self.caching:
-            return self.make_surface(key, *args), None
+            return self.create_surface(key, *args), None
         
         surface = self.get_cached(surface_cache, key)
         if surface is None:
-            surface = self.make_surface(key, *args)
+            surface = self.create_surface(key, *args)
             surface_cache.add(key, surface)
             return surface, False
         return surface, True
@@ -102,7 +102,7 @@ class DrawCommand:
 class DrawTexture(DrawCommand):
     texture: Texture
     
-    def make_surface(self, key, *args):
+    def create_surface(self, key, *args):
         texture_id, _, rotation, scale = key
         
         if not rotation and scale == 1:
@@ -153,7 +153,7 @@ class DrawRect(DrawCommand):
     dims: vec2
     style: RectStyle
     
-    def make_surface(self, key, *args):
+    def create_surface(self, key, *args):
         
         dims, bg_color, bd, bd_color, bd_radius, rotation, scale = key
         
@@ -200,7 +200,7 @@ class DrawCircle(DrawCommand):
     radius: int
     style: CircleStyle
     
-    def make_surface(self, key, *args):
+    def create_surface(self, key, *args):
         radius, bg_color, bd, bd_color, scale = key
         
         surface = pg.Surface((radius*2, radius*2), pg.SRCALPHA)
@@ -236,7 +236,7 @@ class DrawText(DrawCommand):
     text: str
     font: Font
     
-    def make_surface(self, key, *args):
+    def create_surface(self, key, *args):
         # Added scale to the cache key unpack
         text, font_key, color, spacing, rotation, scale = key
         pg_font: pg.font.Font = args[0]
@@ -311,7 +311,7 @@ class DrawLine(DrawCommand):
     points: list[vec2]
     style: LineStyle
     
-    def make_surface(self, key, *args):
+    def create_surface(self, key, *args):
         points, color, width, rotation, scale = key
         screen_points: list[vec2] = args[0]
         
@@ -370,7 +370,7 @@ class DrawSubSurface(DrawCommand):
     sub_rect: Rect
     target_dims: vec2
     
-    def make_surface(self, key, *args):
+    def create_surface(self, key, *args):
         _, _, lod_level, sx, sy, sw, sh, view_w, view_h = key
         lod_surface: pg.Surface = args[0]
         
@@ -430,7 +430,7 @@ class DrawChunkedSprite(DrawCommand):
     texture: Texture
     chunk_size: int = 256
     
-    def make_surface(self, key, *args):
+    def create_surface(self, key, *args):
         texture_id, cx, cy, cw, ch, rotation, scale, lod_level = key
         lod_surface: pg.Surface = args[0]
         

@@ -32,7 +32,7 @@ class State:
         self._id = state_id
         self._engine = engine
         
-        self._engine.state_manager.add_state(self)
+        self._engine.state_manager.register_state(self)
         
         self._camera = Camera(self.engine.display)
         
@@ -56,7 +56,7 @@ class State:
         self._world_layer = self.create_layer("world", _LAYER_WORLD, self.camera, interactable=True)
         
         self._debug_overlay = (
-            self.make_object.ui.debug
+            self.create_object.ui.debug
             .debug_overlay(vec2(), width=self.engine.display.viewport_dims.x, anchor=Anchor.TL)
             .set_constant_padding(10)
         )
@@ -147,7 +147,7 @@ class State:
         return self._factory
     
     @property
-    def make_object(self) -> ObjectFactory:
+    def create_object(self) -> ObjectFactory:
         return self._factory
     
     @property
@@ -227,26 +227,26 @@ class State:
         font_gray       = self.resources.get_font("debug_gray_text")
         font_white      = self.resources.get_font("debug_white_text")
         
-        c1 = self.make_object.ui.layouts.vertical_layout(vec2()).skip_rendering().set_cell_padding(10)
-        c2 = self.make_object.ui.layouts.vertical_layout(vec2()).skip_rendering().set_cell_padding(10)
+        c1 = self.create_object.ui.layouts.vertical_layout(vec2()).skip_rendering().set_cell_padding(10)
+        c2 = self.create_object.ui.layouts.vertical_layout(vec2()).skip_rendering().set_cell_padding(10)
         
         # region ENGINE PANEL
         
-        engine_pannel = self.make_object.ui.window(vec2(), vec2(400, 190), "ENGINE", style=green_style)
+        engine_pannel = self.create_object.window.regular(vec2(), vec2(400, 190), "ENGINE", style=green_style)
         
         engine_c1 = (
-            self.make_object.ui.layouts.vertical_layout(vec2(), 400)
+            self.create_object.ui.layouts.vertical_layout(vec2(), 400)
             .skip_rendering().set_constant_padding(10)
         )
         engine_c1.stack_y(
-            self.make_object.text.dynamic_label(
+            self.create_object.text.dynamic_label(
                 vec2(), "{} FPS    |    {} ms",
                 lambda: (round(self.clock.fps), round(self.clock.dtime * 1000, 1)),
                 font_blue_title, cache=False
             ),
             anchor=Anchor.T
         )
-        fps_line_chart = self.make_object.ui.line_chart(
+        fps_line_chart = self.create_object.ui.line_chart(
             vec2(), vec2(380, 100), blue_line_chart_style, 10, 10, None, None, 0, 120, None, 5,
             update_action=lambda o: fps_line_chart.insert_point(vec2(self.clock.time, self.clock.fps))
         )
@@ -258,29 +258,29 @@ class State:
         # region FRAME PANEL
         
         frame_pannel = (
-            self.make_object.ui.window(vec2(), vec2(400, 200), "FRAME TIMER", style=yellow_style)
+            self.create_object.window.regular(vec2(), vec2(400, 200), "FRAME TIMER", style=yellow_style)
             .stack_content_x(
-                self.make_object.ui.layouts.vertical_layout(vec2(), 180).skip_rendering()
-                .stack_y(self.make_object.text.label(vec2(), "Update", font_white), anchor=Anchor.TL)
-                .stack_y(self.make_object.text.label(vec2(), "- Events", font_gray), anchor=Anchor.TL)
-                .stack_y(self.make_object.text.label(vec2(), "- State", font_gray), anchor=Anchor.TL)
-                .stack_y(self.make_object.text.label(vec2(), "- Input", font_gray), anchor=Anchor.TL)
-                .stack_y(self.make_object.text.label(vec2(), "Rendering", font_white), anchor=Anchor.TL)
-                .stack_y(self.make_object.text.label(vec2(), "- Draw Calls", font_gray), anchor=Anchor.TL)
-                .stack_y(self.make_object.text.label(vec2(), "- Drawing", font_gray), anchor=Anchor.TL)
-                .stack_y(self.make_object.text.label(vec2(), "- Screen Update", font_gray), anchor=Anchor.TL)
-                .stack_y(self.make_object.text.label(vec2(), "Ticking", font_white), anchor=Anchor.TL)
+                self.create_object.ui.layouts.vertical_layout(vec2(), 180).skip_rendering()
+                .stack_y(self.create_object.text.label(vec2(), "Update", font_white), anchor=Anchor.TL)
+                .stack_y(self.create_object.text.label(vec2(), "- Events", font_gray), anchor=Anchor.TL)
+                .stack_y(self.create_object.text.label(vec2(), "- State", font_gray), anchor=Anchor.TL)
+                .stack_y(self.create_object.text.label(vec2(), "- Input", font_gray), anchor=Anchor.TL)
+                .stack_y(self.create_object.text.label(vec2(), "Rendering", font_white), anchor=Anchor.TL)
+                .stack_y(self.create_object.text.label(vec2(), "- Draw Calls", font_gray), anchor=Anchor.TL)
+                .stack_y(self.create_object.text.label(vec2(), "- Drawing", font_gray), anchor=Anchor.TL)
+                .stack_y(self.create_object.text.label(vec2(), "- Screen Update", font_gray), anchor=Anchor.TL)
+                .stack_y(self.create_object.text.label(vec2(), "Ticking", font_white), anchor=Anchor.TL)
             ).stack_content_x(
-                self.make_object.ui.layouts.vertical_layout(vec2(), 180).skip_rendering()
-                .stack_y(self.make_object.text.dynamic_label(vec2(), "{} ms", lambda: self.frame_timer.get_time_ms("Update"), font_white), anchor=Anchor.TL)
-                .stack_y(self.make_object.text.dynamic_label(vec2(), "{} ms", lambda: self.frame_timer.get_time_ms("Update.Events"), font_gray), anchor=Anchor.TL)
-                .stack_y(self.make_object.text.dynamic_label(vec2(), "{} ms", lambda: self.frame_timer.get_time_ms("Update.State"), font_gray), anchor=Anchor.TL)
-                .stack_y(self.make_object.text.dynamic_label(vec2(), "{} ms", lambda: self.frame_timer.get_time_ms("Update.Input"), font_gray), anchor=Anchor.TL)
-                .stack_y(self.make_object.text.dynamic_label(vec2(), "{} ms", lambda: self.frame_timer.get_time_ms("Rendering"), font_white), anchor=Anchor.TL)
-                .stack_y(self.make_object.text.dynamic_label(vec2(), "{} ms", lambda: self.frame_timer.get_time_ms("Rendering.Draw Calls"), font_gray), anchor=Anchor.TL)
-                .stack_y(self.make_object.text.dynamic_label(vec2(), "{} ms", lambda: self.frame_timer.get_time_ms("Rendering.Drawing"), font_gray), anchor=Anchor.TL)
-                .stack_y(self.make_object.text.dynamic_label(vec2(), "{} ms", lambda: self.frame_timer.get_time_ms("Rendering.Screen Update"), font_gray), anchor=Anchor.TL)
-                .stack_y(self.make_object.text.dynamic_label(vec2(), "{} ms", lambda: self.frame_timer.get_time_ms("Ticking"), font_white), anchor=Anchor.TL)
+                self.create_object.ui.layouts.vertical_layout(vec2(), 180).skip_rendering()
+                .stack_y(self.create_object.text.dynamic_label(vec2(), "{} ms", lambda: self.frame_timer.get_time_ms("Update"), font_white), anchor=Anchor.TL)
+                .stack_y(self.create_object.text.dynamic_label(vec2(), "{} ms", lambda: self.frame_timer.get_time_ms("Update.Events"), font_gray), anchor=Anchor.TL)
+                .stack_y(self.create_object.text.dynamic_label(vec2(), "{} ms", lambda: self.frame_timer.get_time_ms("Update.State"), font_gray), anchor=Anchor.TL)
+                .stack_y(self.create_object.text.dynamic_label(vec2(), "{} ms", lambda: self.frame_timer.get_time_ms("Update.Input"), font_gray), anchor=Anchor.TL)
+                .stack_y(self.create_object.text.dynamic_label(vec2(), "{} ms", lambda: self.frame_timer.get_time_ms("Rendering"), font_white), anchor=Anchor.TL)
+                .stack_y(self.create_object.text.dynamic_label(vec2(), "{} ms", lambda: self.frame_timer.get_time_ms("Rendering.Draw Calls"), font_gray), anchor=Anchor.TL)
+                .stack_y(self.create_object.text.dynamic_label(vec2(), "{} ms", lambda: self.frame_timer.get_time_ms("Rendering.Drawing"), font_gray), anchor=Anchor.TL)
+                .stack_y(self.create_object.text.dynamic_label(vec2(), "{} ms", lambda: self.frame_timer.get_time_ms("Rendering.Screen Update"), font_gray), anchor=Anchor.TL)
+                .stack_y(self.create_object.text.dynamic_label(vec2(), "{} ms", lambda: self.frame_timer.get_time_ms("Ticking"), font_white), anchor=Anchor.TL)
             )
         )
         
@@ -289,17 +289,17 @@ class State:
         # region CAMERA PANEL
         
         camera_pannel = (
-            self.make_object.ui.window(vec2(), vec2(400, 94), "CAMERA", style=blue_style)
+            self.create_object.window.regular(vec2(), vec2(400, 94), "CAMERA", style=blue_style)
             .stack_content_x(
-                self.make_object.ui.layouts.vertical_layout(vec2(), 180).skip_rendering()
-                .stack_y(self.make_object.text.label(vec2(), "Position", font_gray), anchor=Anchor.TL)
-                .stack_y(self.make_object.text.label(vec2(), "Zoom", font_gray), anchor=Anchor.TL)
-                .stack_y(self.make_object.text.label(vec2(), "Rotation", font_gray), anchor=Anchor.TL)
+                self.create_object.ui.layouts.vertical_layout(vec2(), 180).skip_rendering()
+                .stack_y(self.create_object.text.label(vec2(), "Position", font_gray), anchor=Anchor.TL)
+                .stack_y(self.create_object.text.label(vec2(), "Zoom", font_gray), anchor=Anchor.TL)
+                .stack_y(self.create_object.text.label(vec2(), "Rotation", font_gray), anchor=Anchor.TL)
             ).stack_content_x(
-                self.make_object.ui.layouts.vertical_layout(vec2(), 180).skip_rendering()
-                .stack_y(self.make_object.text.dynamic_label(vec2(), "{}", lambda: list(self.camera.pos), font_white), anchor=Anchor.TL)
-                .stack_y(self.make_object.text.dynamic_label(vec2(), "{}", lambda: (f"{self.camera.zoom:.2e}" if (abs(self.camera.zoom) < 0.01 or abs(self.camera.zoom) >= 1000) else f"{self.camera.zoom:.3f}"), font_white), anchor=Anchor.TL)
-                .stack_y(self.make_object.text.dynamic_label(vec2(), "{}°", lambda: round(self.camera.rotation, 1), font_white), anchor=Anchor.TL)
+                self.create_object.ui.layouts.vertical_layout(vec2(), 180).skip_rendering()
+                .stack_y(self.create_object.text.dynamic_label(vec2(), "{}", lambda: list(self.camera.pos), font_white), anchor=Anchor.TL)
+                .stack_y(self.create_object.text.dynamic_label(vec2(), "{}", lambda: (f"{self.camera.zoom:.2e}" if (abs(self.camera.zoom) < 0.01 or abs(self.camera.zoom) >= 1000) else f"{self.camera.zoom:.3f}"), font_white), anchor=Anchor.TL)
+                .stack_y(self.create_object.text.dynamic_label(vec2(), "{}°", lambda: round(self.camera.rotation, 1), font_white), anchor=Anchor.TL)
             )
         )
         
@@ -308,19 +308,19 @@ class State:
         # region INPUT PANEL
         
         input_pannel = (
-            self.make_object.ui.window(vec2(), vec2(400, 116), "INPUT", style=green_style)
+            self.create_object.window.regular(vec2(), vec2(400, 116), "INPUT", style=green_style)
             .stack_content_x(
-                self.make_object.ui.layouts.vertical_layout(vec2(), 180).skip_rendering()
-                .stack_y(self.make_object.text.label(vec2(), "Mouse Screen Pos", font_gray), anchor=Anchor.TL)
-                .stack_y(self.make_object.text.label(vec2(), "Mouse World Pos", font_gray), anchor=Anchor.TL)
-                .stack_y(self.make_object.text.label(vec2(), "Held Buttons", font_gray), anchor=Anchor.TL)
-                .stack_y(self.make_object.text.label(vec2(), "Held Keys", font_gray), anchor=Anchor.TL)
+                self.create_object.ui.layouts.vertical_layout(vec2(), 180).skip_rendering()
+                .stack_y(self.create_object.text.label(vec2(), "Mouse Screen Pos", font_gray), anchor=Anchor.TL)
+                .stack_y(self.create_object.text.label(vec2(), "Mouse World Pos", font_gray), anchor=Anchor.TL)
+                .stack_y(self.create_object.text.label(vec2(), "Held Buttons", font_gray), anchor=Anchor.TL)
+                .stack_y(self.create_object.text.label(vec2(), "Held Keys", font_gray), anchor=Anchor.TL)
             ).stack_content_x(
-                self.make_object.ui.layouts.vertical_layout(vec2(), 180).skip_rendering()
-                .stack_y(self.make_object.text.dynamic_label(vec2(), "{}", lambda: list(self.mouse.pos), font_white), anchor=Anchor.TL)
-                .stack_y(self.make_object.text.dynamic_label(vec2(), "{}", lambda: list(self.mouse.world_pos(self.camera)), font_white), anchor=Anchor.TL)
-                .stack_y(self.make_object.text.dynamic_label(vec2(), "{}", lambda: self.input.held_buttons, font_white), anchor=Anchor.TL)
-                .stack_y(self.make_object.text.dynamic_label(
+                self.create_object.ui.layouts.vertical_layout(vec2(), 180).skip_rendering()
+                .stack_y(self.create_object.text.dynamic_label(vec2(), "{}", lambda: list(self.mouse.pos), font_white), anchor=Anchor.TL)
+                .stack_y(self.create_object.text.dynamic_label(vec2(), "{}", lambda: list(self.mouse.world_pos(self.camera)), font_white), anchor=Anchor.TL)
+                .stack_y(self.create_object.text.dynamic_label(vec2(), "{}", lambda: self.input.held_buttons, font_white), anchor=Anchor.TL)
+                .stack_y(self.create_object.text.dynamic_label(
                     vec2(), "{}",
                     lambda: "{" + ", ".join(f"{pg.key.name(k)}: {v}" for k, v in list(self.input.held_keys.items())[:2])
                             + (f", +{len(self.input.held_keys) - 2}" if len(self.input.held_keys) > 2 else "") + "}",
@@ -334,23 +334,23 @@ class State:
         # region RENDERING PANEL
         
         rendering_pannel = (
-            self.make_object.ui.window(vec2(), vec2(400, 150), "RENDERING", style=blue_style)
+            self.create_object.window.regular(vec2(), vec2(400, 150), "RENDERING", style=blue_style)
             .stack_content_x(
-                self.make_object.ui.layouts.vertical_layout(vec2(), 180).skip_rendering()
-                .stack_y(self.make_object.text.label(vec2(), "Cache Size", font_gray), anchor=Anchor.TL)
-                .stack_y(self.make_object.text.label(vec2(), "Cache Hits", font_gray), anchor=Anchor.TL)
-                .stack_y(self.make_object.text.label(vec2(), "Cache Skips", font_gray), anchor=Anchor.TL)
-                .stack_y(self.make_object.text.label(vec2(), "Cache Misses", font_gray), anchor=Anchor.TL)
-                .stack_y(self.make_object.text.label(vec2(), "Commands", font_gray), anchor=Anchor.TL)
-                .stack_y(self.make_object.text.label(vec2(), "Blits", font_gray), anchor=Anchor.TL)
+                self.create_object.ui.layouts.vertical_layout(vec2(), 180).skip_rendering()
+                .stack_y(self.create_object.text.label(vec2(), "Cache Size", font_gray), anchor=Anchor.TL)
+                .stack_y(self.create_object.text.label(vec2(), "Cache Hits", font_gray), anchor=Anchor.TL)
+                .stack_y(self.create_object.text.label(vec2(), "Cache Skips", font_gray), anchor=Anchor.TL)
+                .stack_y(self.create_object.text.label(vec2(), "Cache Misses", font_gray), anchor=Anchor.TL)
+                .stack_y(self.create_object.text.label(vec2(), "Commands", font_gray), anchor=Anchor.TL)
+                .stack_y(self.create_object.text.label(vec2(), "Blits", font_gray), anchor=Anchor.TL)
             ).stack_content_x(
-                self.make_object.ui.layouts.vertical_layout(vec2(), 180).skip_rendering()
-                .stack_y(self.make_object.text.dynamic_label(vec2(), "{} ({}Mo)", lambda: (self.renderer.surface_cache_size, round(self.renderer.surface_cache_memory_size, 1)), font_white, cache=False), anchor=Anchor.TL)
-                .stack_y(self.make_object.text.dynamic_label(vec2(), "{}", lambda: self.renderer.cache_hits, font_white), anchor=Anchor.TL)
-                .stack_y(self.make_object.text.dynamic_label(vec2(), "{}", lambda: self.renderer.cache_skips, font_white), anchor=Anchor.TL)
-                .stack_y(self.make_object.text.dynamic_label(vec2(), "{}", lambda: self.renderer.cache_misses, font_white), anchor=Anchor.TL)
-                .stack_y(self.make_object.text.dynamic_label(vec2(), "{}", lambda: self.renderer.total_commands_count, font_white), anchor=Anchor.TL)
-                .stack_y(self.make_object.text.dynamic_label(vec2(), "{}", lambda: self.renderer.blit_count, font_white), anchor=Anchor.TL)
+                self.create_object.ui.layouts.vertical_layout(vec2(), 180).skip_rendering()
+                .stack_y(self.create_object.text.dynamic_label(vec2(), "{} ({}Mo)", lambda: (self.renderer.surface_cache_size, round(self.renderer.surface_cache_memory_size, 1)), font_white, cache=False), anchor=Anchor.TL)
+                .stack_y(self.create_object.text.dynamic_label(vec2(), "{}", lambda: self.renderer.cache_hits, font_white), anchor=Anchor.TL)
+                .stack_y(self.create_object.text.dynamic_label(vec2(), "{}", lambda: self.renderer.cache_skips, font_white), anchor=Anchor.TL)
+                .stack_y(self.create_object.text.dynamic_label(vec2(), "{}", lambda: self.renderer.cache_misses, font_white), anchor=Anchor.TL)
+                .stack_y(self.create_object.text.dynamic_label(vec2(), "{}", lambda: self.renderer.total_commands_count, font_white), anchor=Anchor.TL)
+                .stack_y(self.create_object.text.dynamic_label(vec2(), "{}", lambda: self.renderer.blit_count, font_white), anchor=Anchor.TL)
             )
         )
         
@@ -359,11 +359,11 @@ class State:
         # region QUICK DEBUG PANEL
         
         quick_debug_pannel = (
-            self.make_object.ui.window(vec2(), vec2(400, 200), "QUICK DEBUG", style=yellow_style)
+            self.create_object.window.regular(vec2(), vec2(400, 200), "QUICK DEBUG", style=yellow_style)
             .stack_content_x(
-                self.make_object.ui.layouts.vertical_layout(vec2(), 180).skip_rendering()
+                self.create_object.ui.layouts.vertical_layout(vec2(), 180).skip_rendering()
                 .stack_y(
-                    self.make_object.text.dynamic_label(
+                    self.create_object.text.dynamic_label(
                         vec2(), "{}",
                         lambda: ("\n".join(self.quick_debug_manager.get_values()))
                         if self._quick_debug_manager.has_values() else "Nothing to Show",
@@ -407,8 +407,8 @@ class State:
         self._services.set(QuickDebugManager, self.quick_debug_manager)
     
     def init_keybinds(self) -> None:
-        self.add_keybind(pg.K_F3, lambda: self.debug_layer.toggle_rendering())
-        self.add_keybind(pg.K_F4, lambda: self.debug_layer.toggle_frozen())
+        self.register_keybind(pg.K_F3, lambda: self.debug_layer.toggle_rendering())
+        self.register_keybind(pg.K_F4, lambda: self.debug_layer.toggle_frozen())
     
     def init_events(self):
         pass
@@ -417,26 +417,29 @@ class State:
     
     # region REGISTRATION METHODS
     
-    def add_keybind(self, key: int | tuple[int, ...], action: Callback[[], Any], *args) -> None:
-        self.keybinds.add(Keybind(key, action, *args))
+    def register_keybind(self, key: int | tuple[int, ...], action: Callback[[], Any], *args) -> None:
+        self.keybinds.register(Keybind(key, action, *args))
 
     def register_event_callback(self, event_type: str, callback: Callback[[Event], Any], condition: Optional[Callable[[Event], bool]] = None) -> None:
         self.event_manager.register(event_type, callback, condition)
     
-    def add_object(self, layer: str, *obj: PygameObject | list[PygameObject]) -> None:
+    def register_object(self, layer: str, *obj: PygameObject | list[PygameObject]) -> None:
         for o in obj:
             self._layer_manager.add_object(layer, o)
     
     def create_layer(self, name: str, layer_value: float, camera: Optional[Camera] = None, interactable: bool = True) -> Layer:
-        cam = camera if camera is not None else self._camera
+        cam = camera if camera is not None else self.default_camera
         return self._layer_manager.create_layer(name, layer_value, cam, interactable)
     
-    def add_window(self, window: WindowObject, group: str = "main"):
-        self.ui_layer.add_object(window)
-        self.windows.register(window, group)
+    def register_window(self, window: WindowObject, group: str = "main", layer: Layer | str = "ui") -> WindowObject:
+        if isinstance(layer, str):
+            self.register_object(layer, window)
+        else:
+            layer.add_object(window)
+        return self.windows.register(window, group)
     
     def add_quick_debug(self, getter: Callable, template: str = "{}"):
-        self.quick_debug_manager.add_listener(getter, template)
+        self.quick_debug_manager.register_listener(getter, template)
     
     # endregion
     

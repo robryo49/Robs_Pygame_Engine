@@ -40,7 +40,7 @@ def generate_grid_points(
     return points
 
 
-def make_voronoi_array(
+def create_voronoi_array(
         dims: vec2 | tuple[int, int],
         grid_dims: vec2 | tuple[int, int],
         jitter: float = 0.7,
@@ -82,7 +82,7 @@ def make_voronoi_array(
     return arr
 
 
-def make_bfs_voronoi_array(
+def create_bfs_voronoi_array(
         dims: vec2 | tuple[int, int],
         grid_dims: vec2 | tuple[int, int],
         jitter: float = 0.7,

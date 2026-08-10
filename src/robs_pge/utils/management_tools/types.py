@@ -5,12 +5,12 @@ from typing import Any, Callable, Optional, Protocol, TYPE_CHECKING, runtime_che
 
 import numpy as np
 
-from robs_pge.utils.math import vec2, vec3
+from ..math import vec2, vec3
 
 if TYPE_CHECKING:
-    from robs_pge.core import Camera
-    from robs_pge.rendering import DrawCommand
-    from robs_pge.objects import Layer
+    from ...core import Camera
+    from ...rendering import DrawCommand
+    from ...objects import Layer
 
 
 type Vec2Like = vec2 | np.ndarray | tuple[float, float]

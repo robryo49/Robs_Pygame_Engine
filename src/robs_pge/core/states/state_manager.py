@@ -21,7 +21,7 @@ class StateManager:
     
     # endregion
     
-    def add_state(self, state: State):
+    def register_state(self, state: State):
         self.states[state.id] = state
     
     def set_state(self, state: str | State):

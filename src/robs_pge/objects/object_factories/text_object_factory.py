@@ -13,7 +13,7 @@ class TextObjectFactory(SubObjectFactory):
     ) -> TextObject:
         
         font = self._get_resource(font, Font)
-        obj = self._make_object(TextObject, position, rotation, scale, TextRenderer(text, font, cache), layer, anchor)
+        obj = self._create_object(TextObject, position, rotation, scale, TextRenderer(text, font, cache), layer, anchor)
         
         return obj
     
@@ -24,7 +24,7 @@ class TextObjectFactory(SubObjectFactory):
         
         font = self._get_resource(font, Font)
         obj = self.label(position, "", font, rotation, scale, layer, anchor, cache)
-        obj.make_attribute_dynamic("text", getter, template)
+        obj.create_attribute_dynamic("text", getter, template)
         
         return obj
 

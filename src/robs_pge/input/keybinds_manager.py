@@ -33,7 +33,7 @@ class KeybindsManager:
         self.keybinds.set(keybind.key, [keybind])
         return self
         
-    def add(self, keybind: Keybind) -> "KeybindsManager":
+    def register(self, keybind: Keybind) -> "KeybindsManager":
         if self.has(keybind.key):
             self.keybinds.get(keybind.key).append(keybind)
         else:

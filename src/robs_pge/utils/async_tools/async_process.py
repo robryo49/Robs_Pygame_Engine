@@ -1,7 +1,7 @@
 from concurrent.futures import Future
 from typing import Any, Optional
 
-from robs_pge.utils.management_tools.types import Callback
+from ..management_tools import Callback
 
 
 class AsyncProcess:

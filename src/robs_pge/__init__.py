@@ -33,13 +33,13 @@ from .utils import (
     rotate, rotate_rad, rotated_surface_dims, surface_pos_from_pixel_pos, surface_pos_from_uv_pos, get_object_dims,
     Collection, DictCollection, TypedDictCollection, TypedCollection,
     Vec2Like, Vec3Like, Callback, EasingFunctionType, StyleOrName, ValueOrGetter, validate_signature,
-    make_linear_gradient_array, make_angular_gradient_array, make_radial_gradient_array,
-    make_circle_mask, make_rect_mask,
+    create_linear_gradient_array, create_angular_gradient_array, create_radial_gradient_array,
+    create_circle_mask, create_rect_mask,
     normalize_array, blend_arrays, colorize_array, apply_curve,
     erode_heightmap, smooth_heightmap, generate_slope_map,
     generate_distance_map, label_array, label_array_random,
     get_label_centers, majority_filter, find_edges, skeletonize_mask, remove_small_objects,
-    make_noise_array, make_voronoi_array, make_bfs_voronoi_array,
+    create_noise_array, create_voronoi_array, create_bfs_voronoi_array,
     AsyncProcess, AsyncProcessManager,
 )
 from .rendering import (
@@ -100,13 +100,13 @@ __all__ = [
     # utils - types
     "Vec2Like", "Vec3Like", "Callback", "EasingFunctionType", "StyleOrName", "ValueOrGetter", "validate_signature",
     # utils - array tools
-    "make_linear_gradient_array", "make_angular_gradient_array", "make_radial_gradient_array",
-    "make_circle_mask", "make_rect_mask",
+    "create_linear_gradient_array", "create_angular_gradient_array", "create_radial_gradient_array",
+    "create_circle_mask", "create_rect_mask",
     "normalize_array", "blend_arrays", "colorize_array", "apply_curve",
     "erode_heightmap", "smooth_heightmap", "generate_slope_map",
     "generate_distance_map", "label_array", "label_array_random",
     "get_label_centers", "majority_filter", "find_edges", "skeletonize_mask", "remove_small_objects",
-    "make_noise_array", "make_voronoi_array", "make_bfs_voronoi_array",
+    "create_noise_array", "create_voronoi_array", "create_bfs_voronoi_array",
     # utils - async
     "AsyncProcess", "AsyncProcessManager",
     # rendering - styles

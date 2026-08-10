@@ -8,7 +8,7 @@ class QuickDebugManager:
         
         self._queue: list[str] = []
     
-    def add_listener(self, getter: Callable, template: str = "{}"):
+    def register_listener(self, getter: Callable, template: str = "{}"):
         self._getters.append((template, getter))
     
     def quick_debug(self, *infos: Any) -> None:

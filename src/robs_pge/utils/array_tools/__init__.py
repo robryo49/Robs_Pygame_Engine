@@ -1,16 +1,16 @@
-from .gradients import make_linear_gradient_array, make_angular_gradient_array, make_radial_gradient_array
-from .masks import make_circle_mask, make_rect_mask
+from .gradients import create_linear_gradient_array, create_angular_gradient_array, create_radial_gradient_array
+from .masks import create_circle_mask, create_rect_mask
 from .visualization import normalize_array, blend_arrays, colorize_array, apply_curve
 from .processing import *
 from .generation import *
 
 __all__ = [
-    "make_linear_gradient_array",
-    "make_angular_gradient_array",
-    "make_radial_gradient_array",
+    "create_linear_gradient_array",
+    "create_angular_gradient_array",
+    "create_radial_gradient_array",
     
-    "make_circle_mask",
-    "make_rect_mask",
+    "create_circle_mask",
+    "create_rect_mask",
     
     "normalize_array",
     "blend_arrays",
@@ -29,8 +29,8 @@ __all__ = [
     "skeletonize_mask",
     "remove_small_objects",
     
-    "make_noise_array",
-    "make_voronoi_array",
-    "make_bfs_voronoi_array"
+    "create_noise_array",
+    "create_voronoi_array",
+    "create_bfs_voronoi_array"
 ]
 

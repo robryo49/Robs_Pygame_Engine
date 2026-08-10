@@ -12,7 +12,7 @@ class ShapeFactory(SubObjectFactory):
     ) -> RectObject:
         
         style = self._get_resource(style, RectStyle)
-        obj = self._make_object(RectObject, position, rotation, scale, RectRenderer(dims, style, cache), layer, anchor)
+        obj = self._create_object(RectObject, position, rotation, scale, RectRenderer(dims, style, cache), layer, anchor)
         
         return obj
     
@@ -22,7 +22,7 @@ class ShapeFactory(SubObjectFactory):
     ) -> CircleObject:
         
         style = self._get_resource(style, CircleStyle)
-        obj = self._make_object(CircleObject, position, rotation, scale, CircleRenderer(radius, style, cache), layer, anchor)
+        obj = self._create_object(CircleObject, position, rotation, scale, CircleRenderer(radius, style, cache), layer, anchor)
         
         return obj
     
@@ -32,7 +32,7 @@ class ShapeFactory(SubObjectFactory):
     ) -> LineObject:
         
         style = self._get_resource(style, LineStyle)
-        obj = self._make_object(LineObject, position, rotation, scale, LineRenderer(points, style, cache), layer, anchor)
+        obj = self._create_object(LineObject, position, rotation, scale, LineRenderer(points, style, cache), layer, anchor)
         
         return obj
     

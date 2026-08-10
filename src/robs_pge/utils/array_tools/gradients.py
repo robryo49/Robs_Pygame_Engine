@@ -5,7 +5,7 @@ import numpy as np
 from glm import vec2
 
 
-def make_linear_gradient_array(
+def create_linear_gradient_array(
         dims: vec2 | tuple[int, int],
         start: float = 0.0,
         end: float = 1.0,
@@ -21,7 +21,7 @@ def make_linear_gradient_array(
         return np.tile(line[:, np.newaxis], (1, width))
 
 
-def make_radial_gradient_array(
+def create_radial_gradient_array(
         dims: vec2 | tuple[int, int],
         center: Optional[vec2 | tuple[float, float]] = None,
         inner: float = 0.0,
@@ -45,7 +45,7 @@ def make_radial_gradient_array(
     return (inner + (outer - inner) * t).astype(np.float32)
 
 
-def make_angular_gradient_array(
+def create_angular_gradient_array(
         dims: vec2 | tuple[int, int],
         center: Optional[vec2 | tuple[float, float]] = None,
         start_angle: float = 0.0,

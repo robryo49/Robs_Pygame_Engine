@@ -6,7 +6,7 @@ import numpy as np
 import pygame as pg
 from matplotlib.colors import Colormap
 
-from ..utils import Color, Vec2Like, colorize_array, make_noise_array, normalize_array, vec2
+from ..utils import Color, Vec2Like, colorize_array, create_noise_array, normalize_array, vec2
 
 
 class Texture:
@@ -182,6 +182,6 @@ class Texture:
     
     @classmethod
     def from_noise(cls, dims: vec2 | tuple[int, int], noise_offset: vec2 | tuple[int, int] = (0, 0), seed: Optional[int] = None, scale: float = 1, amplitude: float = 1, value_offset: float = 0, octaves: int = 8, persistence: float = 0.5, lacunarity: float = 2.0, cmap="binary"):
-        return cls.from_grayscale_array(make_noise_array(dims, noise_offset, seed, scale, amplitude, value_offset, octaves, persistence, lacunarity), cmap=cmap)
+        return cls.from_grayscale_array(create_noise_array(dims, noise_offset, seed, scale, amplitude, value_offset, octaves, persistence, lacunarity), cmap=cmap)
     
     

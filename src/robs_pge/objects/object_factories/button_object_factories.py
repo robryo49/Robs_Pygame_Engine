@@ -48,7 +48,7 @@ class ButtonObjectFactory(SubObjectFactory):
         font = self._get_resource(button_style.font, Font)
         dims = get_object_dims(dims, width, height, font.get_render_size(text), margin)
         
-        obj = self._make_object(ButtonObject, position, rotation, scale, RectRenderer(dims, bg_style, cache), layer, anchor,
+        obj = self._create_object(ButtonObject, position, rotation, scale, RectRenderer(dims, bg_style, cache), layer, anchor,
                                 self.factory.text.label(vec2(), text, font, 0.0, 1.0, layer, Anchor.C, cache), action
                                 )
         
@@ -78,7 +78,7 @@ class ButtonObjectFactory(SubObjectFactory):
         max_text_dims = vec2(max(d[0] for d in text_dims), max(d[1] for d in text_dims))
         dims = get_object_dims(dims, width, height, max_text_dims, margin)
         
-        obj = self._make_object(CycleButtonObject, position, rotation, scale, RectRenderer(dims, bg_style, cache), layer, anchor,
+        obj = self._create_object(CycleButtonObject, position, rotation, scale, RectRenderer(dims, bg_style, cache), layer, anchor,
                                 self.factory.text.label(vec2(), text, font, 0.0, 1.0, layer, Anchor.C, cache), texts, values, callback
                                 )
         
@@ -98,11 +98,11 @@ class ButtonObjectFactory(SubObjectFactory):
         bg_style = button_style.bg_style
         margin = button_style.margin
         
-        sprite = self.factory.sprite.sprite(vec2(), texture)
+        sprite = self.factory.sprite.regular(vec2(), texture)
         
         dims = get_object_dims(dims, width, height, texture.dims, margin)
         
-        obj = self._make_object(SpriteButtonObject, position, rotation, scale, RectRenderer(dims, bg_style, cache), layer, anchor, sprite, action)
+        obj = self._create_object(SpriteButtonObject, position, rotation, scale, RectRenderer(dims, bg_style, cache), layer, anchor, sprite, action)
         
         self._add_button_behaviors(obj, 1, button_style.hovered_scale, button_style.clicked_scale,
                                    bg_style.bg_color, button_style.hovered_color, button_style.clicked_color,
@@ -125,7 +125,7 @@ class ButtonObjectFactory(SubObjectFactory):
         
         dims =get_object_dims(dims, width, height, sprite.dims, margin)
         
-        obj = self._make_object(IconButtonObject, position, rotation, scale, RectRenderer(dims, bg_style, cache), layer, anchor, sprite, action)
+        obj = self._create_object(IconButtonObject, position, rotation, scale, RectRenderer(dims, bg_style, cache), layer, anchor, sprite, action)
         
         
         self._add_button_behaviors(obj, 1, button_style.hovered_scale, button_style.clicked_scale,
@@ -147,11 +147,11 @@ class ButtonObjectFactory(SubObjectFactory):
         margin = button_style.margin
         
         icon = Icons.get(checked_icon, icon_size, icon_button_style.icon_color)
-        sprite = self.factory.sprite.sprite(vec2(), icon)
+        sprite = self.factory.sprite.regular(vec2(), icon)
         
         dims = get_object_dims(vec2(size), None, None, sprite.dims, margin)
         
-        obj = self._make_object(CheckBoxObject, position, rotation, scale, RectRenderer(dims, bg_style, cache), layer, anchor, sprite, callback)
+        obj = self._create_object(CheckBoxObject, position, rotation, scale, RectRenderer(dims, bg_style, cache), layer, anchor, sprite, callback)
         
         if checked: obj.check()
         
@@ -170,7 +170,7 @@ class ButtonObjectFactory(SubObjectFactory):
         
         tick = self.factory.shape.circle(vec2(), radius - margin, CircleStyle(color), cache=cache)
         
-        obj = self._make_object(RadioButtonObject, position, rotation, scale, CircleRenderer(radius, bg_style, cache), layer, anchor, tick, callback)
+        obj = self._create_object(RadioButtonObject, position, rotation, scale, CircleRenderer(radius, bg_style, cache), layer, anchor, tick, callback)
         
         if checked: obj.check()
         
@@ -195,7 +195,7 @@ class ButtonObjectFactory(SubObjectFactory):
         toggle = self.factory.shape.rect(vec2(bg_style.bd, 0), vec2(toggle_width, toggle_height), toggle_style)
         toggle_bg = self.factory.shape.rect(vec2(bg_style.bd, 0), vec2(toggle_width / 2, toggle_height), toggle_style.with_(bg_color=toggle_bg_color, bd_color=toggle_bg_color))
         
-        obj = self._make_object(ToggleButtonObject, position, rotation, scale, RectRenderer(dims, bg_style, cache), layer, anchor, toggle, toggle_bg, toggle_movement_range, callback)
+        obj = self._create_object(ToggleButtonObject, position, rotation, scale, RectRenderer(dims, bg_style, cache), layer, anchor, toggle, toggle_bg, toggle_movement_range, callback)
         
         if enabled: obj.enable()
         

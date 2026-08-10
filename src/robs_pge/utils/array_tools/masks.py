@@ -4,7 +4,7 @@ import numpy as np
 from glm import vec2
 
 
-def make_circle_mask(
+def create_circle_mask(
         radius: float,
         dims: Optional[vec2 | tuple[int, int]] = None,
         center: Optional[vec2 | tuple[float, float]] = None,
@@ -26,7 +26,7 @@ def make_circle_mask(
     return (distance <= radius).astype(np.float32)
 
 
-def make_rect_mask(
+def create_rect_mask(
         dims: vec2 | tuple[int, int],
         rect: Optional[tuple[int, int, int, int]] = None,
         soft_edge: float = 0.0,

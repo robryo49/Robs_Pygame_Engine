@@ -531,7 +531,7 @@ class PygameObject[R]:
         return self
 
     def add_quick_debug(self, getter: Callable[[PygameObject], Any], template: str = "{}"):
-        self.get_service(QuickDebugManager).add_listener(lambda: getter(self), template)
+        self.get_service(QuickDebugManager).register_listener(lambda: getter(self), template)
         return self
 
     def do_on_update(self, action: Callback[[PygameObject], Any]):
@@ -557,27 +557,27 @@ class PygameObject[R]:
         if on_collision or while_colliding or on_collision_end:
             self.add_behavior(ActionOnCollisionBehavior(on_collision, while_colliding, on_collision_end, condition_on_other))
     
-    def make_attribute_dynamic(self, attribute: str, getter: Any | Callable[[], Any | tuple[Any, ...]], template: Optional[str] = None, strength: float = 1):
+    def create_attribute_dynamic(self, attribute: str, getter: Any | Callable[[], Any | tuple[Any, ...]], template: Optional[str] = None, strength: float = 1):
         self.add_behavior(DynamicAttributeBehavior(attribute, getter, template, strength))
         return self
         
-    def make_attribute_fixed(self, attribute: str, value: Optional[Any | Callable[[], Any]] = None, strength: float = 1):
+    def create_attribute_fixed(self, attribute: str, value: Optional[Any | Callable[[], Any]] = None, strength: float = 1):
         self.add_behavior(AttributeFixingBehavior(attribute, value, strength))
         return self
         
-    def make_attribute_clamped(self, attribute: str, min_value: Optional[float | Callable[[],  float]] = None, max_value: Optional[float | Callable[[],  float]] = None, strength: float = 1):
+    def create_attribute_clamped(self, attribute: str, min_value: Optional[float | Callable[[],  float]] = None, max_value: Optional[float | Callable[[],  float]] = None, strength: float = 1):
         self.add_behavior(AttributeClampingBehavior(attribute, min_value, max_value, strength))
         return self
         
-    def make_attribute_snap(self, attribute: str, values: list[float], offset: float = 0, strength: float = 1):
+    def create_attribute_snap(self, attribute: str, values: list[float], offset: float = 0, strength: float = 1):
         self.add_behavior(AttributeValueSnappingBehavior(attribute, values, offset, strength))
         return self
         
-    def make_attribute_snap_on_grid(self, attribute: str, step: float, offset: float = 0, strength: float = 1):
+    def create_attribute_snap_on_grid(self, attribute: str, step: float, offset: float = 0, strength: float = 1):
         self.add_behavior(AttributeGridSnappingBehavior(attribute, step, offset, strength))
         return self
     
-    def make_draggable(self, button: int = 1, target: Optional["PygameObject"] = None):
+    def create_draggable(self, button: int = 1, target: Optional["PygameObject"] = None):
         self.add_behavior(DraggableBehavior(button, target))
         return self
 
