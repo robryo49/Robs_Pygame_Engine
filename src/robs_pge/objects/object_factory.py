@@ -13,7 +13,7 @@ class ObjectFactory:
         self.text = TextObjectFactory(self)
         self.ui = UIObjectFactory(self)
         self.sprite = SpriteObjectFactory(self)
-        self.window = WindowObjectFactory(self)
+        self.window: WindowObjectFactory = WindowObjectFactory(self)
     
     # region PROPERTIES
     

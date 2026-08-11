@@ -1,11 +1,9 @@
-from typing import Optional
-
-from pygame import FRect
+from typing import Any, Callable, Iterable, Optional, Type
 
 from .sub_factory import SubObjectFactory
-from ..custom import LayoutObject, RectObject, TextObject, WindowObject
+from ..custom import LayoutObject, RectObject, TextObject, WindowObject, DebugInfoWindow
 from ..object import PygameObject
-from ...rendering import IconButtonStyle, RectRenderer, RectStyle, ScrollbarStyle, WindowStyle
+from ...rendering import IconButtonStyle, RectRenderer, RectStyle, ScrollbarStyle, WindowStyle, Font
 from ...resources import Icons
 from ...utils import Anchor, StyleOrName, clamp, vec2
 
@@ -13,37 +11,29 @@ from ...utils import Anchor, StyleOrName, clamp, vec2
 class WindowObjectFactory(SubObjectFactory):
     def __init__(self, object_factory):
         super().__init__(object_factory)
-
-    def regular(self, position: vec2, dims: vec2, title: str, draggable: bool = False, style: StyleOrName[WindowStyle] = None,
-                rotation: float = 0.0, scale: float = 1.0, layer: int = 0, anchor: vec2 = Anchor.C, cache: bool = True) -> WindowObject:
-        
-        window_style = self._get_resource(style, WindowStyle)
-        bg_style = window_style.bg_style
-        margin = window_style.margin
-        
-        # region TITLE
-        
+    
+    def _title_panel(self, window_style: WindowStyle, title: str, layer: int, width: int) -> tuple[Optional[RectObject], Optional[TextObject], float]:
         title_object: Optional[TextObject] = None
         title_panel: Optional[RectObject] = None
-        
         title_panel_height = 0
+        
         if window_style.show_title:
-            title_object: TextObject = self.factory.text.label(vec2(), title, window_style.title_font, layer=layer)
+            title_object = self.factory.text.label(vec2(), title, window_style.title_font, layer=layer)
             
-            if not window_style.title_in_header:
+            if not window_style.title_in_header and title_object is not None:
                 title_panel_height = window_style.title_panel_height or (title_object.height + window_style.title_panel_margin)
-                title_panel: RectObject = self.factory.shape.rect(vec2(), vec2(dims.x, title_panel_height), style=window_style.title_panel_style, layer=layer)
+                title_panel = self.factory.shape.rect(vec2(), vec2(width, title_panel_height), style=window_style.title_panel_style, layer=layer)
                 
                 title_offset = window_style.title_panel_margin * (vec2(1) - window_style.title_align * 2)
                 title_object.pos = title_offset
                 title_object.anchor = window_style.title_align
                 title_panel.add_child(title_object, window_style.title_align)
         
-        # endregion
-        
-        # region HEADER
-        
-        header: Optional[LayoutObject] = None
+        return title_panel, title_object, title_panel_height
+    
+    def _header_panel(self, window_style: WindowStyle, width: int, layer: int, title_object: Optional[TextObject], close_method) -> tuple[Optional[LayoutObject], float]:
+        header = None
+        header_height = 0
         
         if window_style.show_header:
             header_height = window_style.header_height
@@ -51,14 +41,14 @@ class WindowObjectFactory(SubObjectFactory):
                 if title_object is not None and window_style.title_in_header:
                     header_height = title_object.height + window_style.header_margin
                 else:
-                    raise ValueError("cannot determine header height when creating window, must specify title or header height")
+                    raise ValueError("Cannot determine header height when creating window. Must specify title or header height.")
             
             header_style = self._get_resource(window_style.header_style, RectStyle)
-            header: LayoutObject = self.factory.ui.layouts.grid_layout(vec2(), dims.x, header_height, style=header_style, layer=layer)
+            header = self.factory.ui.layouts.grid_layout(vec2(), width, header_height, style=header_style, layer=layer)
             header.set_constant_padding(window_style.header_margin)
             
             buttons_width = (header_height - window_style.header_margin * 2) * 1.5
-            header.set_column_fixed(0, dims.x - buttons_width - window_style.header_margin * 2)
+            header.set_column_fixed(0, width - buttons_width - window_style.header_margin * 2)
             
             if window_style.title_in_header and title_object is not None:
                 title_offset = window_style.header_margin * (vec2(1) - window_style.title_align * 2)
@@ -71,38 +61,38 @@ class WindowObjectFactory(SubObjectFactory):
                 button_dims = vec2(buttons_width, header_height - window_style.header_margin * 2)
                 
                 x_button = self.factory.ui.button.icon_button(
-                    vec2(), Icons.XMARK, button_dims * 0.5, lambda: obj.close(), button_dims, style=icon_buttons_style, layer=layer
+                    vec2(), Icons.XMARK, button_dims * 0.5, close_method, button_dims, style=icon_buttons_style, layer=layer
                 )
                 header.add(x_button, 1, 0)
-        else:
-            header_height = 0
         
-        # endregion
-        
-        # region CONTENT PANEL + SCROLLBAR
-        
+        return header, header_height
+    
+    def _content_panel_and_scrollbar(self, window_style: WindowStyle, height: Optional[int], header_height: float, title_panel_height: float, width: int, layer: int):
         scrollbar_style = self._get_resource(window_style.scrollbar_style, ScrollbarStyle)
         scrollbar_col_width = window_style.scrollbar_width + window_style.scrollbar_edge_margin * 2
         
-        panel_height = dims.y - title_panel_height - header_height
-        panel_width = dims.x - scrollbar_col_width
+        height = height or (header_height + title_panel_height)
+        panel_height = height - title_panel_height - header_height
+        panel_width = width - scrollbar_col_width
         
-        panel = self.factory.ui.layouts.grid_layout(vec2(), panel_width, panel_height, layer=layer)
-        panel.set_outer_padding(margin)
+        panel = self.factory.ui.layouts.grid_layout(vec2(), panel_width, panel_height or None, layer=layer)
+        panel.set_padding(window_style.margin)
         
         scrollbar = self.factory.ui.scrollbar(
             vec2(), vec2(window_style.scrollbar_width, panel_height - window_style.scrollbar_edge_margin * 2),
             scrollbar_style, layer=layer + 1
         )
         
-        # endregion
+        dims = vec2(width, height)
         
-        # region ASSEMBLY
-        
-        obj: WindowObject = self._create_object(
-            WindowObject, position, rotation, scale, RectRenderer(dims, bg_style, cache), layer, anchor,
-            title, panel, header, title_panel, title_object, scrollbar
-        )
+        return panel, scrollbar, dims, panel_width, scrollbar_col_width
+    
+    @staticmethod
+    def _assemble_window(
+            obj: WindowObject, header: Optional[LayoutObject], title_panel: Optional[RectObject],
+            panel: LayoutObject, scrollbar, panel_width: float, scrollbar_col_width: float,
+            window_style: WindowStyle, draggable: bool
+    ):
         
         row = 0
         if header is not None:
@@ -111,17 +101,13 @@ class WindowObjectFactory(SubObjectFactory):
         if title_panel is not None:
             obj.add(title_panel, 0, row, span_x=2)
             row += 1
-
+        
         obj.add(panel, 0, row)
         obj.set_column_fixed(0, panel_width)
-
+        
         obj.add(scrollbar, 1, row, anchor=Anchor.R)
         obj.set_column_fixed(1, scrollbar_col_width)
         obj.set_cell_padding(vec2(window_style.scrollbar_edge_margin, 0), (1, row))
-        
-        # endregion
-        
-        # region WIRING
         
         def _on_panel_scroll(o: PygameObject, scroll: int, pos: vec2):
             max_offset = panel.get_scroll_range_y()
@@ -129,14 +115,45 @@ class WindowObjectFactory(SubObjectFactory):
                 scrollbar.set_value(clamp(scrollbar.value - scroll * 40 / max_offset, 0.0, 1.0))
         
         panel.do_on_scroll(_on_panel_scroll)
-        panel.create_attribute_dynamic("scroll_offset", lambda: vec2(0, scrollbar.value * panel.get_scroll_range_y()), strength=0.2)
+        panel.make_attribute_dynamic("scroll_offset", lambda: vec2(0, scrollbar.value * panel.get_scroll_range_y()), strength=0.2)
         
         if draggable:
             drag_handle = header if header is not None else (title_panel if title_panel is not None else obj)
             drag_handle.make_draggable(1, target=obj)
         
         obj.sync_scrollbar()
-        
         # endregion
+    
+    def create_window[WT](
+            self, window_cls: type[WT], position: vec2, title: str, width: int,
+            height: Optional[int] = None, draggable: bool = False, style: StyleOrName[WindowStyle] = None,
+            rotation: float = 0.0, scale: float = 1.0, layer: int = 0, anchor: vec2 = Anchor.C,
+            cache: bool = True, *args: Any
+    ) -> WT:
+        window_style = self._get_resource(style, WindowStyle)
+        
+        title_panel, title_object, title_panel_height = self._title_panel(window_style, title, layer, width)
+        header, header_height = self._header_panel(window_style, width, layer, title_object, lambda: obj.close())
+        
+        panel, scrollbar, dims, panel_width, scrollbar_col_width = self._content_panel_and_scrollbar(
+            window_style, height, header_height, title_panel_height, width, layer
+        )
+        
+        obj = self._create_object(
+            window_cls, position, rotation, scale, RectRenderer(dims, window_style.bg_style, cache),
+            layer, anchor, title, panel, header, title_panel, title_object, scrollbar, *args
+        )
+        
+        self._assemble_window(obj, header, title_panel, panel, scrollbar, panel_width, scrollbar_col_width, window_style, draggable)
+        obj.fix_width(width)
         
         return obj
+    
+    def regular(
+            self, position: vec2, title: str, width: int, height: Optional[int] = None,
+            draggable: bool = False, style: StyleOrName[WindowStyle] = None,
+            rotation: float = 0.0, scale: float = 1.0, layer: int = 0, anchor: vec2 = Anchor.C, cache: bool = True
+    ) -> WindowObject:
+        
+        return self.create_window(WindowObject, position, title, width, height, draggable, style, rotation, scale, layer, anchor, cache)
+    

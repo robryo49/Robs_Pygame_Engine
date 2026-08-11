@@ -39,6 +39,9 @@ def invert_x(vec: vec2):
 def invert_uv_x(uv: vec2):
     return vec2(1-uv.x, uv.y)
 
+def invert_uv(uv: vec2):
+    return vec2(1-uv.x, 1-uv.y)
+
 
 def get_object_dims(dims: Optional[vec2] = None, width: Optional[float] = None, height: Optional[float] = None,
                     content_dims: Optional[vec2] = None, margin: Optional[float] = None) -> vec2:

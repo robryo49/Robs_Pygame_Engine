@@ -1,7 +1,7 @@
 from typing import Any, Optional
 
-from .button_object_factories import ButtonObjectFactory
-from .debug_object_factories import DebugObjectFactory
+from .button_object_factory import ButtonObjectFactory
+from .debug_object_factory import DebugObjectFactory
 from .layout_object_factory import LayoutObjectFactory
 from .sub_factory import SubObjectFactory
 from ..custom import LineChartObject, ProgressBarObject, ScrollbarObject, SliderObject

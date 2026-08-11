@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Literal
+from typing import Literal, cast
 
 from .primitive_objects import RectObject
 from ..behaviors import *
@@ -10,16 +10,17 @@ from ...utils import Anchor, DictCollection, Transform, clamp, vec2
 
 
 class LayoutObject(RectObject):
-    GRID_MODE = "grid"
-    COL_MOD = "columns"
-    ROW_MOD = "rows"
+    GRID_MODE: Literal["grid"] = "grid"
+    COL_MODE: Literal["columns"] = "columns"
+    ROW_MODE: Literal["rows"] = "rows"
 
     def __init__(self, transform: Transform, renderer: RectRenderer, services: DictCollection, sub_layer: int = 0, anchor: vec2 = Anchor.C):
         super().__init__(transform, renderer, services, sub_layer, anchor)
 
         # === Core data model ===
-        # object → (col, row, span_x, span_y)
-        self._placements: dict[PygameObject, tuple[int, int, int, int]] = {}
+        # object → (col, row, span_x, span_y, cell_anchor)
+        self._placements: dict[PygameObject, tuple[int, int, int, int, vec2]] = {}
+        self._dirty_check_data: dict[PygameObject, tuple[vec2, vec2, vec2]] = {}
 
         # Column/row configuration: index → {"fixed": bool, "size": float, "min_size": float}
         self._cols: dict[int, dict[str, float | bool]] = {}
@@ -32,12 +33,12 @@ class LayoutObject(RectObject):
         self._row_col_widths: dict[int, dict[int, float]] = {}
 
         # Spacing & padding
-        self._spacing: vec2 = vec2(0, 0)
+        self._cell_padding: vec2 = vec2(0, 0)
         self._padding: vec2 = vec2(0, 0)
         self._cells_padding: dict[tuple[int, int], vec2] = {}
 
         # Layout mode
-        self._mode: str = self.GRID_MODE
+        self._mode: Literal["grid", "rows", "columns"] = self.GRID_MODE
 
         # Sizing behavior
         self._fixed_width: Optional[float] = None
@@ -52,6 +53,7 @@ class LayoutObject(RectObject):
         self._flip_y: bool = False
 
         # Dirty tracking via version counter
+        self._dirty_checking: bool = True
         self._layout_version: int = 0
         self._last_solved_version: int = -1
 
@@ -71,23 +73,34 @@ class LayoutObject(RectObject):
 
     @mode.setter
     def mode(self, value: Literal["grid", "columns", "rows"]) -> None:
-        if value not in (self.GRID_MODE, self.COL_MOD, self.ROW_MOD):
+        if value not in (self.GRID_MODE, self.COL_MODE, self.ROW_MODE):
             raise ValueError(f"Invalid layout mode '{value}'. Use 'grid', 'columns', or 'rows'.")
         self._mode = value
         self._mark_dirty()
 
     @property
-    def spacing(self) -> vec2:
-        return self._spacing
+    def cell_pading(self) -> vec2:
+        return self._cell_padding
 
-    @spacing.setter
-    def spacing(self, value: vec2 | float) -> None:
-        self._spacing = vec2(value)
+    @cell_pading.setter
+    def cell_pading(self, value: vec2 | float) -> None:
+        self._cell_padding = vec2(value)
         self._mark_dirty()
+    
+    def set_cell_padding(self, padding: vec2 | float, cell: Optional[tuple[int, int]] = None) -> LayoutObject:
+        if cell is not None:
+            self._cells_padding[cell] = vec2(padding)
+        else:
+            self._cell_padding = vec2(padding)
+        self._mark_dirty()
+        return self
+    
+    def get_cell_padding(self, cell: tuple[int, int]) -> vec2:
+        return self._cells_padding.get(cell, self._cell_padding)
 
-    def set_spacing(self, value: vec2 | float) -> LayoutObject:
-        self._spacing = vec2(value)
-        self._mark_dirty()
+    def set_constant_padding(self, value: vec2 | float) -> LayoutObject:
+        self.set_padding(value*0.5)
+        self.set_cell_padding(value*0.5)
         return self
 
     @property
@@ -139,6 +152,31 @@ class LayoutObject(RectObject):
     def flip_y(self, value: bool) -> None:
         self._flip_y = value
         self._mark_dirty()
+        
+    # region dirty_checking
+    @property
+    def dirty_checking(self) -> bool:
+        return self._dirty_checking
+    
+    @dirty_checking.setter
+    def dirty_checking(self, value):
+        self._dirty_checking = value
+        
+    def enable_dirty_checking(self):
+        self.dirty_checking = True
+        return self
+        
+    def disable_dirty_checking(self):
+        self.dirty_checking = True
+        return self
+        
+    def toggle_dirty_checking(self, value: Optional[bool]=None):
+        self.dirty_checking = (not self.dirty_checking) if value is None else value
+        return self
+    
+    def set_dirty_checking(self, value: bool):
+        self._dirty_checking = value
+    # endregion
 
     # endregion
 
@@ -171,7 +209,19 @@ class LayoutObject(RectObject):
         cfg["min_size"] = min_size
         self._mark_dirty()
         return self
-
+    
+    def fix_col_width(self, col: int, width: Optional[float] = None) -> LayoutObject:
+        return self.set_column_fixed(col, width)
+    
+    def fix_row_height(self, row: int, height: Optional[float] = None) -> LayoutObject:
+        return self.set_row_fixed(row, height)
+    
+    def unfix_col_width(self, col: int) -> LayoutObject:
+        return self.set_column_fixed(col, fixed=False)
+    
+    def unfix_row_height(self, row: int) -> LayoutObject:
+        return self.set_row_fixed(row, fixed=False)
+    
     # endregion
 
     # region SIZING
@@ -195,6 +245,18 @@ class LayoutObject(RectObject):
         self._fixed_height = None
         self._mark_dirty()
         return self
+    
+    def fix_width(self, width: Optional[float] = None) -> LayoutObject:
+        return self.set_fixed_width(width or self.width)
+    
+    def fix_height(self, height: Optional[float] = None) -> LayoutObject:
+        return self.set_fixed_height(height or self.height)
+    
+    def unfix_width(self) -> LayoutObject:
+        return self.set_fixed_width(None)
+    
+    def unfix_height(self) -> LayoutObject:
+        return self.set_fixed_height(None)
 
     # endregion
 
@@ -202,21 +264,20 @@ class LayoutObject(RectObject):
 
     def add(self, obj: PygameObject, col: int, row: int, span_x: int = 1, span_y: int = 1, anchor: vec2 = Anchor.C) -> LayoutObject:
         self.add_child(obj)
-        self._placements[obj] = (col, row, span_x, span_y)
-        obj.anchor = anchor
+        self._placements[obj] = (col, row, span_x, span_y, anchor)
         self._mark_dirty()
         return self
 
     def stack_y(self, obj: PygameObject, col: int = 0, anchor: vec2 = Anchor.C) -> LayoutObject:
         max_row = -1
-        for _, (c, r, _, _) in ((o, p) for o, p in self._placements.items() if p[0] == col):
+        for _, (c, r, _, _, _) in ((o, p) for o, p in self._placements.items() if p[0] == col):
             if r > max_row:
                 max_row = r
         return self.add(obj, col, max_row + 1, 1, 1, anchor)
 
     def stack_x(self, obj: PygameObject, row: int = 0, anchor: vec2 = Anchor.C) -> LayoutObject:
         max_col = -1
-        for _, (c, r, _, _) in ((o, p) for o, p in self._placements.items() if p[1] == row):
+        for _, (c, r, _, _, _) in ((o, p) for o, p in self._placements.items() if p[1] == row):
             if c > max_col:
                 max_col = c
         return self.add(obj, max_col + 1, row, 1, 1, anchor)
@@ -262,8 +323,27 @@ class LayoutObject(RectObject):
 
     def _mark_dirty(self) -> None:
         self._layout_version += 1
+        
+    def _check_if_dirty(self) -> None:
+        for obj in self._placements:
+            data = self._dirty_check_data.get(obj, None)
+            if data is None:
+                self._mark_dirty()
+                return
+            
+            if obj.pos != data[0] or obj.dims != data[1] or obj.anchor != data[2]:
+                self._mark_dirty()
+                return
+    
+    def _update_dirty_check_data(self):
+        for obj in self._placements:
+            self._dirty_check_data[obj] = (obj.pos, obj.dims, obj.anchor)
+        
 
     def _solve_layout(self) -> None:
+        if self._dirty_checking:
+            self._check_if_dirty()
+        
         if self._layout_version == self._last_solved_version:
             return
 
@@ -279,7 +359,7 @@ class LayoutObject(RectObject):
             )
 
         self._position_objects()
-
+        self._update_dirty_check_data()
         self._last_solved_version = self._layout_version
 
     def _solve_sizes(self) -> None:
@@ -290,47 +370,128 @@ class LayoutObject(RectObject):
 
         if self._mode == self.GRID_MODE:
             self._solve_grid_sizes()
-        elif self._mode == self.COL_MOD:
+        elif self._mode == self.COL_MODE:
             self._solve_columns_mode_sizes()
-        elif self._mode == self.ROW_MOD:
+        elif self._mode == self.ROW_MODE:
             self._solve_rows_mode_sizes()
-
+    
     def _solve_grid_sizes(self) -> None:
-        # Reset auto-sized columns/rows
-        for col_idx, cfg in self._cols.items():
+        for cfg in self._cols.values():
             if not cfg["fixed"]:
                 cfg["size"] = 0.0
-        for row_idx, cfg in self._rows.items():
+        
+        for cfg in self._rows.values():
             if not cfg["fixed"]:
                 cfg["size"] = 0.0
-
-        # Measure objects (cell size = object size + 2 * padding)
-        for obj, (col, row, span_x, span_y) in self._placements.items():
+        
+        for obj, (col, row, span_x, span_y, _) in self._placements.items():
+            if span_x <= 0 or span_y <= 0:
+                continue
+            
+            for i in range(span_x):
+                self._cols.setdefault(col + i, {"fixed": False, "size": 0.0, "min_size": 0.0})
+            
+            for i in range(span_y):
+                self._rows.setdefault(row + i, {"fixed": False, "size": 0.0, "min_size": 0.0})
+        
+        for obj, (col, row, span_x, span_y, _) in self._placements.items():
             obj_w, obj_h = obj.dims
+            
             if obj_w <= 0 or obj_h <= 0:
                 continue
-
+            
             pad = self.get_cell_padding((col, row))
+            
             total_w = obj_w + 2 * pad.x
             total_h = obj_h + 2 * pad.y
-
-            for i in range(span_x):
-                ci = col + i
-                cfg = self._cols.setdefault(ci, {"fixed": False, "size": 0.0, "min_size": 0.0})
+            
+            if span_x == 1:
+                cfg = self._cols[col]
                 if not cfg["fixed"]:
-                    cfg["size"] = max(cfg["size"], total_w / span_x)
-
-            for i in range(span_y):
-                ri = row + i
-                cfg = self._rows.setdefault(ri, {"fixed": False, "size": 0.0, "min_size": 0.0})
+                    cfg["size"] = max(cfg["size"], total_w)
+            
+            if span_y == 1:
+                cfg = self._rows[row]
                 if not cfg["fixed"]:
-                    cfg["size"] = max(cfg["size"], total_h / span_y)
-
-        # Apply minimums and store solved sizes
+                    cfg["size"] = max(cfg["size"], total_h)
+        
+        max_iterations = max(1, len(self._placements) + 1)
+        
+        for _ in range(max_iterations):
+            
+            changed = False
+            
+            for obj, (col, row, span_x, span_y, _) in self._placements.items():
+                if span_x <= 1:
+                    continue
+                
+                obj_w, obj_h = obj.dims
+                if obj_w <= 0 or obj_h <= 0:
+                    continue
+                
+                pad = self.get_cell_padding((col, row))
+                total_w = obj_w + 2 * pad.x
+                required_width = total_w - self._cell_padding.x * (span_x - 1)
+                
+                tracks = [self._cols[col + i] for i in range(span_x)]
+                
+                current_width = sum(cfg["size"] for cfg in tracks)
+                deficit = required_width - current_width
+                if deficit <= 0:
+                    continue
+                
+                free_tracks = [cfg for cfg in tracks if not cfg["fixed"]]
+                if not free_tracks:
+                    continue
+                
+                per_track = deficit / len(free_tracks)
+                for cfg in free_tracks:
+                    cfg["size"] += per_track
+                    
+                changed = True
+            
+            for obj, (col, row, span_x, span_y, _) in self._placements.items():
+                if span_y <= 1:
+                    continue
+                
+                obj_w, obj_h = obj.dims
+                if obj_w <= 0 or obj_h <= 0:
+                    continue
+                
+                pad = self.get_cell_padding((col, row))
+                total_h = obj_h + 2 * pad.y
+                required_height = total_h - self._cell_padding.y * (span_y - 1)
+                
+                tracks = [self._rows[row + i] for i in range(span_y)]
+                
+                current_height = sum(cfg["size"] for cfg in tracks)
+                deficit = required_height - current_height
+                if deficit <= 0:
+                    continue
+                
+                free_tracks = [cfg for cfg in tracks if not cfg["fixed"]]
+                if not free_tracks:
+                    continue
+                
+                per_track = deficit / len(free_tracks)
+                for cfg in free_tracks:
+                    cfg["size"] += per_track
+                
+                changed = True
+            
+            if not changed:
+                break
+        
+        self._solved_col_widths = {}
+        
         for col_idx, cfg in self._cols.items():
             self._solved_col_widths[col_idx] = max(cfg["size"], cfg.get("min_size", 0.0))
+        
+        self._solved_row_heights = {}
+        
         for row_idx, cfg in self._rows.items():
             self._solved_row_heights[row_idx] = max(cfg["size"], cfg.get("min_size", 0.0))
+
 
     def _solve_columns_mode_sizes(self) -> None:
         # Each column is independent: widths per-column, row heights per-column
@@ -338,7 +499,7 @@ class LayoutObject(RectObject):
             if not cfg["fixed"]:
                 cfg["size"] = 0.0
 
-        for obj, (col, row, span_x, span_y) in self._placements.items():
+        for obj, (col, row, span_x, span_y, _) in self._placements.items():
             obj_w, obj_h = obj.dims
             if obj_w <= 0 or obj_h <= 0:
                 continue
@@ -368,7 +529,7 @@ class LayoutObject(RectObject):
             if not cfg["fixed"]:
                 cfg["size"] = 0.0
 
-        for obj, (col, row, span_x, span_y) in self._placements.items():
+        for obj, (col, row, span_x, span_y, _) in self._placements.items():
             obj_w, obj_h = obj.dims
             if obj_w <= 0 or obj_h <= 0:
                 continue
@@ -397,17 +558,17 @@ class LayoutObject(RectObject):
         offset = self._padding.x
         for col_idx in sorted(self._solved_col_widths):
             self._col_offsets[col_idx] = offset
-            offset += self._solved_col_widths[col_idx] + self._spacing.x
-        content_w = offset - self._spacing.x + self._padding.x if self._solved_col_widths else self._padding.x * 2
+            offset += self._solved_col_widths[col_idx] + self._cell_padding.x
+        content_w = offset - self._cell_padding.x + self._padding.x if self._solved_col_widths else self._padding.x * 2
 
         # Row offsets depend on mode
         if self._mode == self.GRID_MODE:
             offset = self._padding.y
             for row_idx in sorted(self._solved_row_heights):
                 self._row_offsets[row_idx] = offset
-                offset += self._solved_row_heights[row_idx] + self._spacing.y
-            content_h = offset - self._spacing.y + self._padding.y if self._solved_row_heights else self._padding.y * 2
-        elif self._mode == self.COL_MOD:
+                offset += self._solved_row_heights[row_idx] + self._cell_padding.y
+            content_h = offset - self._cell_padding.y + self._padding.y if self._solved_row_heights else self._padding.y * 2
+        elif self._mode == self.COL_MODE:
             self._col_row_offsets = {}
             max_content_h = 0.0
             for col_idx, row_heights in self._col_row_heights.items():
@@ -415,12 +576,12 @@ class LayoutObject(RectObject):
                 offset = self._padding.y
                 for row_idx in sorted(row_heights):
                     offsets[row_idx] = offset
-                    offset += row_heights[row_idx] + self._spacing.y
+                    offset += row_heights[row_idx] + self._cell_padding.y
                 self._col_row_offsets[col_idx] = offsets
-                col_h = offset - self._spacing.y + self._padding.y if row_heights else self._padding.y * 2
+                col_h = offset - self._cell_padding.y + self._padding.y if row_heights else self._padding.y * 2
                 max_content_h = max(max_content_h, col_h)
             content_h = max_content_h
-        elif self._mode == self.ROW_MOD:
+        elif self._mode == self.ROW_MODE:
             self._row_col_offsets = {}
             max_content_w = 0.0
             for row_idx, col_widths in self._row_col_widths.items():
@@ -428,17 +589,19 @@ class LayoutObject(RectObject):
                 offset = self._padding.x
                 for col_idx in sorted(col_widths):
                     offsets[col_idx] = offset
-                    offset += col_widths[col_idx] + self._spacing.x
+                    offset += col_widths[col_idx] + self._cell_padding.x
                 self._row_col_offsets[row_idx] = offsets
-                row_w = offset - self._spacing.x + self._padding.x if col_widths else self._padding.x * 2
+                row_w = offset - self._cell_padding.x + self._padding.x if col_widths else self._padding.x * 2
                 max_content_w = max(max_content_w, row_w)
             content_w = max_content_w
 
             offset = self._padding.y
             for row_idx in sorted(self._solved_row_heights):
                 self._row_offsets[row_idx] = offset
-                offset += self._solved_row_heights[row_idx] + self._spacing.y
-            content_h = offset - self._spacing.y + self._padding.y if self._solved_row_heights else self._padding.y * 2
+                offset += self._solved_row_heights[row_idx] + self._cell_padding.y
+            content_h = offset - self._cell_padding.y + self._padding.y if self._solved_row_heights else self._padding.y * 2
+        else:
+            raise ValueError(f"Layout mode is {self._mode} but isn't recognized.")
 
         self._content_size = vec2(content_w, content_h)
 
@@ -456,7 +619,7 @@ class LayoutObject(RectObject):
                         self._solved_col_widths[ci] = max(0, self._solved_col_widths[ci] + per_col)
                 # Recompute offsets
                 self._recompute_col_offsets()
-                self._content_size.x = self._fixed_width
+                self._content_size.x = cast(float, self._fixed_width)
 
         if self._fixed_height is not None:
             if self._mode == self.GRID_MODE and self._solved_row_heights:
@@ -470,56 +633,55 @@ class LayoutObject(RectObject):
                         for ri in free_rows:
                             self._solved_row_heights[ri] = max(0, self._solved_row_heights[ri] + per_row)
                     self._recompute_row_offsets()
-                    self._content_size.y = self._fixed_height
+                    self._content_size.y = cast(float, self._fixed_height)
 
     def _recompute_col_offsets(self) -> None:
         offset = self._padding.x
         for col_idx in sorted(self._solved_col_widths):
             self._col_offsets[col_idx] = offset
-            offset += self._solved_col_widths[col_idx] + self._spacing.x
+            offset += self._solved_col_widths[col_idx] + self._cell_padding.x
 
     def _recompute_row_offsets(self) -> None:
         offset = self._padding.y
         for row_idx in sorted(self._solved_row_heights):
             self._row_offsets[row_idx] = offset
-            offset += self._solved_row_heights[row_idx] + self._spacing.y
+            offset += self._solved_row_heights[row_idx] + self._cell_padding.y
 
     def _position_objects(self) -> None:
-        for obj, (col, row, span_x, span_y) in self._placements.items():
+        for obj, (col, row, span_x, span_y, cell_anchor) in self._placements.items():
             obj_w, obj_h = obj.dims
 
-            if self._mode == self.ROW_MOD:
-                # Per-row column offsets and widths
+            if self._mode == self.ROW_MODE:
                 x = self._row_col_offsets.get(row, {}).get(col, self._padding.x)
                 y = self._row_offsets.get(row, self._padding.y)
 
                 col_widths = self._row_col_widths.get(row, {})
-                cell_w = sum(col_widths.get(col + i, 0.0) for i in range(span_x)) + self._spacing.x * (span_x - 1)
-                cell_h = sum(self._solved_row_heights.get(row + i, 0.0) for i in range(span_y)) + self._spacing.y * (span_y - 1)
-            elif self._mode == self.COL_MOD:
-                # Per-column row offsets and heights
+                cell_w = sum(col_widths.get(col + i, 0.0) for i in range(span_x)) + self._cell_padding.x * (span_x - 1)
+                cell_h = sum(self._solved_row_heights.get(row + i, 0.0) for i in range(span_y)) + self._cell_padding.y * (span_y - 1)
+                
+            elif self._mode == self.COL_MODE:
                 x = self._col_offsets.get(col, self._padding.x)
                 y = self._col_row_offsets.get(col, {}).get(row, self._padding.y)
 
-                cell_w = sum(self._solved_col_widths.get(col + i, 0.0) for i in range(span_x)) + self._spacing.x * (span_x - 1)
+                cell_w = sum(self._solved_col_widths.get(col + i, 0.0) for i in range(span_x)) + self._cell_padding.x * (span_x - 1)
                 row_heights = self._col_row_heights.get(col, {})
-                cell_h = sum(row_heights.get(row + i, 0.0) for i in range(span_y)) + self._spacing.y * (span_y - 1)
+                cell_h = sum(row_heights.get(row + i, 0.0) for i in range(span_y)) + self._cell_padding.y * (span_y - 1)
+                
             else:
-                # Grid mode (shared rows/cols)
                 x = self._col_offsets.get(col, self._padding.x)
                 y = self._row_offsets.get(row, self._padding.y)
 
-                cell_w = sum(self._solved_col_widths.get(col + i, 0.0) for i in range(span_x)) + self._spacing.x * (span_x - 1)
-                cell_h = sum(self._solved_row_heights.get(row + i, 0.0) for i in range(span_y)) + self._spacing.y * (span_y - 1)
+                cell_w = sum(self._solved_col_widths.get(col + i, 0.0) for i in range(span_x)) + self._cell_padding.x * (span_x - 1)
+                cell_h = sum(self._solved_row_heights.get(row + i, 0.0) for i in range(span_y)) + self._cell_padding.y * (span_y - 1)
 
             # Per-cell padding
-            pad = self.get_cell_padding((col, row))
-
-            # Anchor offset within cell (padding pushes object inward from edges)
-            anchor_x = cell_w * obj.anchor.x + pad.x * (1 - 2 * obj.anchor.x)
-            anchor_y = cell_h * obj.anchor.y + pad.y * (1 - 2 * obj.anchor.y)
-
-            pos = vec2(x + anchor_x, y + anchor_y)
+            spacing_offset = self.get_cell_padding((col, row)) * 2 * (vec2(0.5) - cell_anchor)
+            cell_offset = vec2(cell_w, cell_h) * cell_anchor
+            obj_offset = vec2(obj_w, obj_h) * (obj.anchor - cell_anchor)
+            anchor_offset = - (vec2(0.5) - self.anchor) * self.dims
+            
+            offset = spacing_offset + cell_offset + obj_offset + anchor_offset
+            pos = vec2(x, y) + offset
 
             # Flip transform
             if self._flip_x:
@@ -549,78 +711,7 @@ class LayoutObject(RectObject):
     # endregion
 
     # region LEGACY COMPATIBILITY
-
-    def fix_col_width(self, col: int, width: Optional[float] = None) -> LayoutObject:
-        return self.set_column_fixed(col, width)
-
-    def fix_row_height(self, row: int, height: Optional[float] = None) -> LayoutObject:
-        return self.set_row_fixed(row, height)
-
-    def unfix_col_width(self, col: int) -> LayoutObject:
-        return self.set_column_fixed(col, fixed=False)
-
-    def unfix_row_height(self, row: int) -> LayoutObject:
-        return self.set_row_fixed(row, fixed=False)
-
-    def fix_width(self, width: Optional[float] = None) -> LayoutObject:
-        return self.set_fixed_width(width or self.width)
-
-    def fix_height(self, height: Optional[float] = None) -> LayoutObject:
-        return self.set_fixed_height(height or self.height)
-
-    def unfix_width(self) -> LayoutObject:
-        return self.set_fixed_width(None)
-
-    def unfix_height(self) -> LayoutObject:
-        return self.set_fixed_height(None)
-
-    def set_constant_padding(self, padding: vec2 | float) -> LayoutObject:
-        p = vec2(padding)
-        self._spacing = p
-        self._padding = vec2(0, 0)
-        self._mark_dirty()
-        return self
-
-    def set_cell_padding(self, padding: vec2 | float, cell: Optional[tuple[int, int]] = None) -> LayoutObject:
-        if cell is not None:
-            self._cells_padding[cell] = vec2(padding)
-        else:
-            self._spacing = vec2(padding)
-        self._mark_dirty()
-        return self
-
-    def get_cell_padding(self, cell: tuple[int, int]) -> vec2:
-        return self._cells_padding.get(cell, self._spacing)
-
-    def set_outer_padding(self, padding: vec2 | float) -> LayoutObject:
-        self._padding = vec2(padding)
-        self._mark_dirty()
-        return self
-
-    def clear_outer_padding(self) -> LayoutObject:
-        self._padding = vec2(0, 0)
-        if self.renderer:
-            self.renderer.bd = 0
-        self._mark_dirty()
-        return self
-
-    def invert_left_right(self) -> LayoutObject:
-        self._flip_x = True
-        self._mark_dirty()
-        return self
-
-    def invert_up_down(self) -> LayoutObject:
-        self._flip_y = True
-        self._mark_dirty()
-        return self
-
-    def add_object(self, obj: PygameObject, x: int, y: int, span_x: int = 1, span_y: int = 1, anchor: vec2 = Anchor.C) -> LayoutObject:
-        obj.anchor = anchor
-        return self.add(obj, x, y, span_x, span_y, anchor)
-
-    def remove_object(self, obj: PygameObject) -> LayoutObject:
-        return self.remove(obj)
-
+    
     @property
     def min_col(self) -> int:
         return 0
@@ -652,24 +743,6 @@ class LayoutObject(RectObject):
     @max_row.setter
     def max_row(self, value: float) -> None:
         pass
-
-    @property
-    def invert_x_order(self) -> bool:
-        return self._flip_x
-
-    @invert_x_order.setter
-    def invert_x_order(self, value: bool) -> None:
-        self._flip_x = value
-        self._mark_dirty()
-
-    @property
-    def invert_y_order(self) -> bool:
-        return self._flip_y
-
-    @invert_y_order.setter
-    def invert_y_order(self, value: bool) -> None:
-        self._flip_y = value
-        self._mark_dirty()
 
     # endregion
 

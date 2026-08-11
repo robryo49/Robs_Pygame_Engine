@@ -7,7 +7,7 @@ from .ui_objects import (
     ToggleButtonObject, RadioButtonObject, IconButtonObject,
     ScrollbarObject
 )
-from .window_objects import WindowObject
+from .window_objects import WindowObject, DebugInfoWindow
 
 __all__ = [
     "RectObject",
@@ -31,5 +31,6 @@ __all__ = [
     "IconButtonObject",
     "RadioButtonObject",
     "WindowObject",
-    "ScrollbarObject"
+    "ScrollbarObject",
+    "DebugInfoWindow"
 ]

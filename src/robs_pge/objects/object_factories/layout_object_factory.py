@@ -1,4 +1,4 @@
-from typing import Optional, cast
+from typing import Iterable, Literal, Optional, cast
 
 from .sub_factory import SubObjectFactory
 from ..custom import LayoutObject
@@ -8,24 +8,6 @@ from ...utils import Anchor, StyleOrName, vec2
 
 
 class LayoutObjectFactory(SubObjectFactory):
-
-    @staticmethod
-    def _unpack_stack_item(item: PygameObject | tuple[PygameObject, int]) -> tuple[PygameObject, int]:
-        if isinstance(item, tuple):
-            if len(item) == 2:
-                return item[0], item[1]
-            raise ValueError(f"Object definition must be Obj or (Obj, span). Got {len(item)} elements")
-        return item, 1
-
-    @staticmethod
-    def _unpack_grid_item(item: PygameObject | tuple[PygameObject, int] | tuple[PygameObject, int, int]) -> tuple[PygameObject, int, int]:
-        if isinstance(item, tuple):
-            if len(item) == 2:
-                return cast(PygameObject, item[0]), cast(int, item[1]), 1
-            if len(item) == 3:
-                return cast(PygameObject, item[0]), cast(int, item[1]), cast(int, item[2])
-            raise ValueError(f"Object definition must be Obj, (Obj, span_x), or (Obj, span_x, span_y). Got {len(item)} elements")
-        return item, 1, 1
 
     def grid_layout(
             self, position: vec2, width: Optional[float] = None, height: Optional[float] = None,
@@ -52,3 +34,48 @@ class LayoutObjectFactory(SubObjectFactory):
             obj.skip_rendering()
 
         return obj
+    
+    def stack_horizontal(
+            self, position: vec2, width: Optional[float] = None, height: Optional[float] = None, objects: Optional[Iterable[PygameObject]] = None, cell_anchor: vec2 = Anchor.C,
+            invert_x=False, style: StyleOrName[RectStyle] = None,
+            rotation: float = 0.0, scale: float = 1.0, layer: int = 0, anchor: vec2 = Anchor.C, cache: bool = True
+    ):
+        
+        layout = self.grid_layout(position, width, height, invert_x, False, style, rotation, scale, layer, anchor, cache)
+        
+        if objects is not None:
+            for obj in objects:
+                layout.stack_x(obj, anchor=cell_anchor)
+        
+        return layout
+    
+    def stack_vertical(
+            self, position: vec2, width: Optional[float] = None, height: Optional[float] = None, objects: Optional[Iterable[PygameObject]] = None, cell_anchor: vec2 = Anchor.C,
+            invert_y=False, style: StyleOrName[RectStyle] = None,
+            rotation: float = 0.0, scale: float = 1.0, layer: int = 0, anchor: vec2 = Anchor.C, cache: bool = True
+    ):
+        
+        layout = self.grid_layout(position, width, height, False, invert_y, style, rotation, scale, layer, anchor, cache)
+        
+        if objects is not None:
+            for obj in objects:
+                layout.stack_y(obj, anchor=cell_anchor)
+        
+        return layout
+    
+    def stack_in_grid(
+            self, position: vec2, width: Optional[float] = None, height: Optional[float] = None, objects: Optional[Iterable[Iterable[PygameObject]]] = None, cell_anchor: vec2 = Anchor.C,
+            mode: Literal["grid", "rows", "columns"] = LayoutObject.GRID_MODE, invert_x=False, invert_y: bool = False, style: StyleOrName[RectStyle] = None,
+            rotation: float = 0.0, scale: float = 1.0, layer: int = 0, anchor: vec2 = Anchor.C, cache: bool = True
+    ):
+        
+        layout = self.grid_layout(position, width, height, invert_x, invert_y, style, rotation, scale, layer, anchor, cache)
+        
+        if objects is not None:
+            for y, row in enumerate(objects):
+                for x, obj in enumerate(row):
+                    layout.add(obj, x, y, anchor=cell_anchor)
+        
+        layout.mode = mode
+        
+        return layout

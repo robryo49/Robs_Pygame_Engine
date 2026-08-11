@@ -159,7 +159,7 @@ class Engine:
                 "gray":     Colors.SLATE_BLUE,
                 "blue":     Colors.BRIGHT_BLUE,
                 "yellow":   Colors.AMBER,
-                "red":      Colors.DARK_RED,
+                "red":      Colors.LIGHT_RED,
                 "teal":     Colors.CARIBBEAN_GREEN,
                 "orange":   Colors.ORANGE,
                 "green":    Colors.GREEN,
@@ -237,6 +237,7 @@ class Engine:
             self.resources.set(RectStyle, f"debug_{name}_header_style", header_style)
             self.resources.set(WindowStyle, f"debug_{name}_panel_style", WindowStyle(
                 bg_style=panel_style,
+                margin=8,
                 show_header=True,
                 header_style=header_style,
                 header_height=4,

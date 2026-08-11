@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Callable, Optional
 
 from .primitive_objects import RectObject, TextObject
 from .ui_objects import LayoutObject, ScrollbarObject
@@ -79,7 +79,7 @@ class WindowObject(LayoutObject):
 
         if visible:
             self._scrollbar.show()
-            scrollbar_col_width = self._scrollbar.width + self.content.spacing.x * 2
+            scrollbar_col_width = self._scrollbar.width + self.content.cell_pading.x * 2
             content_width = self.width - scrollbar_col_width
         else:
             self._scrollbar.hide()
@@ -120,23 +120,47 @@ class WindowObject(LayoutObject):
     def close(self):
         self.hide()
 
-    def add_content(self, obj: PygameObject, x: int, y: int, span_x: int = 1, span_y: int = 1, anchor: vec2 = Anchor.C):
+    def add_content(self, obj: PygameObject, x: int, y: int, span_x: int = 1, span_y: int = 1, anchor: vec2 = Anchor.C) -> "WindowObject":
         self.content.add(obj, x, y, span_x, span_y, anchor)
         return self
 
-    def stack_content_x(self, obj: PygameObject, y: Optional[int] = None, span_y: Optional[int] = None, anchor: vec2 = Anchor.C):
-        if y is not None:
-            self.content.add(obj, 0, y, 1, span_y or 1, anchor)
-        else:
-            self.content.stack_x(obj, anchor=anchor)
+    def stack_content_x(self, obj: PygameObject, row: int = 0, anchor: vec2 = Anchor.C) -> "WindowObject":
+        self.content.stack_x(obj, row, anchor)
         return self
 
-    def stack_content_y(self, obj: PygameObject, x: Optional[int] = None, span_x: Optional[int] = None, anchor: vec2 = Anchor.C):
-        if x is not None:
-            self.content.add(obj, x, 0, span_x or 1, 1, anchor)
-        else:
-            self.content.stack_y(obj, anchor=anchor)
+    def stack_content_y(self, obj: PygameObject, col: int = 0, anchor: vec2 = Anchor.C) -> "WindowObject":
+        self.content.stack_y(obj, col, anchor)
         return self
 
     def __repr__(self):
         return f"Window('{self.id}')"
+
+
+class DebugInfoWindow(WindowObject):
+    def __init__(self, transform: Transform, renderer: RectRenderer,
+                 title: str, content_panel: LayoutObject,
+                 header: Optional[LayoutObject], title_panel: Optional[RectObject], title_object: Optional[TextObject], scrollbar: ScrollbarObject,
+                 title_factory_method, value_factory_method,
+                 services: DictCollection, sub_layer: int = 0, anchor: vec2 = Anchor.C):
+        super().__init__(transform, renderer, title, content_panel, header, title_panel, title_object, scrollbar, services, sub_layer, anchor)
+        
+        self._title_factory = title_factory_method
+        self._value_factory = value_factory_method
+
+    def add_line(self, title: str, template: str, getter: Callable):
+        title = self._title_factory(title)
+        value = self._value_factory(template, getter)
+        
+        self.stack_content_y(title, 0, anchor=Anchor.TL)
+        self.stack_content_y(value, 1, anchor=Anchor.TL)
+    
+    def add_line_break(self):
+        title = self._title_factory(" ")
+        value = self._title_factory(" ")
+        
+        self.stack_content_y(title, 0, anchor=Anchor.TL)
+        self.stack_content_y(value, 1, anchor=Anchor.TL)
+    
+    
+        
+    

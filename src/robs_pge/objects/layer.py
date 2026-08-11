@@ -152,6 +152,9 @@ class Layer:
                     self._physics_world.remove_body(body)
                 o2.layer = None
         self.objects.remove_object(*obj)
+        
+    def get_objects_number(self):
+        return len(self.objects)
     
     # endregion
     

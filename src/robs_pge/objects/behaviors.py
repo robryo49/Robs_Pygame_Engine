@@ -251,9 +251,8 @@ class DynamicAttributeBehavior(ObjectBehavior):
         value = self._evaluate(self._getter)
         attr_value = getattr(self.owner, self._attribute)
         
-        
         if self._template is not None:
-            value = self._template.format(*(value if isinstance(value, tuple) else (value, )))
+            value = self._template.format(*(value if isinstance(value, tuple) and len(value) == self._template.count("{}") else (value, )))
         elif 0 < self._strength < 1:
             try:
                 value = lerp(attr_value, value, self._strength)

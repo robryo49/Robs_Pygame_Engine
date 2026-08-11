@@ -4,7 +4,7 @@ from .styles import (
     LineStyle, ButtonStyle, ProgressBarStyle,
     LineChartStyle, DebugPanelStyle, SliderStyle,
     IconButtonStyle, SpriteButtonStyle, ToggleButtonStyle,
-    RadioButtonStyle, WindowStyle, ScrollbarStyle
+    RadioButtonStyle, WindowStyle, ScrollbarStyle, Font
 )
 from .draw_commands import (
     DrawCommand,
@@ -19,7 +19,7 @@ from .renderer import Renderer
 
 __all__ = [
     # styles
-    "Style", "ShapeStyle",
+    "Style", "ShapeStyle", "Font",
     "RectStyle", "CircleStyle", "PolygonStyle",
     "LineStyle", "ButtonStyle", "ProgressBarStyle",
     "LineChartStyle", "DebugPanelStyle", "SliderStyle",

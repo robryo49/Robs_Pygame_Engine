@@ -257,7 +257,7 @@ class ToggleButtonObject(RectObject):
         
         self.do_on_click(1, lambda o: o.toggle())
         
-        self._toggle_background.create_attribute_dynamic("width", lambda: self._toggle.x_pos + self._toggle.width * 0.5)
+        self._toggle_background.make_attribute_dynamic("width", lambda: self._toggle.x_pos + self._toggle.width * 0.5)
         if callback is not None:
             self.do_on_click(1, callback)
     
@@ -313,12 +313,12 @@ class SliderObject(LayoutObject):
             step = self._handle_movement_range * step / (max_value - min_value)
         
         self._handle.make_draggable(1)
-        self._handle.create_attribute_fixed("y_pos")
-        self._handle.create_attribute_clamped("x_pos", -self._handle_movement_range*0.5, self._handle_movement_range*0.5)
+        self._handle.make_attribute_fixed("y_pos")
+        self._handle.make_attribute_clamped("x_pos", -self._handle_movement_range * 0.5, self._handle_movement_range * 0.5)
         if step is not None:
-            self._handle.create_attribute_snap_on_grid("x_pos", step, self._handle_movement_range*0.5)
+            self._handle.make_attribute_snap_on_grid("x_pos", step, self._handle_movement_range * 0.5)
         
-        self._text.create_attribute_dynamic("text", lambda: str(self.value))
+        self._text.make_attribute_dynamic("text", lambda: str(self.value))
         
         self._bar.add_child(self._handle, Anchor.C)
         
@@ -452,11 +452,11 @@ class ScrollbarObject(RectObject):
         self.add_child(self._handle, Anchor.C)
         
         self._handle.make_draggable(1)
-        self._handle.create_attribute_fixed("x_pos")
+        self._handle.make_attribute_fixed("x_pos")
         
         self.update_movement_range()
         
-        self._handle.create_attribute_clamped("y_pos", lambda: self._min_y, lambda: self._max_y)
+        self._handle.make_attribute_clamped("y_pos", lambda: self._min_y, lambda: self._max_y)
     
     # region PROPERTIES
     

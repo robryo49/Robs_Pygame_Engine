@@ -24,7 +24,7 @@ class TextObjectFactory(SubObjectFactory):
         
         font = self._get_resource(font, Font)
         obj = self.label(position, "", font, rotation, scale, layer, anchor, cache)
-        obj.create_attribute_dynamic("text", getter, template)
+        obj.make_attribute_dynamic("text", getter, template)
         
         return obj
 

@@ -4,35 +4,48 @@ from typing import Any, Callable
 class QuickDebugManager:
     def __init__(self):
         
-        self._getters: list[tuple[str, Callable]] = []
+        self._getters: list[tuple[str, str, Callable]] = []
+        self._queue: list[tuple[str, str]] = []
         
-        self._queue: list[str] = []
+        self._values: dict[str, str] = {}
     
-    def register_listener(self, getter: Callable, template: str = "{}"):
-        self._getters.append((template, getter))
+    def register_listener(self, name: str, getter: Callable, template: str = "{}"):
+        self._getters.append((name, template, getter))
     
-    def quick_debug(self, *infos: Any) -> None:
-        self._queue.append(" ".join(str(info) for info in infos))
+    def quick_debug(self, name, value: Any) -> None:
+        self._queue.append((name, str(value)))
         
-    def get_getter_values(self) -> list[str]:
-        values = []
-        for template, getter in self._getters:
+        
+    def _get_getter_values(self):
+        for name, template, getter in self._getters:
             
             v = getter()
             if isinstance(v, tuple) and template.count("{}") == len(v):
-                values.append(template.format(*v))
+                self._values[name] = template.format(*v)
             else:
-                values.append(template.format(v))
-                
-        return values
+                self._values[name] = template.format(v)
     
+    def _get_queued_values(self):
+        for name, value in self._queue:
+            self._values[name] = value
+            
+            
     def clear_queue(self):
         self._queue.clear()
     
-    def get_values(self):
-        values = self._queue + self.get_getter_values()
-        self._queue.clear()
-        return values
+    def clear_values(self):
+        self._values.clear()
+        
+    def clear_listeners(self):
+        self._getters.clear()
     
-    def has_values(self) -> bool:
-        return len(self._queue) > 0 or len(self._getters) > 0
+    def update_values(self):
+        self.clear_values()
+        
+        self._get_queued_values()
+        self._get_getter_values()
+        
+        self.clear_queue()
+    
+    def get_values(self):
+        return dict(self._values)
