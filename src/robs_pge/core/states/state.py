@@ -227,7 +227,7 @@ class State:
         
         panels_width = 400
         titles_width = 150
-        infos_width = panels_width - titles_width
+        infos_width = panels_width - titles_width - 20
         
         engine_pannel = self.create_object.ui.debug.debug_info_window(vec2(), "ENGINE", panels_width, titles_width, infos_width, font_white, font_gray, blue_style)
         engine_pannel.add_line("FPS", "{} ms", lambda: round(self.clock.fps))
@@ -285,7 +285,6 @@ class State:
         
         quick_debug_panel = self.create_object.ui.debug.dynamic_debug_info_window(vec2(), "QUICK DEBUG", panels_width, self.quick_debug_manager.get_values, titles_width, infos_width, font_white, font_gray, yellow_style)
         
-        self.debug_overlay.set_column_fixed(0, panels_width+16)
         self.debug_overlay.stack_y(engine_pannel, 0, Anchor.TL)
         self.debug_overlay.stack_y(state_panel, 0, Anchor.TL)
         self.debug_overlay.stack_y(rendering_panel, 0, Anchor.TL)
@@ -293,7 +292,6 @@ class State:
         self.debug_overlay.stack_y(camera_panel, 0, Anchor.TL)
         self.debug_overlay.stack_y(mouse_panel, 0, Anchor.TL)
         
-        self.debug_overlay.set_column_fixed(1, panels_width+16)
         self.debug_overlay.stack_y(input_panel, 1, Anchor.TL)
         self.debug_overlay.stack_y(animation_panel, 1, Anchor.TL)
         self.debug_overlay.stack_y(async_panel, 1, Anchor.TL)

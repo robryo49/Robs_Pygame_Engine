@@ -1,11 +1,10 @@
-from typing import Any, Callable, Iterable, Optional, Type
+from typing import Any, Optional
 
 from .sub_factory import SubObjectFactory
-from ..custom import LayoutObject, RectObject, TextObject, WindowObject, DebugInfoWindow
-from ..object import PygameObject
-from ...rendering import IconButtonStyle, RectRenderer, RectStyle, ScrollbarStyle, WindowStyle, Font
+from ..custom import LayoutObject, RectObject, TextObject, WindowObject
+from ...rendering import IconButtonStyle, RectRenderer, RectStyle, WindowStyle
 from ...resources import Icons
-from ...utils import Anchor, StyleOrName, clamp, vec2
+from ...utils import Anchor, StyleOrName, vec2
 
 
 class WindowObjectFactory(SubObjectFactory):
@@ -48,7 +47,7 @@ class WindowObjectFactory(SubObjectFactory):
             header.set_constant_padding(window_style.header_margin)
             
             buttons_width = (header_height - window_style.header_margin * 2) * 1.5
-            header.set_column_fixed(0, width - buttons_width - window_style.header_margin * 2)
+            header.set_fixed_col_width(0, width - buttons_width - window_style.header_margin * 2)
             
             if window_style.title_in_header and title_object is not None:
                 title_offset = window_style.header_margin * (vec2(1) - window_style.title_align * 2)
@@ -73,7 +72,7 @@ class WindowObjectFactory(SubObjectFactory):
         panel_width = width
 
         panel = self.factory.ui.layouts.grid_layout(vec2(), panel_width, None, layer=layer)
-        panel.set_padding(window_style.margin)
+        panel.set_outer_padding(window_style.margin)
 
         dims = vec2(width, height)
 
@@ -87,14 +86,14 @@ class WindowObjectFactory(SubObjectFactory):
         
         row = 0
         if header is not None:
-            obj.add(header, 0, row, span_x=2)
+            obj.add(header, 0, row)
             row += 1
         if title_panel is not None:
-            obj.add(title_panel, 0, row, span_x=2)
+            obj.add(title_panel, 0, row)
             row += 1
         
         obj.add(panel, 0, row)
-        obj.set_column_fixed(0, panel_width)
+        obj.set_fixed_col_width(round(panel_width), 0)
         
         if draggable:
             drag_handle = header if header is not None else (title_panel if title_panel is not None else obj)
@@ -117,14 +116,17 @@ class WindowObjectFactory(SubObjectFactory):
             window_style, height, header_height, title_panel_height, width, layer
         )
         
-        obj = self._create_object(
+        obj: WT = self._create_object(
             window_cls, position, rotation, scale, RectRenderer(dims, window_style.bg_style, cache),
             layer, anchor, title, panel, header, title_panel, title_object, *args
         )
         
         self._assemble_window(obj, header, title_panel, panel, panel_width, draggable)
-        obj.fix_width(width)
-
+        
+        obj.set_fixed_width(width)
+        if height is not None:
+            obj.set_fixed_height(height)
+            
         return obj
     
     def regular(

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from typing import Literal, cast
-
+from dataclasses import dataclass
+from typing import Literal
 from .primitive_objects import RectObject
 from ..behaviors import *
 from ..object import PygameObject
@@ -9,668 +9,696 @@ from ...rendering import RectRenderer
 from ...utils import Anchor, DictCollection, Transform, clamp, vec2
 
 
+CellPos = tuple[int, int]
+
+@dataclass
+class SizeConstraint:
+    min: Optional[int] = None
+    max: Optional[int] = None
+    fixed: Optional[int] = None
+    
+    def apply(self, value: int) -> int:
+        if self.fixed is not None:
+            return self.fixed
+        if self.min is not None and value < self.min:
+            return self.min
+        if self.max is not None and value > self.max:
+            return self.max
+        return value
+        
+
+
 class LayoutObject(RectObject):
     GRID_MODE: Literal["grid"] = "grid"
     COL_MODE: Literal["columns"] = "columns"
     ROW_MODE: Literal["rows"] = "rows"
+    
+    STRETCH_MODE: Literal["stretch"] = "stretch"
+    PRESERVE_MODE: Literal["preserve"] = "preserve"
 
     def __init__(self, transform: Transform, renderer: RectRenderer, services: DictCollection, sub_layer: int = 0, anchor: vec2 = Anchor.C):
         super().__init__(transform, renderer, services, sub_layer, anchor)
-
-        # === Core data model ===
-        # object → (col, row, span_x, span_y, cell_anchor)
-        self._placements: dict[PygameObject, tuple[int, int, int, int, vec2]] = {}
-        self._dirty_check_data: dict[PygameObject, tuple[vec2, vec2, vec2]] = {}
-
-        # Column/row configuration: index → {"fixed": bool, "size": float, "min_size": float}
-        self._cols: dict[int, dict[str, float | bool]] = {}
-        self._rows: dict[int, dict[str, float | bool]] = {}
-
-        # For columns mode: per-column row heights {col: {row: height}}
-        self._col_row_heights: dict[int, dict[int, float]] = {}
-
-        # For rows mode: per-row column widths {row: {col: width}}
-        self._row_col_widths: dict[int, dict[int, float]] = {}
-
-        # Spacing & padding
-        self._cell_padding: vec2 = vec2(0, 0)
-        self._padding: vec2 = vec2(0, 0)
-        self._cells_padding: dict[tuple[int, int], vec2] = {}
-
-        # Layout mode
-        self._mode: Literal["grid", "rows", "columns"] = self.GRID_MODE
-
-        # Sizing behavior
-        self._fixed_width: Optional[float] = None
-        self._fixed_height: Optional[float] = None
-
-        # Flip
-        self._flip_x: bool = False
-        self._flip_y: bool = False
-
-        # Dirty tracking via version counter
+        
+        # obj -> cell_x, cell_y, cell_anchor
+        self._object_placements: dict[PygameObject, tuple[CellPos, vec2]] = {}
+        
+        self._dirty: bool = False
         self._dirty_checking: bool = True
-        self._layout_version: int = 0
-        self._last_solved_version: int = -1
-
-        # Precomputed data (solved each layout pass)
-        self._solved_col_widths: dict[int, float] = {}
-        self._solved_row_heights: dict[int, float] = {}
-        self._col_offsets: dict[int, float] = {}
-        self._row_offsets: dict[int, float] = {}
-        self._col_row_offsets: dict[int, dict[int, float]] = {}
-        self._content_size: vec2 = vec2(0, 0)
-
-    # region PROPERTIES
-
-    @property
-    def mode(self) -> str:
-        return self._mode
-
-    @mode.setter
-    def mode(self, value: Literal["grid", "columns", "rows"]) -> None:
-        if value not in (self.GRID_MODE, self.COL_MODE, self.ROW_MODE):
-            raise ValueError(f"Invalid layout mode '{value}'. Use 'grid', 'columns', or 'rows'.")
-        self._mode = value
-        self._mark_dirty()
-
-    @property
-    def cell_padding(self) -> vec2:
-        return self._cell_padding
-
-    @cell_padding.setter
-    def cell_padding(self, value: vec2 | float) -> None:
-        self._cell_padding = vec2(value)
-        self._mark_dirty()
-    
-    def set_cell_padding(self, padding: vec2 | float, cell: Optional[tuple[int, int]] = None) -> LayoutObject:
-        if cell is not None:
-            self._cells_padding[cell] = vec2(padding)
-        else:
-            self._cell_padding = vec2(padding)
-        self._mark_dirty()
-        return self
-    
-    def get_cell_padding(self, cell: tuple[int, int]) -> vec2:
-        return self._cells_padding.get(cell, self._cell_padding)
-
-    def set_constant_padding(self, value: vec2 | float) -> LayoutObject:
-        self.set_padding(value*0.5)
-        self.set_cell_padding(value*0.5)
-        return self
-
-    @property
-    def padding(self) -> vec2:
-        return self._padding
-
-    @padding.setter
-    def padding(self, value: vec2 | float) -> None:
-        self._padding = vec2(value)
-        self._mark_dirty()
-
-    def set_padding(self, value: vec2 | float) -> LayoutObject:
-        self._padding = vec2(value)
-        self._mark_dirty()
-        return self
-
-    @property
-    def fixed_width(self) -> Optional[float]:
-        return self._fixed_width
-
-    @property
-    def fixed_height(self) -> Optional[float]:
-        return self._fixed_height
-
-    @property
-    def flip_x(self) -> bool:
-        return self._flip_x
-
-    @flip_x.setter
-    def flip_x(self, value: bool) -> None:
-        self._flip_x = value
-        self._mark_dirty()
-
-    @property
-    def flip_y(self) -> bool:
-        return self._flip_y
-
-    @flip_y.setter
-    def flip_y(self, value: bool) -> None:
-        self._flip_y = value
-        self._mark_dirty()
+        self._dirty_checking_values: dict[PygameObject, tuple[vec2, vec2, vec2]] = {}
         
-    # region dirty_checking
-    @property
-    def dirty_checking(self) -> bool:
-        return self._dirty_checking
-    
-    @dirty_checking.setter
-    def dirty_checking(self, value):
-        self._dirty_checking = value
+        self._max_col = 0
+        self._max_cols = {}
+        self._max_row = 0
+        self._max_rows = {}
         
-    def enable_dirty_checking(self):
-        self.dirty_checking = True
-        return self
+        self._mode: Literal["grid", "columns", "rows"] = self.GRID_MODE
+        self._fit_mode: Literal["stretch", "preserve"] = self.STRETCH_MODE
+        self._overflow_mode: Literal["stretch", "preserve"] = self.STRETCH_MODE
         
-    def disable_dirty_checking(self):
-        self.dirty_checking = True
-        return self
         
-    def toggle_dirty_checking(self, value: Optional[bool]=None):
-        self.dirty_checking = (not self.dirty_checking) if value is None else value
-        return self
-    
-    def set_dirty_checking(self, value: bool):
-        self._dirty_checking = value
+        self._justification: vec2 = Anchor.C
+        # self._cell_anchor: vec2 = Anchor.C
+        # self._cell_anchors: dict[CellPos, vec2] = {}
+        
+        
+        self._width_constraint: SizeConstraint = SizeConstraint()
+        self._height_constraint: SizeConstraint = SizeConstraint()
+        
+        self._col_width_constraint: SizeConstraint = SizeConstraint()
+        self._col_widths_constraints: dict[int, SizeConstraint] = {}
+        
+        self._row_height_constraint: SizeConstraint = SizeConstraint()
+        self._row_heights_constraints: dict[int, SizeConstraint] = {}
+        
+        self._outer_padding: vec2 = vec2()
+        self._cell_spacing: vec2 = vec2()
+        self._cell_padding: vec2 = vec2()
+        self._cell_paddings: dict[CellPos, vec2] = {}
+        
+        
+        self._calculated_width: int = 0
+        self._calculated_height: int = 0
+        
+        self._calculated_col_widths: dict[int, int] = {}
+        self._calculated_row_heights: dict[int, int] = {}
+        self._row_mode_calculated_col_widths: dict[int, dict[int, int]] = {}
+        self._col_mode_calculated_row_heights: dict[int, dict[int, int]] = {}
+        
+        self._calculated_col_offsets: dict[int, int] = {}
+        self._calculated_row_offsets: dict[int, int] = {}
+        self._row_mode_calculated_col_offsets: dict[int, dict[int, int]] = {}
+        self._col_mode_calculated_row_offsets: dict[int, dict[int, int]] = {}
+        
+        self._calculated_row_widths: int = 0
+        self._calculated_col_heights: int = 0
+        self._row_mode_calculated_row_widths: dict[int, int] = {}
+        self._col_mode_calculated_col_heights: dict[int, int] = {}
+        
     # endregion
-
-    # endregion
-
-    # region COLUMN / ROW CONFIGURATION
-
-    def set_column_fixed(self, col: int, size: Optional[float] = None, fixed: bool = True) -> LayoutObject:
-        cfg = self._cols.setdefault(col, {"fixed": False, "size": 0.0, "min_size": 0.0})
-        cfg["fixed"] = fixed
-        if size is not None:
-            cfg["size"] = size
-        self._mark_dirty()
-        return self
-
-    def set_row_fixed(self, row: int, size: Optional[float] = None, fixed: bool = True) -> LayoutObject:
-        cfg = self._rows.setdefault(row, {"fixed": False, "size": 0.0, "min_size": 0.0})
-        cfg["fixed"] = fixed
-        if size is not None:
-            cfg["size"] = size
-        self._mark_dirty()
-        return self
-
-    def set_column_min_size(self, col: int, min_size: float) -> LayoutObject:
-        cfg = self._cols.setdefault(col, {"fixed": False, "size": 0.0, "min_size": 0.0})
-        cfg["min_size"] = min_size
-        self._mark_dirty()
-        return self
-
-    def set_row_min_size(self, row: int, min_size: float) -> LayoutObject:
-        cfg = self._rows.setdefault(row, {"fixed": False, "size": 0.0, "min_size": 0.0})
-        cfg["min_size"] = min_size
-        self._mark_dirty()
-        return self
     
-    def fix_col_width(self, col: int, width: Optional[float] = None) -> LayoutObject:
-        return self.set_column_fixed(col, width)
+    def _get_cell_padding(self, cell: Optional[CellPos] = None) -> vec2:
+        return self._cell_paddings.get(cell, self._cell_padding) if cell is not None else self._cell_padding
     
-    def fix_row_height(self, row: int, height: Optional[float] = None) -> LayoutObject:
-        return self.set_row_fixed(row, height)
+    def _apply_col_width_constraints(self, col: int, width: int) -> int:
+        constraint = self._col_widths_constraints.get(col)
+        if constraint is not None:
+            return constraint.apply(width)
+        return self._col_width_constraint.apply(width)
     
-    def unfix_col_width(self, col: int) -> LayoutObject:
-        return self.set_column_fixed(col, fixed=False)
+    def _apply_row_height_constraints(self, row: int, height: int) -> int:
+        constraint = self._row_heights_constraints.get(row)
+        if constraint is not None:
+            return constraint.apply(height)
+        return self._row_height_constraint.apply(height)
     
-    def unfix_row_height(self, row: int) -> LayoutObject:
-        return self.set_row_fixed(row, fixed=False)
+    def _calculate_cell_dim(self, obj: PygameObject, cell: CellPos):
+        return obj.dims + 2 * self._get_cell_padding(cell)
     
-    # endregion
-
-    # region SIZING
-
-    def set_fixed_width(self, width: Optional[float]) -> LayoutObject:
-        self._fixed_width = width
-        self._mark_dirty()
-        return self
-
-    def set_fixed_height(self, height: Optional[float]) -> LayoutObject:
-        self._fixed_height = height
-        self._mark_dirty()
-        return self
-
-    def fit_width(self) -> LayoutObject:
-        self._fixed_width = None
-        self._mark_dirty()
-        return self
-
-    def fit_height(self) -> LayoutObject:
-        self._fixed_height = None
-        self._mark_dirty()
-        return self
-    
-    def fix_width(self, width: Optional[float] = None) -> LayoutObject:
-        return self.set_fixed_width(width or self.width)
-    
-    def fix_height(self, height: Optional[float] = None) -> LayoutObject:
-        return self.set_fixed_height(height or self.height)
-    
-    def unfix_width(self) -> LayoutObject:
-        return self.set_fixed_width(None)
-    
-    def unfix_height(self) -> LayoutObject:
-        return self.set_fixed_height(None)
-
-    # endregion
-
-    # region OBJECT MANAGEMENT
-
-    def add(self, obj: PygameObject, col: int, row: int, span_x: int = 1, span_y: int = 1, anchor: vec2 = Anchor.C) -> LayoutObject:
-        self.add_child(obj)
-        self._placements[obj] = (col, row, span_x, span_y, anchor)
-        self._mark_dirty()
-        return self
-
-    def stack_y(self, obj: PygameObject, col: int = 0, anchor: vec2 = Anchor.C) -> LayoutObject:
-        max_row = -1
-        for _, (c, r, _, _, _) in ((o, p) for o, p in self._placements.items() if p[0] == col):
-            if r > max_row:
-                max_row = r
-        return self.add(obj, col, max_row + 1, 1, 1, anchor)
-
-    def stack_x(self, obj: PygameObject, row: int = 0, anchor: vec2 = Anchor.C) -> LayoutObject:
-        max_col = -1
-        for _, (c, r, _, _, _) in ((o, p) for o, p in self._placements.items() if p[1] == row):
-            if c > max_col:
-                max_col = c
-        return self.add(obj, max_col + 1, row, 1, 1, anchor)
-
-    def remove(self, obj: PygameObject) -> LayoutObject:
-        self.remove_child(obj)
-        self._placements.pop(obj, None)
-        self._mark_dirty()
-        return self
-
-    def clear(self) -> LayoutObject:
-        for obj in list(self._placements.keys()):
-            self.remove_child(obj)
-        self._placements.clear()
-        self._mark_dirty()
-        return self
-
-    # endregion
-
-    # region LAYOUT SOLVING
-
-    def _mark_dirty(self) -> None:
-        self._layout_version += 1
+    def _calculate_col_and_row_dims(self) -> None:
+        self._calculated_col_widths.clear()
+        self._calculated_row_heights.clear()
+        self._row_mode_calculated_col_widths.clear()
+        self._col_mode_calculated_row_heights.clear()
         
-    def _check_if_dirty(self) -> None:
-        for obj in self._placements:
-            data = self._dirty_check_data.get(obj, None)
-            if data is None:
-                self._mark_dirty()
-                return
+        for obj, (cell, _) in self._object_placements.items():
+            col, row = cell
+            cell_width, cell_height = self._calculate_cell_dim(obj, cell)
+            cell_width = round(cell_width)
+            cell_height = round(cell_height)
             
-            if obj.pos != data[0] or obj.dims != data[1] or obj.anchor != data[2]:
-                self._mark_dirty()
-                return
-    
-    def _update_dirty_check_data(self):
-        for obj in self._placements:
-            self._dirty_check_data[obj] = (obj.pos, obj.dims, obj.anchor)
-        
-
-    def _solve_layout(self) -> None:
-        if self._dirty_checking:
-            self._check_if_dirty()
-
-        if self._layout_version == self._last_solved_version:
-            return
-
-        self._solve_sizes()
-        self._compute_offsets()
-        self._apply_fit_sizing()
-
-        # Update renderer dims before positioning (anchor offset depends on this)
-        if self.renderer:
-            self.renderer.dims = vec2(
-                self._fixed_width if self._fixed_width is not None else self._content_size.x,
-                self._fixed_height if self._fixed_height is not None else self._content_size.y
-            )
-
-        self._position_objects()
-        self._update_dirty_check_data()
-        self._last_solved_version = self._layout_version
-
-    def _solve_sizes(self) -> None:
-        self._solved_col_widths = {}
-        self._solved_row_heights = {}
-        self._col_row_heights = {}
-        self._row_col_widths = {}
-
-        if self._mode == self.GRID_MODE:
-            self._solve_grid_sizes()
-        elif self._mode == self.COL_MODE:
-            self._solve_columns_mode_sizes()
-        elif self._mode == self.ROW_MODE:
-            self._solve_rows_mode_sizes()
-    
-    def _solve_grid_sizes(self) -> None:
-        for cfg in self._cols.values():
-            if not cfg["fixed"]:
-                cfg["size"] = 0.0
-        
-        for cfg in self._rows.values():
-            if not cfg["fixed"]:
-                cfg["size"] = 0.0
-        
-        for obj, (col, row, span_x, span_y, _) in self._placements.items():
-            if span_x <= 0 or span_y <= 0:
-                continue
+            if self._mode == self.GRID_MODE:
+                self._calculated_col_widths[col] = max(self._calculated_col_widths.get(col, 0), cell_width)
+                self._calculated_row_heights[row] = max(self._calculated_row_heights.get(row, 0), cell_height)
             
-            for i in range(span_x):
-                self._cols.setdefault(col + i, {"fixed": False, "size": 0.0, "min_size": 0.0})
+            elif self._mode == self.ROW_MODE:
+                calculated_col_widths = self._row_mode_calculated_col_widths.setdefault(row, {})
+                calculated_col_widths[col] = max(calculated_col_widths.get(col, 0), cell_width)
+                self._calculated_row_heights[row] = max(self._calculated_row_heights.get(row, 0), cell_height)
             
-            for i in range(span_y):
-                self._rows.setdefault(row + i, {"fixed": False, "size": 0.0, "min_size": 0.0})
-        
-        for obj, (col, row, span_x, span_y, _) in self._placements.items():
-            obj_w, obj_h = obj.dims
-            
-            if obj_w <= 0 or obj_h <= 0:
-                continue
-            
-            pad = self.get_cell_padding((col, row))
-            
-            total_w = obj_w + 2 * pad.x
-            total_h = obj_h + 2 * pad.y
-            
-            if span_x == 1:
-                cfg = self._cols[col]
-                if not cfg["fixed"]:
-                    cfg["size"] = max(cfg["size"], total_w)
-            
-            if span_y == 1:
-                cfg = self._rows[row]
-                if not cfg["fixed"]:
-                    cfg["size"] = max(cfg["size"], total_h)
-        
-        max_iterations = max(1, len(self._placements) + 1)
-        
-        for _ in range(max_iterations):
-            
-            changed = False
-            
-            for obj, (col, row, span_x, span_y, _) in self._placements.items():
-                if span_x <= 1:
-                    continue
-                
-                obj_w, obj_h = obj.dims
-                if obj_w <= 0 or obj_h <= 0:
-                    continue
-                
-                pad = self.get_cell_padding((col, row))
-                total_w = obj_w + 2 * pad.x
-                required_width = total_w - self._cell_padding.x * (span_x - 1)
-                
-                tracks = [self._cols[col + i] for i in range(span_x)]
-                
-                current_width = sum(cfg["size"] for cfg in tracks)
-                deficit = required_width - current_width
-                if deficit <= 0:
-                    continue
-                
-                free_tracks = [cfg for cfg in tracks if not cfg["fixed"]]
-                if not free_tracks:
-                    continue
-                
-                per_track = deficit / len(free_tracks)
-                for cfg in free_tracks:
-                    cfg["size"] += per_track
-                    
-                changed = True
-            
-            for obj, (col, row, span_x, span_y, _) in self._placements.items():
-                if span_y <= 1:
-                    continue
-                
-                obj_w, obj_h = obj.dims
-                if obj_w <= 0 or obj_h <= 0:
-                    continue
-                
-                pad = self.get_cell_padding((col, row))
-                total_h = obj_h + 2 * pad.y
-                required_height = total_h - self._cell_padding.y * (span_y - 1)
-                
-                tracks = [self._rows[row + i] for i in range(span_y)]
-                
-                current_height = sum(cfg["size"] for cfg in tracks)
-                deficit = required_height - current_height
-                if deficit <= 0:
-                    continue
-                
-                free_tracks = [cfg for cfg in tracks if not cfg["fixed"]]
-                if not free_tracks:
-                    continue
-                
-                per_track = deficit / len(free_tracks)
-                for cfg in free_tracks:
-                    cfg["size"] += per_track
-                
-                changed = True
-            
-            if not changed:
-                break
-        
-        self._solved_col_widths = {}
-        
-        for col_idx, cfg in self._cols.items():
-            self._solved_col_widths[col_idx] = max(cfg["size"], cfg.get("min_size", 0.0))
-        
-        self._solved_row_heights = {}
-        
-        for row_idx, cfg in self._rows.items():
-            self._solved_row_heights[row_idx] = max(cfg["size"], cfg.get("min_size", 0.0))
-
-
-    def _solve_columns_mode_sizes(self) -> None:
-        # Each column is independent: widths per-column, row heights per-column
-        for col_idx, cfg in self._cols.items():
-            if not cfg["fixed"]:
-                cfg["size"] = 0.0
-
-        for obj, (col, row, span_x, span_y, _) in self._placements.items():
-            obj_w, obj_h = obj.dims
-            if obj_w <= 0 or obj_h <= 0:
-                continue
-
-            pad = self.get_cell_padding((col, row))
-            total_w = obj_w + 2 * pad.x
-            total_h = obj_h + 2 * pad.y
-
-            # Column width = widest object + padding
-            col_width = total_w / span_x if span_x > 0 else total_w
-            cfg = self._cols.setdefault(col, {"fixed": False, "size": 0.0, "min_size": 0.0})
-            if not cfg["fixed"]:
-                cfg["size"] = max(cfg["size"], col_width)
-
-            # Per-column row heights (with padding)
-            row_heights = self._col_row_heights.setdefault(col, {})
-            for i in range(span_y):
-                ri = row + i
-                row_heights[ri] = max(row_heights.get(ri, 0.0), total_h / span_y)
-
-        for col_idx, cfg in self._cols.items():
-            self._solved_col_widths[col_idx] = max(cfg["size"], cfg.get("min_size", 0.0))
-
-    def _solve_rows_mode_sizes(self) -> None:
-        # Each row is independent: heights per-row, column widths per-row
-        for row_idx, cfg in self._rows.items():
-            if not cfg["fixed"]:
-                cfg["size"] = 0.0
-
-        for obj, (col, row, span_x, span_y, _) in self._placements.items():
-            obj_w, obj_h = obj.dims
-            if obj_w <= 0 or obj_h <= 0:
-                continue
-
-            pad = self.get_cell_padding((col, row))
-            total_w = obj_w + 2 * pad.x
-            total_h = obj_h + 2 * pad.y
-
-            # Row height = tallest object + padding
-            row_height = total_h / span_y if span_y > 0 else total_h
-            cfg = self._rows.setdefault(row, {"fixed": False, "size": 0.0, "min_size": 0.0})
-            if not cfg["fixed"]:
-                cfg["size"] = max(cfg["size"], row_height)
-
-            # Per-row column widths (with padding)
-            col_widths = self._row_col_widths.setdefault(row, {})
-            for i in range(span_x):
-                ci = col + i
-                col_widths[ci] = max(col_widths.get(ci, 0.0), total_w / span_x)
-
-        for row_idx, cfg in self._rows.items():
-            self._solved_row_heights[row_idx] = max(cfg["size"], cfg.get("min_size", 0.0))
-
-    def _compute_offsets(self) -> None:
-        # Column offsets (same for all modes)
-        offset = self._padding.x
-        for col_idx in sorted(self._solved_col_widths):
-            self._col_offsets[col_idx] = offset
-            offset += self._solved_col_widths[col_idx]
-        content_w = offset + self._padding.x if self._solved_col_widths else self._padding.x * 2
-
-        # Row offsets depend on mode
-        if self._mode == self.GRID_MODE:
-            offset = self._padding.y
-            for row_idx in sorted(self._solved_row_heights):
-                self._row_offsets[row_idx] = offset
-                offset += self._solved_row_heights[row_idx]
-            content_h = offset + self._padding.y if self._solved_row_heights else self._padding.y * 2
-        elif self._mode == self.COL_MODE:
-            self._col_row_offsets = {}
-            max_content_h = 0.0
-            for col_idx, row_heights in self._col_row_heights.items():
-                offsets = {}
-                offset = self._padding.y
-                for row_idx in sorted(row_heights):
-                    offsets[row_idx] = offset
-                    offset += row_heights[row_idx]
-                self._col_row_offsets[col_idx] = offsets
-                col_h = offset + self._padding.y if row_heights else self._padding.y * 2
-                max_content_h = max(max_content_h, col_h)
-            content_h = max_content_h
-        elif self._mode == self.ROW_MODE:
-            self._row_col_offsets = {}
-            max_content_w = 0.0
-            for row_idx, col_widths in self._row_col_widths.items():
-                offsets = {}
-                offset = self._padding.x
-                for col_idx in sorted(col_widths):
-                    offsets[col_idx] = offset
-                    offset += col_widths[col_idx]
-                self._row_col_offsets[row_idx] = offsets
-                row_w = offset + self._padding.x if col_widths else self._padding.x * 2
-                max_content_w = max(max_content_w, row_w)
-            content_w = max_content_w
-
-            offset = self._padding.y
-            for row_idx in sorted(self._solved_row_heights):
-                self._row_offsets[row_idx] = offset
-                offset += self._solved_row_heights[row_idx]
-            content_h = offset + self._padding.y if self._solved_row_heights else self._padding.y * 2
-        else:
-            raise ValueError(f"Layout mode is {self._mode} but isn't recognized.")
-
-        self._content_size = vec2(content_w, content_h)
-
-    def _apply_fit_sizing(self) -> None:
-        # Distribute extra space to non-fixed columns/rows when size is fixed
-        if self._fixed_width is not None and self._solved_col_widths:
-            free_cols = [ci for ci in self._solved_col_widths if not self._cols.get(ci, {}).get("fixed", False)]
-            if free_cols:
-                current_total = sum(self._solved_col_widths.values())
-                target = self._fixed_width - self._padding.x * 2
-                missing = target - current_total
-                if missing != 0:
-                    per_col = missing / len(free_cols)
-                    for ci in free_cols:
-                        self._solved_col_widths[ci] = max(0, self._solved_col_widths[ci] + per_col)
-                # Recompute offsets
-                self._recompute_col_offsets()
-                self._content_size.x = cast(float, self._fixed_width)
-
-        if self._fixed_height is not None:
-            if self._mode == self.GRID_MODE and self._solved_row_heights:
-                free_rows = [ri for ri in self._solved_row_heights if not self._rows.get(ri, {}).get("fixed", False)]
-                if free_rows:
-                    current_total = sum(self._solved_row_heights.values())
-                    target = self._fixed_height - self._padding.y * 2
-                    missing = target - current_total
-                    if missing != 0:
-                        per_row = missing / len(free_rows)
-                        for ri in free_rows:
-                            self._solved_row_heights[ri] = max(0, self._solved_row_heights[ri] + per_row)
-                    self._recompute_row_offsets()
-                    self._content_size.y = cast(float, self._fixed_height)
-
-    def _recompute_col_offsets(self) -> None:
-        offset = self._padding.x
-        for col_idx in sorted(self._solved_col_widths):
-            self._col_offsets[col_idx] = offset
-            offset += self._solved_col_widths[col_idx]
-
-    def _recompute_row_offsets(self) -> None:
-        offset = self._padding.y
-        for row_idx in sorted(self._solved_row_heights):
-            self._row_offsets[row_idx] = offset
-            offset += self._solved_row_heights[row_idx]
-
-    def _position_objects(self) -> None:
-        for obj, (col, row, span_x, span_y, cell_anchor) in self._placements.items():
-            obj_w, obj_h = obj.dims
-
-            if self._mode == self.ROW_MODE:
-                x = self._row_col_offsets.get(row, {}).get(col, self._padding.x)
-                y = self._row_offsets.get(row, self._padding.y)
-
-                col_widths = self._row_col_widths.get(row, {})
-                cell_w = sum(col_widths.get(col + i, 0.0) for i in range(span_x)) + self._cell_padding.x * (span_x - 1)
-                cell_h = sum(self._solved_row_heights.get(row + i, 0.0) for i in range(span_y)) + self._cell_padding.y * (span_y - 1)
-                
             elif self._mode == self.COL_MODE:
-                x = self._col_offsets.get(col, self._padding.x)
-                y = self._col_row_offsets.get(col, {}).get(row, self._padding.y)
-
-                cell_w = sum(self._solved_col_widths.get(col + i, 0.0) for i in range(span_x)) + self._cell_padding.x * (span_x - 1)
-                row_heights = self._col_row_heights.get(col, {})
-                cell_h = sum(row_heights.get(row + i, 0.0) for i in range(span_y)) + self._cell_padding.y * (span_y - 1)
-                
-            else:
-                x = self._col_offsets.get(col, self._padding.x)
-                y = self._row_offsets.get(row, self._padding.y)
-
-                cell_w = sum(self._solved_col_widths.get(col + i, 0.0) for i in range(span_x)) + self._cell_padding.x * (span_x - 1)
-                cell_h = sum(self._solved_row_heights.get(row + i, 0.0) for i in range(span_y)) + self._cell_padding.y * (span_y - 1)
-
-            # Per-cell padding
-            spacing_offset = self.get_cell_padding((col, row)) * 2 * (vec2(0.5) - cell_anchor)
-            cell_offset = vec2(cell_w, cell_h) * cell_anchor
-            obj_offset = vec2(obj_w, obj_h) * (obj.anchor - cell_anchor)
-            anchor_offset = - (vec2(0.5) - self.anchor) * self.dims
+                self._calculated_col_widths[col] = max(self._calculated_col_widths.get(col, 0), cell_width)
+                calculated_row_heights = self._col_mode_calculated_row_heights.setdefault(col, {})
+                calculated_row_heights[row] = max(calculated_row_heights.get(row, 0), cell_height)
+        
+        for col, width in self._calculated_col_widths.items():
+            self._calculated_col_widths[col] = self._apply_col_width_constraints(col, width)
+        
+        for row, height in self._calculated_row_heights.items():
+            self._calculated_row_heights[row] = self._apply_row_height_constraints(row, height)
+        
+        for row, calculated_col_widths in self._row_mode_calculated_col_widths.items():
+            for col, width in calculated_col_widths.items():
+                calculated_col_widths[col] = self._apply_col_width_constraints(col, width)
+        
+        for col, calculated_row_heights in self._col_mode_calculated_row_heights.items():
+            for row, height in calculated_row_heights.items():
+                calculated_row_heights[row] = self._apply_row_height_constraints(row, height)
+    
+    @staticmethod
+    def _calculate_offsets(dimensions: dict[int, int], spacing: int) -> dict[int, int]:
+        offsets: dict[int, int] = {}
+        
+        offset = 0
+        for index in sorted(dimensions.keys()):
+            offsets[index] = offset
+            offset += dimensions[index] + spacing
+        
+        return offsets
+    
+    @staticmethod
+    def _calculate_total_size(dimensions: dict[int, int], spacing: int) -> int:
+        if not dimensions:
+            return 0
+        
+        return sum(dimensions.values()) + spacing * (len(dimensions) - 1)
+    
+    @staticmethod
+    def _fit_dimensions(dimensions: dict[int, int], target_size: int, spacing: int, constraints: dict[int, SizeConstraint], default_constraint: SizeConstraint, stretch: bool) -> None:
+        if not dimensions:
+            return
+        
+        target_size = max(0, target_size - spacing * (len(dimensions) - 1))
+        indices = sorted(dimensions.keys())
+        
+        if not stretch:
+            return
+        
+        current_size = sum(dimensions.values())
+        
+        if current_size == target_size:
+            return
+        
+        if current_size <= 0:
+            share = target_size / len(indices)
+            for index in indices:
+                dimensions[index] = round(share)
             
-            offset = spacing_offset + cell_offset + obj_offset + anchor_offset
-            pos = vec2(x, y) + offset
-
-            # Flip transform
-            if self._flip_x:
-                pos.x = self._content_size.x - pos.x - obj_w
-            if self._flip_y:
-                pos.y = self._content_size.y - pos.y - obj_h
-
-            # Convert to local space
-            pos -= self.get_anchor_offset(self.anchor)
-
-            obj.pos = pos
-
-    # endregion
-
-    # region UPDATE
-
-    def _update_self(self, dt: float) -> LayoutObject:
-        self.behaviors.on_update(dt)
-        self._solve_layout()
-        if self.renderer:
-            self.renderer.update(dt)
+            return
+        
+        if target_size > current_size:
+            remaining = target_size - current_size
+            active = set(indices)
+            
+            while remaining > 0 and active:
+                total_weight = sum(dimensions[index] for index in active)
+                
+                if total_weight <= 0:
+                    break
+                
+                changes: dict[int, int] = {}
+                consumed = 0
+                constrained = set()
+                
+                for index in active:
+                    old_size = dimensions[index]
+                    ideal = remaining * old_size / total_weight
+                    proposed = old_size + ideal
+                    
+                    constraint = constraints.get(index, default_constraint)
+                    constrained_size = constraint.apply(round(proposed))
+                    
+                    delta = constrained_size - old_size
+                    
+                    if delta < 0:
+                        delta = 0
+                    
+                    changes[index] = delta
+                    
+                    if constrained_size < round(proposed):
+                        constrained.add(index)
+                
+                for index, delta in changes.items():
+                    dimensions[index] += delta
+                    consumed += delta
+                
+                if consumed <= 0:
+                    break
+                
+                remaining -= consumed
+                active -= constrained
+        
+        else:
+            remaining = current_size - target_size
+            active = set(indices)
+            
+            while remaining > 0 and active:
+                total_weight = sum(dimensions[index] for index in active)
+                
+                if total_weight <= 0:
+                    break
+                
+                changes: dict[int, int] = {}
+                consumed = 0
+                constrained = set()
+                
+                for index in active:
+                    old_size = dimensions[index]
+                    ideal = remaining * old_size / total_weight
+                    proposed = old_size - ideal
+                    
+                    constraint = constraints.get(index, default_constraint)
+                    constrained_size = constraint.apply(round(proposed))
+                    
+                    delta = old_size - constrained_size
+                    
+                    if delta < 0:
+                        delta = 0
+                    
+                    changes[index] = delta
+                    
+                    if constrained_size > round(proposed):
+                        constrained.add(index)
+                
+                for index, delta in changes.items():
+                    dimensions[index] -= delta
+                    consumed += delta
+                
+                if consumed <= 0:
+                    break
+                
+                remaining -= consumed
+                active -= constrained
+    
+    def _fit_col_dimensions(self, dimensions: dict[int, int], target_size: int) -> None:
+        self._fit_dimensions(
+            dimensions, target_size, round(self._cell_spacing.x), self._col_widths_constraints, self._col_width_constraint,
+            self._fit_mode == self.STRETCH_MODE or self._overflow_mode == self.STRETCH_MODE
+        )
+    
+    def _fit_row_dimensions(self, dimensions: dict[int, int], target_size: int) -> None:
+        self._fit_dimensions(
+            dimensions, target_size, round(self._cell_spacing.y), self._row_heights_constraints, self._row_height_constraint,
+            self._fit_mode == self.STRETCH_MODE or self._overflow_mode == self.STRETCH_MODE
+        )
+    
+    def _calculate_dims(self):
+        outer_pad_x, outer_pad_y = self._outer_padding
+        outer_pad_x = round(outer_pad_x)
+        outer_pad_y = round(outer_pad_y)
+        
+        spacing_x = round(self._cell_spacing.x)
+        spacing_y = round(self._cell_spacing.y)
+        
+        if self._mode == self.GRID_MODE:
+            self._calculated_row_widths = self._calculate_total_size(self._calculated_col_widths, spacing_x)
+            self._calculated_col_heights = self._calculate_total_size(self._calculated_row_heights, spacing_y)
+        
+        elif self._mode == self.ROW_MODE:
+            self._row_mode_calculated_row_widths = {
+                row: self._calculate_total_size(calculated_col_widths, spacing_x)
+                for row, calculated_col_widths in self._row_mode_calculated_col_widths.items()
+            }
+            
+            self._calculated_row_widths = max(self._row_mode_calculated_row_widths.values(), default=0)
+            self._calculated_col_heights = self._calculate_total_size(self._calculated_row_heights, spacing_y)
+        
+        elif self._mode == self.COL_MODE:
+            self._calculated_col_mode_col_heights = {
+                col: self._calculate_total_size(calculated_row_heights, spacing_y)
+                for col, calculated_row_heights in self._col_mode_calculated_row_heights.items()
+            }
+            
+            self._calculated_row_widths = self._calculate_total_size(self._calculated_col_widths, spacing_x)
+            self._calculated_col_heights = max(self._calculated_col_mode_col_heights.values(), default=0)
+        
+        self._calculated_width = self._width_constraint.apply(self._calculated_row_widths + 2 * outer_pad_x)
+        self._calculated_height = self._height_constraint.apply(self._calculated_col_heights + 2 * outer_pad_y)
+    
+    def _fit_col_and_row_dims(self):
+        outer_pad_x, outer_pad_y = self._outer_padding
+        outer_pad_x = round(outer_pad_x)
+        outer_pad_y = round(outer_pad_y)
+        
+        available_width = max(0, self._calculated_width - 2 * outer_pad_x)
+        available_height = max(0, self._calculated_height - 2 * outer_pad_y)
+        
+        spacing_x = round(self._cell_spacing.x)
+        spacing_y = round(self._cell_spacing.y)
+        
+        if self._mode == self.GRID_MODE:
+            current_width = self._calculate_total_size(self._calculated_col_widths, spacing_x)
+            current_height = self._calculate_total_size(self._calculated_row_heights, spacing_y)
+            
+            if current_width < available_width and self._fit_mode == self.STRETCH_MODE:
+                    self._fit_col_dimensions(self._calculated_col_widths, available_width)
+            
+            elif current_width > available_width and self._overflow_mode == self.STRETCH_MODE:
+                    self._fit_col_dimensions(self._calculated_col_widths, available_width)
+            
+            if current_height < available_height and self._fit_mode == self.STRETCH_MODE:
+                    self._fit_row_dimensions(self._calculated_row_heights, available_height)
+            
+            elif current_height > available_height and self._overflow_mode == self.STRETCH_MODE:
+                    self._fit_row_dimensions(self._calculated_row_heights, available_height)
+        
+        elif self._mode == self.ROW_MODE:
+            for row, calculated_col_widths in self._row_mode_calculated_col_widths.items():
+                current_width = self._calculate_total_size(calculated_col_widths, spacing_x)
+                
+                if current_width < available_width and self._fit_mode == self.STRETCH_MODE:
+                        self._fit_col_dimensions(calculated_col_widths, available_width)
+                
+                elif current_width > available_width and self._overflow_mode == self.STRETCH_MODE:
+                        self._fit_col_dimensions(calculated_col_widths, available_width)
+            
+            current_height = self._calculate_total_size(self._calculated_row_heights, spacing_y)
+            
+            if current_height < available_height and self._fit_mode == self.STRETCH_MODE:
+                    self._fit_row_dimensions(self._calculated_row_heights, available_height)
+            
+            elif current_height > available_height and self._overflow_mode == self.STRETCH_MODE:
+                    self._fit_row_dimensions(self._calculated_row_heights, available_height)
+        
+        elif self._mode == self.COL_MODE:
+            current_width = self._calculate_total_size(self._calculated_col_widths, spacing_x)
+            
+            if current_width < available_width and self._fit_mode == self.STRETCH_MODE:
+                self._fit_col_dimensions(self._calculated_col_widths, available_width)
+            
+            elif current_width > available_width and self._overflow_mode == self.STRETCH_MODE:
+                self._fit_col_dimensions(self._calculated_col_widths, available_width)
+            
+            for col, calculated_row_heights in self._col_mode_calculated_row_heights.items():
+                current_height = self._calculate_total_size(calculated_row_heights, spacing_y)
+                
+                if current_height < available_height and self._fit_mode == self.STRETCH_MODE:
+                    self._fit_row_dimensions(calculated_row_heights, available_height)
+                
+                elif current_height > available_height and self._overflow_mode == self.STRETCH_MODE:
+                    self._fit_row_dimensions(calculated_row_heights, available_height)
+    
+    def _calculate_row_and_col_offsets(self):
+        spacing_x = round(self._cell_spacing.x)
+        spacing_y = round(self._cell_spacing.y)
+        
+        self._calculated_col_offsets.clear()
+        self._calculated_row_offsets.clear()
+        self._row_mode_calculated_col_offsets.clear()
+        self._col_mode_calculated_row_offsets.clear()
+        
+        if self._mode == self.GRID_MODE:
+            self._calculated_col_offsets = self._calculate_offsets(self._calculated_col_widths, spacing_x)
+            self._calculated_row_offsets = self._calculate_offsets(self._calculated_row_heights, spacing_y)
+            
+            self._calculated_row_widths = self._calculate_total_size(self._calculated_col_widths, spacing_x)
+            self._calculated_col_heights = self._calculate_total_size(self._calculated_row_heights, spacing_y)
+        
+        elif self._mode == self.ROW_MODE:
+            self._row_mode_calculated_col_offsets = {
+                row: self._calculate_offsets(calculated_col_widths, spacing_x)
+                for row, calculated_col_widths in self._row_mode_calculated_col_widths.items()
+            }
+            
+            self._calculated_row_offsets = self._calculate_offsets(self._calculated_row_heights, spacing_y)
+            
+            self._row_mode_calculated_row_widths = {
+                row: self._calculate_total_size(calculated_col_widths, spacing_x)
+                for row, calculated_col_widths in self._row_mode_calculated_col_widths.items()
+            }
+            
+            self._calculated_col_heights = self._calculate_total_size(self._calculated_row_heights, spacing_y)
+        
+        elif self._mode == self.COL_MODE:
+            self._calculated_col_offsets = self._calculate_offsets(self._calculated_col_widths, spacing_x)
+            
+            self._col_mode_calculated_row_offsets = {
+                col: self._calculate_offsets(calculated_row_heights, spacing_y)
+                for col, calculated_row_heights in self._col_mode_calculated_row_heights.items()
+            }
+            
+            self._calculated_row_widths = self._calculate_total_size(self._calculated_col_widths, spacing_x)
+            
+            self._col_mode_calculated_col_heights = {
+                col: self._calculate_total_size(calculated_row_heights, spacing_y)
+                for col, calculated_row_heights in self._col_mode_calculated_row_heights.items()
+            }
+            
+            self._calculated_col_heights = max(self._col_mode_calculated_col_heights.values(), default=0)
+    
+    def _get_cell_offset(self, cell: CellPos):
+        col, row = cell
+        
+        if self._mode == self.GRID_MODE:
+            return self._calculated_col_offsets.get(col, 0), self._calculated_row_offsets.get(row, 0)
+        
+        if self._mode == self.ROW_MODE:
+            return self._row_mode_calculated_col_offsets.get(row, {}).get(col, 0), self._calculated_row_offsets.get(row, 0)
+        
+        if self._mode == self.COL_MODE:
+            return self._calculated_col_offsets.get(col, 0), self._col_mode_calculated_row_offsets.get(col, {}).get(row, 0)
+        
+        return 0, 0
+    
+    def _get_cell_size(self, cell: CellPos):
+        col, row = cell
+        
+        if self._mode == self.GRID_MODE:
+            return self._calculated_col_widths.get(col, 0), self._calculated_row_heights.get(row, 0)
+        
+        if self._mode == self.ROW_MODE:
+            return self._row_mode_calculated_col_widths.get(row, {}).get(col, 0), self._calculated_row_heights.get(row, 0)
+        
+        if self._mode == self.COL_MODE:
+            return self._calculated_col_widths.get(col, 0), self._col_mode_calculated_row_heights.get(col, {}).get(row, 0)
+        
+        return 0, 0
+    
+    def _position_objects(self):
+        outer_pad_x, outer_pad_y = self._outer_padding
+        outer_pad_x = round(outer_pad_x)
+        outer_pad_y = round(outer_pad_y)
+        
+        justify_x, justify_y = self._justification
+        
+        spacing_x = round(self._cell_spacing.x)
+        spacing_y = round(self._cell_spacing.y)
+        
+        layout_w, layout_h = self._calculated_width, self._calculated_height
+        
+        if self._mode == self.GRID_MODE:
+            content_w = self._calculate_total_size(self._calculated_col_widths, spacing_x)
+            content_h = self._calculate_total_size(self._calculated_row_heights, spacing_y)
+        
+        elif self._mode == self.ROW_MODE:
+            content_w = max(self._row_mode_calculated_row_widths.values(), default=0)
+            content_h = self._calculate_total_size(self._calculated_row_heights, spacing_y)
+        
+        elif self._mode == self.COL_MODE:
+            content_w = self._calculate_total_size(self._calculated_col_widths, spacing_x)
+            content_h = max(self._col_mode_calculated_col_heights.values(), default=0)
+        
+        else:
+            content_w = 0
+            content_h = 0
+        
+        start_x = round(outer_pad_x + (layout_w - 2 * outer_pad_x - content_w) * justify_x)
+        start_y = round(outer_pad_y + (layout_h - 2 * outer_pad_y - content_h) * justify_y)
+        
+        for obj, (cell, (cell_anchor_x, cell_anchor_y)) in self._object_placements.items():
+            cell_offset_x, cell_offset_y = self._get_cell_offset(cell)
+            cell_w, cell_h = self._get_cell_size(cell)
+            
+            cell_pad_x, cell_pad_y = self._get_cell_padding(cell)
+            
+            obj_w, obj_h = round(obj.dims.x), round(obj.dims.y)
+            obj_anchor_x, obj_anchor_y = obj.anchor
+            
+            cell_x = start_x + cell_offset_x
+            cell_y = start_y + cell_offset_y
+            
+            anchor_x = cell_x + cell_w * cell_anchor_x
+            anchor_y = cell_y + cell_h * cell_anchor_y
+            
+            anchor_x += cell_pad_x * (1 - 2 * cell_anchor_x)
+            anchor_y += cell_pad_y * (1 - 2 * cell_anchor_y)
+            
+            obj_x = anchor_x + obj_w * (obj_anchor_x - cell_anchor_x)
+            obj_y = anchor_y + obj_h * (obj_anchor_y - cell_anchor_y)
+            
+            obj.x_pos = round(obj_x)
+            obj.y_pos = round(obj_y)
+            
+            self._dirty_checking_values[obj] = (obj.pos, obj.dims, obj.anchor)
+    
+    
+    
+    def set_width_constraint(self, min_value: Optional[int] = None, max_value: Optional[int] = None, fixed_value: Optional[int] = None) -> LayoutObject:
+        self._width_constraint.min = min_value
+        self._width_constraint.max = max_value
+        self._width_constraint.fixed = fixed_value
         return self
-
-    # endregion
-
+        
+    def set_fixed_width(self, value: int) -> LayoutObject:
+        self._width_constraint.fixed = value
+        return self
+    
+    def set_min_width(self, value: int) -> LayoutObject:
+        self._width_constraint.min = value
+        return self
+        
+    def set_max_width(self, value: int) -> LayoutObject:
+        self._width_constraint.max = value
+        return self
+        
+        
+    def set_height_constraint(self, min_value: Optional[int] = None, max_value: Optional[int] = None, fixed_value: Optional[int] = None) -> LayoutObject:
+        self._height_constraint.min = min_value
+        self._height_constraint.max = max_value
+        self._height_constraint.fixed = fixed_value
+        return self
+        
+    def set_fixed_height(self, value: int) -> LayoutObject:
+        self._height_constraint.fixed = value
+        return self
+    
+    def set_min_height(self, value: int) -> LayoutObject:
+        self._height_constraint.min = value
+        return self
+        
+    def set_max_height(self, value: int) -> LayoutObject:
+        self._height_constraint.max = value
+        return self
+    
+    
+    def _get_col_constraint(self, col: Optional[int]) -> SizeConstraint:
+        if col is None:
+            return self._col_width_constraint
+        return self._col_widths_constraints.setdefault(col, SizeConstraint())
+    
+    def _get_row_constraint(self, row: Optional[int]) -> SizeConstraint:
+        if row is None:
+            return self._row_height_constraint
+        return self._row_heights_constraints.setdefault(row, SizeConstraint())
+    
+    # --- Column Constraints ---
+    
+    def set_col_width_constraint(self, min_value: Optional[int] = None, max_value: Optional[int] = None, fixed_value: Optional[int] = None, col: Optional[int] = None) -> LayoutObject:
+        constraint = self._get_col_constraint(col)
+        constraint.min = min_value
+        constraint.max = max_value
+        constraint.fixed = fixed_value
+        return self
+    
+    def set_fixed_col_width(self, value: int, col: Optional[int] = None) -> LayoutObject:
+        self._get_col_constraint(col).fixed = value
+        return self
+    
+    def set_min_col_width(self, value: int, col: Optional[int] = None) -> LayoutObject:
+        self._get_col_constraint(col).min = value
+        return self
+    
+    def set_max_col_width(self, value: int, col: Optional[int] = None) -> LayoutObject:
+        self._get_col_constraint(col).max = value
+        return self
+    
+    # --- Row Constraints ---
+    
+    def set_row_height_constraint(self, min_value: Optional[int] = None, max_value: Optional[int] = None, fixed_value: Optional[int] = None, row: Optional[int] = None) -> LayoutObject:
+        constraint = self._get_row_constraint(row)
+        constraint.min = min_value
+        constraint.max = max_value
+        constraint.fixed = fixed_value
+        return self
+    
+    def set_fixed_row_height(self, value: int, row: Optional[int] = None) -> LayoutObject:
+        self._get_row_constraint(row).fixed = value
+        return self
+    
+    def set_min_row_height(self, value: int, row: Optional[int] = None) -> LayoutObject:
+        self._get_row_constraint(row).min = value
+        return self
+    
+    def set_max_row_height(self, value: int, row: Optional[int] = None) -> LayoutObject:
+        self._get_row_constraint(row).max = value
+        return self
+        
+    
+    def set_outer_padding(self, value: int | vec2) -> LayoutObject:
+        self._outer_padding = vec2(value)
+        return self
+    
+    def set_cell_spacing(self, value: int | vec2) -> LayoutObject:
+        self._cell_spacing = vec2(value)
+        return self
+        
+    def set_cell_padding(self, value: int | vec2, cell: Optional[CellPos] = None) -> LayoutObject:
+        if cell is None:
+            self._cell_padding = vec2(value)
+        else:
+            self._cell_paddings[cell] = vec2(value)
+        return self
+            
+    def set_constant_padding(self, value: int | vec2) -> LayoutObject:
+        self.set_outer_padding(value)
+        self.set_cell_spacing(value)
+        return self
+    
+    
+    def set_mode(self, mode: Literal["grid", "rows", "columns"]) -> LayoutObject:
+        self._mode = mode
+        return self
+    
+    def set_fit_mode(self, mode: Literal["stretch", "preserve"]) -> LayoutObject:
+        self._fit_mode = mode
+        return self
+    
+    def set_overflow_mode(self, mode: Literal["stretch", "preserve"]) -> LayoutObject:
+        self._overflow_mode = mode
+        return self
+    
+    def set_justify(self, value: vec2) -> LayoutObject:
+        self._justification = value
+        return self
+    
+    
+    def mark_dirty(self):
+        self._dirty = True
+    
+    def add(self, obj: PygameObject, x: int, y: int, anchor: vec2 = Anchor.C):
+        
+        self._max_col = max(self._max_col, x)
+        self._max_cols[y] = max(self._max_cols.get(y, 0), x)
+        self._max_row = max(self._max_row, y)
+        self._max_rows[x] = max(self._max_rows.get(x, 0), y)
+        
+        self._object_placements[obj] = ((x, y), anchor)
+        self.add_child(obj, Anchor.TL)
+        self.mark_dirty()
+        
+    def stack_x(self, obj: PygameObject, y: int = 0, anchor: vec2 = Anchor.C):
+        self.add(obj, self._max_cols.get(y, 0) + 1, y, anchor)
+        
+    def stack_y(self, obj: PygameObject, x: int = 0, anchor: vec2 = Anchor.C):
+        self.add(obj, x, self._max_rows.get(x, 0) + 1, anchor)
+        
+        
+    def _dirty_check(self):
+        for obj in self._object_placements:
+            pos, dims, anchor = self._dirty_checking_values.get(obj, (None, None, None))
+            if obj.pos != pos or obj.dims != dims or obj.anchor != anchor:
+                self._dirty = True
+                return
+    
+    def _update_self(self, dt: float) -> PygameObject:
+        super()._update_self(dt)
+        
+        if self._dirty_checking:
+            self._dirty_check()
+            
+        if self._dirty:
+            self._calculate_col_and_row_dims()
+            self._calculate_dims()
+            self._fit_col_and_row_dims()
+            self._calculate_row_and_col_offsets()
+            self._position_objects()
+            
+            self.width = self._calculated_width
+            self.height = self._calculated_height
+            
+            self._dirty = False
+        
+        return self
+    
     def __repr__(self) -> str:
         return f"LayoutObject({id(self)})"
 

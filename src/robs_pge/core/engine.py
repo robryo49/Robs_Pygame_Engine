@@ -236,18 +236,20 @@ class Engine:
             font = self.resources.get_font(f"debug_{name}_title")
             self.resources.set(RectStyle, f"debug_{name}_header_style", header_style)
             self.resources.set(WindowStyle, f"debug_{name}_panel_style", WindowStyle(
-                bg_style=panel_style,
-                margin=8,
-                show_header=True,
-                header_style=header_style,
-                header_height=4,
-                header_margin=0,
-                show_title=True,
-                title_panel_style=title_panel_style,
-                title_panel_height=30,
-                title_panel_margin=8,
-                title_font=font,
-                title_align=Anchor.L,
+                bg_style = panel_style,
+                margin = 8,
+                show_header = True,
+                header_style = header_style,
+                header_height = 50,
+                header_margin = 0,
+                show_header_buttons = False,
+                show_title = True,
+                title_panel_style = title_panel_style,
+                title_panel_height = 30,
+                title_panel_margin = 8,
+                title_font = font,
+                title_align = Anchor.L,
+                title_in_header = False,
             ))
         
         for name, color in colors.items():

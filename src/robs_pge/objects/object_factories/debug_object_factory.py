@@ -19,7 +19,9 @@ class DebugObjectFactory(SubObjectFactory):
             RectRenderer(vec2(), RectStyle(Color(255, 255, 255, 100), 10, Color(255, 255, 255, 200)), cache),
             self.factory.services, layer, anchor
         ).skip_rendering()
-        obj.mode = obj.COL_MODE
+        obj.set_mode(obj.COL_MODE)
+        obj.set_fit_mode(obj.PRESERVE_MODE)
+        obj.set_justify(Anchor.TL)
 
         if width is not None:
             obj.set_fixed_width(width)
@@ -44,9 +46,9 @@ class DebugObjectFactory(SubObjectFactory):
         window = self.factory.window.create_window(DebugInfoWindow, position, title, width, None, False, style, rotation, scale, layer, anchor, cache, title_factory, value_factory)
         
         if title_column_width is not None:
-            window.content.fix_col_width(0, title_column_width)
+            window.content.set_fixed_col_width(title_column_width, 0)
         if value_column_width is not None:
-            window.content.fix_col_width(1, value_column_width)
+            window.content.set_fixed_col_width(value_column_width, 1)
         
         return window
     
@@ -62,9 +64,9 @@ class DebugObjectFactory(SubObjectFactory):
         window.stack_content_x(self.factory.text.dynamic_label(vec2(), "{}", lambda: "\n".join(str(v) for v in values_getter().values()), font=value_font), anchor=Anchor.TL)
         
         if title_column_width is not None:
-            window.content.fix_col_width(0, title_column_width)
+            window.content.set_fixed_col_width(title_column_width, 0)
         if value_column_width is not None:
-            window.content.fix_col_width(1, value_column_width)
+            window.content.set_fixed_col_width(value_column_width, 1)
         
         return window
         
