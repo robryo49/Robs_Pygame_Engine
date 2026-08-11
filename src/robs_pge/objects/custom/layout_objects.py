@@ -44,10 +44,6 @@ class LayoutObject(RectObject):
         self._fixed_width: Optional[float] = None
         self._fixed_height: Optional[float] = None
 
-        # Scroll
-        self._scroll_offset: vec2 = vec2(0, 0)
-        self._scroll_speed: float = 15.0
-
         # Flip
         self._flip_x: bool = False
         self._flip_y: bool = False
@@ -79,11 +75,11 @@ class LayoutObject(RectObject):
         self._mark_dirty()
 
     @property
-    def cell_pading(self) -> vec2:
+    def cell_padding(self) -> vec2:
         return self._cell_padding
 
-    @cell_pading.setter
-    def cell_pading(self, value: vec2 | float) -> None:
+    @cell_padding.setter
+    def cell_padding(self, value: vec2 | float) -> None:
         self._cell_padding = vec2(value)
         self._mark_dirty()
     
@@ -116,16 +112,6 @@ class LayoutObject(RectObject):
         self._padding = vec2(value)
         self._mark_dirty()
         return self
-
-    @property
-    def scroll_offset(self) -> vec2:
-        return self._scroll_offset
-
-    @scroll_offset.setter
-    def scroll_offset(self, value: vec2) -> None:
-        if value != self._scroll_offset:
-            self._scroll_offset = value
-            self._mark_dirty()
 
     @property
     def fixed_width(self) -> Optional[float]:
@@ -297,28 +283,6 @@ class LayoutObject(RectObject):
 
     # endregion
 
-    # region SCROLL
-
-    def enable_scroll(self, speed: float = 15.0) -> LayoutObject:
-        self._scroll_speed = speed
-        self.do_on_scroll(lambda o, scroll, pos: o.apply_scroll(scroll))
-        return self
-
-    def apply_scroll(self, scroll: int) -> None:
-        max_offset = self.get_scroll_range_y()
-        new_y = clamp(self._scroll_offset.y + scroll * self._scroll_speed, 0, max_offset)
-        self._scroll_offset = vec2(self._scroll_offset.x, new_y)
-        self._mark_dirty()
-
-    def get_viewport_height(self) -> float:
-        return self._fixed_height if self._fixed_height is not None else self.height
-
-    def get_scroll_range_y(self) -> float:
-        content_height = self._content_size.y
-        return max(0.0, content_height - self.get_viewport_height())
-
-    # endregion
-
     # region LAYOUT SOLVING
 
     def _mark_dirty(self) -> None:
@@ -343,7 +307,7 @@ class LayoutObject(RectObject):
     def _solve_layout(self) -> None:
         if self._dirty_checking:
             self._check_if_dirty()
-        
+
         if self._layout_version == self._last_solved_version:
             return
 
@@ -558,16 +522,16 @@ class LayoutObject(RectObject):
         offset = self._padding.x
         for col_idx in sorted(self._solved_col_widths):
             self._col_offsets[col_idx] = offset
-            offset += self._solved_col_widths[col_idx] + self._cell_padding.x
-        content_w = offset - self._cell_padding.x + self._padding.x if self._solved_col_widths else self._padding.x * 2
+            offset += self._solved_col_widths[col_idx]
+        content_w = offset + self._padding.x if self._solved_col_widths else self._padding.x * 2
 
         # Row offsets depend on mode
         if self._mode == self.GRID_MODE:
             offset = self._padding.y
             for row_idx in sorted(self._solved_row_heights):
                 self._row_offsets[row_idx] = offset
-                offset += self._solved_row_heights[row_idx] + self._cell_padding.y
-            content_h = offset - self._cell_padding.y + self._padding.y if self._solved_row_heights else self._padding.y * 2
+                offset += self._solved_row_heights[row_idx]
+            content_h = offset + self._padding.y if self._solved_row_heights else self._padding.y * 2
         elif self._mode == self.COL_MODE:
             self._col_row_offsets = {}
             max_content_h = 0.0
@@ -576,9 +540,9 @@ class LayoutObject(RectObject):
                 offset = self._padding.y
                 for row_idx in sorted(row_heights):
                     offsets[row_idx] = offset
-                    offset += row_heights[row_idx] + self._cell_padding.y
+                    offset += row_heights[row_idx]
                 self._col_row_offsets[col_idx] = offsets
-                col_h = offset - self._cell_padding.y + self._padding.y if row_heights else self._padding.y * 2
+                col_h = offset + self._padding.y if row_heights else self._padding.y * 2
                 max_content_h = max(max_content_h, col_h)
             content_h = max_content_h
         elif self._mode == self.ROW_MODE:
@@ -589,17 +553,17 @@ class LayoutObject(RectObject):
                 offset = self._padding.x
                 for col_idx in sorted(col_widths):
                     offsets[col_idx] = offset
-                    offset += col_widths[col_idx] + self._cell_padding.x
+                    offset += col_widths[col_idx]
                 self._row_col_offsets[row_idx] = offsets
-                row_w = offset - self._cell_padding.x + self._padding.x if col_widths else self._padding.x * 2
+                row_w = offset + self._padding.x if col_widths else self._padding.x * 2
                 max_content_w = max(max_content_w, row_w)
             content_w = max_content_w
 
             offset = self._padding.y
             for row_idx in sorted(self._solved_row_heights):
                 self._row_offsets[row_idx] = offset
-                offset += self._solved_row_heights[row_idx] + self._cell_padding.y
-            content_h = offset - self._cell_padding.y + self._padding.y if self._solved_row_heights else self._padding.y * 2
+                offset += self._solved_row_heights[row_idx]
+            content_h = offset + self._padding.y if self._solved_row_heights else self._padding.y * 2
         else:
             raise ValueError(f"Layout mode is {self._mode} but isn't recognized.")
 
@@ -639,13 +603,13 @@ class LayoutObject(RectObject):
         offset = self._padding.x
         for col_idx in sorted(self._solved_col_widths):
             self._col_offsets[col_idx] = offset
-            offset += self._solved_col_widths[col_idx] + self._cell_padding.x
+            offset += self._solved_col_widths[col_idx]
 
     def _recompute_row_offsets(self) -> None:
         offset = self._padding.y
         for row_idx in sorted(self._solved_row_heights):
             self._row_offsets[row_idx] = offset
-            offset += self._solved_row_heights[row_idx] + self._cell_padding.y
+            offset += self._solved_row_heights[row_idx]
 
     def _position_objects(self) -> None:
         for obj, (col, row, span_x, span_y, cell_anchor) in self._placements.items():
@@ -689,9 +653,6 @@ class LayoutObject(RectObject):
             if self._flip_y:
                 pos.y = self._content_size.y - pos.y - obj_h
 
-            # Scroll offset
-            pos -= self._scroll_offset
-
             # Convert to local space
             pos -= self.get_anchor_offset(self.anchor)
 
@@ -707,42 +668,6 @@ class LayoutObject(RectObject):
         if self.renderer:
             self.renderer.update(dt)
         return self
-
-    # endregion
-
-    # region LEGACY COMPATIBILITY
-    
-    @property
-    def min_col(self) -> int:
-        return 0
-
-    @min_col.setter
-    def min_col(self, value: int) -> None:
-        pass
-
-    @property
-    def max_col(self) -> float:
-        return float('inf')
-
-    @max_col.setter
-    def max_col(self, value: float) -> None:
-        pass
-
-    @property
-    def min_row(self) -> int:
-        return 0
-
-    @min_row.setter
-    def min_row(self, value: int) -> None:
-        pass
-
-    @property
-    def max_row(self) -> float:
-        return float('inf')
-
-    @max_row.setter
-    def max_row(self, value: float) -> None:
-        pass
 
     # endregion
 

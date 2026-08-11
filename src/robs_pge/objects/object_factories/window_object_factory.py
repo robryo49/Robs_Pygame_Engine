@@ -67,31 +67,22 @@ class WindowObjectFactory(SubObjectFactory):
         
         return header, header_height
     
-    def _content_panel_and_scrollbar(self, window_style: WindowStyle, height: Optional[int], header_height: float, title_panel_height: float, width: int, layer: int):
-        scrollbar_style = self._get_resource(window_style.scrollbar_style, ScrollbarStyle)
-        scrollbar_col_width = window_style.scrollbar_width + window_style.scrollbar_edge_margin * 2
-        
+    def _content_panel(self, window_style: WindowStyle, height: Optional[int], header_height: float, title_panel_height: float, width: int, layer: int):
+
         height = height or (header_height + title_panel_height)
-        panel_height = height - title_panel_height - header_height
-        panel_width = width - scrollbar_col_width
-        
-        panel = self.factory.ui.layouts.grid_layout(vec2(), panel_width, panel_height or None, layer=layer)
+        panel_width = width
+
+        panel = self.factory.ui.layouts.grid_layout(vec2(), panel_width, None, layer=layer)
         panel.set_padding(window_style.margin)
-        
-        scrollbar = self.factory.ui.scrollbar(
-            vec2(), vec2(window_style.scrollbar_width, panel_height - window_style.scrollbar_edge_margin * 2),
-            scrollbar_style, layer=layer + 1
-        )
-        
+
         dims = vec2(width, height)
-        
-        return panel, scrollbar, dims, panel_width, scrollbar_col_width
+
+        return panel, dims, panel_width
     
     @staticmethod
     def _assemble_window(
             obj: WindowObject, header: Optional[LayoutObject], title_panel: Optional[RectObject],
-            panel: LayoutObject, scrollbar, panel_width: float, scrollbar_col_width: float,
-            window_style: WindowStyle, draggable: bool
+            panel: LayoutObject, panel_width: float, draggable: bool
     ):
         
         row = 0
@@ -105,26 +96,13 @@ class WindowObjectFactory(SubObjectFactory):
         obj.add(panel, 0, row)
         obj.set_column_fixed(0, panel_width)
         
-        obj.add(scrollbar, 1, row, anchor=Anchor.R)
-        obj.set_column_fixed(1, scrollbar_col_width)
-        obj.set_cell_padding(vec2(window_style.scrollbar_edge_margin, 0), (1, row))
-        
-        def _on_panel_scroll(o: PygameObject, scroll: int, pos: vec2):
-            max_offset = panel.get_scroll_range_y()
-            if max_offset > 0:
-                scrollbar.set_value(clamp(scrollbar.value - scroll * 40 / max_offset, 0.0, 1.0))
-        
-        panel.do_on_scroll(_on_panel_scroll)
-        panel.make_attribute_dynamic("scroll_offset", lambda: vec2(0, scrollbar.value * panel.get_scroll_range_y()), strength=0.2)
-        
         if draggable:
             drag_handle = header if header is not None else (title_panel if title_panel is not None else obj)
             drag_handle.make_draggable(1, target=obj)
         
-        obj.sync_scrollbar()
         # endregion
     
-    def create_window[WT](
+    def create_window[WT: WindowObject](
             self, window_cls: type[WT], position: vec2, title: str, width: int,
             height: Optional[int] = None, draggable: bool = False, style: StyleOrName[WindowStyle] = None,
             rotation: float = 0.0, scale: float = 1.0, layer: int = 0, anchor: vec2 = Anchor.C,
@@ -135,18 +113,18 @@ class WindowObjectFactory(SubObjectFactory):
         title_panel, title_object, title_panel_height = self._title_panel(window_style, title, layer, width)
         header, header_height = self._header_panel(window_style, width, layer, title_object, lambda: obj.close())
         
-        panel, scrollbar, dims, panel_width, scrollbar_col_width = self._content_panel_and_scrollbar(
+        panel, dims, panel_width = self._content_panel(
             window_style, height, header_height, title_panel_height, width, layer
         )
         
         obj = self._create_object(
             window_cls, position, rotation, scale, RectRenderer(dims, window_style.bg_style, cache),
-            layer, anchor, title, panel, header, title_panel, title_object, scrollbar, *args
+            layer, anchor, title, panel, header, title_panel, title_object, *args
         )
         
-        self._assemble_window(obj, header, title_panel, panel, scrollbar, panel_width, scrollbar_col_width, window_style, draggable)
+        self._assemble_window(obj, header, title_panel, panel, panel_width, draggable)
         obj.fix_width(width)
-        
+
         return obj
     
     def regular(

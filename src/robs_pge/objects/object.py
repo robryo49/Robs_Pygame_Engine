@@ -492,11 +492,11 @@ class PygameObject[R]:
     def behaviors(self):
         return self._behaviors
     
-    def add_behavior(self, behavior: ObjectBehavior | list[ObjectBehavior] | BehaviorManager):
+    def add_behavior(self, behavior: ObjectBehavior):
         self.behaviors.add(behavior)
         return self
         
-    def remove_behavior(self, behavior: ObjectBehavior | list[ObjectBehavior] | BehaviorManager):
+    def remove_behavior(self, behavior: ObjectBehavior):
         self.behaviors.remove(behavior)
         return self
     
@@ -817,8 +817,8 @@ class PygameObject[R]:
         self.get_service(AnimationManager).play(animation)
         return self
     
-    def quick_debug(self, *infos: Any) -> PygameObject:
-        self.get_service(QuickDebugManager).quick_debug(infos)
+    def quick_debug(self, name, value) -> PygameObject:
+        self.get_service(QuickDebugManager).quick_debug(name, value)
         return self
     
     # endregion

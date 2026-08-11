@@ -9,7 +9,7 @@ from ...utils import Anchor, DictCollection, Transform, vec2, ObjectFlags
 
 class WindowObject(LayoutObject):
     def __init__(self, transform: Transform, renderer: RectRenderer,
-                 title: str, content_panel: LayoutObject, header: Optional[LayoutObject], title_panel: Optional[RectObject], title_object: Optional[TextObject], scrollbar: ScrollbarObject,
+                 title: str, content_panel: LayoutObject, header: Optional[LayoutObject], title_panel: Optional[RectObject], title_object: Optional[TextObject],
                  services: DictCollection, sub_layer: int = 0, anchor: vec2 = Anchor.C):
         super().__init__(transform, renderer, services, sub_layer, anchor)
 
@@ -20,8 +20,6 @@ class WindowObject(LayoutObject):
         self._header = header
         self._title_panel = title_panel
         self._title_object = title_object
-
-        self._scrollbar: ScrollbarObject = scrollbar
 
     # region PROPERTIES
 
@@ -57,60 +55,8 @@ class WindowObject(LayoutObject):
     def closed(self):
         return self.has_flag(ObjectFlags.HIDDEN)
 
-    @property
-    def scrollbar(self) -> ScrollbarObject:
-        return self._scrollbar
-
     def _update_self(self, dt: float):
         super()._update_self(dt)
-        self.sync_scrollbar()
-
-    def _apply_content_width(self, width: float):
-        self.content.set_fixed_width(width)
-        self.content.renderer.dims.x = width
-
-        clip = self.content.children_clip_area
-        if clip is not None:
-            clip.width = width - clip.x * 2
-
-    def _set_scrollbar_visible(self, visible: bool):
-        if visible == self._scrollbar.visible:
-            return
-
-        if visible:
-            self._scrollbar.show()
-            scrollbar_col_width = self._scrollbar.width + self.content.cell_pading.x * 2
-            content_width = self.width - scrollbar_col_width
-        else:
-            self._scrollbar.hide()
-            self._scrollbar.value = 0.0
-            self.content.scroll_offset = vec2()
-            scrollbar_col_width = 0
-            content_width = self.width
-
-        self.set_column_fixed(0, content_width)
-        self.set_column_fixed(1, scrollbar_col_width)
-        self._apply_content_width(content_width)
-
-    def show_scrollbar(self):
-        self._set_scrollbar_visible(True)
-
-    def hide_scrollbar(self):
-        self._set_scrollbar_visible(False)
-
-    def sync_scrollbar(self):
-
-        max_offset = self.content.get_scroll_range_y()
-        self._set_scrollbar_visible(max_offset > 0.5)
-
-        if not self.scrollbar.visible:
-            return
-
-        viewport_height = self.content.get_viewport_height()
-        content_height = viewport_height + max_offset
-        ratio = viewport_height / content_height if content_height > 0 else 1.0
-
-        self.scrollbar.handle_height = max(self.scrollbar.handle_width, viewport_height * ratio)
 
     # endregion
 
@@ -139,10 +85,10 @@ class WindowObject(LayoutObject):
 class DebugInfoWindow(WindowObject):
     def __init__(self, transform: Transform, renderer: RectRenderer,
                  title: str, content_panel: LayoutObject,
-                 header: Optional[LayoutObject], title_panel: Optional[RectObject], title_object: Optional[TextObject], scrollbar: ScrollbarObject,
+                 header: Optional[LayoutObject], title_panel: Optional[RectObject], title_object: Optional[TextObject],
                  title_factory_method, value_factory_method,
                  services: DictCollection, sub_layer: int = 0, anchor: vec2 = Anchor.C):
-        super().__init__(transform, renderer, title, content_panel, header, title_panel, title_object, scrollbar, services, sub_layer, anchor)
+        super().__init__(transform, renderer, title, content_panel, header, title_panel, title_object, services, sub_layer, anchor)
         
         self._title_factory = title_factory_method
         self._value_factory = value_factory_method
