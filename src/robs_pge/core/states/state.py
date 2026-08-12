@@ -296,6 +296,7 @@ class State:
         self.debug_overlay.stack_y(animation_panel, 1, Anchor.TL)
         self.debug_overlay.stack_y(async_panel, 1, Anchor.TL)
         
+        self.debug_overlay.set_fixed_col_width(self.engine.default_camera.viewport_width - 2 * (panels_width + 20) - 40, 2)
         self.debug_overlay.stack_y(quick_debug_panel, 2, Anchor.TR)
     
     def init_resources(self) -> None:

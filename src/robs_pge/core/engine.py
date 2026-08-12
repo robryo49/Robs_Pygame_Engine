@@ -240,7 +240,7 @@ class Engine:
                 margin = 8,
                 show_header = True,
                 header_style = header_style,
-                header_height = 50,
+                header_height = 4,
                 header_margin = 0,
                 show_header_buttons = False,
                 show_title = True,

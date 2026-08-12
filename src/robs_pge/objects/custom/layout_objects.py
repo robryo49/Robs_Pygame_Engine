@@ -57,8 +57,6 @@ class LayoutObject(RectObject):
         
         
         self._justification: vec2 = Anchor.C
-        # self._cell_anchor: vec2 = Anchor.C
-        # self._cell_anchors: dict[CellPos, vec2] = {}
         
         
         self._width_constraint: SizeConstraint = SizeConstraint()
@@ -94,6 +92,44 @@ class LayoutObject(RectObject):
         self._row_mode_calculated_row_widths: dict[int, int] = {}
         self._col_mode_calculated_col_heights: dict[int, int] = {}
         
+    # region PROPERTIES
+    
+    @property
+    def dirty(self):
+        return self._dirty
+    
+    @property
+    def max_col(self):
+        return self._max_col
+    
+    @property
+    def max_cols(self):
+        return dict(self._max_cols)
+    
+    @property
+    def max_row(self):
+        return self._max_row
+    
+    @property
+    def max_rows(self):
+        return dict(self._max_rows)
+    
+    @property
+    def mode(self):
+        return self._mode
+    
+    @property
+    def fit_mode(self):
+        return self._fit_mode
+    
+    @property
+    def overflow_mode(self):
+        return self._overflow_mode
+    
+    @property
+    def justification(self):
+        return self._justification
+    
     # endregion
     
     def _get_cell_padding(self, cell: Optional[CellPos] = None) -> vec2:
@@ -526,18 +562,22 @@ class LayoutObject(RectObject):
         self._width_constraint.min = min_value
         self._width_constraint.max = max_value
         self._width_constraint.fixed = fixed_value
+        self.mark_dirty()
         return self
         
     def set_fixed_width(self, value: int) -> LayoutObject:
         self._width_constraint.fixed = value
+        self.mark_dirty()
         return self
     
     def set_min_width(self, value: int) -> LayoutObject:
         self._width_constraint.min = value
+        self.mark_dirty()
         return self
         
     def set_max_width(self, value: int) -> LayoutObject:
         self._width_constraint.max = value
+        self.mark_dirty()
         return self
         
         
@@ -545,18 +585,22 @@ class LayoutObject(RectObject):
         self._height_constraint.min = min_value
         self._height_constraint.max = max_value
         self._height_constraint.fixed = fixed_value
+        self.mark_dirty()
         return self
         
     def set_fixed_height(self, value: int) -> LayoutObject:
         self._height_constraint.fixed = value
+        self.mark_dirty()
         return self
     
     def set_min_height(self, value: int) -> LayoutObject:
         self._height_constraint.min = value
+        self.mark_dirty()
         return self
         
     def set_max_height(self, value: int) -> LayoutObject:
         self._height_constraint.max = value
+        self.mark_dirty()
         return self
     
     
@@ -577,18 +621,22 @@ class LayoutObject(RectObject):
         constraint.min = min_value
         constraint.max = max_value
         constraint.fixed = fixed_value
+        self.mark_dirty()
         return self
     
     def set_fixed_col_width(self, value: int, col: Optional[int] = None) -> LayoutObject:
         self._get_col_constraint(col).fixed = value
+        self.mark_dirty()
         return self
     
     def set_min_col_width(self, value: int, col: Optional[int] = None) -> LayoutObject:
         self._get_col_constraint(col).min = value
+        self.mark_dirty()
         return self
     
     def set_max_col_width(self, value: int, col: Optional[int] = None) -> LayoutObject:
         self._get_col_constraint(col).max = value
+        self.mark_dirty()
         return self
     
     # --- Row Constraints ---
@@ -598,27 +646,33 @@ class LayoutObject(RectObject):
         constraint.min = min_value
         constraint.max = max_value
         constraint.fixed = fixed_value
+        self.mark_dirty()
         return self
     
     def set_fixed_row_height(self, value: int, row: Optional[int] = None) -> LayoutObject:
         self._get_row_constraint(row).fixed = value
+        self.mark_dirty()
         return self
     
     def set_min_row_height(self, value: int, row: Optional[int] = None) -> LayoutObject:
         self._get_row_constraint(row).min = value
+        self.mark_dirty()
         return self
     
     def set_max_row_height(self, value: int, row: Optional[int] = None) -> LayoutObject:
         self._get_row_constraint(row).max = value
+        self.mark_dirty()
         return self
         
     
     def set_outer_padding(self, value: int | vec2) -> LayoutObject:
         self._outer_padding = vec2(value)
+        self.mark_dirty()
         return self
     
     def set_cell_spacing(self, value: int | vec2) -> LayoutObject:
         self._cell_spacing = vec2(value)
+        self.mark_dirty()
         return self
         
     def set_cell_padding(self, value: int | vec2, cell: Optional[CellPos] = None) -> LayoutObject:
@@ -626,6 +680,7 @@ class LayoutObject(RectObject):
             self._cell_padding = vec2(value)
         else:
             self._cell_paddings[cell] = vec2(value)
+        self.mark_dirty()
         return self
             
     def set_constant_padding(self, value: int | vec2) -> LayoutObject:
@@ -636,18 +691,22 @@ class LayoutObject(RectObject):
     
     def set_mode(self, mode: Literal["grid", "rows", "columns"]) -> LayoutObject:
         self._mode = mode
+        self.mark_dirty()
         return self
     
     def set_fit_mode(self, mode: Literal["stretch", "preserve"]) -> LayoutObject:
         self._fit_mode = mode
+        self.mark_dirty()
         return self
     
     def set_overflow_mode(self, mode: Literal["stretch", "preserve"]) -> LayoutObject:
         self._overflow_mode = mode
+        self.mark_dirty()
         return self
     
     def set_justify(self, value: vec2) -> LayoutObject:
         self._justification = value
+        self.mark_dirty()
         return self
     
     
