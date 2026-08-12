@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Literal
+from typing import Literal, cast
 from .primitive_objects import RectObject
 from ..behaviors import *
 from ..object import PygameObject
@@ -54,10 +54,9 @@ class LayoutObject(RectObject):
         self._mode: Literal["grid", "columns", "rows"] = self.GRID_MODE
         self._fit_mode: Literal["stretch", "preserve"] = self.STRETCH_MODE
         self._overflow_mode: Literal["stretch", "preserve"] = self.STRETCH_MODE
-        
-        
         self._justification: vec2 = Anchor.C
         
+        self._content_offset = vec2()
         
         self._width_constraint: SizeConstraint = SizeConstraint()
         self._height_constraint: SizeConstraint = SizeConstraint()
@@ -95,40 +94,101 @@ class LayoutObject(RectObject):
     # region PROPERTIES
     
     @property
-    def dirty(self):
+    def dirty(self) -> bool:
         return self._dirty
     
     @property
-    def max_col(self):
+    def max_col(self) -> int:
         return self._max_col
     
     @property
-    def max_cols(self):
+    def max_cols(self) -> dict[int, int]:
         return dict(self._max_cols)
     
     @property
-    def max_row(self):
+    def max_row(self) -> int:
         return self._max_row
     
     @property
-    def max_rows(self):
+    def max_rows(self) -> dict[int, int]:
         return dict(self._max_rows)
     
+    # region mode
     @property
-    def mode(self):
-        return self._mode
+    def mode(self) -> Literal["grid", "columns", "rows"]:
+        return cast(Literal["grid", "columns", "rows"], self._mode)
     
-    @property
-    def fit_mode(self):
-        return self._fit_mode
+    @mode.setter
+    def mode(self, value: Literal["grid", "columns", "rows"]):
+        self._mode = value
+        self.mark_dirty()
+    # endregion
     
+    # region fit_mode
     @property
-    def overflow_mode(self):
-        return self._overflow_mode
+    def fit_mode(self) -> Literal["stretch", "preserve"]:
+        return cast(Literal["stretch", "preserve"], self._fit_mode)
     
+    @fit_mode.setter
+    def fit_mode(self, value: Literal["stretch", "preserve"]):
+        self._fit_mode = value
+        self.mark_dirty()
+    # endregion
+    
+    # region overflow_mode
     @property
-    def justification(self):
+    def overflow_mode(self) -> Literal["stretch", "preserve"]:
+        return cast(Literal["stretch", "preserve"], self._overflow_mode)
+    
+    @overflow_mode.setter
+    def overflow_mode(self, value: Literal["stretch", "preserve"]):
+        self._overflow_mode = value
+        self.mark_dirty()
+    # endregion
+    
+    # region justification
+    @property
+    def justification(self) -> vec2:
         return self._justification
+    
+    @justification.setter
+    def justification(self, value: vec2):
+        self._justification = value
+        self.mark_dirty()
+    # endregion
+    
+    # region content_offset
+    @property
+    def content_offset(self) -> vec2:
+        return vec2(self._content_offset)
+    
+    @content_offset.setter
+    def content_offset(self, value: vec2):
+        self._content_offset = value
+        self.mark_dirty()
+    # endregion
+    
+    # region content_offset_y
+    @property
+    def content_offset_y(self) -> float:
+        return self._content_offset.y
+    
+    @content_offset_y.setter
+    def content_offset_y(self, value: float):
+        self._content_offset.y = value
+        self.mark_dirty()
+    # endregion
+    
+    # region content_offset_x
+    @property
+    def content_offset_x(self) -> float:
+        return self._content_offset.x
+    
+    @content_offset_x.setter
+    def content_offset_x(self, value: float):
+        self._content_offset.x = value
+        self.mark_dirty()
+    # endregion
     
     # endregion
     
@@ -530,6 +590,9 @@ class LayoutObject(RectObject):
         start_x = round(outer_pad_x + (layout_w - 2 * outer_pad_x - content_w) * justify_x)
         start_y = round(outer_pad_y + (layout_h - 2 * outer_pad_y - content_h) * justify_y)
         
+        content_offset_x = self._content_offset.x
+        content_offset_y = self._content_offset.y
+        
         for obj, (cell, (cell_anchor_x, cell_anchor_y)) in self._object_placements.items():
             cell_offset_x, cell_offset_y = self._get_cell_offset(cell)
             cell_w, cell_h = self._get_cell_size(cell)
@@ -548,8 +611,8 @@ class LayoutObject(RectObject):
             anchor_x += cell_pad_x * (1 - 2 * cell_anchor_x)
             anchor_y += cell_pad_y * (1 - 2 * cell_anchor_y)
             
-            obj_x = anchor_x + obj_w * (obj_anchor_x - cell_anchor_x)
-            obj_y = anchor_y + obj_h * (obj_anchor_y - cell_anchor_y)
+            obj_x = anchor_x + obj_w * (obj_anchor_x - cell_anchor_x) + content_offset_x
+            obj_y = anchor_y + obj_h * (obj_anchor_y - cell_anchor_y) + content_offset_y
             
             obj.x_pos = round(obj_x)
             obj.y_pos = round(obj_y)
@@ -689,6 +752,22 @@ class LayoutObject(RectObject):
         return self
     
     
+    def set_content_offset(self, value: vec2) -> LayoutObject:
+        self._content_offset = value
+        self.mark_dirty()
+        return self
+    
+    def set_content_offset_x(self, value: float) -> LayoutObject:
+        self._content_offset.x = value
+        self.mark_dirty()
+        return self
+    
+    def set_content_offset_y(self, value: float) -> LayoutObject:
+        self._content_offset.y = value
+        self.mark_dirty()
+        return self
+    
+    
     def set_mode(self, mode: Literal["grid", "rows", "columns"]) -> LayoutObject:
         self._mode = mode
         self.mark_dirty()
@@ -760,15 +839,3 @@ class LayoutObject(RectObject):
     
     def __repr__(self) -> str:
         return f"LayoutObject({id(self)})"
-
-
-class DebugOverlay(LayoutObject):
-    def __init__(self, transform: Transform, renderer: RectRenderer, services: DictCollection, sub_layer: int = 0, anchor: vec2 = Anchor.C):
-        super().__init__(transform, renderer, services, sub_layer, anchor)
-
-    def toggle(self) -> LayoutObject:
-        self.visible = not self.visible
-        return self
-
-    def __repr__(self) -> str:
-        return f"DebugOverlay({id(self)})"

@@ -234,22 +234,26 @@ class SetAttributeOnClickBehavior(AnimationOnClickBehavior):
         
 
 class DynamicAttributeBehavior(ObjectBehavior):
-    def __init__(self, attribute: str, getter: Any | Callable[[], Any | tuple[Any]], template: Optional[str] = None, strength: float = 1):
+    def __init__(self, attribute: str, value_getter: Any | Callable[[], Any | tuple[Any]], template: Optional[str] = None, strength: float = 1,
+                 attr_getter: Callable[[PygameObject, str], Any] = getattr, attr_setter: Callable[[PygameObject, str, Any], Any] = setattr):
         super().__init__()
         
         self._attribute = attribute
-        self._getter = getter
+        self._value_getter = value_getter
         self._template = template
         
         self._strength = strength
+        
+        self._get_attr = attr_getter
+        self._set_attr = attr_setter
     
     
     def on_update(self, dt: float):
         if not self.owner:
             return
         
-        value = self._evaluate(self._getter)
-        attr_value = getattr(self.owner, self._attribute)
+        value = self._evaluate(self._value_getter)
+        attr_value = self._get_attr(self.owner, self._attribute)
         
         if self._template is not None:
             value = self._template.format(*(value if isinstance(value, tuple) and len(value) == self._template.count("{}") else (value, )))
@@ -262,10 +266,11 @@ class DynamicAttributeBehavior(ObjectBehavior):
         if value == attr_value:
             return
         
-        setattr(self.owner, self._attribute, value)
+        self._set_attr(self.owner, self._attribute, value)
 
 class AttributeValueSnappingBehavior(ObjectBehavior):
-    def __init__(self, attribute: str, values: list[float], offset: float = 0, strength: float = 1):
+    def __init__(self, attribute: str, values: list[float], offset: float = 0, strength: float = 1,
+                 attr_getter: Callable[[PygameObject, str], Any] = getattr, attr_setter: Callable[[PygameObject, str, Any], Any] = setattr):
         super().__init__()
         
         self._attribute = attribute
@@ -273,18 +278,22 @@ class AttributeValueSnappingBehavior(ObjectBehavior):
         self._offset = offset
         
         self._strength = strength
+        
+        self._get_attr = attr_getter
+        self._set_attr = attr_setter
     
     def on_update(self, dt):
-        attr_value = getattr(self.owner, self._attribute)
+        attr_value = self._get_attr(self.owner, self._attribute)
         value = min(self._values, key=lambda x: abs(x - (attr_value + self._offset)))
         
         if 0 < self._strength < 1:
             value = lerp(attr_value, value, self._strength)
             
-        setattr(self.owner, self._attribute, value)
+        self._set_attr(self.owner, self._attribute, value)
 
 class AttributeGridSnappingBehavior(ObjectBehavior):
-    def __init__(self, attribute: str, step: float, offset: float = 0, strength: float = 1):
+    def __init__(self, attribute: str, step: float, offset: float = 0, strength: float = 1,
+                 attr_getter: Callable[[PygameObject, str], Any] = getattr, attr_setter: Callable[[PygameObject, str, Any], Any] = setattr):
         super().__init__()
         self._attribute = attribute
         
@@ -292,34 +301,35 @@ class AttributeGridSnappingBehavior(ObjectBehavior):
         self._offset = offset
         
         self._strength = strength
+        
+        self._get_attr = attr_getter
+        self._set_attr = attr_setter
     
     def on_update(self, dt: float):
         
-        attr_value = getattr(self.owner, self._attribute)
+        attr_value = self._get_attr(self.owner, self._attribute)
         value = round((attr_value - self._offset) / self._step) * self._step + self._offset
         
         if 0 < self._strength < 1:
             value = lerp(attr_value, value, self._strength)
         
-        setattr(self.owner, self._attribute, value)
+        self._set_attr(self.owner, self._attribute, value)
 
 class AttributeClampingBehavior(ObjectBehavior):
-    def __init__(
-            self,
-            attribute: str,
-            min_value: Optional[float | Callable[[],  float]] = None,
-            max_value: Optional[float | Callable[[],  float]] = None,
-            strength: float = 1
-    ):
+    def __init__(self, attribute: str, min_value: Optional[float | Callable[[],  float]] = None, max_value: Optional[float | Callable[[],  float]] = None, strength: float = 1,
+                 attr_getter: Callable[[PygameObject, str], Any] = getattr, attr_setter: Callable[[PygameObject, str, Any], Any] = setattr):
         super().__init__()
         self._attribute = attribute
         
         self._min_value = -inf if min_value is None else min_value
         self._max_value = inf if max_value is None else max_value
         self._strength = strength
+        
+        self._get_attr = attr_getter
+        self._set_attr = attr_setter
     
     def on_update(self, dt: float):
-        attr_value = getattr(self.owner, self._attribute)
+        attr_value = self._get_attr(self.owner, self._attribute)
         
         # Dynamically evaluate the bounds every frame
         current_min = self._evaluate(self._min_value)
@@ -331,26 +341,30 @@ class AttributeClampingBehavior(ObjectBehavior):
         if 0 < self._strength < 1:
             target_value = lerp(attr_value, target_value, self._strength)
         
-        setattr(self.owner, self._attribute, target_value)
+        self._set_attr(self.owner, self._attribute, target_value)
 
 class AttributeFixingBehavior(ObjectBehavior):
-    def __init__(self, attribute: str, value: Optional[Any | Callable[[], Any]] = None, strength: float = 1):
+    def __init__(self, attribute: str, value: Optional[Any | Callable[[], Any]] = None, strength: float = 1,
+                 attr_getter: Callable[[PygameObject, str], Any] = getattr, attr_setter: Callable[[PygameObject, str, Any], Any] = setattr):
         super().__init__()
         self._attribute = attribute
         self._value = value
         
         self._strength = strength
+        
+        self._get_attr = attr_getter
+        self._set_attr = attr_setter
     
     def on_attach(self):
         self._value = self._value if self._value is not None else getattr(self.owner, self._attribute)
     
     def on_update(self, dt: float):
-        attr_value = getattr(self.owner, self._attribute)
+        attr_value = self._get_attr(self.owner, self._attribute)
         value = self._evaluate(self._value)
         
         if 0 < self._strength < 1:
             value = lerp(attr_value, value, self._strength)
-        setattr(self.owner, self._attribute, value)
+        self._set_attr(self.owner, self._attribute, value)
 
 
 # endregion

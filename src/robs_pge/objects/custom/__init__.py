@@ -1,13 +1,14 @@
 from .primitive_objects import RectObject, CircleObject, LineObject, TextObject
 from .sprite_objects import SpriteObject, ChunkedSpriteObject, SubSurfaceSpriteObject, IconObject
-from .layout_objects import LayoutObject, DebugOverlay
+from .layout_objects import LayoutObject
 from .ui_objects import (
     CheckBoxObject, SliderObject, ButtonObject, LineChartObject,
     ProgressBarObject, CycleButtonObject, SpriteButtonObject,
     ToggleButtonObject, RadioButtonObject, IconButtonObject,
     ScrollbarObject
 )
-from .window_objects import WindowObject, DebugInfoWindow
+from .window_objects import WindowObject
+from .debug_objects import DebugOverlay, DebugInfoWindow
 
 __all__ = [
     "RectObject",

@@ -557,25 +557,58 @@ class PygameObject[R]:
         if on_collision or while_colliding or on_collision_end:
             self.add_behavior(ActionOnCollisionBehavior(on_collision, while_colliding, on_collision_end, condition_on_other))
     
-    def make_attribute_dynamic(self, attribute: str, getter: Any | Callable[[], Any | tuple[Any, ...]], template: Optional[str] = None, strength: float = 1):
-        self.add_behavior(DynamicAttributeBehavior(attribute, getter, template, strength))
+    
+    def make_attribute_dynamic(self, attribute: str, value_getter: Any | Callable[[], Any | tuple[Any, ...]], template: Optional[str] = None, strength: float = 1,
+                               attr_getter = getattr, attr_setter = setattr):
+        self.add_behavior(DynamicAttributeBehavior(attribute, value_getter, template, strength, attr_getter, attr_setter))
         return self
         
-    def make_attribute_fixed(self, attribute: str, value: Optional[Any | Callable[[], Any]] = None, strength: float = 1):
-        self.add_behavior(AttributeFixingBehavior(attribute, value, strength))
+    def make_attribute_fixed(self, attribute: str, value: Optional[Any | Callable[[], Any]] = None, strength: float = 1,
+                             attr_getter = getattr, attr_setter = setattr):
+        self.add_behavior(AttributeFixingBehavior(attribute, value, strength, attr_getter, attr_setter))
         return self
         
-    def make_attribute_clamped(self, attribute: str, min_value: Optional[float | Callable[[],  float]] = None, max_value: Optional[float | Callable[[],  float]] = None, strength: float = 1):
-        self.add_behavior(AttributeClampingBehavior(attribute, min_value, max_value, strength))
+    def make_attribute_clamped(self, attribute: str, min_value: Optional[float | Callable[[],  float]] = None, max_value: Optional[float | Callable[[],  float]] = None, strength: float = 1,
+                               attr_getter = getattr, attr_setter = setattr):
+        self.add_behavior(AttributeClampingBehavior(attribute, min_value, max_value, strength, attr_getter, attr_setter))
         return self
         
-    def make_attribute_snap(self, attribute: str, values: list[float], offset: float = 0, strength: float = 1):
-        self.add_behavior(AttributeValueSnappingBehavior(attribute, values, offset, strength))
+    def make_attribute_snap(self, attribute: str, values: list[float], offset: float = 0, strength: float = 1,
+                            attr_getter = getattr, attr_setter = setattr):
+        self.add_behavior(AttributeValueSnappingBehavior(attribute, values, offset, strength, attr_getter, attr_setter))
         return self
         
-    def make_attribute_snap_on_grid(self, attribute: str, step: float, offset: float = 0, strength: float = 1):
-        self.add_behavior(AttributeGridSnappingBehavior(attribute, step, offset, strength))
+    def make_attribute_snap_on_grid(self, attribute: str, step: float, offset: float = 0, strength: float = 1,
+                                    attr_getter = getattr, attr_setter = setattr):
+        self.add_behavior(AttributeGridSnappingBehavior(attribute, step, offset, strength, attr_getter, attr_setter))
         return self
+    
+    
+    def make_property_dynamic(self, prop_name: str, value_getter: Any | Callable[[], Any | tuple[Any, ...]], template: Optional[str] = None, strength: float = 1):
+        self.add_behavior(DynamicAttributeBehavior(prop_name, value_getter, template, strength,
+            lambda o, p: o.get_property(p), lambda o, p, v: o.set_property(p, v)))
+        return self
+        
+    def make_property_fixed(self, prop_name: str, value: Optional[Any | Callable[[], Any]] = None, strength: float = 1):
+        self.add_behavior(AttributeFixingBehavior(prop_name, value, strength,
+            lambda o, p: o.get_property(p), lambda o, p, v: o.set_property(p, v)))
+        return self
+        
+    def make_property_clamped(self, prop_name: str, min_value: Optional[float | Callable[[],  float]] = None, max_value: Optional[float | Callable[[],  float]] = None, strength: float = 1):
+        self.add_behavior(AttributeClampingBehavior(prop_name, min_value, max_value, strength,
+            lambda o, p: o.get_property(p), lambda o, p, v: o.set_property(p, v)))
+        return self
+        
+    def make_property_snap(self, prop_name: str, values: list[float], offset: float = 0, strength: float = 1):
+        self.add_behavior(AttributeValueSnappingBehavior(prop_name, values, offset, strength,
+            lambda o, p: o.get_property(p), lambda o, p, v: o.set_property(p, v)))
+        return self
+        
+    def make_property_snap_on_grid(self, prop_name: str, step: float, offset: float = 0, strength: float = 1):
+        self.add_behavior(AttributeGridSnappingBehavior(prop_name, step, offset, strength,
+            lambda o, p: o.get_property(p), lambda o, p, v: o.set_property(p, v)))
+        return self
+    
     
     def make_draggable(self, button: int = 1, target: Optional["PygameObject"] = None):
         self.add_behavior(DraggableBehavior(button, target))
@@ -890,7 +923,6 @@ class PygameObject[R]:
             self.renderer.update(dt)
             
         return self
-            
     
     def __repr__(self):
         return f"PygameObject({id(self)})"
