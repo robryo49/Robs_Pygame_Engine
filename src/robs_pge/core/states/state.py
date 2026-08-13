@@ -27,11 +27,15 @@ _LAYER_DEBUG = 1000.0
 
 
 class State:
-    def __init__(self, engine: Engine, state_id: str):
+    
+    DEBUG_DISABLED: int = 0
+    DEBUG_PERF: int = 1
+    DEBUG_FULL: int = 100
+    
+    def __init__(self, engine: Engine, state_id: str, debug_mode: int = DEBUG_DISABLED):
         
         self._id = state_id
         self._engine = engine
-        
         self._engine.state_manager.register_state(self)
         
         self._camera = Camera(self.engine.display)
@@ -50,11 +54,11 @@ class State:
         self._factory.services = self._services
         
         self._layer_manager: LayerManager = LayerManager(self._services)
-        
         self._debug_layer = self.create_layer("debug", _LAYER_DEBUG, self.engine.default_camera, interactable=False)
         self._ui_layer = self.create_layer("ui", _LAYER_UI, self.engine.default_camera, interactable=True)
         self._world_layer = self.create_layer("world", _LAYER_WORLD, self.camera, interactable=True)
         
+        self._debug_mode = debug_mode
         self._debug_overlay = (
             self.create_object.ui.debug
             .debug_overlay(ScreenAnchor.TL, width=self.engine.display.viewport_dims.x, anchor=Anchor.TL)
@@ -216,6 +220,8 @@ class State:
     # region INIT METHODS
     
     def init_debug_overlay_objects(self) -> None:
+        if not self._debug_mode:
+            return
         
         green_style  = self.resources.get(WindowStyle, "debug_teal_panel_style")
         blue_style   = self.resources.get(WindowStyle, "debug_blue_panel_style")
@@ -285,19 +291,20 @@ class State:
         
         quick_debug_panel = self.create_object.ui.debug.dynamic_debug_info_window(vec2(), "QUICK DEBUG", panels_width, self.quick_debug_manager.get_values, titles_width, infos_width, font_white, font_gray, yellow_style)
         
-        self.debug_overlay.stack_y(engine_pannel, 0, Anchor.TL)
-        self.debug_overlay.stack_y(state_panel, 0, Anchor.TL)
-        self.debug_overlay.stack_y(rendering_panel, 0, Anchor.TL)
-        self.debug_overlay.stack_y(frame_panel, 0, Anchor.TL)
-        self.debug_overlay.stack_y(camera_panel, 0, Anchor.TL)
-        self.debug_overlay.stack_y(mouse_panel, 0, Anchor.TL)
+        if self._debug_mode >= self.DEBUG_PERF: self.debug_overlay.stack_y(engine_pannel, 0, Anchor.TL)
+        if self._debug_mode >= self.DEBUG_PERF: self.debug_overlay.stack_y(state_panel, 0, Anchor.TL)
+        if self._debug_mode >= self.DEBUG_PERF: self.debug_overlay.stack_y(rendering_panel, 0, Anchor.TL)
+        if self._debug_mode >= self.DEBUG_PERF: self.debug_overlay.stack_y(frame_panel, 0, Anchor.TL)
+        if self._debug_mode >= self.DEBUG_FULL: self.debug_overlay.stack_y(camera_panel, 0, Anchor.TL)
+        if self._debug_mode >= self.DEBUG_FULL: self.debug_overlay.stack_y(mouse_panel, 0, Anchor.TL)
         
-        self.debug_overlay.stack_y(input_panel, 1, Anchor.TL)
-        self.debug_overlay.stack_y(animation_panel, 1, Anchor.TL)
-        self.debug_overlay.stack_y(async_panel, 1, Anchor.TL)
+        if self._debug_mode >= self.DEBUG_FULL: self.debug_overlay.stack_y(input_panel, 1, Anchor.TL)
+        if self._debug_mode >= self.DEBUG_FULL: self.debug_overlay.stack_y(animation_panel, 1, Anchor.TL)
+        if self._debug_mode >= self.DEBUG_FULL: self.debug_overlay.stack_y(async_panel, 1, Anchor.TL)
         
-        self.debug_overlay.set_fixed_col_width(self.engine.default_camera.viewport_width - 2 * (panels_width + 20) - 40, 2)
-        self.debug_overlay.stack_y(quick_debug_panel, 2, Anchor.TR)
+        cols = 2 if self._debug_mode >= self.DEBUG_FULL else 1
+        self.debug_overlay.set_fixed_col_width(self.engine.default_camera.viewport_width - cols * (panels_width + 20) - 40, 2)
+        if self._debug_mode >= self.DEBUG_PERF: self.debug_overlay.stack_y(quick_debug_panel, 2, Anchor.TR)
     
     def init_resources(self) -> None:
         pass
