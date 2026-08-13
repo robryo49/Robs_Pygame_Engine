@@ -68,15 +68,15 @@ class WindowObjectFactory(SubObjectFactory):
     
     def _content_panel(self, window_style: WindowStyle, height: Optional[int], header_height: float, title_panel_height: float, width: int, layer: int):
 
-        height = height or (header_height + title_panel_height)
         panel_width = width
 
         panel = self.factory.ui.layouts.grid_layout(vec2(), panel_width, None, layer=layer)
         panel.set_outer_padding(window_style.margin)
+        
+        if height is not None:
+            panel.set_fixed_height(height - header_height - title_panel_height)
 
-        dims = vec2(width, height)
-
-        return panel, dims, panel_width
+        return panel, panel_width
     
     @staticmethod
     def _assemble_window(
@@ -112,10 +112,11 @@ class WindowObjectFactory(SubObjectFactory):
         title_panel, title_object, title_panel_height = self._title_panel(window_style, title, layer, width)
         header, header_height = self._header_panel(window_style, width, layer, title_object, lambda: obj.close())
         
-        panel, dims, panel_width = self._content_panel(
+        panel, panel_width = self._content_panel(
             window_style, height, header_height, title_panel_height, width, layer
         )
         
+        dims = vec2(width, height or (header_height + title_panel_height))
         obj: WT = self._create_object(
             window_cls, position, rotation, scale, RectRenderer(dims, window_style.bg_style, cache),
             layer, anchor, title, panel, header, title_panel, title_object, *args

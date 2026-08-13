@@ -291,7 +291,7 @@ class PygameObject[R]:
     
     # endregion
     
-    # region clip_area
+    # region children clip_area
     
     @property
     def children_clip_area(self):
