@@ -81,7 +81,7 @@ class InteractionManager:
             self._top_hovered = self._active[1] or self._active[2] or self._active[3]
         else:
             self._top_hovered = self._get_first(hovered, lambda obj: obj.has_flag(ObjectFlags.HOVERABLE))
-        
+            
         top = self._top_hovered
         if previous_hovered is top:
             if top is not None:
@@ -104,8 +104,9 @@ class InteractionManager:
         if self._input.held_button(button) and active and active.has_flag(ObjectFlags.CLICKABLE):
             active.on_hold(button, mouse_pos)
         
-        if self._input.released_button(button) and active and active.has_flag(ObjectFlags.CLICKABLE):
-            active.on_release(button, mouse_pos)
+        if self._input.released_button(button) and active:
+            if active.has_flag(ObjectFlags.CLICKABLE):
+                active.on_release(button, mouse_pos)
             self._active[button] = None
     
     def _handle_scroll(self, hovered: list[PygameObject]):
