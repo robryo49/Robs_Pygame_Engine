@@ -7,7 +7,7 @@ from .sub_factory import SubObjectFactory
 from ..custom import LineChartObject, ProgressBarObject, ScrollbarObject, SliderObject
 from ..object import PygameObject
 from ...rendering import CircleStyle, LineChartStyle, LineStyle, ProgressBarStyle, RectRenderer, RectStyle, ScrollbarStyle, SliderStyle
-from ...utils import Anchor, StyleOrName, length, vec2, Callback
+from ...utils import Anchor, StyleOrName, length, vec2, Callback, Font
 
 
 class UIObjectFactory(SubObjectFactory):
@@ -27,7 +27,7 @@ class UIObjectFactory(SubObjectFactory):
         bg_style = slider_style.bg_style
         bar_style = slider_style.bar_style
         handle_style: RectStyle | CircleStyle = slider_style.handle_style
-        font = slider_style.font
+        font = self._get_resource(slider_style.font, Font)
         
         max_text_width = font.get_render_size(str(max_value) + ".00" )[0]
         bar_width = slider_style.bar_width
@@ -52,7 +52,7 @@ class UIObjectFactory(SubObjectFactory):
         obj = self._create_object(SliderObject, position, rotation, scale, RectRenderer(dims, bg_style, cache), layer, anchor, bar, handle, text, min_value, max_value, step)
         obj.set_fixed_width(dims.x).set_fixed_height(dims.y)
         obj.set_constant_padding(margin)
-        obj.set_column_fixed(0 if slider_style.text_position.lower() in ["left", "l"] else 1, max_text_width + margin * 0.5)
+        obj.set_fixed_col_width(max_text_width + margin * 0.5, 0 if slider_style.text_position.lower() in ["left", "l"] else 1)
 
         obj.add(bar, 1 if slider_style.text_position.lower() in ["left", "l"] else 0, 0)
         obj.add(text, 0 if slider_style.text_position.lower() in ["left", "l"] else 1, 0)

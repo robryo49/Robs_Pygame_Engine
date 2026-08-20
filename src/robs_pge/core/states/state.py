@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Callable, Optional, TYPE_CHECKING
+from typing import Any, Callable, Iterable, Optional, TYPE_CHECKING
 
 import pygame as pg
 
@@ -289,7 +289,8 @@ class State:
         async_panel = self.create_object.ui.debug.debug_info_window(vec2(), "ASYNC", panels_width, titles_width, infos_width, font_white, font_gray, red_style)
         async_panel.add_line("Running",         "{}", lambda: self.async_process_manager.pending_count)
         
-        quick_debug_panel = self.create_object.ui.debug.dynamic_debug_info_window(vec2(), "QUICK DEBUG", panels_width, self.quick_debug_manager.get_values, titles_width, infos_width, font_white, font_gray, yellow_style)
+        quick_debug_panel = self.create_object.ui.debug.dynamic_debug_info_window(vec2(), "QUICK DEBUG", panels_width, self.quick_debug_manager.get_values, titles_width-85, infos_width+85, font_white, font_gray, yellow_style)
+    
         
         if self._debug_mode >= self.DEBUG_PERF: self.debug_overlay.stack_y(engine_pannel, 0, Anchor.TL)
         if self._debug_mode >= self.DEBUG_PERF: self.debug_overlay.stack_y(state_panel, 0, Anchor.TL)
@@ -351,6 +352,10 @@ class State:
         else:
             layer.add_object(window)
         return self.windows.register(window, group)
+    
+    def register_windows(self, windows: Iterable[WindowObject], group: str = "main", layer: Layer | str = "ui"):
+        for window in windows:
+            self.register_window(window, group, layer)
     
     def register_quick_debug(self, name: str, getter: Callable, template: str = "{}"):
         self.quick_debug_manager.register_listener(name, getter, template)

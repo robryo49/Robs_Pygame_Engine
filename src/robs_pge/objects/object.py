@@ -365,9 +365,9 @@ class PygameObject[R]:
         return self
         
     def remove_child(self, obj: "PygameObject"):
-        self._children.remove(obj)
-        obj.set_parent(None)
-        
+        if self._children.has(obj):
+            self._children.remove(obj)
+            obj.set_parent(None)
         return self
         
     # endregion

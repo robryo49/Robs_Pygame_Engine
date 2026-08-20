@@ -43,7 +43,10 @@ class DebugObjectFactory(SubObjectFactory):
         title_factory = lambda t: self.factory.text.label(vec2(), t, title_font, cache=False)
         value_factory = lambda t, g: self.factory.text.dynamic_label(vec2(), t, g, value_font, cache=False)
         
-        window = self.factory.window.create_window(DebugInfoWindow, position, title, width, None, False, style, rotation, scale, layer, anchor, cache, title_factory, value_factory)
+        window = self.factory.window.create_window(
+            DebugInfoWindow, position, title, width, None, DebugInfoWindow.GRID_MODE, DebugInfoWindow.STRETCH_MODE, DebugInfoWindow.STRETCH_MODE, Anchor.T, False,
+            style, rotation, scale, layer, anchor, cache, title_factory, value_factory
+        )
         
         if title_column_width is not None:
             window.content.set_fixed_col_width(title_column_width, 0)
@@ -58,7 +61,10 @@ class DebugObjectFactory(SubObjectFactory):
             title_font: StyleOrName[Font] = None, value_font: StyleOrName[Font] = None, style: StyleOrName[WindowStyle] = None,
             rotation: float = 0.0, scale: float = 1.0, layer: int = 0, anchor: vec2 = Anchor.C, cache: bool = True
     ):
-        window = self.factory.window.regular(position, title, width, None, False, style, rotation, scale, layer, anchor, cache)
+        window = self.factory.window.regular(
+            position, title, width, None, DebugInfoWindow.GRID_MODE, DebugInfoWindow.STRETCH_MODE, DebugInfoWindow.STRETCH_MODE, Anchor.T, False,
+            style, rotation, scale, layer, anchor, cache
+        )
         
         window.stack_content_x(self.factory.text.dynamic_label(vec2(), "{}", lambda: "\n".join(str(v) for v in values_getter().keys()), font=title_font), anchor=Anchor.TL)
         window.stack_content_x(self.factory.text.dynamic_label(vec2(), "{}", lambda: "\n".join(str(v) for v in values_getter().values()), font=value_font), anchor=Anchor.TL)

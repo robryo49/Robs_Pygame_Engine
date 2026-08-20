@@ -331,7 +331,7 @@ class WindowStyle(Style):
     
     show_header: bool = False
     header_style: Optional[RectStyle] = field(default_factory=RectStyle)
-    header_height: Optional[int] = None
+    header_height: int = 20
     header_margin: int = 0
     
     show_header_buttons: bool = False

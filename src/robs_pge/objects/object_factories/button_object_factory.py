@@ -38,7 +38,7 @@ class ButtonObjectFactory(SubObjectFactory):
     
     
     def button(
-            self, position: vec2, text: str, action: Callback[..., Any] = None, dims: Optional[vec2] = None, width: Optional[float] = None, height: Optional[float] = None, style: StyleOrName[ButtonStyle] = None,
+            self, position: vec2, text: str, action: Callback[[PygameObject], Any] = None, dims: Optional[vec2] = None, width: Optional[float] = None, height: Optional[float] = None, style: StyleOrName[ButtonStyle] = None,
             rotation: float = 0.0, scale: float = 1.0, layer: int = 0, anchor: vec2 = Anchor.C, cache: bool = True
     ) -> ButtonObject:
         
@@ -60,7 +60,7 @@ class ButtonObjectFactory(SubObjectFactory):
         return obj
     
     def cycle_button(
-            self, position: vec2, texts: tuple[str, ...], values: Optional[tuple[Any, ...]] = None, default_index: int = 0, callback: Callback[[Any], Any] = None, dims: Optional[vec2] = None, width: Optional[float] = None, height: Optional[float] = None, style: StyleOrName[ButtonStyle] = None,
+            self, position: vec2, texts: tuple[str, ...], values: Optional[tuple[Any, ...]] = None, default_index: int = 0, callback: Callback[[PygameObject], Any] = None, dims: Optional[vec2] = None, width: Optional[float] = None, height: Optional[float] = None, style: StyleOrName[ButtonStyle] = None,
             rotation: float = 0.0, scale: float = 1.0, layer: int = 0, anchor: vec2 = Anchor.C, cache: bool = True
     ) -> CycleButtonObject:
         
@@ -90,7 +90,7 @@ class ButtonObjectFactory(SubObjectFactory):
         return obj
     
     def sprite_button(
-            self, position: vec2, texture: Texture, action: Callback[..., Any] = None, dims: Optional[vec2] = None, width: Optional[float] = None, height: Optional[float] = None, style: StyleOrName[SpriteButtonStyle] = None,
+            self, position: vec2, texture: Texture, action: Callback[[PygameObject], Any] = None, dims: Optional[vec2] = None, width: Optional[float] = None, height: Optional[float] = None, style: StyleOrName[SpriteButtonStyle] = None,
             rotation: float = 0.0, scale: float = 1.0, layer: int = 0, anchor: vec2 = Anchor.C, cache: bool = True
     ) -> SpriteButtonObject:
         
@@ -112,7 +112,7 @@ class ButtonObjectFactory(SubObjectFactory):
         return obj
     
     def icon_button(
-            self, position: vec2, icon: str, icon_size: int, action: Callback[..., Any] = None, dims: Optional[vec2] = None, width: Optional[float] = None, height: Optional[float] = None, style: StyleOrName[IconButtonStyle] = None,
+            self, position: vec2, icon: str, icon_size: int, action: Callback[[PygameObject], Any] = None, dims: Optional[vec2] = None, width: Optional[float] = None, height: Optional[float] = None, style: StyleOrName[IconButtonStyle] = None,
             rotation: float = 0.0, scale: float = 1.0, layer: int = 0, anchor: vec2 = Anchor.C, cache: bool = True
     ) -> IconButtonObject:
         
@@ -136,7 +136,7 @@ class ButtonObjectFactory(SubObjectFactory):
         return obj
     
     def checkbox(
-            self, position: vec2, icon_size, size: Optional[float] = None, callback: Callback[[bool], Any] = None, checked_icon: str = Icons.CHECK, checked=False, style: StyleOrName[IconButtonStyle] = None,
+            self, position: vec2, icon_size, size: Optional[float] = None, callback: Callback[[PygameObject], Any] = None, checked_icon: str = Icons.CHECK, checked=False, style: StyleOrName[IconButtonStyle] = None,
             rotation: float = 0.0, scale: float = 1.0, layer: int = 0, anchor: vec2 = Anchor.C, cache: bool = True
     ) -> CheckBoxObject:
         

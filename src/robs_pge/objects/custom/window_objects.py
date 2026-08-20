@@ -23,9 +23,20 @@ class WindowObject(LayoutObject):
 
     # region PROPERTIES
 
+    # region content
     @property
-    def content(self) -> LayoutObject:
+    def content(self):
         return self._content
+    
+    @content.setter
+    def content(self, obj: LayoutObject):
+        self.remove_child(self._content)
+        self.add_child(obj)
+        obj._height_constraint = self.content._height_constraint.copy()
+        self._content = obj
+        self._content.mark_dirty()
+        self.mark_dirty()
+    # endregion
 
     @property
     def header(self) -> Optional[LayoutObject]:
@@ -76,6 +87,10 @@ class WindowObject(LayoutObject):
 
     def stack_content_y(self, obj: PygameObject, col: int = 0, anchor: vec2 = Anchor.C) -> "WindowObject":
         self.content.stack_y(obj, col, anchor)
+        return self
+    
+    def set_content(self, obj: LayoutObject):
+        self.content = obj
         return self
 
     def __repr__(self):

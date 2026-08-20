@@ -412,7 +412,6 @@ class TextRenderer(ObjectRenderer):
         self._text = text
         
         self._font = font or Font()
-        
         self._dims = vec2(self.font.get_render_size(self.text))
     
     # region PROPERTIES

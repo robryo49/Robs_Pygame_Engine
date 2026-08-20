@@ -2,14 +2,16 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from typing import Literal, cast
+
 from .primitive_objects import RectObject
 from ..behaviors import *
 from ..object import PygameObject
 from ...rendering import RectRenderer
-from ...utils import Anchor, DictCollection, Transform, clamp, vec2
-
+from ...utils import Anchor, DictCollection, Transform, vec2
 
 CellPos = tuple[int, int]
+FitMode = Literal["stretch", "preserve"]
+LayoutMode = Literal["grid", "columns", "rows"]
 
 @dataclass
 class SizeConstraint:
@@ -25,10 +27,19 @@ class SizeConstraint:
         if self.max is not None and value > self.max:
             return self.max
         return value
-        
+    
+    def __iter__(self):
+        return iter([self.min, self.max, self.fixed])
+    
+    def copy(self):
+        return SizeConstraint(self.min, self.max, self.fixed)
 
 
 class LayoutObject(RectObject):
+    
+    Mode = LayoutMode
+    FitMode = FitMode
+    
     GRID_MODE: Literal["grid"] = "grid"
     COL_MODE: Literal["columns"] = "columns"
     ROW_MODE: Literal["rows"] = "rows"
@@ -40,7 +51,7 @@ class LayoutObject(RectObject):
         super().__init__(transform, renderer, services, sub_layer, anchor)
         
         # obj -> cell_x, cell_y, cell_anchor
-        self._object_placements: dict[PygameObject, tuple[CellPos, vec2]] = {}
+        self._object_placements: dict[PygameObject, CellPos] = {}
         
         self._dirty: bool = False
         self._dirty_checking: bool = True
@@ -48,13 +59,31 @@ class LayoutObject(RectObject):
         
         self._max_col = 0
         self._max_cols = {}
+        self._next_cols = {}
         self._max_row = 0
         self._max_rows = {}
+        self._next_rows = {}
         
-        self._mode: Literal["grid", "columns", "rows"] = self.GRID_MODE
-        self._fit_mode: Literal["stretch", "preserve"] = self.STRETCH_MODE
-        self._overflow_mode: Literal["stretch", "preserve"] = self.STRETCH_MODE
+        self._mode: LayoutMode = self.GRID_MODE
         self._justification: vec2 = Anchor.C
+        
+        self._fit_mode: FitMode = self.STRETCH_MODE
+        self._horizontal_fit_mode: Optional[FitMode] = None
+        self._vertical_fit_mode: Optional[FitMode] = None
+        
+        self._col_horizontal_fit_modes: dict[int, FitMode] = {}
+        self._row_vertical_fit_modes: dict[int, FitMode] = {}
+        
+        self._overflow_mode: FitMode = self.STRETCH_MODE
+        self._horizontal_overflow_mode: Optional[FitMode] = None
+        self._vertical_overflow_mode: Optional[FitMode] = None
+        
+        self._col_horizontal_overflow_modes: dict[int, FitMode] = {}
+        self._row_vertical_overflow_modes: dict[int, FitMode] = {}
+        
+        
+        self._cell_anchor: vec2 = Anchor.C
+        self._cell_anchors: dict[CellPos, vec2] = {}
         
         self._content_offset = vec2()
         
@@ -69,6 +98,7 @@ class LayoutObject(RectObject):
         
         self._outer_padding: vec2 = vec2()
         self._cell_spacing: vec2 = vec2()
+        
         self._cell_padding: vec2 = vec2()
         self._cell_paddings: dict[CellPos, vec2] = {}
         
@@ -113,6 +143,39 @@ class LayoutObject(RectObject):
     def max_rows(self) -> dict[int, int]:
         return dict(self._max_rows)
     
+    # region outer_padding
+    @property
+    def outer_padding(self) -> vec2:
+        return self._outer_padding
+    
+    @outer_padding.setter
+    def outer_padding(self, value: vec2 | int):
+        self._outer_padding = vec2(value)
+        self.mark_dirty()
+    # endregion
+    
+    # region cell_spacing
+    @property
+    def cell_spacing(self) -> vec2:
+        return self._cell_spacing
+    
+    @cell_spacing.setter
+    def cell_spacing(self, value: vec2 | int):
+        self._cell_spacing = vec2(value)
+        self.mark_dirty()
+    # endregion
+    
+    # region cell_padding
+    @property
+    def cell_padding(self) -> vec2:
+        return self._cell_padding
+    
+    @cell_padding.setter
+    def cell_padding(self, value: vec2 | int):
+        self._cell_padding = vec2(value)
+        self.mark_dirty()
+    # endregion
+    
     # region mode
     @property
     def mode(self) -> Literal["grid", "columns", "rows"]:
@@ -126,23 +189,67 @@ class LayoutObject(RectObject):
     
     # region fit_mode
     @property
-    def fit_mode(self) -> Literal["stretch", "preserve"]:
-        return cast(Literal["stretch", "preserve"], self._fit_mode)
+    def fit_mode(self) -> FitMode:
+        return cast(FitMode, self._fit_mode)
     
     @fit_mode.setter
-    def fit_mode(self, value: Literal["stretch", "preserve"]):
+    def fit_mode(self, value: FitMode):
         self._fit_mode = value
         self.mark_dirty()
     # endregion
     
     # region overflow_mode
     @property
-    def overflow_mode(self) -> Literal["stretch", "preserve"]:
-        return cast(Literal["stretch", "preserve"], self._overflow_mode)
+    def overflow_mode(self) -> FitMode:
+        return cast(FitMode, self._overflow_mode)
     
     @overflow_mode.setter
-    def overflow_mode(self, value: Literal["stretch", "preserve"]):
+    def overflow_mode(self, value: FitMode):
         self._overflow_mode = value
+        self.mark_dirty()
+    # endregion
+    
+    # region horizontal_fit_mode
+    @property
+    def horizontal_fit_mode(self) -> FitMode:
+        return cast(FitMode, self._horizontal_fit_mode or self._fit_mode)
+    
+    @horizontal_fit_mode.setter
+    def horizontal_fit_mode(self, value: Optional[FitMode]):
+        self._horizontal_fit_mode = value
+        self.mark_dirty()
+    # endregion
+    
+    # region vertical_fit_mode
+    @property
+    def vertical_fit_mode(self) -> FitMode:
+        return cast(FitMode, self._vertical_fit_mode or self._fit_mode)
+    
+    @vertical_fit_mode.setter
+    def vertical_fit_mode(self, value: Optional[FitMode]):
+        self._vertical_fit_mode = value
+        self.mark_dirty()
+    # endregion
+    
+    # region horizontal_overflow_mode
+    @property
+    def horizontal_overflow_mode(self) -> FitMode:
+        return cast(FitMode, self._horizontal_overflow_mode or self._overflow_mode)
+    
+    @horizontal_overflow_mode.setter
+    def horizontal_overflow_mode(self, value: Optional[FitMode]):
+        self._horizontal_overflow_mode = value
+        self.mark_dirty()
+    # endregion
+    
+    # region vertical_overflow_mode
+    @property
+    def vertical_overflow_mode(self) -> FitMode:
+        return cast(FitMode, self._vertical_overflow_mode or self._overflow_mode)
+    
+    @vertical_overflow_mode.setter
+    def vertical_overflow_mode(self, value: Optional[FitMode]):
+        self._vertical_overflow_mode = value
         self.mark_dirty()
     # endregion
     
@@ -195,6 +302,24 @@ class LayoutObject(RectObject):
     def _get_cell_padding(self, cell: Optional[CellPos] = None) -> vec2:
         return self._cell_paddings.get(cell, self._cell_padding) if cell is not None else self._cell_padding
     
+    def _get_fit_mode(self, horizontal: bool) -> FitMode:
+        if horizontal:
+            if self._horizontal_fit_mode is not None:
+                return cast(FitMode, self._horizontal_fit_mode)
+        else:
+            if self._vertical_fit_mode is not None:
+                return cast(FitMode, self._vertical_fit_mode)
+        return cast(FitMode, self._fit_mode)
+    
+    def _get_overflow_mode(self, horizontal: bool) -> FitMode:
+        if horizontal:
+            if self._horizontal_overflow_mode is not None:
+                return cast(FitMode, self._horizontal_overflow_mode)
+        else:
+            if self._vertical_overflow_mode is not None:
+                return cast(FitMode, self._vertical_overflow_mode)
+        return cast(FitMode, self._overflow_mode)
+    
     def _apply_col_width_constraints(self, col: int, width: int) -> int:
         constraint = self._col_widths_constraints.get(col)
         if constraint is not None:
@@ -207,7 +332,7 @@ class LayoutObject(RectObject):
             return constraint.apply(height)
         return self._row_height_constraint.apply(height)
     
-    def _calculate_cell_dim(self, obj: PygameObject, cell: CellPos):
+    def _calculate_cell_dims(self, obj: PygameObject, cell: CellPos):
         return obj.dims + 2 * self._get_cell_padding(cell)
     
     def _calculate_col_and_row_dims(self) -> None:
@@ -216,9 +341,9 @@ class LayoutObject(RectObject):
         self._row_mode_calculated_col_widths.clear()
         self._col_mode_calculated_row_heights.clear()
         
-        for obj, (cell, _) in self._object_placements.items():
+        for obj, cell in self._object_placements.items():
             col, row = cell
-            cell_width, cell_height = self._calculate_cell_dim(obj, cell)
+            cell_width, cell_height = self._calculate_cell_dims(obj, cell)
             cell_width = round(cell_width)
             cell_height = round(cell_height)
             
@@ -378,13 +503,13 @@ class LayoutObject(RectObject):
     def _fit_col_dimensions(self, dimensions: dict[int, int], target_size: int) -> None:
         self._fit_dimensions(
             dimensions, target_size, round(self._cell_spacing.x), self._col_widths_constraints, self._col_width_constraint,
-            self._fit_mode == self.STRETCH_MODE or self._overflow_mode == self.STRETCH_MODE
+            self._get_fit_mode(horizontal=True) == self.STRETCH_MODE or self._get_overflow_mode(horizontal=True) == self.STRETCH_MODE
         )
     
     def _fit_row_dimensions(self, dimensions: dict[int, int], target_size: int) -> None:
         self._fit_dimensions(
             dimensions, target_size, round(self._cell_spacing.y), self._row_heights_constraints, self._row_height_constraint,
-            self._fit_mode == self.STRETCH_MODE or self._overflow_mode == self.STRETCH_MODE
+            self._get_fit_mode(horizontal=False) == self.STRETCH_MODE or self._get_overflow_mode(horizontal=False) == self.STRETCH_MODE
         )
     
     def _calculate_dims(self):
@@ -435,52 +560,52 @@ class LayoutObject(RectObject):
             current_width = self._calculate_total_size(self._calculated_col_widths, spacing_x)
             current_height = self._calculate_total_size(self._calculated_row_heights, spacing_y)
             
-            if current_width < available_width and self._fit_mode == self.STRETCH_MODE:
+            if current_width < available_width and self._get_fit_mode(horizontal=True) == self.STRETCH_MODE:
                     self._fit_col_dimensions(self._calculated_col_widths, available_width)
             
-            elif current_width > available_width and self._overflow_mode == self.STRETCH_MODE:
+            elif current_width > available_width and self._get_overflow_mode(horizontal=True) == self.STRETCH_MODE:
                     self._fit_col_dimensions(self._calculated_col_widths, available_width)
             
-            if current_height < available_height and self._fit_mode == self.STRETCH_MODE:
+            if current_height < available_height and self._get_fit_mode(horizontal=False) == self.STRETCH_MODE:
                     self._fit_row_dimensions(self._calculated_row_heights, available_height)
             
-            elif current_height > available_height and self._overflow_mode == self.STRETCH_MODE:
+            elif current_height > available_height and self._get_overflow_mode(horizontal=False) == self.STRETCH_MODE:
                     self._fit_row_dimensions(self._calculated_row_heights, available_height)
         
         elif self._mode == self.ROW_MODE:
             for row, calculated_col_widths in self._row_mode_calculated_col_widths.items():
                 current_width = self._calculate_total_size(calculated_col_widths, spacing_x)
                 
-                if current_width < available_width and self._fit_mode == self.STRETCH_MODE:
+                if current_width < available_width and self._get_fit_mode(horizontal=True) == self.STRETCH_MODE:
                         self._fit_col_dimensions(calculated_col_widths, available_width)
                 
-                elif current_width > available_width and self._overflow_mode == self.STRETCH_MODE:
+                elif current_width > available_width and self._get_overflow_mode(horizontal=True) == self.STRETCH_MODE:
                         self._fit_col_dimensions(calculated_col_widths, available_width)
             
             current_height = self._calculate_total_size(self._calculated_row_heights, spacing_y)
             
-            if current_height < available_height and self._fit_mode == self.STRETCH_MODE:
+            if current_height < available_height and self._get_fit_mode(horizontal=False) == self.STRETCH_MODE:
                     self._fit_row_dimensions(self._calculated_row_heights, available_height)
             
-            elif current_height > available_height and self._overflow_mode == self.STRETCH_MODE:
+            elif current_height > available_height and self._get_overflow_mode(horizontal=False) == self.STRETCH_MODE:
                     self._fit_row_dimensions(self._calculated_row_heights, available_height)
         
         elif self._mode == self.COL_MODE:
             current_width = self._calculate_total_size(self._calculated_col_widths, spacing_x)
             
-            if current_width < available_width and self._fit_mode == self.STRETCH_MODE:
+            if current_width < available_width and self._get_fit_mode(horizontal=True) == self.STRETCH_MODE:
                 self._fit_col_dimensions(self._calculated_col_widths, available_width)
             
-            elif current_width > available_width and self._overflow_mode == self.STRETCH_MODE:
+            elif current_width > available_width and self._get_overflow_mode(horizontal=True) == self.STRETCH_MODE:
                 self._fit_col_dimensions(self._calculated_col_widths, available_width)
             
             for col, calculated_row_heights in self._col_mode_calculated_row_heights.items():
                 current_height = self._calculate_total_size(calculated_row_heights, spacing_y)
                 
-                if current_height < available_height and self._fit_mode == self.STRETCH_MODE:
+                if current_height < available_height and self._get_fit_mode(horizontal=False) == self.STRETCH_MODE:
                     self._fit_row_dimensions(calculated_row_heights, available_height)
                 
-                elif current_height > available_height and self._overflow_mode == self.STRETCH_MODE:
+                elif current_height > available_height and self._get_overflow_mode(horizontal=False) == self.STRETCH_MODE:
                     self._fit_row_dimensions(calculated_row_heights, available_height)
     
     def _calculate_row_and_col_offsets(self):
@@ -545,6 +670,9 @@ class LayoutObject(RectObject):
         
         return 0, 0
     
+    def _get_cell_anchor(self, cell: CellPos) -> vec2:
+        return self._cell_anchors.get(cell, self._cell_anchor)
+    
     def _get_cell_size(self, cell: CellPos):
         col, row = cell
         
@@ -593,7 +721,8 @@ class LayoutObject(RectObject):
         content_offset_x = self._content_offset.x
         content_offset_y = self._content_offset.y
         
-        for obj, (cell, (cell_anchor_x, cell_anchor_y)) in self._object_placements.items():
+        for obj, cell in self._object_placements.items():
+            cell_anchor_x, cell_anchor_y = self._get_cell_anchor(cell)
             cell_offset_x, cell_offset_y = self._get_cell_offset(cell)
             cell_w, cell_h = self._get_cell_size(cell)
             
@@ -729,13 +858,11 @@ class LayoutObject(RectObject):
         
     
     def set_outer_padding(self, value: int | vec2) -> LayoutObject:
-        self._outer_padding = vec2(value)
-        self.mark_dirty()
+        self.outer_padding = vec2(value)
         return self
     
     def set_cell_spacing(self, value: int | vec2) -> LayoutObject:
-        self._cell_spacing = vec2(value)
-        self.mark_dirty()
+        self.cell_spacing = vec2(value)
         return self
         
     def set_cell_padding(self, value: int | vec2, cell: Optional[CellPos] = None) -> LayoutObject:
@@ -745,69 +872,108 @@ class LayoutObject(RectObject):
             self._cell_paddings[cell] = vec2(value)
         self.mark_dirty()
         return self
-            
+        
     def set_constant_padding(self, value: int | vec2) -> LayoutObject:
         self.set_outer_padding(value)
         self.set_cell_spacing(value)
         return self
     
     
-    def set_content_offset(self, value: vec2) -> LayoutObject:
-        self._content_offset = value
+    def set_cell_anchor(self, value: vec2, cell: Optional[CellPos] = None) -> LayoutObject:
+        if cell is None:
+            self._cell_anchor = vec2(value)
+        else:
+            self._cell_anchors[cell] = vec2(value)
         self.mark_dirty()
+        return self
+    
+    
+    def set_content_offset(self, value: vec2) -> LayoutObject:
+        self.content_offset = value
         return self
     
     def set_content_offset_x(self, value: float) -> LayoutObject:
-        self._content_offset.x = value
-        self.mark_dirty()
+        self.content_offset_x = value
         return self
     
     def set_content_offset_y(self, value: float) -> LayoutObject:
-        self._content_offset.y = value
-        self.mark_dirty()
+        self.content_offset.y = value
         return self
     
     
     def set_mode(self, mode: Literal["grid", "rows", "columns"]) -> LayoutObject:
-        self._mode = mode
+        self.mode = mode
+        return self
+    
+    def set_fit_mode(self, mode: FitMode) -> LayoutObject:
+        self.fit_mode = mode
+        return self
+    
+    def set_horizontal_fit_mode(self, mode: FitMode, col: Optional[int] = None) -> LayoutObject:
+        if col is None:
+            self._horizontal_fit_mode = mode
+        else:
+            self._col_horizontal_fit_modes[col] = mode
         self.mark_dirty()
         return self
     
-    def set_fit_mode(self, mode: Literal["stretch", "preserve"]) -> LayoutObject:
-        self._fit_mode = mode
+    def set_vertical_fit_mode(self, mode: FitMode, row: Optional[int] = None) -> LayoutObject:
+        if row is None:
+            self.vertical_fit_mode = mode
+        else:
+            self._row_vertical_fit_modes[row] = mode
         self.mark_dirty()
         return self
     
-    def set_overflow_mode(self, mode: Literal["stretch", "preserve"]) -> LayoutObject:
-        self._overflow_mode = mode
-        self.mark_dirty()
+    def set_overflow_mode(self, mode: FitMode) -> LayoutObject:
+        self.overflow_mode = mode
+        return self
+    
+    def set_horizontal_overflow_mode(self, mode: FitMode, col: Optional[int] = None) -> LayoutObject:
+        if col is None:
+            self._horizontal_overflow_mode = mode
+        else:
+            self._col_horizontal_overflow_modes[col] = mode
+        return self
+    
+    def set_vertical_overflow_mode(self, mode: FitMode, row: Optional[int] = None) -> LayoutObject:
+        if row is None:
+            self._vertical_overflow_mode = mode
+        else:
+            self._row_vertical_overflow_modes[row] = mode
         return self
     
     def set_justify(self, value: vec2) -> LayoutObject:
-        self._justification = value
-        self.mark_dirty()
+        self.justification = value
         return self
     
     
     def mark_dirty(self):
         self._dirty = True
     
-    def add(self, obj: PygameObject, x: int, y: int, anchor: vec2 = Anchor.C):
+    def add(self, obj: PygameObject, x: int, y: int, anchor: Optional[vec2] = None):
         
         self._max_col = max(self._max_col, x)
         self._max_cols[y] = max(self._max_cols.get(y, 0), x)
+        self._next_cols[y] = self._next_cols.get(y, x) + 1
+        
         self._max_row = max(self._max_row, y)
         self._max_rows[x] = max(self._max_rows.get(x, 0), y)
+        self._next_rows[x] = self._next_rows.get(x, y) + 1
         
-        self._object_placements[obj] = ((x, y), anchor)
+        self._object_placements[obj] = (x, y)
+        
+        if anchor is not None:
+            self.set_cell_anchor(anchor, (x, y))
+        
         self.add_child(obj, Anchor.TL)
         self.mark_dirty()
         
     def stack_x(self, obj: PygameObject, y: int = 0, anchor: vec2 = Anchor.C):
-        self.add(obj, self._max_cols.get(y, 0) + 1, y, anchor)
+        self.add(obj, self._next_cols.get(y, 0), y, anchor)
         
     def stack_y(self, obj: PygameObject, x: int = 0, anchor: vec2 = Anchor.C):
-        self.add(obj, x, self._max_rows.get(x, 0) + 1, anchor)
+        self.add(obj, x, self._next_rows.get(x, 0), anchor)
         
         
     def _dirty_check(self):
