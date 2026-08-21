@@ -15,7 +15,7 @@ class UIObjectFactory(SubObjectFactory):
         super().__init__(object_factory)
         
         self.button = ButtonObjectFactory(object_factory)
-        self.layouts = LayoutObjectFactory(object_factory)
+        self.layout = LayoutObjectFactory(object_factory)
         self.debug = DebugObjectFactory(object_factory)
     
     def slider(
@@ -51,7 +51,7 @@ class UIObjectFactory(SubObjectFactory):
         
         obj = self._create_object(SliderObject, position, rotation, scale, RectRenderer(dims, bg_style, cache), layer, anchor, bar, handle, text, min_value, max_value, step)
         obj.set_fixed_width(dims.x).set_fixed_height(dims.y)
-        obj.set_constant_padding(margin)
+        obj.set_cell_spacing(margin, True)
         obj.set_fixed_col_width(max_text_width + margin * 0.5, 0 if slider_style.text_position.lower() in ["left", "l"] else 1)
 
         obj.add(bar, 1 if slider_style.text_position.lower() in ["left", "l"] else 0, 0)

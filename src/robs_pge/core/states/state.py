@@ -62,7 +62,7 @@ class State:
         self._debug_overlay = (
             self.create_object.ui.debug
             .debug_overlay(ScreenAnchor.TL, width=self.engine.display.viewport_dims.x, anchor=Anchor.TL)
-            .set_constant_padding(20)
+            .set_cell_spacing(20, True)
         )
         self.debug_layer.add_object(self._debug_overlay)
         self.debug_layer.disable_rendering()
@@ -70,6 +70,7 @@ class State:
         self.init_resources()
         self.init_keybinds()
         self.init_services()
+        self.init_object_constructors()
         self.init_debug_overlay_objects()
     
     # region PROPERTIES
@@ -328,9 +329,15 @@ class State:
     def init_events(self):
         pass
     
+    def init_object_constructors(self):
+        pass
+    
     # endregion
     
     # region REGISTRATION METHODS
+    
+    def register_object_constructor(self, name: str, constructor: Callable[[...], PygameObject]):
+        self.factory.register_constructor(name, constructor)
     
     def register_keybind(self, key: int | tuple[int, ...], action: Callback[[], Any], *args) -> None:
         self.keybinds.register(Keybind(key, action, *args))

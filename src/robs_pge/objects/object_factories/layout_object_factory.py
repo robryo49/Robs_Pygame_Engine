@@ -142,3 +142,12 @@ class LayoutObjectFactory(SubObjectFactory):
                 layout.add(constructor(*args), x, y, anchor=cell_anchor)
         
         return layout
+    
+    def __call__(
+            self, position: vec2, width: Optional[int] = None, height: Optional[int] = None,
+            mode: LayoutObject.Mode = LayoutObject.GRID_MODE, fit_mode: LayoutObject.FitMode = LayoutObject.STRETCH_MODE,
+            overflow_mode: LayoutObject.FitMode = LayoutObject.STRETCH_MODE, justification: vec2 = Anchor.C,
+            style: StyleOrName[RectStyle] = None,
+            rotation: float = 0.0, scale: float = 1.0, layer: int = 0, anchor: vec2 = Anchor.C, cache: bool = True
+    ) -> LayoutObject:
+        return self.grid_layout(position, width, height, mode, fit_mode, overflow_mode, justification, style, rotation, scale, layer, anchor, cache)

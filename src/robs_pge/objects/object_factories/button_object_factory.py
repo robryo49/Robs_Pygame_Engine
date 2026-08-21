@@ -200,4 +200,11 @@ class ButtonObjectFactory(SubObjectFactory):
         if enabled: obj.enable()
         
         return obj
+    
+    
+    def __call__(
+            self, position: vec2, text: str, action: Callback[[PygameObject], Any] = None, dims: Optional[vec2] = None, width: Optional[float] = None, height: Optional[float] = None, style: StyleOrName[ButtonStyle] = None,
+            rotation: float = 0.0, scale: float = 1.0, layer: int = 0, anchor: vec2 = Anchor.C, cache: bool = True
+    ) -> ButtonObject:
+        return self.button(position, text, action, dims, width, height, style, rotation, scale, layer, anchor, cache)
         

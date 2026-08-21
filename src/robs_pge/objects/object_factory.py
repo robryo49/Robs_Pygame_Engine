@@ -1,8 +1,12 @@
-from typing import Any, Optional
+from __future__ import annotations
+from typing import Any, Callable, Optional, TYPE_CHECKING
 
 from .object_factories import ShapeFactory, SpriteObjectFactory, TextObjectFactory, UIObjectFactory, WindowObjectFactory
 from ..resources import ResourceManager
 from ..utils import DictCollection, Transform
+
+if TYPE_CHECKING:
+    from ..objects import PygameObject
 
 
 class ObjectFactory:
@@ -14,6 +18,8 @@ class ObjectFactory:
         self.ui = UIObjectFactory(self)
         self.sprite = SpriteObjectFactory(self)
         self.window: WindowObjectFactory = WindowObjectFactory(self)
+        
+        self._constructors: dict[str, Callable[[...], PygameObject]] = {}
     
     # region PROPERTIES
     
@@ -37,4 +43,10 @@ class ObjectFactory:
     
     def create_object[T](self, object_type: type[T], position, rotation, scale, renderer, layer, anchor, *args) -> T:
         return object_type(Transform(position, rotation, scale), renderer, *args, self._services, layer, anchor)
+    
+    def register_constructor(self, name: str, constructor: Callable[[...], PygameObject]):
+        self._constructors[name] = constructor
+    
+    def __call__(self, constructor_name: str, *args, **kwargs) -> PygameObject:
+        return self._constructors[constructor_name](*args, **kwargs)
     

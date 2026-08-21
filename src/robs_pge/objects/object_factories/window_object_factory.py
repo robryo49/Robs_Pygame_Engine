@@ -53,10 +53,10 @@ class WindowObjectFactory(SubObjectFactory):
             title_object = self.factory.text.label(vec2(), title, title_font, layer=layer)
         
         if show_header:
-            header: LayoutObject = self.factory.ui.layouts.grid_layout(vec2(), width, header_height, justification=Anchor.R, style=header_style, layer=layer)
+            header: LayoutObject = self.factory.ui.layout.grid_layout(vec2(), width, header_height, justification=Anchor.R, style=header_style, layer=layer)
             
         if title_object is not None and not title_in_header:
-            title_panel: LayoutObject = self.factory.ui.layouts.grid_layout(vec2(), width, title_panel_height, style=title_panel_style, layer=layer)
+            title_panel: LayoutObject = self.factory.ui.layout.grid_layout(vec2(), width, title_panel_height, style=title_panel_style, layer=layer)
             title_panel.add(title_object, 0, 0, anchor=title_align)
             title_panel.set_outer_padding(title_panel_margin)
             
@@ -72,7 +72,7 @@ class WindowObjectFactory(SubObjectFactory):
         
         
         content_panel_height = None if height is None else (height - (title_panel_height or 0) - (header_height or 0))
-        content_panel = self.factory.ui.layouts.grid_layout(vec2(), width, content_panel_height, mode, fit_mode, overflow_mode, justification, layer=layer)
+        content_panel = self.factory.ui.layout.grid_layout(vec2(), width, content_panel_height, mode, fit_mode, overflow_mode, justification, layer=layer)
         content_panel.set_outer_padding(margin)
         
         window = self._create_object(
@@ -138,3 +138,11 @@ class WindowObjectFactory(SubObjectFactory):
         
         return window
     
+    def __call__(
+            self, position: vec2, title: str, width: int, height: Optional[int] = None,
+            mode: WindowObject.Mode = WindowObject.GRID_MODE, fit_mode: WindowObject.FitMode = WindowObject.STRETCH_MODE,
+            overflow_mode: WindowObject.FitMode = WindowObject.PRESERVE_MODE, justification: vec2 = Anchor.C,
+            draggable: bool = False, style: StyleOrName[WindowStyle] = None,
+            rotation: float = 0.0, scale: float = 1.0, layer: int = 0, anchor: vec2 = Anchor.C, cache: bool = True
+    ) -> WindowObject:
+        return self.regular(position, title, width, height, mode, fit_mode, overflow_mode, justification, draggable, style, rotation, scale, layer, anchor, cache)

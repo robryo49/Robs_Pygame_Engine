@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Literal, cast
+from typing import Literal, cast, overload
 
 from .primitive_objects import RectObject
 from ..behaviors import *
@@ -50,10 +50,9 @@ class LayoutObject(RectObject):
                  sub_layer: int = 0, anchor: vec2 = Anchor.C):
         super().__init__(transform, renderer, services, sub_layer, anchor)
         
-        # obj -> top-left cell
         self._object_placements: dict[PygameObject, CellPos] = {}
-        # obj -> (span_x, span_y)
         self._object_spans: dict[PygameObject, tuple[int, int]] = {}
+        self._cells_objects: dict[CellPos, PygameObject] = {}
         
         self._dirty = False
         self._dirty_checking = True
@@ -115,7 +114,9 @@ class LayoutObject(RectObject):
         self._row_mode_calculated_row_widths: dict[int, int] = {}
         self._col_mode_calculated_col_heights: dict[int, int] = {}
     
-    # ------------------------------------------------------------------ properties
+    # endregion
+    
+    # region PROPERTIES
     
     @property
     def dirty(self) -> bool:
@@ -267,7 +268,9 @@ class LayoutObject(RectObject):
         self._content_offset.y = value
         self.mark_dirty()
     
-    # ------------------------------------------------------------------ helpers
+    # endregion
+    
+    # region HELPERS
     
     def _get_cell_padding(self, cell: Optional[CellPos] = None) -> vec2:
         return self._cell_paddings.get(cell, self._cell_padding) if cell is not None else self._cell_padding
@@ -460,7 +463,9 @@ class LayoutObject(RectObject):
         self._fit_dimensions(tmp, required_size, spacing, constraints, default_constraint, True, set(indices))
         dimensions.update(tmp)
     
-    # ------------------------------------------------------------------ dimensions / span resolution
+    # endregion
+    
+    # region DIMENSIONS / SPAN RESOLUTION
     
     def _collect_tracks(self) -> tuple[set[int], set[int]]:
         cols: set[int] = set()
@@ -574,7 +579,9 @@ class LayoutObject(RectObject):
             tuple((c, tuple(sorted(v.items()))) for c, v in sorted(self._col_mode_calculated_row_heights.items())),
         )
     
-    # ------------------------------------------------------------------ size / fitting
+    # endregion
+    
+    # region SIZE / FITTING
     
     def _calculate_dims(self):
         outer_pad_x = round(self._outer_padding.x)
@@ -643,7 +650,9 @@ class LayoutObject(RectObject):
                         (current > available_height and self._get_overflow_mode(False) == self.STRETCH_MODE)):
                     self._fit_local_row_dimensions(col, heights, available_height)
     
-    # ------------------------------------------------------------------ spanning cuts
+    # endregion
+    
+    # region SPANNING CUTS
     
     def _build_col_mode_cuts(self) -> dict[int, list[tuple[int, int, int, int, PygameObject]]]:
         """For each column, return (start_row, end_row, start_y, end_y, object) barriers."""
@@ -899,7 +908,9 @@ class LayoutObject(RectObject):
                     anchor_offsets = self._col_mode_calculated_row_offsets.get(anchor_col, {})
                     col_offsets[start_row] = anchor_offsets.get(start_row, start_y)
     
-    # ------------------------------------------------------------------ cells / positioning
+    # endregion
+    
+    # region CELLS / POSITIONING
     
     def _get_cell_anchor(self, cell: CellPos) -> vec2:
         return self._cell_anchors.get(cell, self._cell_anchor)
@@ -975,7 +986,9 @@ class LayoutObject(RectObject):
             obj.y_pos = round(obj_y)
             self._dirty_checking_values[obj] = (obj.pos, obj.dims, obj.anchor)
     
-    # ------------------------------------------------------------------ setters / public API
+    # endregion
+    
+    # region SETTERS / PUBLIC API
     
     def set_width_constraint(self, min_value: Optional[int] = None, max_value: Optional[int] = None,
                              fixed_value: Optional[int] = None) -> "LayoutObject":
@@ -986,13 +999,19 @@ class LayoutObject(RectObject):
         return self
     
     def set_fixed_width(self, value: int) -> "LayoutObject":
-        self._width_constraint.fixed = value; self.mark_dirty(); return self
+        self._width_constraint.fixed = value
+        self.mark_dirty()
+        return self
     
     def set_min_width(self, value: int) -> "LayoutObject":
-        self._width_constraint.min = value; self.mark_dirty(); return self
+        self._width_constraint.min = value
+        self.mark_dirty()
+        return self
     
     def set_max_width(self, value: int) -> "LayoutObject":
-        self._width_constraint.max = value; self.mark_dirty(); return self
+        self._width_constraint.max = value
+        self.mark_dirty()
+        return self
     
     def set_height_constraint(self, min_value: Optional[int] = None, max_value: Optional[int] = None,
                               fixed_value: Optional[int] = None) -> "LayoutObject":
@@ -1003,115 +1022,153 @@ class LayoutObject(RectObject):
         return self
     
     def set_fixed_height(self, value: int) -> "LayoutObject":
-        self._height_constraint.fixed = value; self.mark_dirty(); return self
+        self._height_constraint.fixed = value
+        self.mark_dirty()
+        return self
     
     def set_min_height(self, value: int) -> "LayoutObject":
-        self._height_constraint.min = value; self.mark_dirty(); return self
+        self._height_constraint.min = value
+        self.mark_dirty()
+        return self
     
     def set_max_height(self, value: int) -> "LayoutObject":
-        self._height_constraint.max = value; self.mark_dirty(); return self
+        self._height_constraint.max = value
+        self.mark_dirty()
+        return self
     
     def set_col_width_constraint(self, min_value: Optional[int] = None, max_value: Optional[int] = None,
                                  fixed_value: Optional[int] = None, col: Optional[int] = None) -> "LayoutObject":
-        c = self._get_col_constraint(col); c.min = min_value; c.max = max_value; c.fixed = fixed_value
-        self.mark_dirty(); return self
+        c = self._get_col_constraint(col)
+        c.min = min_value
+        c.max = max_value
+        c.fixed = fixed_value
+        self.mark_dirty()
+        return self
     
     def set_fixed_col_width(self, value: int, col: Optional[int] = None) -> "LayoutObject":
-        self._get_col_constraint(col).fixed = value; self.mark_dirty(); return self
+        self._get_col_constraint(col).fixed = value
+        self.mark_dirty()
+        return self
     
     def set_min_col_width(self, value: int, col: Optional[int] = None) -> "LayoutObject":
-        self._get_col_constraint(col).min = value; self.mark_dirty(); return self
+        self._get_col_constraint(col).min = value
+        self.mark_dirty()
+        return self
     
     def set_max_col_width(self, value: int, col: Optional[int] = None) -> "LayoutObject":
-        self._get_col_constraint(col).max = value; self.mark_dirty(); return self
+        self._get_col_constraint(col).max = value
+        self.mark_dirty()
+        return self
     
     def set_row_height_constraint(self, min_value: Optional[int] = None, max_value: Optional[int] = None,
                                   fixed_value: Optional[int] = None, row: Optional[int] = None) -> "LayoutObject":
-        c = self._get_row_constraint(row); c.min = min_value; c.max = max_value; c.fixed = fixed_value
-        self.mark_dirty(); return self
+        c = self._get_row_constraint(row)
+        c.min = min_value
+        c.max = max_value
+        c.fixed = fixed_value
+        self.mark_dirty()
+        return self
     
     def set_fixed_row_height(self, value: int, row: Optional[int] = None) -> "LayoutObject":
-        self._get_row_constraint(row).fixed = value; self.mark_dirty(); return self
+        self._get_row_constraint(row).fixed = value
+        self.mark_dirty()
+        return self
     
     def set_min_row_height(self, value: int, row: Optional[int] = None) -> "LayoutObject":
-        self._get_row_constraint(row).min = value; self.mark_dirty(); return self
+        self._get_row_constraint(row).min = value
+        self.mark_dirty()
+        return self
     
     def set_max_row_height(self, value: int, row: Optional[int] = None) -> "LayoutObject":
-        self._get_row_constraint(row).max = value; self.mark_dirty(); return self
+        self._get_row_constraint(row).max = value
+        self.mark_dirty()
+        return self
     
     def set_outer_padding(self, value: int | vec2) -> "LayoutObject":
-        self.outer_padding = value; return self
+        self.outer_padding = value
+        return self
     
-    def set_cell_spacing(self, value: int | vec2) -> "LayoutObject":
-        self.cell_spacing = value; return self
+    def set_cell_spacing(self, value: int | vec2, outer=False) -> "LayoutObject":
+        self.cell_spacing = value
+        return self.set_outer_padding(value) if outer else self
     
     def set_cell_padding(self, value: int | vec2, cell: Optional[CellPos] = None) -> "LayoutObject":
         if cell is None: self._cell_padding = vec2(value)
         else: self._cell_paddings[cell] = vec2(value)
-        self.mark_dirty(); return self
-    
-    def set_constant_padding(self, value: int | vec2) -> "LayoutObject":
-        return self.set_outer_padding(value).set_cell_spacing(value)
+        self.mark_dirty()
+        return self
     
     def set_cell_anchor(self, value: vec2, cell: Optional[CellPos] = None) -> "LayoutObject":
         if cell is None: self._cell_anchor = vec2(value)
         else: self._cell_anchors[cell] = vec2(value)
-        self.mark_dirty(); return self
+        self.mark_dirty()
+        return self
     
     def set_content_offset(self, value: vec2) -> "LayoutObject":
-        self.content_offset = value; return self
+        self.content_offset = value
+        return self
     
     def set_content_offset_x(self, value: float) -> "LayoutObject":
-        self.content_offset_x = value; return self
+        self.content_offset_x = value
+        return self
     
     def set_content_offset_y(self, value: float) -> "LayoutObject":
-        self.content_offset_y = value; return self
+        self.content_offset_y = value
+        return self
     
     def set_mode(self, mode: Literal["grid", "rows", "columns"]) -> "LayoutObject":
-        self.mode = mode; return self
+        self.mode = mode
+        return self
     
     def set_fit_mode(self, mode: FitMode) -> "LayoutObject":
-        self.fit_mode = mode; return self
+        self.fit_mode = mode
+        return self
     
     def set_horizontal_fit_mode(self, mode: FitMode, col: Optional[int] = None) -> "LayoutObject":
         if col is None: self._horizontal_fit_mode = mode
         else: self._col_horizontal_fit_modes[col] = mode
-        self.mark_dirty(); return self
+        self.mark_dirty()
+        return self
     
     def set_vertical_fit_mode(self, mode: FitMode, row: Optional[int] = None) -> "LayoutObject":
         if row is None: self._vertical_fit_mode = mode
         else: self._row_vertical_fit_modes[row] = mode
-        self.mark_dirty(); return self
+        self.mark_dirty()
+        return self
     
     def set_overflow_mode(self, mode: FitMode) -> "LayoutObject":
-        self.overflow_mode = mode; return self
+        self.overflow_mode = mode
+        return self
     
     def set_horizontal_overflow_mode(self, mode: FitMode, col: Optional[int] = None) -> "LayoutObject":
         if col is None: self._horizontal_overflow_mode = mode
         else: self._col_horizontal_overflow_modes[col] = mode
-        self.mark_dirty(); return self
+        self.mark_dirty()
+        return self
     
     def set_vertical_overflow_mode(self, mode: FitMode, row: Optional[int] = None) -> "LayoutObject":
         if row is None: self._vertical_overflow_mode = mode
         else: self._row_vertical_overflow_modes[row] = mode
-        self.mark_dirty(); return self
+        self.mark_dirty()
+        return self
     
     def set_justify(self, value: vec2) -> "LayoutObject":
-        self.justification = value; return self
+        self.justification = value
+        return self
+    
     
     def add(self, obj: PygameObject, x: int, y: int, anchor: Optional[vec2] = None,
-            span: tuple[int, int] = (1, 1)):
+            span_x: int = 1, span_y: int = 1) -> "LayoutObject":
+        sx, sy = span = (span_x, span_y)
         span = self._validate_span(span)
-        sx, sy = span
         
-        new_cells = {(cx, cy) for cx in range(x, x + sx) for cy in range(y, y + sy)}
-        for other, (ox, oy) in self._object_placements.items():
-            if other is obj:
-                continue
-            osx, osy = self._get_span(other)
-            old_cells = {(cx, cy) for cx in range(ox, ox + osx) for cy in range(oy, oy + osy)}
-            if new_cells & old_cells:
-                raise ValueError(f"Object {obj!r} overlaps existing object {other!r}")
+        for cell_y in range(y, y+sy):
+            for cell_x in range(x, x+sx):
+                if other := self._cells_objects.get((cell_x, cell_y)) is not None:
+                    raise ValueError(f"Object {str(obj)} overlaps existing object {str(other)}")
+        for cell_y in range(y, y+sy):
+            for cell_x in range(x, x+sx):
+                self._cells_objects[(cell_x, cell_y)] = obj
         
         self._max_col = max(self._max_col, x + sx - 1)
         self._max_row = max(self._max_row, y + sy - 1)
@@ -1159,20 +1216,27 @@ class LayoutObject(RectObject):
         return self
     
     def stack_x(self, obj: PygameObject, y: int = 0, anchor: vec2 = Anchor.C,
-                span: tuple[int, int] = (1, 1)):
+                span_x: int = 1, span_y: int = 1):
+        span = (span_x, span_y)
         sx, _ = self._validate_span(span)
-        self.add(obj, self._next_cols.get(y, 0), y, anchor, span)
+        self.add(obj, self._next_cols.get(y, 0), y, anchor, span_x, span_y)
         self._next_cols[y] = self._object_placements[obj][0] + sx
         return self
     
     def stack_y(self, obj: PygameObject, x: int = 0, anchor: vec2 = Anchor.C,
-                span: tuple[int, int] = (1, 1)):
+                span_x: int = 1, span_y: int = 1):
+        span = (span_x, span_y)
         _, sy = self._validate_span(span)
-        self.add(obj, x, self._next_rows.get(x, 0), anchor, span)
+        self.add(obj, x, self._next_rows.get(x, 0), anchor, span_x, span_y)
         self._next_rows[x] = self._object_placements[obj][1] + sy
         return self
     
-    # ------------------------------------------------------------------ update
+    
+    def get_at(self, cell: CellPos | vec2) -> Optional[PygameObject]:
+        cell = (round(cell[0]), round(cell[1]))
+        return self._cells_objects.get(cell)
+    
+    # endregion
     
     def mark_dirty(self):
         self._dirty = True

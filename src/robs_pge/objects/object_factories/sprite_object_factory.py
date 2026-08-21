@@ -61,4 +61,10 @@ class SpriteObjectFactory(SubObjectFactory):
         obj = self._create_object(IconObject, position, rotation, scale, IconRenderer(icon, icon_size, icon_color, cache), layer, anchor)
         
         return obj
-
+    
+    
+    def __call__(
+            self, position: vec2, texture: Texture | str, dims: Optional[vec2] = None, width: Optional[int] = None, height: Optional[int] = None,
+            rotation: float = 0.0, scale: float = 1.0, layer: int = 1, anchor: vec2 = Anchor.C, cache: bool = True
+    ) -> SpriteObject[SpriteRenderer]:
+        return self.regular(position, texture, dims, width, height, rotation, scale, layer, anchor, cache)

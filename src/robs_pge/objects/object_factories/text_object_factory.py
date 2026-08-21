@@ -28,3 +28,9 @@ class TextObjectFactory(SubObjectFactory):
         
         return obj
 
+    def __call__(
+                 self, position: vec2, text: str, font: StyleOrName[Font] = None,
+    rotation: float = 0.0, scale: float = 1.0, layer: int = 0, anchor: vec2 = Anchor.C, cache: bool = True
+    ) -> TextObject:
+        
+        return self.label(position, text, font, rotation, scale, layer, anchor, cache)
