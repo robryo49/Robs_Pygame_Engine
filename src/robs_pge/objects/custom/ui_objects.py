@@ -357,6 +357,109 @@ class SliderObject(LayoutObject):
     # endregion
 
 
+class ValueSelectorObject(LayoutObject):
+    def __init__(self, transform: Transform, background: RectRenderer, text: TextObject, min_value: float, max_value: float, increments: tuple[float, ...], start_value: float, callback: Callback[[float], Any], services: DictCollection, sub_layer: int = 0, anchor: vec2 = Anchor.C):
+        super().__init__(transform, background, services, sub_layer, anchor)
+        
+        self._min_value = min_value
+        self._max_value = max_value
+        self._increments = increments
+        self._text = text
+        self._callback = callback
+        self._value = clamp(start_value, min_value, max_value)
+        self._text.text = str(self._value)
+        
+    # region PROPERTIES
+    
+    @property
+    def min_value(self):
+        return self._min_value
+    
+    @property
+    def max_value(self):
+        return self._max_value
+    
+    @property
+    def increments(self):
+        return self._increments
+    
+    @property
+    def value_label(self):
+        return self._text
+    
+    @property
+    def value(self):
+        return self._value
+    
+    @value.setter
+    def value(self, value: float):
+        new_value = clamp(value, self.min_value, self.max_value)
+        if new_value != self._value:
+            self._value = new_value
+            self._text.text = str(self._value)
+            if self._callback is not None:
+                self._callback(self._value)
+                
+    def increment(self, amount: float = 1.0):
+        self.value = self._value + amount
+        
+    def decrement(self, amount: float = 1.0):
+        self.value = self._value - amount
+        
+    # endregion
+
+
+class ValueCyclerObject(LayoutObject):
+    def __init__(self, transform: Transform, background: RectRenderer, text: TextObject, values: tuple[Any, ...], default_index: int, callback: Callback[[Any], Any], services: DictCollection, sub_layer: int = 0, anchor: vec2 = Anchor.C):
+        super().__init__(transform, background, services, sub_layer, anchor)
+        
+        if not values:
+            raise ValueError("ValueCycler requires at least one value")
+        if not (0 <= default_index < len(values)):
+            raise ValueError(f"Default index {default_index} out of range for values of length {len(values)}")
+            
+        self._values = values
+        self._index = default_index
+        self._text = text
+        self._callback = callback
+        self._text.text = str(self.value)
+        
+    # region PROPERTIES
+    
+    @property
+    def values(self):
+        return self._values
+    
+    @property
+    def index(self):
+        return self._index
+    
+    @index.setter
+    def index(self, value: int):
+        new_index = value % len(self._values)
+        if new_index != self._index:
+            self._index = new_index
+            self._text.text = str(self.value)
+            if self._callback is not None:
+                self._callback(self.value)
+                
+    @property
+    def value(self):
+        return self._values[self._index]
+    
+    @property
+    def value_label(self):
+        return self._text
+        
+    def cycle_forward(self, amount: int = 1):
+        self.index += amount
+        
+    def cycle_backward(self, amount: int = 1):
+        self.index -= amount
+        
+    # endregion
+
+
 class ProgressBarObject(RectObject):
     def __init__(self, transform: Transform, background: RectRenderer, bar: RectObject, services: DictCollection, sub_layer: int = 0, anchor: vec2 = Anchor.C):
         super().__init__(transform, background, services, sub_layer, anchor)

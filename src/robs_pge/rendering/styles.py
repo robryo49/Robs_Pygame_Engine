@@ -289,6 +289,58 @@ class ScrollbarStyle(Style):
 
 
 @dataclass
+class ValueSelectorStyle(Style):
+    """
+    Attributes:
+        bg_style
+        button_style
+        font
+        margin
+        value_width
+        hide_bg
+    """
+    bg_style: RectStyle = field(default_factory=RectStyle)
+    button_style: ButtonStyle = field(default_factory=ButtonStyle)
+    font: StyleOrName[Font] = field(default_factory=Font)
+    margin: int = 8
+    value_width: Optional[int] = None
+    hide_bg: bool = False
+    
+    def with_alpha(self, alpha: int):
+        return self.with_(
+            bg_style = self.bg_style.with_alpha(alpha),
+            button_style = self.button_style.with_alpha(alpha),
+        )
+
+
+@dataclass
+class ValueCyclerStyle(Style):
+    """
+    Attributes:
+        bg_style
+        icon_button_style
+        font
+        margin
+        value_width
+        icon_size
+        hide_bg
+    """
+    bg_style: RectStyle = field(default_factory=RectStyle)
+    icon_button_style: IconButtonStyle = field(default_factory=IconButtonStyle)
+    font: StyleOrName[Font] = field(default_factory=Font)
+    margin: int = 8
+    value_width: Optional[int] = None
+    icon_size: int = 16
+    hide_bg: bool = False
+    
+    def with_alpha(self, alpha: int):
+        return self.with_(
+            bg_style = self.bg_style.with_alpha(alpha),
+            icon_button_style = self.icon_button_style.with_alpha(alpha),
+        )
+
+
+@dataclass
 class DebugPanelStyle(Style):
     """
     Attributes:

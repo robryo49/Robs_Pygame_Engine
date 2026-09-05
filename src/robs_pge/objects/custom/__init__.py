@@ -5,7 +5,7 @@ from .ui_objects import (
     CheckBoxObject, SliderObject, ButtonObject, LineChartObject,
     ProgressBarObject, CycleButtonObject, SpriteButtonObject,
     ToggleButtonObject, RadioButtonObject, IconButtonObject,
-    ScrollbarObject
+    ScrollbarObject, ValueSelectorObject, ValueCyclerObject
 )
 from .window_objects import WindowObject
 from .debug_objects import DebugOverlay, DebugInfoWindow
@@ -25,6 +25,8 @@ __all__ = [
     "ProgressBarObject",
     "CycleButtonObject",
     "SliderObject",
+    "ValueSelectorObject",
+    "ValueCyclerObject",
     "SpriteButtonObject",
     "IconObject",
     "CheckBoxObject",

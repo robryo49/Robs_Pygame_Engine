@@ -7,6 +7,7 @@ from .objects import (
     RectObject, CircleObject, SpriteObject, LineObject, CycleButtonObject,
     LayoutObject, DebugOverlay,
     ButtonObject, ProgressBarObject, LineChartObject,
+    ValueSelectorObject, ValueCyclerObject,
     ObjectFactory, ObjectCollection, ObjectBehavior,
     Layer, TextObject, WindowObject, SubSurfaceSpriteObject, ChunkedSpriteObject,
     ActionOnUpdateBehavior, ActionOnClickBehavior, MultiplyAttributeOnClickBehavior,
@@ -46,7 +47,7 @@ from .rendering import (
     Style, RectStyle, LineStyle, ButtonStyle, CircleStyle, ShapeStyle, LineChartStyle,
     PolygonStyle, ProgressBarStyle, DebugPanelStyle, SliderStyle, IconButtonStyle,
     RadioButtonStyle, SpriteButtonStyle, ToggleButtonStyle, WindowStyle,
-    ScrollbarStyle,
+    ScrollbarStyle, ValueSelectorStyle, ValueCyclerStyle,
     DrawCommand, DrawRect, DrawCircle, DrawTexture, DrawText, DrawLine, DrawSubSurface, DrawChunkedSprite,
     ObjectRenderer, RectRenderer, CircleRenderer, LineRenderer, SpriteRenderer, TextRenderer,
     SubSurfaceRenderer, ChunkedSpriteRenderer, IconRenderer,
@@ -69,6 +70,7 @@ __all__ = [
     "RectObject", "CircleObject", "TextObject", "SpriteObject", "LineObject", "CycleButtonObject",
     "LayoutObject", "DebugOverlay", "WindowObject", "SubSurfaceSpriteObject", "ChunkedSpriteObject",
     "ButtonObject", "ProgressBarObject", "LineChartObject",
+    "ValueSelectorObject", "ValueCyclerObject",
     "ObjectFactory", "ObjectCollection", "ObjectBehavior",
     "Layer",
     # behaviors
@@ -113,7 +115,7 @@ __all__ = [
     "Style", "RectStyle", "LineStyle", "ButtonStyle", "CircleStyle",
     "ShapeStyle", "LineChartStyle", "PolygonStyle", "ProgressBarStyle", "DebugPanelStyle",
     "SliderStyle", "IconButtonStyle", "RadioButtonStyle", "SpriteButtonStyle", "ToggleButtonStyle",
-    "WindowStyle", "ScrollbarStyle",
+    "WindowStyle", "ScrollbarStyle", "ValueSelectorStyle", "ValueCyclerStyle",
     # rendering - draw commands
     "DrawCommand", "DrawRect", "DrawCircle", "DrawTexture", "DrawText", "DrawLine", "DrawSubSurface", "DrawChunkedSprite",
     # rendering - renderers

@@ -25,7 +25,8 @@ from .custom import (
     RectObject, CircleObject, SpriteObject, LineObject, CycleButtonObject,
     SubSurfaceSpriteObject, ChunkedSpriteObject,
     LayoutObject, DebugOverlay,
-    ButtonObject, ProgressBarObject, LineChartObject, TextObject, WindowObject
+    ButtonObject, ProgressBarObject, LineChartObject, TextObject, WindowObject,
+    ValueSelectorObject, ValueCyclerObject
 )
 from .object import PygameObject
 from .window_manager import WindowManager
@@ -59,6 +60,7 @@ __all__ = [
     "SubSurfaceSpriteObject", "ChunkedSpriteObject",
     "LayoutObject", "DebugOverlay",
     "ButtonObject", "ProgressBarObject", "LineChartObject", "WindowObject",
+    "ValueSelectorObject", "ValueCyclerObject",
     # particles
     "Particle", "ParticleEmitter", "BurstParticleEmitter",
     "ParticleSystem", "ParticlePool",
