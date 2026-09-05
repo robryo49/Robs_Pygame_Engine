@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Literal
+from typing import Any, Literal
 
 from ..object import PygameObject
 from ...physics import ShapeTypes
@@ -220,12 +220,12 @@ class TextObject(PygameObject[TextRenderer]):
         return self._renderer
     
     @property
-    def text(self):
+    def text(self) -> str:
         return self.renderer.text
     
     @text.setter
-    def text(self, value: str):
-        self.renderer.text = value
+    def text(self, value: Any):
+        self.renderer.text = str(value)
         
     @property
     def font(self):

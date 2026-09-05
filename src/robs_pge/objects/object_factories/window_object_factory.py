@@ -1,11 +1,12 @@
-from typing import Any, Callable, Optional
+import time
+from typing import Any, Optional
 
 from .sub_factory import SubObjectFactory
-from ..object import PygameObject
 from ..custom import LayoutObject, TextObject, WindowObject
-from ...rendering import RectRenderer, RectStyle, WindowStyle, ButtonStyle
+from ..object import PygameObject
+from ...rendering import ButtonStyle, RectRenderer, RectStyle, WindowStyle
 from ...resources import Icons
-from ...utils import Anchor, Font, StyleOrName, vec2, Callback
+from ...utils import Anchor, Callback, Font, StyleOrName, vec2, ObjectFlags
 
 
 class WindowObjectFactory(SubObjectFactory):
@@ -13,7 +14,7 @@ class WindowObjectFactory(SubObjectFactory):
         super().__init__(object_factory)
         
     def create_window[WT](
-            self, window_cls: type[WT], position: vec2, title: str, width: int, height: Optional[int] = None,
+            self, window_cls: type[WT], position: vec2, title: Optional[str], width: int, height: Optional[int] = None,
             mode: WindowObject.Mode = WindowObject.GRID_MODE, fit_mode: WindowObject.FitMode = WindowObject.STRETCH_MODE,
             overflow_mode: WindowObject.FitMode = WindowObject.PRESERVE_MODE, justification: vec2 = Anchor.C,
             draggable: bool = False, style: StyleOrName[WindowStyle] = None,
@@ -49,6 +50,9 @@ class WindowObjectFactory(SubObjectFactory):
         title_panel: Optional[LayoutObject] = None
         title_object: Optional[TextObject] = None
         
+        if title is None:
+            title = str(hash(time.time()))
+        
         if show_title:
             title_object = self.factory.text.label(vec2(), title, title_font, layer=layer)
         
@@ -58,11 +62,11 @@ class WindowObjectFactory(SubObjectFactory):
         if title_object is not None and not title_in_header:
             title_panel: LayoutObject = self.factory.ui.layout.grid_layout(vec2(), width, title_panel_height, style=title_panel_style, layer=layer)
             title_panel.add(title_object, 0, 0, anchor=title_align)
-            title_panel.set_outer_padding(title_panel_margin)
+            title_panel.set_padding(title_panel_margin)
             
         if title_object is not None and header is not None and title_in_header:
             header.add(title_object, 0, 0, anchor=title_align)
-            header.set_outer_padding(header_margin)
+            header.set_padding(header_margin)
         
         if header is not None and show_header_buttons:
             buttons_dims = vec2(1.2, 1) * (header_height - header_margin * 2)
@@ -73,7 +77,7 @@ class WindowObjectFactory(SubObjectFactory):
         
         content_panel_height = None if height is None else (height - (title_panel_height or 0) - (header_height or 0))
         content_panel = self.factory.ui.layout.grid_layout(vec2(), width, content_panel_height, mode, fit_mode, overflow_mode, justification, layer=layer)
-        content_panel.set_outer_padding(margin)
+        content_panel.set_padding(margin)
         
         window = self._create_object(
             window_cls, position, rotation, scale, RectRenderer(vec2(), bg_style, cache),
@@ -93,11 +97,13 @@ class WindowObjectFactory(SubObjectFactory):
                 title_panel.make_draggable(target=window)
             else:
                 content_panel.make_draggable(target=window)
+                
+        window.add_flag(ObjectFlags.HOVERABLE)
             
         return window
     
     def regular(
-            self, position: vec2, title: str, width: int, height: Optional[int] = None,
+            self, position: vec2, title: Optional[str], width: int, height: Optional[int] = None,
             mode: WindowObject.Mode = WindowObject.GRID_MODE, fit_mode: WindowObject.FitMode = WindowObject.STRETCH_MODE,
             overflow_mode: WindowObject.FitMode = WindowObject.PRESERVE_MODE, justification: vec2 = Anchor.C,
             draggable: bool = False, style: StyleOrName[WindowStyle] = None,
@@ -108,7 +114,7 @@ class WindowObjectFactory(SubObjectFactory):
     
     
     def with_content(
-            self, position: vec2, title: str, width: int, height: Optional[int] = None, content: Optional[LayoutObject] = None,
+            self, position: vec2, title: Optional[str], width: int, height: Optional[int] = None, content: Optional[LayoutObject] = None,
             mode: WindowObject.Mode = WindowObject.GRID_MODE, fit_mode: WindowObject.FitMode = WindowObject.STRETCH_MODE,
             overflow_mode: WindowObject.FitMode = WindowObject.PRESERVE_MODE, justification: vec2 = Anchor.C,
             draggable: bool = False, style: StyleOrName[WindowStyle] = None,
@@ -122,7 +128,7 @@ class WindowObjectFactory(SubObjectFactory):
         return window
     
     def menu(
-        self, position: vec2, title: str, options: list[tuple[str, Callback[[PygameObject], Any]]], button_dims: vec2, width: int, height: Optional[int] = None,
+        self, position: vec2, title: Optional[str], options: list[tuple[str, Callback[[PygameObject], Any]]], button_dims: vec2, width: int, height: Optional[int] = None,
         mode: WindowObject.Mode = WindowObject.GRID_MODE, fit_mode: WindowObject.FitMode = WindowObject.STRETCH_MODE,
         overflow_mode: WindowObject.FitMode = WindowObject.PRESERVE_MODE, justification: vec2 = Anchor.C,
         draggable: bool = False, window_style: StyleOrName[WindowStyle] = None, button_style: StyleOrName[ButtonStyle] = None,
@@ -138,8 +144,40 @@ class WindowObjectFactory(SubObjectFactory):
         
         return window
     
+    
+    def dialog(
+            self, position: vec2, content: PygameObject, options: list[tuple[str, Callback[[PygameObject], Any]]], width: int, height: Optional[int] = None,
+            buttons_height: int = 30, options_vertical: bool = False, spacing: int = 20,
+            mode: WindowObject.Mode = WindowObject.GRID_MODE, fit_mode: WindowObject.FitMode = WindowObject.STRETCH_MODE,
+            overflow_mode: WindowObject.FitMode = WindowObject.PRESERVE_MODE, justification: vec2 = Anchor.C,
+            draggable: bool = False, window_style: StyleOrName[WindowStyle] = None, button_style: StyleOrName[ButtonStyle] = None,
+            rotation: float = 0.0, scale: float = 1.0, layer: int = 0, anchor: vec2 = Anchor.C, cache: bool = True
+    ):
+        window = self.regular(position, None, width, height, mode, fit_mode, overflow_mode, justification, draggable, window_style, rotation, scale, layer, anchor, cache)
+    
+        button_style = self._get_resource(button_style, ButtonStyle)
+        
+        if options_vertical:
+            window.content.stack_y(content)
+            buttons_width = width - 2*spacing
+            for row, (txt, callback) in enumerate(options):
+                window.content.stack_y(self.factory.ui.button(vec2(), txt, callback, vec2(buttons_width, buttons_height), style=button_style))
+                window.content.set_vertical_fit_mode(window.PRESERVE_MODE, row+1)
+        else:
+            n = len(options)
+            window.content.stack_y(content, span_x=n)
+            buttons_width = (width - (n+1) * spacing) / n
+            for row, (txt, callback) in enumerate(options):
+                window.content.stack_x(self.factory.ui.button(vec2(), txt, callback, vec2(buttons_width, buttons_height), style=button_style), y=1)
+                window.content.set_vertical_fit_mode(window.PRESERVE_MODE, row+1)
+        
+        window.content.set_cell_spacing(spacing, True)
+        
+        return window
+        
+    
     def __call__(
-            self, position: vec2, title: str, width: int, height: Optional[int] = None,
+            self, position: vec2, title: Optional[str], width: int, height: Optional[int] = None,
             mode: WindowObject.Mode = WindowObject.GRID_MODE, fit_mode: WindowObject.FitMode = WindowObject.STRETCH_MODE,
             overflow_mode: WindowObject.FitMode = WindowObject.PRESERVE_MODE, justification: vec2 = Anchor.C,
             draggable: bool = False, style: StyleOrName[WindowStyle] = None,

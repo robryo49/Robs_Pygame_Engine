@@ -31,6 +31,14 @@ class ObjectCollection(TypedCollection):
     def rendering_enabled(self):
         return self._rendering_enabled
     
+    @property
+    def size(self):
+        return len(self)
+    
+    @property
+    def full_size(self):
+        return self.size + sum(o.children.full_size for o in self)
+    
     # endregion
     
     
@@ -72,7 +80,7 @@ class ObjectCollection(TypedCollection):
             return self
         
         for o in self._to_remove:
-            self.remove(o)
+            super().remove(o)
             
         self._to_remove.clear()
         return self
@@ -110,7 +118,7 @@ class ObjectCollection(TypedCollection):
                 o.update(dt)
             
         return self
-            
+        
     def render(self, submit: Callable[[DrawCommand], Any]) -> "ObjectCollection":
         
         if self.rendering_enabled:

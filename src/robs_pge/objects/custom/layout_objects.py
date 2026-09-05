@@ -1084,13 +1084,16 @@ class LayoutObject(RectObject):
         self.mark_dirty()
         return self
     
-    def set_outer_padding(self, value: int | vec2) -> "LayoutObject":
-        self.outer_padding = value
+    def set_padding(self, value: int | vec2, cell: Optional[CellPos] = None) -> "LayoutObject":
+        if cell is not None:
+            self.set_cell_padding(value, cell)
+        else:
+            self.outer_padding = value
         return self
     
     def set_cell_spacing(self, value: int | vec2, outer=False) -> "LayoutObject":
         self.cell_spacing = value
-        return self.set_outer_padding(value) if outer else self
+        return self.set_padding(value) if outer else self
     
     def set_cell_padding(self, value: int | vec2, cell: Optional[CellPos] = None) -> "LayoutObject":
         if cell is None: self._cell_padding = vec2(value)

@@ -63,6 +63,10 @@ class LayerManager:
         self.get_layer(layer_name).add_object(obj)
         return self
     
+    def remove_object(self, layer_name: str, obj) -> "LayerManager":
+        self.get_layer(layer_name).remove_object(obj)
+        return self
+    
     def update(self, dt: float) -> "LayerManager":
         for layer in self._sorted_layers:
             layer.update(dt)

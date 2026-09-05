@@ -1,7 +1,7 @@
-from typing import Optional
+from typing import Callable, Optional
 
 from .tween import Tween
-from ..utils import Easing, EasingFunctionType, add, multiply, power, subtract
+from ..utils import Easing, EasingFunctionType, add, multiply, power, subtract, Callback
 
 
 class Animation:
@@ -12,6 +12,7 @@ class Animation:
         self._tween = Tween(duration, easing_function)
         
         self._linked_animations: list[tuple[Animation, float]] = []
+        self._linked_callbacks: list[tuple[Callback, float]] = []
     
     # region PROPERTIES
     
@@ -36,6 +37,10 @@ class Animation:
         return self._linked_animations
     
     @property
+    def linked_callbacks(self):
+        return self._linked_callbacks
+    
+    @property
     def finished(self):
         return self.tween.finished
     
@@ -51,6 +56,12 @@ class Animation:
     def plus(self, anim, delay):
         self._linked_animations.append((anim, delay))
         return self
+    
+    def with_end_callback(self, callback: Callback, delay = 0.0):
+        self._linked_callbacks.append((callback, self.duration + delay))
+    
+    def with_start_callback(self, callback: Callback, delay = 0.0):
+        self._linked_callbacks.append((callback, delay))
     
     def set_attr(self, value):
         setattr(self.obj, self.attr, value)

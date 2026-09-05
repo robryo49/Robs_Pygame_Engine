@@ -24,6 +24,8 @@ class ScreenAnchor:
     B =     vec2(0.5,   1)
     BR =    vec2(1,     1)
     
+    SCREEN_DIMENSIONS = vec2(1, 1)
+    
     @staticmethod
     def set_screen_dims(dims: vec2):
         ScreenAnchor.TL =    vec2(0,     0) * dims
@@ -35,3 +37,5 @@ class ScreenAnchor:
         ScreenAnchor.BL =    vec2(0,     1) * dims
         ScreenAnchor.B =     vec2(0.5,   1) * dims
         ScreenAnchor.BR =    vec2(1,     1) * dims
+        
+        ScreenAnchor.SCREEN_DIMENSIONS = vec2(1, 1) * dims

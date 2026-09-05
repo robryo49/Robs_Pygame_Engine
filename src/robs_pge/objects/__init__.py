@@ -20,6 +20,7 @@ from .behavior_manager import BehaviorManager
 from .interaction_manager import InteractionManager
 from .object_collection import ObjectCollection
 from .object_factory import ObjectFactory
+from .dialog_manager import DialogManager
 from .custom import (
     RectObject, CircleObject, SpriteObject, LineObject, CycleButtonObject,
     SubSurfaceSpriteObject, ChunkedSpriteObject,
@@ -50,6 +51,7 @@ __all__ = [
     "InteractionManager",
     "ObjectCollection",
     "ObjectFactory",
+    "DialogManager",
     "WindowManager",
     # objects
     "PygameObject",

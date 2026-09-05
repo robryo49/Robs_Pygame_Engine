@@ -850,8 +850,8 @@ class PygameObject[R]:
         self.get_service(AnimationManager).play(animation)
         return self
     
-    def quick_debug(self, name, value) -> PygameObject:
-        self.get_service(QuickDebugManager).quick_debug(name, value)
+    def quick_debug(self, name: str, value: Any, duration: float = 0.0) -> PygameObject:
+        self.get_service(QuickDebugManager).quick_debug(name, value, duration)
         return self
     
     # endregion

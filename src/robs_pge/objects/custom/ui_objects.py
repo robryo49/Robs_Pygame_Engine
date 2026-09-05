@@ -354,11 +354,7 @@ class SliderObject(LayoutObject):
         normalized_value = (value - self.min_value) / self.value_range
         self._handle.x_pos = (normalized_value - 0.5) * self._handle_movement_range
         
-    
     # endregion
-    
-    def _update_self(self, dt: float):
-        super()._update_self(dt)
 
 
 class ProgressBarObject(RectObject):

@@ -31,10 +31,10 @@ class ResourceManager:
     
     def get(self, resource_type: type, name: str) -> Any:
         if resource_type not in self._resources:
-            raise KeyError(f"No resource of type '{resource_type.__name__}' registered")
+            raise KeyError(f"No resource of type '{resource_type.__name__}' registered, only have: {list(self._resources.keys())}")
         resource = self._resources[resource_type].get(name)
         if resource is None:
-            raise KeyError(f"Resource '{name}' of type '{resource_type.__name__}' not found")
+            raise KeyError(f"Resource '{name}' of type '{resource_type.__name__}' not found, only have: {list(self._resources[resource_type].keys())}")
         return resource
     
     # endregion
@@ -52,7 +52,7 @@ class ResourceManager:
     def get_path(self, folder: str) -> Path:
         path = self._folders.get(folder)
         if path is None:
-            raise KeyError(f"Asset folder '{folder}' is not registered")
+            raise KeyError(f"Folder '{folder}' is not registered, only have: {list(self._folders.keys())}")
         return path
     
     # endregion

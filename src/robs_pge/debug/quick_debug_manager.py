@@ -5,15 +5,15 @@ class QuickDebugManager:
     def __init__(self):
         
         self._getters: list[tuple[str, str, Callable]] = []
-        self._queue: list[tuple[str, str]] = []
+        self._queue: list[tuple[str, str, float]] = []
         
         self._values: dict[str, str] = {}
     
     def register_listener(self, name: str, getter: Callable, template: str = "{}"):
         self._getters.append((name, template, getter))
     
-    def quick_debug(self, name, value: Any) -> None:
-        self._queue.append((name, str(value)))
+    def quick_debug(self, name, value: Any, duration: float = 1.0) -> None:
+        self._queue.append((name, str(value), duration))
         
         
     def _get_getter_values(self):
@@ -26,7 +26,7 @@ class QuickDebugManager:
                 self._values[name] = template.format(v)
     
     def _get_queued_values(self):
-        for name, value in self._queue:
+        for name, value, _ in self._queue:
             self._values[name] = value
             
             
@@ -39,13 +39,13 @@ class QuickDebugManager:
     def clear_listeners(self):
         self._getters.clear()
     
-    def update_values(self):
+    def update(self, dt: float) -> None:
         self.clear_values()
         
         self._get_queued_values()
         self._get_getter_values()
         
-        self.clear_queue()
+        self._queue = [(name, value, d-dt) for name, value, d in self._queue if d-dt > 0]
     
     def get_values(self):
         return dict(self._values)

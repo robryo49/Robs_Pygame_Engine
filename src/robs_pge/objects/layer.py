@@ -153,8 +153,14 @@ class Layer:
                 o2.layer = None
         self.objects.remove_object(*obj)
         
-    def get_objects_number(self):
-        return len(self.objects)
+    def get_partial_objects_count(self):
+        return self.objects.size
+    
+    def get_full_objects_count(self):
+        return self.objects.full_size
+    
+    def get_objects_count(self):
+        return self.get_partial_objects_count(), self.get_full_objects_count()
     
     # endregion
     

@@ -9,10 +9,10 @@ from ...animation import AnimationManager
 from ...debug import FrameTimer, QuickDebugManager
 from ...events import Event, EventManager
 from ...input import InputManager, Keybind, KeybindsManager
-from ...objects import InteractionManager, Layer, LayerManager, ObjectFactory, ParticleSystem, WindowManager, WindowObject, DebugOverlay
-from ...rendering import LineChartStyle, WindowStyle
+from ...objects import DebugOverlay, InteractionManager, Layer, LayerManager, ObjectFactory, ParticleSystem, WindowManager, WindowObject, DialogManager
+from ...rendering import WindowStyle
 from ...resources import ResourceManager
-from ...utils import Anchor, AsyncProcess, AsyncProcessManager, DictCollection, vec2, Callback, ScreenAnchor, round_sig
+from ...utils import Anchor, AsyncProcess, AsyncProcessManager, Callback, DictCollection, ScreenAnchor, round_sig, vec2
 
 if TYPE_CHECKING:
     from ..engine import Engine
@@ -49,6 +49,13 @@ class State:
         self._quick_debug_manager = self._create_quick_debug_manager()
         
         self._factory = self._create_object_factory()
+        
+        self._dialogs_layer_id = "ui"
+        self._dialogs_manager = self._create_dialog_manager(
+            self._factory, self._window_manager,
+            lambda o: self.register_object(self._dialogs_layer_id, o),
+            lambda o: self.unregister_object(self._dialogs_layer_id, o)
+        )
         
         self._services: DictCollection = DictCollection()
         self._factory.services = self._services
@@ -164,8 +171,12 @@ class State:
         return self._layer_manager
     
     @property
-    def windows(self):
+    def windows(self) -> WindowManager:
         return self._window_manager
+    
+    @property
+    def dialogs(self) -> DialogManager:
+        return self._dialogs_manager
     
     
     @property
@@ -199,6 +210,10 @@ class State:
     @staticmethod
     def _create_object_factory() -> ObjectFactory:
         return ObjectFactory()
+    
+    @staticmethod
+    def _create_dialog_manager(object_factory, window_manager, object_registration_method, object_unregistration_method) -> DialogManager:
+        return DialogManager(object_factory, window_manager, object_registration_method, object_unregistration_method)
     
     @staticmethod
     def _create_particle_system() -> ParticleSystem:
@@ -246,7 +261,7 @@ class State:
         state_panel.add_line("Current", "{}", lambda: self.id)
         state_panel.add_line("Layers :", "{}", lambda: "")
         for layer in list(self.layer_manager.layers.values()):
-            state_panel.add_line("- " + layer.id, "{} Objects", layer.get_objects_number)
+            state_panel.add_line("- " + layer.id, "{} Objects ({})", layer.get_objects_count)
         
         rendering_panel = self.create_object.ui.debug.debug_info_window(vec2(), "RENDERING", panels_width, titles_width, infos_width, font_white, font_gray, yellow_style)
         rendering_panel.add_line("Cache Size",  "{} ({}Mo)", lambda: (self.renderer.surface_cache_size, round(self.renderer.surface_cache_memory_size, 1)))
@@ -349,20 +364,35 @@ class State:
         for o in obj:
             self._layer_manager.add_object(layer, o)
     
+    def unregister_object(self, layer: str, *obj: PygameObject | list[PygameObject]) -> None:
+        for o in obj:
+            self._layer_manager.remove_object(layer, o)
+    
     def create_layer(self, name: str, layer_value: float, camera: Optional[Camera] = None, interactable: bool = True) -> Layer:
         cam = camera if camera is not None else self.default_camera
         return self._layer_manager.create_layer(name, layer_value, cam, interactable)
     
-    def register_window(self, window: WindowObject, group: str = "main", layer: Layer | str = "ui") -> WindowObject:
+    def register_window(self, window: WindowObject, group: Optional[str] = None, layer: Layer | str = "ui") -> WindowObject:
         if isinstance(layer, str):
             self.register_object(layer, window)
         else:
             layer.add_object(window)
         return self.windows.register(window, group)
     
-    def register_windows(self, windows: Iterable[WindowObject], group: str = "main", layer: Layer | str = "ui"):
+    def register_windows(self, windows: Iterable[WindowObject], group: Optional[str] = None, layer: Layer | str = "ui"):
         for window in windows:
             self.register_window(window, group, layer)
+    
+    def unregister_window(self, window: WindowObject, layer: Layer | str = "ui") -> WindowObject:
+        if isinstance(layer, str):
+            self.unregister_object(layer, window)
+        else:
+            layer.add_object(window)
+        return self.windows.unregister(window)
+    
+    def unregister_windows(self, windows: Iterable[WindowObject], layer: Layer | str = "ui"):
+        for window in windows:
+            self.unregister_window(window, layer)
     
     def register_quick_debug(self, name: str, getter: Callable, template: str = "{}"):
         self.quick_debug_manager.register_listener(name, getter, template)
@@ -377,14 +407,14 @@ class State:
     def start_async_process(self, fn: Callable, *args, **kwargs) -> AsyncProcess:
         return self.async_process_manager.submit(fn, *args, **kwargs)
     
-    def open_window(self, window_id: str) -> None:
+    def open_window(self, window_id: str | WindowObject) -> None:
         self.windows.open(window_id)
     
-    def close_window(self, window_id: str) -> None:
+    def close_window(self, window_id: str | WindowObject) -> None:
         self.windows.close(window_id)
     
-    def quick_debug(self, name: str, value: Any) -> None:
-        self.quick_debug_manager.quick_debug(name, value)
+    def quick_debug(self, name: str, value: Any, duration: float = 0.0) -> None:
+        self.quick_debug_manager.quick_debug(name, value, duration)
     
     # endregion
     
@@ -399,7 +429,7 @@ class State:
         self.frame_timer.time("Update.State.Particles",        lambda: self.particle_system.update(dt))
         self.frame_timer.time("Update.State.Camera",           lambda: self.camera.update(dt))
         
-        self.quick_debug_manager.update_values()
+        self.quick_debug_manager.update(dt)
     
     def render(self) -> None:
         for layer in self._layer_manager.sorted_layers:

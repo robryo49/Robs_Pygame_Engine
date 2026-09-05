@@ -106,7 +106,7 @@ class ButtonStyle(Style):
         transition_duration
     """
     bg_style: RectStyle = field(default_factory=RectStyle)
-    margin: int = 50
+    margin: int = 20
     font: StyleOrName[Font] = field(default_factory=Font)
     hovered_scale: float = 1.1
     clicked_scale: float = 0.9
