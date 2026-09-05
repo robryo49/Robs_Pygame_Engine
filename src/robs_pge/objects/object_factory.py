@@ -48,5 +48,8 @@ class ObjectFactory:
         self._constructors[name] = constructor
     
     def __call__(self, constructor_name: str, *args, **kwargs) -> PygameObject:
-        return self._constructors[constructor_name](*args, **kwargs)
-    
+        try:
+            return self._constructors[constructor_name](*args, **kwargs)
+        except KeyError:
+            raise KeyError(f"Object constructor with name '{constructor_name}' not found, only have : {list(self._constructors.keys())}")
+        
