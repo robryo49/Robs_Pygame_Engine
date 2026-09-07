@@ -1,4 +1,5 @@
 from __future__ import annotations
+
 from typing import Any, Callable, Optional, TYPE_CHECKING
 
 from .object_factories import ShapeFactory, SpriteObjectFactory, TextObjectFactory, UIObjectFactory, WindowObjectFactory
@@ -30,6 +31,10 @@ class ObjectFactory:
     @services.setter
     def services(self, value: DictCollection):
         self._services = value
+        
+    @property
+    def constructors(self):
+        return self._constructors
     
     # endregion
     

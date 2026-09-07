@@ -5,16 +5,14 @@ from typing import Any, Callable, Optional, TYPE_CHECKING
 from .custom import RectObject, WindowObject
 from .object import PygameObject
 from .object_factory import ObjectFactory
-
-from ..rendering import ButtonStyle, Font, RectStyle, WindowStyle, IconButtonStyle, SliderStyle
-from ..utils import Anchor, Callback, Color, ObjectFlags, ScreenAnchor, StyleOrName, vec2, ValueOrGetter
+from ..rendering import ButtonStyle, Font, RectStyle, ValueCyclerStyle, ValueSelectorStyle, WindowStyle, Style
+from ..utils import Anchor, Callback, Color, ObjectFlags, ScreenAnchor, StyleOrName, ValueOrGetter, inf, vec2
 
 if TYPE_CHECKING:
     from .window_manager import WindowManager
 
 
 class DialogManager:
-    
     def __init__(self, object_factory: ObjectFactory, window_manager: WindowManager,
                  object_registration_method: Callable[[PygameObject], Any],
                  object_unregistration_method: Callable[[PygameObject], Any]):
@@ -25,17 +23,10 @@ class DialogManager:
         self._register_object: Callable[[PygameObject], Any] = object_registration_method
         self._unregister_object: Callable[[PygameObject], Any] = object_unregistration_method
         
-        
         self._default_backdrop_color = Color(0, 0, 0, 200)
-        
         self._default_dialog_width: int = 500
         
-        self._default_window_style: StyleOrName[WindowStyle] = WindowStyle()
-        self._default_button_style: StyleOrName[ButtonStyle] = ButtonStyle()
-        self._default_slider_style: StyleOrName[SliderStyle] = SliderStyle()
-        self._default_icon_button_style: StyleOrName[IconButtonStyle] = IconButtonStyle()
-        self._default_text_font: StyleOrName[Font] = Font()
-    
+        self._default_styles: dict[type, Any] = {}
     
     # region PROPERTIES
     
@@ -49,35 +40,36 @@ class DialogManager:
         self._default_dialog_width = value
     # endregion
     
-    # region default_window_style
-    @property
-    def default_window_style(self):
-        return self._default_window_style
-    
-    @default_window_style.setter
-    def default_window_style(self, value):
-        self._default_window_style = value
     # endregion
     
-    # region default_button_style
-    @property
-    def default_button_style(self):
-        return self._default_button_style
+    # region STYLE METHODS
     
-    @default_button_style.setter
-    def default_button_style(self, value):
-        self._default_button_style = value
-    # endregion
+    def set_default_style[T](self, style_type: type[T], style: StyleOrName[T]):
+        self._default_styles[style_type] = style
+        return self
     
-    # region default_font
-    @property
-    def default_text_font(self):
-        return self._default_text_font
+    def set_default_styles[T](self, styles: dict[type[T], StyleOrName[T]]):
+        for t, s in styles.items():
+            self.set_default_style(t, s)
+        return self
     
-    @default_text_font.setter
-    def default_text_font(self, value):
-        self._default_text_font = value
-    # endregion
+    def clear_default_style[T](self, style_type: type[T]):
+        self._default_styles.pop(style_type, None)
+        return self
+    
+    def clear_default_styles(self):
+        self._default_styles.clear()
+    
+    def get_default_style[T](self, style_type: type[T]) -> T:
+        return self._default_styles.get(style_type, self._object_factory.get_default_style(style_type))
+    
+    def get_style[T](self, style: Optional[str | Any], style_type: type[T]) -> T:
+        if isinstance(style, str):
+            return self._object_factory.get_style(style, style_type)
+        elif style is not None:
+            return style
+        else:
+            return self.get_default_style(style_type)
     
     # endregion
     
@@ -96,8 +88,8 @@ class DialogManager:
         position = ScreenAnchor.C if position is None else position
         width = width or self._default_dialog_width
         
-        window_style = window_style or self._default_window_style
-        button_style = button_style or self._default_button_style
+        window_style = self.get_style(window_style, WindowStyle)
+        button_style = self.get_style(button_style, ButtonStyle)
         
         def choose(v):
             self._close_dialog(dialog, backdrop)
@@ -146,31 +138,77 @@ class DialogManager:
         
         return dialog
     
+    def open_value_selection_dialog(
+            self, message: Optional[str], callback: Callback[[Optional[float]], Any], default_value: float= 0.0,
+            min_value: float = 0.0, max_value: float = inf, increments: float | list[float] = 1, allow_cancel: bool = True,
+            position: Optional[vec2] = None, width: Optional[int] = None, height: Optional[int] = None, backdrop_color: Optional[Color] = None,
+            window_style: StyleOrName[WindowStyle] = None, button_style: StyleOrName[ButtonStyle] = None, font: StyleOrName[Font] = None,
+            value_selector_style: StyleOrName[ValueSelectorStyle] = None, anchor: vec2 = Anchor.C
+    ):
+        width = width or self._default_dialog_width
+        
+        font = self.get_style(font, Font)
+        value_selector_style = self.get_style(value_selector_style, ValueSelectorStyle)
+        
+        text = self._object_factory.text(vec2(), message, font)
+        value_selector = self._object_factory.ui.value_selector(vec2(), vec2(width - 20*2, 50), default_value, min_value, max_value, increments, callback, value_selector_style)
+        
+        content = self._object_factory.ui.layout.stack_in_col(vec2(), None, None, objects = [text, value_selector])
+        content.set_cell_spacing(20)
+        
+        options = [("Confirm", lambda: value_selector.value), ("Cancel", lambda: None)] if allow_cancel else [("Confirm", lambda: value_selector.value)]
+        
+        return self.open_dialog(content, options, callback, position, width, height, backdrop_color, window_style, button_style, anchor)
+    
+    def open_value_cycling_dialog[T](
+            self, message: Optional[str], callback: Callback[[T], Any], values: list[T],
+            default_value: Optional[T] = None, default_value_index: Optional[int] = None, allow_cancel: bool = False,
+            position: Optional[vec2] = None, width: Optional[int] = None, height: Optional[int] = None, backdrop_color: Optional[Color] = None,
+            window_style: StyleOrName[WindowStyle] = None, button_style: StyleOrName[ButtonStyle] = None, font: StyleOrName[Font] = None,
+            value_cycler_style: StyleOrName[ValueCyclerStyle] = None, anchor: vec2 = Anchor.C
+    ):
+        width = width or self._default_dialog_width
+        default_index = values.index(default_value) if default_value is not None else default_value_index if default_value_index is not None else 0
+        
+        font = self.get_style(font, Font)
+        value_selector_style = self.get_style(value_cycler_style, ValueCyclerStyle)
+        
+        text = self._object_factory.text(vec2(), message, font)
+        value_selector = self._object_factory.ui.value_cycler(vec2(), vec2(width - 20*2, 50), values, default_index, callback, value_selector_style)
+        
+        content = self._object_factory.ui.layout.stack_in_col(vec2(), None, None, objects = [text, value_selector])
+        content.set_cell_spacing(20)
+        
+        options = [("Confirm", lambda: value_selector.value), ("Cancel", lambda: None)] if allow_cancel else [("Confirm", lambda: value_selector.value)]
+        
+        return self.open_dialog(content, options, callback, position, width, height, backdrop_color, window_style, button_style, anchor)
+    
+    # region TEXT DIALOGS
+    
     def open_text_dialog[T](
             self, message: str, values: list[tuple[str, T]], callback: Callback[[T], Any],
             position: Optional[vec2] = None, width: Optional[int] = None, height: Optional[int] = None, backdrop_color: Optional[Color] = None,
             window_style: StyleOrName[WindowStyle] = None, button_style: StyleOrName[ButtonStyle] = None, font: StyleOrName[Font] = None, anchor: vec2 = Anchor.C
     ):
-        
-        font = font or self.default_text_font
+        font = self.get_style(font, Font)
         text = self._object_factory.text(vec2(), message, font)
         
         return self.open_dialog(text, values, callback, position, width, height, backdrop_color, window_style, button_style, anchor)
-
+    
     def open_message_dialog(
             self, message: str, callback: Callback,
             position: Optional[vec2] = None, width: Optional[int] = None, height: Optional[int] = None, backdrop_color: Optional[Color] = None,
             window_style: StyleOrName[WindowStyle] = None, button_style: StyleOrName[ButtonStyle] = None, font: StyleOrName[Font] = None, anchor: vec2 = Anchor.C
     ):
         return self.open_text_dialog(message, [("Confirm", True)], callback, position, width, height, backdrop_color, window_style, button_style, font, anchor)
-
+    
     def open_yes_no_dialog(
             self, message: str, callback: Callback[[bool], Any],
             position: Optional[vec2] = None, width: Optional[int] = None, height: Optional[int] = None, backdrop_color: Optional[Color] = None,
             window_style: StyleOrName[WindowStyle] = None, button_style: StyleOrName[ButtonStyle] = None, font: StyleOrName[Font] = None, anchor: vec2 = Anchor.C
     ):
         return self.open_text_dialog(message, [("Yes", True), ("No", False)], callback, position, width, height, backdrop_color, window_style, button_style, font, anchor)
-
+    
     def open_confirm_dialog(
             self, message: str, callback: Callback[[bool], Any],
             position: Optional[vec2] = None, width: Optional[int] = None, height: Optional[int] = None, backdrop_color: Optional[Color] = None,
@@ -178,4 +216,4 @@ class DialogManager:
     ):
         return self.open_text_dialog(message, [("Comfirm", True), ("Cancel", False)], callback, position, width, height, backdrop_color, window_style, button_style, font, anchor)
     
-    
+    # endregion
