@@ -1,6 +1,13 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
 
+# Environment & IDE
 .venv/
 .idea/
+*.iml
+
+# Custom ignores
 /test/
-/Robs Pygame Engine.iml
-/.air/
