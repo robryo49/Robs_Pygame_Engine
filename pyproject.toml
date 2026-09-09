@@ -5,17 +5,13 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
-    "matplotlib==3.11.0",
+    "matplotlib>=3.11.1",
     "noise>=1.2.2",
-    "numpy==2.5.1",
-    "opensimplex>=0.4.5.1",
-    "pygame-ce==2.5.7",
+    "numpy>=2.5.3",
+    "pygame-ce>=2.5.8",
     "pyglm>=2.8.3",
-    "pymunk>=7.0",
+    "pymunk>=7.3.0",
     "resvg>=0.2.0",
-    "resvg-py>=0.3.3",
+    "resvg-py>=0.5.0",
     "scikit-image>=0.26.0",
-    "scipy==1.18.0",
-    "scipy-stubs==1.18.0.0",
-    "svglib>=2.0.2",
 ]
