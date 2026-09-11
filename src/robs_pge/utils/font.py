@@ -4,9 +4,10 @@ import pygame as pg
 
 from .color import Color
 from .math import vec2
+from .management_tools import Style
 
 
-class Font:
+class Font(Style):
     def __init__(self, name="dejavusansmono", size=24, color: Optional[Color] = None, bold=False, italic=False, line_spacing=0):
         
         self.name = name
@@ -40,4 +41,8 @@ class Font:
     
     def get_render_size(self, text):
         return vec2(self._pg_font.size(text))
+    
+    @staticmethod
+    def get_all_fonts():
+        return pg.font.get_fonts()
     

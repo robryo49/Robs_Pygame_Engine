@@ -2,9 +2,13 @@ from .math import *
 from .font import Font
 from .color import Color, Colors, ColorPalette
 from .keybinds import Keybinds
-from .management_tools import ObjectTags, Vec2Like, Vec3Like, Callback, EasingFunctionType, StyleOrName, ValueOrGetter, validate_signature, ObjectFlags, KeybindFlags, Collection, DictCollection, TypedCollection, TypedDictCollection
+from .management_tools import (
+    ObjectTags, Vec2Like, Vec3Like, Callback, EasingFunctionType, StyleOrName, Style, ValueOrGetter, validate_signature, ObjectFlags, KeybindFlags,
+    Collection, DictCollection, TypedCollection, TypedDictCollection
+)
 from .array_tools import *
 from .async_tools import *
+from .surface_tools import *
 
 
 __all__ = [
@@ -29,7 +33,7 @@ __all__ = [
     # collection
     "Collection", "DictCollection", "TypedDictCollection", "TypedCollection",
     # types
-    "Vec2Like", "Vec3Like", "Callback", "EasingFunctionType", "StyleOrName", "ValueOrGetter", "validate_signature",
+    "Vec2Like", "Vec3Like", "Callback", "EasingFunctionType", "StyleOrName", "Style", "ValueOrGetter", "validate_signature",
     # array_tools
     "create_linear_gradient_array", "create_angular_gradient_array", "create_radial_gradient_array",
     "create_circle_mask", "create_rect_mask",
@@ -39,6 +43,8 @@ __all__ = [
     "get_label_centers", "majority_filter", "find_edges",
     "skeletonize_mask", "remove_small_objects",
     "create_noise_array", "create_voronoi_array", "create_bfs_voronoi_array",
+    
+    "replace_color",
     # async
     "AsyncProcessManager", "AsyncProcess",
 ]

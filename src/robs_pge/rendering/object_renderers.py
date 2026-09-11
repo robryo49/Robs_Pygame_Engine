@@ -16,7 +16,7 @@ class RectRenderer(ObjectRenderer):
     def __init__(self, dims: vec2, style: Optional[RectStyle] = None, cache=True):
         super().__init__(cache)
         
-        self._dims = dims
+        self._dims: vec2 = dims
         
         self._style = (style or RectStyle()).copy()
     
@@ -24,7 +24,7 @@ class RectRenderer(ObjectRenderer):
     
     # region style
     @property
-    def style(self):
+    def style(self) -> RectStyle:
         return self._style
     
     @style.setter
@@ -34,7 +34,7 @@ class RectRenderer(ObjectRenderer):
     
     # region dims
     @property
-    def dims(self):
+    def dims(self) -> vec2:
         return self._dims
     
     @dims.setter
@@ -112,10 +112,11 @@ class RectRenderer(ObjectRenderer):
         if not (0 <= x <= w and 0 <= y <= h):
             return False
         
-        max_r = min(w, h) / 2
+        max_r = min(float(w), float(h)) / 2
         
-        if isinstance(self.bd_radius, (tuple, list)):
-            r_bl, r_br, r_tl, r_tr = (min(r, max_r) for r in self.bd_radius)
+        bd_radius = self.bd_radius
+        if isinstance(bd_radius, (tuple, list)):
+            r_bl, r_br, r_tl, r_tr = (min(r, max_r) for r in bd_radius)
         else:
             r_bl = r_br = r_tl = r_tr = min(self.bd_radius, max_r)
         

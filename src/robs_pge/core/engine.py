@@ -39,6 +39,7 @@ class Engine:
         self._running: bool = True
         
         self.init_resources()
+        self.init_default_resources()
         
     # region PROPERTIES
     
@@ -136,10 +137,10 @@ class Engine:
     def init_resources(self) -> "Engine":
         logging.info("Initializing resources")
         self.init_folders()
+        self.init_textures()
         self.init_color_palettes()
         self.init_fonts()
         self.init_styles()
-        self.init_textures()
         
         return self
     
@@ -201,7 +202,6 @@ class Engine:
     def init_textures(self):
         logging.info("Initializing textures")
     
-    
     def init_styles(self):
         logging.info("Initializing styles")
         
@@ -215,8 +215,8 @@ class Engine:
         panel_style = RectStyle(bg_color=Colors.with_alpha(debug.dark_gray, 200), bd_color=Colors.with_alpha(debug.medium_gray, 200), bd=1)
         title_panel_style = RectStyle(bg_color=Colors.with_alpha(debug.medium_gray, 200))
         
-        self.resources.set(RectStyle, "debug_panel_style", panel_style)
-        self.resources.set(RectStyle, "debug_title_panel_style", title_panel_style)
+        self.resources.register(RectStyle, "debug_panel_style", panel_style)
+        self.resources.register(RectStyle, "debug_title_panel_style", title_panel_style)
         
         colors = {
             "green":  debug.green,
@@ -234,8 +234,8 @@ class Engine:
         for name, color in colors.items():
             header_style = RectStyle(bg_color=color)
             font = self.resources.get_font(f"debug_{name}_title")
-            self.resources.set(RectStyle, f"debug_{name}_header_style", header_style)
-            self.resources.set(WindowStyle, f"debug_{name}_panel_style", WindowStyle(
+            self.resources.register(RectStyle, f"debug_{name}_header_style", header_style)
+            self.resources.register(WindowStyle, f"debug_{name}_panel_style", WindowStyle(
                 bg_style = panel_style,
                 margin = 8,
                 show_header = True,
@@ -253,12 +253,24 @@ class Engine:
             ))
         
         for name, color in colors.items():
-            self.resources.set(LineChartStyle, f"debug_{name}_line_chart_style", LineChartStyle(RectStyle(Colors.with_alpha(Colors.BLACK, 60), bd=0), line_color=color, line_width=1))
+            self.resources.register(LineChartStyle, f"debug_{name}_line_chart_style", LineChartStyle(RectStyle(Colors.with_alpha(Colors.BLACK, 60), bd=0), line_color=color, line_width=1))
         
         for name, color in colors.items():
-            self.resources.set(ProgressBarStyle, f"debug_{name}_progress_bar_style", ProgressBarStyle(RectStyle(Colors.with_alpha(debug.dark_gray, 150), bd=0, bd_radius=2), color=color))
+            self.resources.register(ProgressBarStyle, f"debug_{name}_progress_bar_style", ProgressBarStyle(RectStyle(Colors.with_alpha(debug.dark_gray, 150), bd=0, bd_radius=2), color=color))
         
         return self
+    
+    
+    def init_default_resources(self) -> "Engine":
+        logging.info("Initializing default resources")
+        
+        self.init_default_styles()
+        
+        return self
+    
+    def init_default_styles(self):
+        logging.info("Initializing default styles")
+    
     
     def set_state(self, state: str | State):
         self.state_manager.set_state(state)

@@ -1,16 +1,12 @@
 from __future__ import annotations
 
 import inspect
-from typing import Any, Callable, Optional, Protocol, TYPE_CHECKING, runtime_checkable
+from dataclasses import dataclass, replace
+from typing import Any, Callable, Optional
 
 import numpy as np
 
 from ..math import vec2, vec3
-
-if TYPE_CHECKING:
-    from ...core import Camera
-    from ...rendering import DrawCommand
-    from ...objects import Layer
 
 
 type Vec2Like = vec2 | np.ndarray | tuple[float, float]
@@ -24,24 +20,13 @@ type StyleOrName[T] = Optional[T | str]
 type ValueOrGetter[T] = T | Callable[[], T]
 
 
-@runtime_checkable
-class RenderableType(Protocol):
-    def render(self, submit: Callable[[DrawCommand], Any], camera: Camera): pass
-
-
-@runtime_checkable
-class UpdatableType(Protocol):
-    def update(self, dt: float): pass
+@dataclass
+class Style:
+    def with_(self, **kwargs):
+        return replace(self, **kwargs)  # type: ignore[arg-type]
     
-
-@runtime_checkable
-class ObjectLikeType(RenderableType, UpdatableType, Protocol):
-    
-    @property
-    def layer(self): pass
-    
-    @layer.setter
-    def layer(self, value: Layer): pass
+    def copy(self):
+        return replace(self)
 
 
 

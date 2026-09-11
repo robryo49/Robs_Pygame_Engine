@@ -1,19 +1,8 @@
-from dataclasses import dataclass, field, replace
+from dataclasses import dataclass, field
 from typing import Optional
 
-from ..utils import Color, Font, vec2, Colors, Anchor, StyleOrName
-
-
-@dataclass
-class Style:
-    """
-    Base class for all UI styles
-    """
-    def with_(self, **kwargs):
-        return replace(self, **kwargs)  # type: ignore[arg-type]
-    
-    def copy(self):
-        return replace(self)
+from .surface_builders import RectBuilder
+from ..utils import Anchor, Color, Colors, Font, Style, StyleOrName, vec2
 
 
 # region PRIMITIVES
@@ -46,8 +35,10 @@ class RectStyle(ShapeStyle):
         bd
         bd_color
         bd_radius
+        builder
     """
     bd_radius: int | tuple[int, int, int, int] = 0
+    builder: RectBuilder = field(default_factory=RectBuilder)
 
 
 @dataclass

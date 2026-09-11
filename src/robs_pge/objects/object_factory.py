@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import Any, Callable, Optional, TYPE_CHECKING
 
 from .object_factories import ShapeFactory, SpriteObjectFactory, TextObjectFactory, UIObjectFactory, WindowObjectFactory
+from ..rendering import Style
 from ..resources import ResourceManager
 from ..utils import DictCollection, Transform
 
@@ -38,13 +39,15 @@ class ObjectFactory:
     
     # endregion
     
-    def get_resource[T](self, resource: Optional[str | Any], style_type: type[T]) -> T:
-        if isinstance(resource, str):
-            return self._services.get(ResourceManager).get(style_type, resource)
-        elif resource is not None:
-            return resource
+    def get_resource[T](self, resource: Optional[str | Any], resource_type: type[T]) -> T:
+        manager: ResourceManager = self._services[ResourceManager]
+        is_style = isinstance(resource_type, type) and issubclass(resource_type, Style)
+
+        if is_style:
+            return manager.get_style_or_default(resource_type, resource)
         else:
-            return style_type()
+            return manager.get_or_default(resource_type, resource)
+        
     
     def create_object[T](self, object_type: type[T], position, rotation, scale, renderer, layer, anchor, *args) -> T:
         return object_type(Transform(position, rotation, scale), renderer, *args, self._services, layer, anchor)

@@ -154,25 +154,8 @@ class DrawRect(DrawCommand):
     style: RectStyle
     
     def create_surface(self, key, *args):
-        
-        dims, bg_color, bd, bd_color, bd_radius, rotation, scale = key
-        
-        surface = pg.Surface(dims, pg.SRCALPHA)
-        
-        if isinstance(bd_radius, tuple):
-            pg.draw.rect(surface, bg_color, surface.get_rect(), 0, 0, *bd_radius)
-        else:
-            pg.draw.rect(surface, bg_color, surface.get_rect(), 0, bd_radius)
-        
-        if bd:
-            if isinstance(bd_radius, tuple):
-                pg.draw.rect(surface, bd_color, surface.get_rect(), bd, 0, *bd_radius)
-            else:
-                pg.draw.rect(surface, bd_color, surface.get_rect(), bd, bd_radius)
-        if rotation:
-            surface = pg.transform.rotozoom(surface, rotation, 1).convert_alpha()
-        
-        return surface
+        dims, bg_color, bd, bd_color, bd_radius, rotation = key
+        return self.style.builder.build_surface(vec2(dims), bg_color, bd, bd_color, bd_radius, rotation)
     
     def draw(self, blit_call_queue: list[tuple[pg.Surface, vec2]], surface_cache, font_cache):
         screen_pos, rotation, scale = self.get_composed_transform()
@@ -183,7 +166,7 @@ class DrawRect(DrawCommand):
         bd_radius = tuple(round(corner_radius * scale) for corner_radius in self.style.bd_radius) if isinstance(self.style.bd_radius, tuple) else round(self.style.bd_radius * scale)
         
         dims =      self.dims * scale
-        key =       (tuple(dims), bg_color, bd, bd_color, bd_radius, rotation, scale)
+        key =       (tuple(dims), bg_color, bd, bd_color, bd_radius, rotation)
         
         if dims[0] <= 0 or dims[1] <= 0:
             return None
