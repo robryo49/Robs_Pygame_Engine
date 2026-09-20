@@ -126,5 +126,11 @@ class ObjectCollection(TypedCollection):
                 o.render(submit)
         
         return self
+
+    def has(self, item: PygameObject) -> bool:
+        return (super().has(item) or item in self._to_add) and item not in self._to_remove
+
+    def __contains__(self, item: object) -> bool:
+        return (super().__contains__(item) or item in self._to_add) and item not in self._to_remove
         
     

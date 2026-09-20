@@ -3,10 +3,9 @@ from __future__ import annotations
 from typing import Any, Callable, Optional, TYPE_CHECKING
 
 from .behavior import ObjectBehavior
-from .. import ValueOrGetter
 from ..animation import AdderAnimation, Animation, AnimationManager, MultiplierAnimation, SetterAnimation
 from ..events import Event
-from ..utils import ObjectFlags, vec2, clamp, inf, lerp, EasingFunctionType, Callback
+from ..utils import ObjectFlags, vec2, clamp, inf, lerp, EasingFunctionType, Callback, ValueOrGetter
 
 if TYPE_CHECKING:
     from ..core import Camera

@@ -7,10 +7,103 @@ from .sprite_objects import IconObject, SpriteObject
 from ..behaviors import *
 from ...animation import SetterAnimation
 from ...rendering import CircleRenderer, RectRenderer
-from ...utils import Anchor, Callback, DictCollection, Easing, Transform, clamp, inf, invert_y, vec2
+from ...utils import Anchor, Callback, DictCollection, Easing, Transform, clamp, inf, invert_y, vec2, Font, split_text
 
 if TYPE_CHECKING:
     from ..object import PygameObject
+
+
+
+class TextBoxObject(LayoutObject):
+    JUSTIFY_LEFT = vec2(0, 0)
+    JUSTIFY_CENTER = vec2(0.5, 0)
+    JUSTIFY_RIGHT = vec2(1, 0)
+
+    def __init__(self, transform: Transform, renderer: RectRenderer, text, font: Font, text_objects: list[TextObject],
+                 text_object_factory: Callable[..., TextObject], services: DictCollection,
+                 sub_layer: int = 0, anchor: vec2 = Anchor.C):
+        super().__init__(transform, renderer, services, sub_layer, anchor)
+
+        self._font = font
+
+        self._text = text
+        self._text_objects = text_objects
+
+        self._text_object_factory = text_object_factory
+
+    @property
+    def text_align(self):
+        return self.justification
+
+    @text_align.setter
+    def text_align(self, value: vec2):
+        self.justification = value
+
+    @property
+    def line_spacing(self):
+        return self.cell_spacing
+
+    @line_spacing.setter
+    def line_spacing(self, value: int):
+        self.cell_spacing = value
+
+    def _update_lines(self):
+        font = self._font
+
+        # 1. Determine available width for text wrapping
+        available_width = (
+                self._width_constraint.fixed
+                or self._width_constraint.max
+                or (self.width if self.width > 0 else None)
+        )
+        if available_width is not None:
+            available_width: int = max(0, available_width - 2 * round(self._outer_padding.x))
+
+        # 2. Split text into lines
+        lines = split_text(self._text, font, available_width)
+
+        # 3. Synchronize TextObjects with lines
+        if len(lines) == len(self._text_objects):
+            for obj, line in zip(self._text_objects, lines):
+                obj.text = line
+        else:
+            template_obj = self._text_objects[0]
+
+            # Remove existing children from layout container
+            for obj in self._text_objects:
+                if obj in self._children:
+                    self.remove_child(obj)
+
+            self._object_placements.clear()
+            self._object_spans.clear()
+            self._cells_objects.clear()
+            self._next_rows.clear()
+            self._max_row = 0
+
+            new_text_objects: list[TextObject] = []
+            for i, line in enumerate(lines):
+                if i < len(self._text_objects):
+                    obj = self._text_objects[i]
+                    obj.text = line
+                else:
+                    # Spawn new line object through the factory delegate
+                    obj = self._text_object_factory(
+                        vec2(),
+                        line,
+                        font=self._font,
+                        layer=template_obj.sub_layer,
+                        anchor=Anchor.C,
+                        cache=template_obj.renderer._cache
+                    )
+                new_text_objects.append(obj)
+                self.stack_y(obj, x=0, anchor=self.text_align)
+
+            self._text_objects = new_text_objects
+
+    def _update_self(self, dt: float) -> PygameObject:
+        if self._dirty:
+            self._update_lines()
+        return super()._update_self(dt)
 
 
 class ButtonObject(RectObject):
@@ -174,7 +267,7 @@ class CheckBoxObject(RectObject):
         self.add_child(self._checked_icon)
         self._checked_icon.hide()
         
-        self.do_on_click(1, lambda o: o.toggle())
+        self.do_on_click(1, lambda o: self.toggle())
         if callback is not None:
             self.do_on_click(1, callback)
         
@@ -209,7 +302,7 @@ class RadioButtonObject(CircleObject):
         self.add_child(self._tick)
         self._tick.hide()
         
-        self.do_on_click(1, lambda o: o.toggle())
+        self.do_on_click(1, lambda o: self.toggle())
         if callback is not None:
             self.do_on_click(1, callback)
     
@@ -255,7 +348,7 @@ class ToggleButtonObject(RectObject):
         toggle.anchor = Anchor.L
         toggle_background.anchor = Anchor.L
         
-        self.do_on_click(1, lambda o: o.toggle())
+        self.do_on_click(1, lambda o: self.toggle())
         
         self._toggle_background.make_attribute_dynamic("width", lambda: self._toggle.x_pos + self._toggle.width * 0.5)
         if callback is not None:

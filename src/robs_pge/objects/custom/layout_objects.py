@@ -46,8 +46,7 @@ class LayoutObject(RectObject):
     STRETCH_MODE: Literal["stretch"] = "stretch"
     PRESERVE_MODE: Literal["preserve"] = "preserve"
     
-    def __init__(self, transform: Transform, renderer: RectRenderer, services: DictCollection,
-                 sub_layer: int = 0, anchor: vec2 = Anchor.C):
+    def __init__(self, transform: Transform, renderer: RectRenderer, services: DictCollection, sub_layer: int = 0, anchor: vec2 = Anchor.C):
         super().__init__(transform, renderer, services, sub_layer, anchor)
         
         self._object_placements: dict[PygameObject, CellPos] = {}
@@ -1218,7 +1217,7 @@ class LayoutObject(RectObject):
         self.mark_dirty()
         return self
     
-    def stack_x(self, obj: PygameObject, y: int = 0, anchor: vec2 = Anchor.C,
+    def stack_x(self, obj: PygameObject, y: int = 0, anchor: Optional[vec2] = None,
                 span_x: int = 1, span_y: int = 1):
         span = (span_x, span_y)
         sx, _ = self._validate_span(span)
@@ -1226,7 +1225,7 @@ class LayoutObject(RectObject):
         self._next_cols[y] = self._object_placements[obj][0] + sx
         return self
     
-    def stack_y(self, obj: PygameObject, x: int = 0, anchor: vec2 = Anchor.C,
+    def stack_y(self, obj: PygameObject, x: int = 0, anchor: Optional[vec2] = None,
                 span_x: int = 1, span_y: int = 1):
         span = (span_x, span_y)
         _, sy = self._validate_span(span)

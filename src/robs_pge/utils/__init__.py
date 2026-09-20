@@ -9,6 +9,7 @@ from .management_tools import (
 from .array_tools import *
 from .async_tools import *
 from .surface_tools import *
+from .text_utils import *
 
 
 __all__ = [
@@ -24,6 +25,7 @@ __all__ = [
     "CoordinateSystem",
     # font
     "Font",
+    "split_text",
     # color
     "Color", "Colors", "ColorPalette",
     # flags

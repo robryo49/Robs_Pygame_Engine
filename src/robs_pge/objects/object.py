@@ -338,16 +338,22 @@ class PygameObject[R]:
     @property
     def parent(self):
         return self._parent
-    
+
     def set_parent(self, obj: Optional["PygameObject"], anchor: vec2 = Anchor.C):
-        if self._parent not in [None, obj]:
-            self._parent.remove_child(self)
-        
+        if self._parent is obj:
+            self._parent_anchor = anchor
+            return self
+
+        old_parent = self._parent
         self._parent = obj
         self._parent_anchor = anchor
+
+        if old_parent is not None:
+            old_parent.remove_child(self)
+
         self._invalidate_world_transform()
         self._invalidate_visible()
-        
+
         return self
     # endregion
     
@@ -363,13 +369,16 @@ class PygameObject[R]:
             obj.set_parent(self, anchor)
             
         return self
-        
+
     def remove_child(self, obj: "PygameObject"):
         if self._children.has(obj):
             self._children.remove(obj)
+
+        if obj.parent is self:
             obj.set_parent(None)
+
         return self
-        
+
     # endregion
     
     @property
