@@ -1,8 +1,13 @@
-from typing import Any, Literal, Optional
+from __future__ import annotations
+
+from typing import Any, Literal, Optional, TYPE_CHECKING
 
 import pygame as pg
 
 from ..utils import Color, Colors, replace_color, vec2
+
+if TYPE_CHECKING:
+    from ..resources import Texture
 
 
 class SurfaceBuilder:
@@ -34,7 +39,7 @@ class RectBuilder(SurfaceBuilder):
 class SlicedRectBuilder(RectBuilder):
     
     def __init__(
-            self, template: pg.Surface, grid_width: Literal[1, 2, 3] = 2, grid_height: Literal[1, 2, 3] = 2,
+            self, template: Texture, grid_width: Literal[1, 2, 3] = 2, grid_height: Literal[1, 2, 3] = 2,
             horizontal_region_sizes: Optional[int | tuple[int, int] | tuple[int, int, int]] = None,
             vertical_region_sizes: Optional[int | tuple[int, int] | tuple[int, int, int]] = None,
             horizontal_fill_mode: Literal["stretch", "repeat"] = "stretch",
@@ -44,7 +49,7 @@ class SlicedRectBuilder(RectBuilder):
     ):
         super().__init__()
         
-        self._template = template
+        self._template = template.surface
         
         self._grid_width = grid_width
         self._grid_height = grid_height
@@ -250,8 +255,8 @@ class SlicedRectBuilder(RectBuilder):
 
             return [sizes, middle, sizes]
 
-        if len(sizes) != 3:
-            raise ValueError("A 3-region grid requires three region sizes.")
+        if len(sizes) == 2:
+            return [sizes[0], total_size - sizes[0] - sizes[1], sizes[1]]
 
         if sum(sizes) != total_size:
             raise ValueError(f"Region sizes {sizes} don't fill the template dimension ({total_size}).")
