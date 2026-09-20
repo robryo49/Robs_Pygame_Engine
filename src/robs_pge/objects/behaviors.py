@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import Any, Callable, Optional, TYPE_CHECKING
 
 from .behavior import ObjectBehavior
+from .. import ValueOrGetter
 from ..animation import AdderAnimation, Animation, AnimationManager, MultiplierAnimation, SetterAnimation
 from ..events import Event
 from ..utils import ObjectFlags, vec2, clamp, inf, lerp, EasingFunctionType, Callback
@@ -23,7 +24,7 @@ class ActionOnEventBehavior(ObjectBehavior):
 
         self._action = action
     
-    def on_event(self, event: str | Event):
+    def on_event(self, event: str | Event) -> None:
         
         if isinstance(self._event, tuple):
             found = False
@@ -42,7 +43,7 @@ class ActionOnUpdateBehavior(ObjectBehavior):
 
         self._action = action
 
-    def on_update(self, dt: float):
+    def on_update(self, dt: float) -> None:
         self._exec(self._action, self.owner)
 
 class ActionOnClickBehavior(ObjectBehavior):
@@ -55,16 +56,17 @@ class ActionOnClickBehavior(ObjectBehavior):
         self._on_hold = on_hold
         self._on_release = on_release
         
-    def on_attach(self):
-        self.owner.add_flag(ObjectFlags.CLICKABLE)
+    def on_attach(self) -> None:
+        if (owner := self.owner) is None: return
+        owner.add_flag(ObjectFlags.CLICKABLE)
     
-    def on_click(self, button: int, pos: vec2):
+    def on_click(self, button: int, pos: vec2) -> None:
         self._exec(self._on_click, self.owner)
         
-    def on_hold(self, button: int, pos: vec2):
+    def on_hold(self, button: int, pos: vec2) -> None:
         self._exec(self._on_hold, self.owner)
     
-    def on_release(self, button: int, pos: vec2):
+    def on_release(self, button: int, pos: vec2) -> None:
         self._exec(self._on_release, self.owner)
         
 class ActionOnHoverBehavior(ObjectBehavior):
@@ -75,16 +77,17 @@ class ActionOnHoverBehavior(ObjectBehavior):
         self._on_hover = while_hovered
         self._on_hover_end = hover_end
         
-    def on_attach(self):
-        self.owner.add_flag(ObjectFlags.HOVERABLE)
+    def on_attach(self) -> None:
+        if (owner := self.owner) is None: return
+        owner.add_flag(ObjectFlags.HOVERABLE)
     
-    def on_hover(self):
+    def on_hover(self) -> None:
         self._exec(self._on_hover, self.owner)
         
-    def on_hover_start(self):
+    def on_hover_start(self) -> None:
         self._exec(self._on_hover_start, self.owner)
         
-    def on_hover_end(self):
+    def on_hover_end(self) -> None:
         self._exec(self._on_hover_end, self.owner)
         
 class ActionOnScrollBehavior(ObjectBehavior):
@@ -93,10 +96,11 @@ class ActionOnScrollBehavior(ObjectBehavior):
 
         self._action = action
 
-    def on_attach(self):
-        self.owner.add_flag(ObjectFlags.SCROLLABLE)
+    def on_attach(self) -> None:
+        if (owner := self.owner) is None: return
+        owner.add_flag(ObjectFlags.SCROLLABLE)
 
-    def on_scroll(self, scroll: int, pos: vec2):
+    def on_scroll(self, scroll: int, pos: vec2) -> None:
         self._exec(self._action, self.owner, scroll, pos)
 
 class ActionOnCollisionBehavior(ObjectBehavior):
@@ -115,17 +119,17 @@ class ActionOnCollisionBehavior(ObjectBehavior):
     def _validate(self, obj: PygameObject) -> bool:
         return self._condition_on_other is None or self._condition_on_other(obj)
         
-    def on_collision(self, obj: PygameObject):
+    def on_collision(self, obj: PygameObject) -> None:
         if self._validate(obj):
             self._exec(self._on_collision_action, self.owner, obj)
             self._colliding_objects.append(obj)
         
-    def on_update(self, dt: float):
+    def on_update(self, dt: float) -> None:
         if self._colliding_objects:
             for obj in self._colliding_objects:
                 self._exec(self._while_colliding_action, self.owner, obj)
         
-    def on_collision_end(self, obj: PygameObject):
+    def on_collision_end(self, obj: PygameObject) -> None:
         if self._validate(obj):
             self._exec(self._on_collision_end_action, self.owner, obj)
             self._colliding_objects.remove(obj)
@@ -147,16 +151,17 @@ class AnimationOnClickBehavior(ObjectBehavior):
         
         self._animation_manager: Optional[AnimationManager] = None
     
-    def on_attach(self):
-        self._animation_manager = self.owner.get_service(AnimationManager)
-        self.owner.add_flag(ObjectFlags.CLICKABLE)
+    def on_attach(self) -> None:
+        if (owner := self.owner) is None: return
+        self._animation_manager = owner.get_service(AnimationManager)
+        owner.add_flag(ObjectFlags.CLICKABLE)
     
-    def on_click(self, button: int, pos: vec2):
+    def on_click(self, button: int, pos: vec2) -> None:
         if not self._animation_manager or not self._click_animation: return
         if button == self._button:
             self._animation_manager.play(self._click_animation())
     
-    def on_release(self, button: int, pos: vec2):
+    def on_release(self, button: int, pos: vec2) -> None:
         if not self._animation_manager or not self._release_animation: return
         if button == self._button:
             self._animation_manager.play(self._release_animation())
@@ -170,15 +175,16 @@ class AnimationOnHoverBehavior(ObjectBehavior):
         
         self._animation_manager: Optional[AnimationManager] = None
     
-    def on_attach(self):
-        self._animation_manager = self.owner.get_service(AnimationManager)
-        self.owner.add_flag(ObjectFlags.CLICKABLE)
+    def on_attach(self) -> None:
+        if (owner := self.owner) is None: return
+        self._animation_manager = owner.get_service(AnimationManager)
+        owner.add_flag(ObjectFlags.CLICKABLE)
     
-    def on_hover_start(self):
+    def on_hover_start(self) -> None:
         if not self._animation_manager or not self._hover_start_animation: return
         self._animation_manager.play(self._hover_start_animation())
     
-    def on_hover_end(self):
+    def on_hover_end(self) -> None:
         if not self._animation_manager or not self._hover_end_animation: return
         self._animation_manager.play(self._hover_end_animation())
 
@@ -234,7 +240,7 @@ class SetAttributeOnClickBehavior(AnimationOnClickBehavior):
         
 
 class DynamicAttributeBehavior(ObjectBehavior):
-    def __init__(self, attribute: str, value_getter: Any | Callable[[], Any | tuple[Any]], template: Optional[str] = None, strength: float = 1,
+    def __init__(self, attribute: str, value_getter: ValueOrGetter[Any], template: Optional[str] = None, strength: float = 1,
                  attr_getter: Callable[[PygameObject, str], Any] = getattr, attr_setter: Callable[[PygameObject, str, Any], Any] = setattr):
         super().__init__()
         
@@ -246,14 +252,12 @@ class DynamicAttributeBehavior(ObjectBehavior):
         
         self._get_attr = attr_getter
         self._set_attr = attr_setter
-    
-    
-    def on_update(self, dt: float):
-        if not self.owner:
-            return
+
+    def on_update(self, dt: float) -> None:
+        if (owner := self.owner) is None: return
         
         value = self._evaluate(self._value_getter)
-        attr_value = self._get_attr(self.owner, self._attribute)
+        attr_value = self._get_attr(owner, self._attribute)
         
         if self._template is not None:
             value = self._template.format(*(value if isinstance(value, tuple) and len(value) == self._template.count("{}") else (value, )))
@@ -266,7 +270,7 @@ class DynamicAttributeBehavior(ObjectBehavior):
         if value == attr_value:
             return
         
-        self._set_attr(self.owner, self._attribute, value)
+        self._set_attr(owner, self._attribute, value)
 
 class AttributeValueSnappingBehavior(ObjectBehavior):
     def __init__(self, attribute: str, values: list[float], offset: float = 0, strength: float = 1,
@@ -282,14 +286,16 @@ class AttributeValueSnappingBehavior(ObjectBehavior):
         self._get_attr = attr_getter
         self._set_attr = attr_setter
     
-    def on_update(self, dt):
-        attr_value = self._get_attr(self.owner, self._attribute)
+    def on_update(self, dt: float) -> None:
+        if (owner := self.owner) is None: return
+
+        attr_value = self._get_attr(owner, self._attribute)
         value = min(self._values, key=lambda x: abs(x - (attr_value + self._offset)))
         
         if 0 < self._strength < 1:
             value = lerp(attr_value, value, self._strength)
             
-        self._set_attr(self.owner, self._attribute, value)
+        self._set_attr(owner, self._attribute, value)
 
 class AttributeGridSnappingBehavior(ObjectBehavior):
     def __init__(self, attribute: str, step: float, offset: float = 0, strength: float = 1,
@@ -305,15 +311,16 @@ class AttributeGridSnappingBehavior(ObjectBehavior):
         self._get_attr = attr_getter
         self._set_attr = attr_setter
     
-    def on_update(self, dt: float):
-        
-        attr_value = self._get_attr(self.owner, self._attribute)
+    def on_update(self, dt: float) -> None:
+        if (owner := self.owner) is None: return
+
+        attr_value = self._get_attr(owner, self._attribute)
         value = round((attr_value - self._offset) / self._step) * self._step + self._offset
         
         if 0 < self._strength < 1:
             value = lerp(attr_value, value, self._strength)
         
-        self._set_attr(self.owner, self._attribute, value)
+        self._set_attr(owner, self._attribute, value)
 
 class AttributeClampingBehavior(ObjectBehavior):
     def __init__(self, attribute: str, min_value: Optional[float | Callable[[],  float]] = None, max_value: Optional[float | Callable[[],  float]] = None, strength: float = 1,
@@ -328,20 +335,20 @@ class AttributeClampingBehavior(ObjectBehavior):
         self._get_attr = attr_getter
         self._set_attr = attr_setter
     
-    def on_update(self, dt: float):
-        attr_value = self._get_attr(self.owner, self._attribute)
+    def on_update(self, dt: float) -> None:
+        if (owner := self.owner) is None: return
+
+        attr_value = self._get_attr(owner, self._attribute)
         
-        # Dynamically evaluate the bounds every frame
         current_min = self._evaluate(self._min_value)
         current_max = self._evaluate(self._max_value)
         
         target_value = clamp(attr_value, current_min, current_max)
         
-        # Apply strength interpolation if necessary
         if 0 < self._strength < 1:
             target_value = lerp(attr_value, target_value, self._strength)
         
-        self._set_attr(self.owner, self._attribute, target_value)
+        self._set_attr(owner, self._attribute, target_value)
 
 class AttributeFixingBehavior(ObjectBehavior):
     def __init__(self, attribute: str, value: Optional[Any | Callable[[], Any]] = None, strength: float = 1,
@@ -355,16 +362,18 @@ class AttributeFixingBehavior(ObjectBehavior):
         self._get_attr = attr_getter
         self._set_attr = attr_setter
     
-    def on_attach(self):
+    def on_attach(self) -> None:
         self._value = self._value if self._value is not None else getattr(self.owner, self._attribute)
     
-    def on_update(self, dt: float):
-        attr_value = self._get_attr(self.owner, self._attribute)
+    def on_update(self, dt: float) -> None:
+        if (owner := self.owner) is None: return
+
+        attr_value = self._get_attr(owner, self._attribute)
         value = self._evaluate(self._value)
         
         if 0 < self._strength < 1:
             value = lerp(attr_value, value, self._strength)
-        self._set_attr(self.owner, self._attribute, value)
+        self._set_attr(owner, self._attribute, value)
 
 
 # endregion
@@ -379,7 +388,9 @@ class HideOnCameraZoomBehavior(ObjectBehavior):
         
         self._camera = camera
     
-    def on_update(self, dt: float):
+    def on_update(self, dt: float) -> None:
+        if (owner := self.owner) is None: return
+
         hide = False
         if self._max_zoom is not None and self._max_zoom < self._camera.zoom:
             hide = True
@@ -387,36 +398,41 @@ class HideOnCameraZoomBehavior(ObjectBehavior):
             hide = True
         
         if hide:
-            self.owner.add_flag(ObjectFlags.HIDDEN)
+            owner.add_flag(ObjectFlags.HIDDEN)
         else:
-            self.owner.remove_flag(ObjectFlags.HIDDEN)
+            owner.remove_flag(ObjectFlags.HIDDEN)
 
 
 class DraggableBehavior(ObjectBehavior):
     def __init__(self, button: int = 1, target: Optional[PygameObject] = None):
         super().__init__()
-        self._button = button
-        self._target = target
-        self._dragging = False
-        self._offset = vec2(0, 0)
+        self._button: int = button
+        self._target: Optional[PygameObject] = target
+        self._dragging: bool = False
+        self._offset: vec2 = vec2(0, 0)
     
     @property
-    def target(self) -> PygameObject:
+    def target(self) -> Optional[PygameObject]:
         return self._target if self._target is not None else self.owner
     
-    def on_attach(self):
-        self.owner.add_flag(ObjectFlags.DRAGGABLE)
+    def on_attach(self) -> None:
+        if (owner := self.owner) is None: return
+        owner.add_flag(ObjectFlags.DRAGGABLE)
     
-    def on_click(self, button: int, pos: vec2):
+    def on_click(self, button: int, pos: vec2) -> None:
+        if (target := self.target) is None: return
+
         if button == self._button:
             self._dragging = True
-            self._offset = self.target.pos - self.target.world_to_parent_local(pos)
+            self._offset = target.pos - target.world_to_parent_local(pos)
     
-    def on_hold(self, button: int, pos: vec2):
+    def on_hold(self, button: int, pos: vec2) -> None:
+        if (target := self.target) is None: return
+
         if self._dragging and button == self._button:
-            self.target.pos = self.target.world_to_parent_local(pos) + self._offset
+            target.pos = target.world_to_parent_local(pos) + self._offset
     
-    def on_release(self, button: int, pos: vec2):
+    def on_release(self, button: int, pos: vec2) -> None:
         if button == self._button:
             self._dragging = False
     

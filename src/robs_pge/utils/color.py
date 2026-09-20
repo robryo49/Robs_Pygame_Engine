@@ -230,4 +230,4 @@ class ColorPalette:
         try:
             return self.get(name)
         except KeyError:
-            raise AttributeError(f"'{type(self).__name__}' has no color '{name}'")
+            raise AttributeError(f"'{type(self).__name__}' has no color '{name}', only has {list(self.all_colors.keys())}")

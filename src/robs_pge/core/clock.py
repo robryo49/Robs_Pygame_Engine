@@ -36,7 +36,7 @@ class Clock:
     # endregion
     
     def tick(self) -> "Clock":
-        self._clock.tick()
+        self._clock.tick(120)
         self._dtime = self.clock.get_time() / 1000
         self._time += self.dtime
         self._tick_num += 1

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Callable, Iterable, Optional, TYPE_CHECKING, cast
+from typing import Any, Callable, Optional, TYPE_CHECKING, cast
 
 from .object_collection import ObjectCollection
 from .object import PygameObject
@@ -135,22 +135,20 @@ class Layer:
     
     # region Object Management
     
-    def add_object(self, *obj: PygameObject | Iterable[PygameObject]) -> None:
+    def add_object(self, *obj: PygameObject | list[PygameObject]) -> None:
         self.objects.add_object(*obj)
         
         for o in obj:
-            for o2 in o if isinstance(o, Iterable) else [o]:
-                o.layer = self
-                if self._physics_world and o2.has_physics and (body := o2.physics_body) is not None:
-                    self._physics_world.add_body(body)
-                    
+            o.layer = self
+            if self._physics_world and o.has_physics and (body := o.physics_body) is not None:
+                self._physics_world.add_body(body)
 
-    def remove_object(self, *obj: PygameObject | Iterable[PygameObject]) -> None:
+
+    def remove_object(self, *obj: PygameObject | list[PygameObject]) -> None:
         for o in obj:
-            for o2 in o if isinstance(o, Iterable) else [o]:
-                if self._physics_world and o2.has_physics and (body := o2.physics_body) is not None:
-                    self._physics_world.remove_body(body)
-                o2.layer = None
+            if self._physics_world and o.has_physics and (body := o.physics_body) is not None:
+                self._physics_world.remove_body(body)
+            o.layer = None
         self.objects.remove_object(*obj)
         
     def get_partial_objects_count(self):

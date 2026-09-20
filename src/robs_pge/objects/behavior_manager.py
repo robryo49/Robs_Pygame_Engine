@@ -10,15 +10,15 @@ if TYPE_CHECKING:
     from .object import PygameObject
 
 class BehaviorManager(TypedCollection):
-    def __init__(self, owner):
+    def __init__(self, owner: PygameObject):
         super().__init__(ObjectBehavior)
         
-        self._owner = owner
+        self._owner: PygameObject = owner
         
     # region PROPERTIES
     
     @property
-    def owner(self):
+    def owner(self) -> PygameObject:
         return self._owner
     
     def __iter__(self) -> Iterator[ObjectBehavior]:
@@ -44,47 +44,47 @@ class BehaviorManager(TypedCollection):
             
         return item
     
-    def on_hover(self):
+    def on_hover(self) -> None:
         for b in self:
             b.on_hover()
         
-    def on_hover_end(self):
+    def on_hover_end(self) -> None:
         for b in self:
             b.on_hover_end()
         
-    def on_hover_start(self):
+    def on_hover_start(self) -> None:
         for b in self:
             b.on_hover_start()
         
-    def on_click(self, button: int, pos: vec2):
+    def on_click(self, button: int, pos: vec2) -> None:
         for b in self:
             b.on_click(button, pos)
         
-    def on_hold(self, button: int, pos: vec2):
+    def on_hold(self, button: int, pos: vec2) -> None:
         for b in self:
             b.on_hold(button, pos)
         
-    def on_release(self, button: int, pos: vec2):
+    def on_release(self, button: int, pos: vec2) -> None:
         for b in self:
             b.on_release(button, pos)
             
-    def on_update(self, dt: float):
+    def on_update(self, dt: float) -> None:
         for b in self:
             b.on_update(dt)
             
-    def on_event(self, event: Event):
+    def on_event(self, event: Event) -> None:
         for b in self:
             b.on_event(event)
     
-    def on_scroll(self, scroll: int, pos: vec2):
+    def on_scroll(self, scroll: int, pos: vec2) -> None:
         for b in self:
             b.on_scroll(scroll, pos)
             
-    def on_collision(self, obj: PygameObject):
+    def on_collision(self, obj: PygameObject) -> None:
         for b in self:
             b.on_collision(obj)
     
-    def on_collision_end(self, obj: PygameObject):
+    def on_collision_end(self, obj: PygameObject) -> None:
         for b in self:
             b.on_collision_end(obj)
         

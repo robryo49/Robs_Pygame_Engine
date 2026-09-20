@@ -4,15 +4,18 @@ from typing import Any, Callable, Iterable, Optional, TYPE_CHECKING
 
 import pygame as pg
 
+from ..clock import Clock
 from ..camera import Camera
+from ...input import Mouse
 from ...animation import AnimationManager
 from ...debug import FrameTimer, QuickDebugManager
 from ...events import Event, EventManager
 from ...input import InputManager, Keybind, KeybindsManager
 from ...objects import DebugOverlay, InteractionManager, Layer, LayerManager, ObjectFactory, ParticleSystem, WindowManager, WindowObject, DialogManager
-from ...rendering import WindowStyle
+from ...physics import PhysicsWorld
+from ...rendering import WindowStyle, Renderer
 from ...resources import ResourceManager
-from ...utils import Anchor, AsyncProcess, AsyncProcessManager, Callback, DictCollection, ScreenAnchor, round_sig, vec2
+from ...utils import Anchor, AsyncProcessManager, Callback, DictCollection, ScreenAnchor, round_sig, vec2
 
 if TYPE_CHECKING:
     from ..engine import Engine
@@ -87,11 +90,11 @@ class State:
         return self._id
     
     @property
-    def engine(self):
+    def engine(self) -> Engine:
         return self._engine
     
     @property
-    def clock(self):
+    def clock(self) -> Clock:
         return self.engine.clock
     
     @property
@@ -111,11 +114,11 @@ class State:
         return self.engine.default_camera
     
     @property
-    def mouse(self):
+    def mouse(self) -> Mouse:
         return self.input.mouse
     
     @property
-    def renderer(self):
+    def renderer(self) -> Renderer:
         return self.engine.renderer
     
     @property
@@ -151,7 +154,7 @@ class State:
         return self._async_process_manager
     
     @property
-    def quick_debug_manager(self):
+    def quick_debug_manager(self) -> QuickDebugManager:
         return self._quick_debug_manager
     
     @property
@@ -228,7 +231,7 @@ class State:
         return WindowManager(event_manager)
     
     @staticmethod
-    def _create_quick_debug_manager():
+    def _create_quick_debug_manager() -> QuickDebugManager:
         return QuickDebugManager()
     
     # endregion
@@ -341,17 +344,17 @@ class State:
         self.register_keybind(pg.K_F3, lambda: self.debug_layer.toggle_rendering())
         self.register_keybind(pg.K_F4, lambda: self.debug_layer.toggle_frozen())
     
-    def init_events(self):
+    def init_events(self) -> None:
         pass
     
-    def init_object_constructors(self):
+    def init_object_constructors(self) -> None:
         pass
     
     # endregion
     
     # region REGISTRATION METHODS
     
-    def register_object_constructor(self, name: str, constructor: Callable[[...], PygameObject]):
+    def register_object_constructor(self, name: str, constructor: Callable[[...], PygameObject]) -> None:
         self.factory.register_constructor(name, constructor)
     
     def register_keybind(self, key: int | tuple[int, ...], action: Callback[[], Any], *args) -> None:
@@ -372,29 +375,29 @@ class State:
         cam = camera if camera is not None else self.default_camera
         return self._layer_manager.create_layer(name, layer_value, cam, interactable)
     
-    def register_window(self, window: WindowObject, group: Optional[str] = None, layer: Layer | str = "ui") -> WindowObject:
+    def register_window(self, window: WindowObject, group: Optional[str] = None, layer: Layer | str = "ui") -> None:
         if isinstance(layer, str):
             self.register_object(layer, window)
         else:
             layer.add_object(window)
-        return self.windows.register(window, group)
+        self.windows.register(window, group)
     
-    def register_windows(self, windows: Iterable[WindowObject], group: Optional[str] = None, layer: Layer | str = "ui"):
+    def register_windows(self, windows: Iterable[WindowObject], group: Optional[str] = None, layer: Layer | str = "ui") -> None:
         for window in windows:
             self.register_window(window, group, layer)
     
-    def unregister_window(self, window: WindowObject, layer: Layer | str = "ui") -> WindowObject:
+    def unregister_window(self, window: WindowObject, layer: Layer | str = "ui") -> None:
         if isinstance(layer, str):
             self.unregister_object(layer, window)
         else:
             layer.add_object(window)
-        return self.windows.unregister(window)
+        self.windows.unregister(window)
     
-    def unregister_windows(self, windows: Iterable[WindowObject], layer: Layer | str = "ui"):
+    def unregister_windows(self, windows: Iterable[WindowObject], layer: Layer | str = "ui") -> None:
         for window in windows:
             self.unregister_window(window, layer)
     
-    def register_quick_debug(self, name: str, getter: Callable, template: str = "{}"):
+    def register_quick_debug(self, name: str, getter: Callable, template: str = "{}") -> None:
         self.quick_debug_manager.register_listener(name, getter, template)
     
     # endregion
@@ -404,8 +407,8 @@ class State:
     def trigger_event(self, event: Event) -> None:
         self.event_manager.trigger(event)
     
-    def start_async_process(self, fn: Callable, *args, **kwargs) -> AsyncProcess:
-        return self.async_process_manager.submit(fn, *args, **kwargs)
+    def start_async_process(self, fn: Callable, *args, **kwargs) -> None:
+        self.async_process_manager.submit(fn, *args, **kwargs)
     
     def open_window(self, window_id: str | WindowObject) -> None:
         self.windows.open(window_id)
@@ -437,7 +440,7 @@ class State:
 
     # region PHYSICS
 
-    def enable_physics(self, layer_name: str = "world", gravity: vec2 = vec2(0, 980)):
+    def enable_physics(self, layer_name: str = "world", gravity: vec2 = vec2(0, 980)) -> PhysicsWorld:
         layer = self._layer_manager.get_layer(layer_name)
         pw = layer.enable_physics(gravity)
         return pw
