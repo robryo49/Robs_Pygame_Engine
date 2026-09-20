@@ -143,13 +143,13 @@ class UIObjectFactory(SubObjectFactory):
         font = self._get_resource(selector_style.font, Font)
         margin = selector_style.margin
         
-        incs = tuple(increments if increments is not None else (1,))
-        for inc in incs:
+        increments = tuple(increments if increments is not None else (1,))
+        for inc in increments:
             if inc <= 0:
                 raise ValueError("ValueSelector increments must be positive")
                 
         dec_buttons = []
-        for inc in reversed(incs):
+        for inc in reversed(increments):
             v_inc = int(inc) if inc == int(inc) else inc
             btn = self.button.button(vec2(), f"-{v_inc}", style=button_style, layer=layer, cache=cache)
             dec_buttons.append((btn, inc))
@@ -158,14 +158,14 @@ class UIObjectFactory(SubObjectFactory):
         text = self.factory.text.label(vec2(), str(start_val), font, layer=layer, cache=cache)
         
         inc_buttons = []
-        for inc in incs:
+        for inc in increments:
             v_inc = int(inc) if inc == int(inc) else inc
             btn = self.button.button(vec2(), f"+{v_inc}", style=button_style, layer=layer, cache=cache)
             inc_buttons.append((btn, inc))
             
         obj = self._create_object(
             ValueSelectorObject, position, rotation, scale, RectRenderer(dims, bg_style, cache),
-            layer, anchor, text, min_value, max_value, incs, start_val, callback
+            layer, anchor, text, min_value, max_value, increments, start_val, callback
         )
         
         for btn, inc in dec_buttons:

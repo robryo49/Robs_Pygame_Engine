@@ -17,7 +17,7 @@ from .object_renderers import (
     SpriteRenderer, TextRenderer, SubSurfaceRenderer, ChunkedSpriteRenderer, IconRenderer
 )
 from .renderer import Renderer
-from .surface_builders import RectBuilder
+from .surface_builders import RectBuilder, SlicedRectBuilder
 
 __all__ = [
     # styles
@@ -36,5 +36,5 @@ __all__ = [
     "RectRenderer", "CircleRenderer", "LineRenderer",
     "SpriteRenderer", "TextRenderer", "SubSurfaceRenderer", "ChunkedSpriteRenderer", "IconRenderer",
     
-    "Renderer", "RectBuilder"
+    "Renderer", "RectBuilder", "SlicedRectBuilder"
 ]

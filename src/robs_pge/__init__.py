@@ -51,7 +51,7 @@ from .rendering import (
     DrawCommand, DrawRect, DrawCircle, DrawTexture, DrawText, DrawLine, DrawSubSurface, DrawChunkedSprite,
     ObjectRenderer, RectRenderer, CircleRenderer, LineRenderer, SpriteRenderer, TextRenderer,
     SubSurfaceRenderer, ChunkedSpriteRenderer, IconRenderer,
-    Renderer,
+    Renderer, SlicedRectBuilder,
 )
 from .events import Event, Events, EventManager
 from .debug import FrameTimer, QuickDebugManager
@@ -115,7 +115,7 @@ __all__ = [
     "Style", "RectStyle", "LineStyle", "ButtonStyle", "CircleStyle",
     "ShapeStyle", "LineChartStyle", "PolygonStyle", "ProgressBarStyle", "DebugPanelStyle",
     "SliderStyle", "IconButtonStyle", "RadioButtonStyle", "SpriteButtonStyle", "ToggleButtonStyle",
-    "WindowStyle", "ScrollbarStyle", "ValueSelectorStyle", "ValueCyclerStyle",
+    "WindowStyle", "ScrollbarStyle", "ValueSelectorStyle", "ValueCyclerStyle", "SlicedRectBuilder",
     # rendering - draw commands
     "DrawCommand", "DrawRect", "DrawCircle", "DrawTexture", "DrawText", "DrawLine", "DrawSubSurface", "DrawChunkedSprite",
     # rendering - renderers
