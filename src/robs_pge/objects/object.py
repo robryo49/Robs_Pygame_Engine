@@ -124,11 +124,43 @@ class PygameObject[R]:
         self._cached_world_transform = result
         self._world_transform_dirty = False
         return result
+
+    @property
+    def world_pos(self):
+        return self.world_transform.pos
+
+    @property
+    def world_x_pos(self):
+        return self.world_transform.x_pos
+
+    @property
+    def world_y_pos(self):
+        return self.world_transform.y_pos
+
+    @property
+    def world_rotation(self):
+        return self.world_transform.rotation
     
     @property
     def camera_transform(self) -> Transform:
         cam_pos = self.world_to_camera(self.world_transform.pos)
         return Transform(cam_pos, self.world_transform.rotation, self.world_transform.scale)
+
+    @property
+    def camera_pos(self):
+        return self.camera_transform.pos
+
+    @property
+    def camera_x_pos(self):
+        return self.camera_transform.x_pos
+
+    @property
+    def camera_y_pos(self):
+        return self.camera_transform.y_pos
+
+    @property
+    def camera_rotation(self):
+        return self.camera_transform.rotation
     
     # region properties
     
