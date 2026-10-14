@@ -4,14 +4,14 @@ from typing import Any, Callable, TYPE_CHECKING
 
 from .layer import Layer
 from ..rendering import DrawCommand
-from ..utils import DictCollection
 
 if TYPE_CHECKING:
     from ..core import Camera
+    from ..core.states.services_collection import ServicesCollection
 
 
 class LayerManager:
-    def __init__(self, services: DictCollection):
+    def __init__(self, services: ServicesCollection):
         self._services = services
         
         self._layers: dict[str, Layer] = {}

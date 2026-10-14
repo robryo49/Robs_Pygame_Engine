@@ -55,8 +55,8 @@ class UIObjectFactory(SubObjectFactory):
         obj.set_cell_spacing(margin, True)
         obj.set_fixed_col_width(max_text_width + margin * 0.5, 0 if slider_style.text_position.lower() in ["left", "l"] else 1)
 
-        obj.add(bar, 1 if slider_style.text_position.lower() in ["left", "l"] else 0, 0)
-        obj.add(text, 0 if slider_style.text_position.lower() in ["left", "l"] else 1, 0)
+        obj.set_object_in_cell(bar, 1 if slider_style.text_position.lower() in ["left", "l"] else 0, 0)
+        obj.set_object_in_cell(text, 0 if slider_style.text_position.lower() in ["left", "l"] else 1, 0)
         
         if slider_style.hide_bg:
             obj.skip_rendering()
@@ -175,15 +175,15 @@ class UIObjectFactory(SubObjectFactory):
             
         col_idx = 0
         for btn, _ in dec_buttons:
-            obj.add(btn, col_idx, 0)
+            obj.set_object_in_cell(btn, col_idx, 0)
             col_idx += 1
             
         value_col_idx = col_idx
-        obj.add(text, value_col_idx, 0)
+        obj.set_object_in_cell(text, value_col_idx, 0)
         col_idx += 1
         
         for btn, _ in inc_buttons:
-            obj.add(btn, col_idx, 0)
+            obj.set_object_in_cell(btn, col_idx, 0)
             col_idx += 1
             
         obj.set_fixed_width(dims.x).set_fixed_height(dims.y)
@@ -236,9 +236,9 @@ class UIObjectFactory(SubObjectFactory):
         prev_btn.do_on_click(1, lambda _: obj.cycle_backward())
         next_btn.do_on_click(1, lambda _: obj.cycle_forward())
         
-        obj.add(prev_btn, 0, 0)
-        obj.add(text, 1, 0)
-        obj.add(next_btn, 2, 0)
+        obj.set_object_in_cell(prev_btn, 0, 0)
+        obj.set_object_in_cell(text, 1, 0)
+        obj.set_object_in_cell(next_btn, 2, 0)
         
         obj.set_fixed_width(dims.x).set_fixed_height(dims.y)
         obj.set_cell_spacing(margin, True)

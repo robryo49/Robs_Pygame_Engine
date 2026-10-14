@@ -2,14 +2,16 @@ from __future__ import annotations
 
 from typing import Any, Callable, Optional, TYPE_CHECKING
 
-from .behavior import ObjectBehavior
+from .behavior import ObjectBehavior, LayoutObjectBehavior
 from ..animation import AdderAnimation, Animation, AnimationManager, MultiplierAnimation, SetterAnimation
 from ..events import Event
-from ..utils import ObjectFlags, vec2, clamp, inf, lerp, EasingFunctionType, Callback, ValueOrGetter
+from ..rendering import RectStyle
+from ..utils import ObjectFlags, vec2, clamp, inf, lerp, EasingFunctionType, Callback, ValueOrGetter, Color, Anchor
 
 if TYPE_CHECKING:
     from ..core import Camera
-    from ..objects import PygameObject
+    from ..objects import PygameObject, LayoutObject
+    from .object_factory import ObjectFactory
 
 
 # region ACTION BEHAVIORS
@@ -133,6 +135,23 @@ class ActionOnCollisionBehavior(ObjectBehavior):
             self._exec(self._on_collision_end_action, self.owner, obj)
             self._colliding_objects.remove(obj)
 
+class ActionOnAttributeChangeBehavior(ObjectBehavior):
+    def __init__(self, attribute: str, action: Callable[[PygameObject], Any]):
+        super().__init__()
+
+        self._attribute = attribute
+        self._action = action
+
+        self._previous_attribute_value = None
+
+    def on_attach(self) -> None:
+        self._previous_attribute_value = getattr(self.owner, self._attribute)
+
+    def on_update(self, dt: float) -> None:
+        current_attribute_value = getattr(self.owner, self._attribute)
+        if current_attribute_value != self._previous_attribute_value:
+            self._exec(self._action, self.owner)
+            self._previous_attribute_value = current_attribute_value
 
 # endregion
 
@@ -152,7 +171,7 @@ class AnimationOnClickBehavior(ObjectBehavior):
     
     def on_attach(self) -> None:
         if (owner := self.owner) is None: return
-        self._animation_manager = owner.get_service(AnimationManager)
+        self._animation_manager = owner.services.get_animation_manager()
         owner.add_flag(ObjectFlags.CLICKABLE)
     
     def on_click(self, button: int, pos: vec2) -> None:
@@ -176,7 +195,7 @@ class AnimationOnHoverBehavior(ObjectBehavior):
     
     def on_attach(self) -> None:
         if (owner := self.owner) is None: return
-        self._animation_manager = owner.get_service(AnimationManager)
+        self._animation_manager = owner.services.get_animation_manager()
         owner.add_flag(ObjectFlags.CLICKABLE)
     
     def on_hover_start(self) -> None:
@@ -186,6 +205,11 @@ class AnimationOnHoverBehavior(ObjectBehavior):
     def on_hover_end(self) -> None:
         if not self._animation_manager or not self._hover_end_animation: return
         self._animation_manager.play(self._hover_end_animation())
+
+class AnimationOnAttributeChangeBehavior(ActionOnAttributeChangeBehavior):
+    def __init__(self, attribute: str, animation: Optional[Callable[[], Animation]]):
+        super().__init__(attribute, lambda o: o.play_animation(animation()))
+
 
 
 # endregion
@@ -403,12 +427,21 @@ class HideOnCameraZoomBehavior(ObjectBehavior):
 
 
 class DraggableBehavior(ObjectBehavior):
-    def __init__(self, button: int = 1, target: Optional[PygameObject] = None):
+    def __init__(
+            self, button: int = 1, target: Optional[PygameObject] = None,
+            on_drag_start: Callback[[PygameObject], Any] = None,
+            while_dragging: Callback[[PygameObject], Any] = None,
+            on_drag_end: Callback[[PygameObject], Any] = None,
+    ):
         super().__init__()
         self._button: int = button
         self._target: Optional[PygameObject] = target
         self._dragging: bool = False
         self._offset: vec2 = vec2(0, 0)
+
+        self._on_drag_start: Callback[[PygameObject], Any] = on_drag_start
+        self._while_dragging: Callback[[PygameObject], Any] = while_dragging
+        self._on_drag_end: Callback[[PygameObject], Any] = on_drag_end
     
     @property
     def target(self) -> Optional[PygameObject]:
@@ -423,15 +456,111 @@ class DraggableBehavior(ObjectBehavior):
 
         if button == self._button:
             self._dragging = True
-            self._offset = target.pos - target.world_to_parent_local(pos)
+            self._offset = target.pos - target.world_to_parent_children_local(pos)
+            self._exec(self._on_drag_start, self.owner)
     
     def on_hold(self, button: int, pos: vec2) -> None:
         if (target := self.target) is None: return
 
         if self._dragging and button == self._button:
-            target.pos = target.world_to_parent_local(pos) + self._offset
+            target.pos = target.world_to_parent_children_local(pos) + self._offset
+            self._exec(self._while_dragging, self.owner)
     
     def on_release(self, button: int, pos: vec2) -> None:
         if button == self._button:
             self._dragging = False
+            self._exec(self._on_drag_end, self.owner)
+
+
+
+class ActionOnObjectAdditionBehavior(LayoutObjectBehavior):
+    def __init__(
+            self,
+            on_object_addition: Callback[[LayoutObject, PygameObject], Any] = None,
+            on_object_removal: Callback[[LayoutObject, PygameObject], Any] = None,
+    ):
+        super().__init__()
+
+        self._on_object_addition: Callback[[LayoutObject, PygameObject], Any] = on_object_addition
+        self._on_object_removal: Callback[[LayoutObject, PygameObject], Any] = on_object_removal
+
+    def on_object_addition(self, obj: PygameObject) -> None:
+        self._exec(self._on_object_addition, self.owner, obj)
+
+    def on_object_removal(self, obj: PygameObject) -> None:
+        self._exec(self._on_object_removal, self.owner, obj)
+
+
+class ReorderableLayoutBehavior(ActionOnObjectAdditionBehavior):
+    def __init__(self, placeholder_style: RectStyle):
+        super().__init__()
+
+        self._placeholder_style = placeholder_style
+        self._factory: Optional[ObjectFactory] = None
+
+    def on_attach(self) -> None:
+        super().on_attach()
+        self._factory = self.owner.services.get_object_factory()
+
+        for obj in self._owner._object_placements:
+            self.on_object_addition(obj)
+
+    def _start_dragging_object(self, obj: PygameObject):
+        placeholder = self._factory.shape.rect(vec2(), obj.dims, RectStyle(Color(0, 0, 0, 100), 10, Color(0, 0, 0, 0), bd_radius=20))
+        self.owner.replace_object(obj, placeholder, ignore_callbacks=True)
+        self.owner.add_child(obj, Anchor.TL)
+        obj.set_property("layout_placeholder", placeholder)
+        obj.focus()
+
+    def _while_dragging_object(self, obj: PygameObject):
+        placeholder = obj.get_property("layout_placeholder")
+        owner = self.owner
+
+        x, y = obj.pos
+        dx, dy = x - placeholder.pos.x, y - placeholder.pos.y
+
+        col, row = owner.get_object_placement(placeholder)
+
+        next_col, next_row = col + 1 if dx >= 0 else col - 1, row + 1 if dy >= 0 else row - 1
+
+        if owner.mode == owner.GRID_MODE:
+            if 0 <= next_col <= owner.max_col:
+                next_col_width = owner.get_col_width(next_col)
+                if abs(dx) > next_col_width * 0.66:
+                    owner.switch_object_positions(placeholder, owner.get_object_in_cell(next_col, row))
+            if 0 <= next_row <= owner.max_row:
+                next_row_height = owner.get_row_height(next_row)
+                if abs(dy) > next_row_height * 0.66:
+                    owner.switch_object_positions(placeholder, owner.get_object_in_cell(col, next_row))
+
+        if owner.mode == owner.COL_MODE:
+
+            if 0 <= next_col <= owner.max_col:
+                next_col_width = owner.get_col_width(next_col)
+                if abs(dx) > next_col_width * 0.66:
+                    owner.switch_object_positions(placeholder, owner.get_object_in_cell(next_col, row))
+
+            if 0 <= next_row <= owner.max_row:
+                next_row_height = owner.get_row_height(next_row, col)
+                if abs(dy) > next_row_height * 0.66:
+                    owner.switch_object_positions(placeholder, owner.get_object_in_cell(col, next_row))
+
+    def _end_dragging_object(self, obj: PygameObject):
+        placeholder = obj.remove_property("layout_placeholder")
+        self.owner.replace_object(placeholder, obj, ignore_callbacks=True)
+        obj.unfocus()
+
+    def on_object_addition(self, obj: PygameObject) -> None:
+        super().on_object_addition(obj)
+
+        obj.make_draggable(
+            on_drag_start=self._start_dragging_object,
+            while_dragging=self._while_dragging_object,
+            on_drag_end=self._end_dragging_object,
+        )
+
+    def on_object_removal(self, obj: PygameObject) -> None:
+        super().on_object_removal(obj)
+        obj.remove_behavior("draggable_behavior")
+
     

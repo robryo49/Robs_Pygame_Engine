@@ -6,22 +6,22 @@ from ..events import Event
 from ..utils import vec2
 
 if TYPE_CHECKING:
-    from ..objects import PygameObject
+    from ..objects import PygameObject, LayoutObject
 
 
-class ObjectBehavior:
+class ObjectBehavior[OwnerType: PygameObject = PygameObject]:
     def __init__(self):
-        self._owner: Optional[PygameObject] = None
+        self._owner: Optional[OwnerType] = None
     
     # region PROPERTIES
     
     # region object
     @property
-    def owner(self) -> Optional[PygameObject]:
+    def owner(self) -> Optional[OwnerType]:
         return self._owner
     
     @owner.setter
-    def owner(self, value):
+    def owner(self, value) -> Optional[OwnerType]:
         self._owner = value
     # endregion
     
@@ -58,3 +58,8 @@ class ObjectBehavior:
     
     def on_collision(self, obj: PygameObject) -> None: pass
     def on_collision_end(self, obj: PygameObject) -> None: pass
+
+
+class LayoutObjectBehavior[OwnerType: LayoutObject = LayoutObject](ObjectBehavior[OwnerType]):
+    def on_object_addition(self, obj: PygameObject) -> None: pass
+    def on_object_removal(self, obj: PygameObject) -> None: pass

@@ -4,6 +4,7 @@ from typing import Any, Callable, Iterable, Optional, TYPE_CHECKING
 
 import pygame as pg
 
+from .services_collection import ServicesCollection
 from ..clock import Clock
 from ..camera import Camera
 from ...input import Mouse
@@ -42,6 +43,7 @@ class State:
         self._engine.state_manager.register_state(self)
         
         self._camera = Camera(self.engine.display)
+        self._services = self._create_services_collection()
         
         self._event_manager = self._create_event_manager()
         self._animation_manager = self._create_animation_manager()
@@ -51,7 +53,7 @@ class State:
         self._window_manager = self._create_window_manager(self.event_manager)
         self._quick_debug_manager = self._create_quick_debug_manager()
         
-        self._factory = self._create_object_factory()
+        self._factory = self._create_object_factory(self._services)
         
         self._dialogs_layer_id = "ui"
         self._dialogs_manager = self._create_dialog_manager(
@@ -59,9 +61,6 @@ class State:
             lambda o: self.register_object(self._dialogs_layer_id, o),
             lambda o: self.unregister_object(self._dialogs_layer_id, o)
         )
-        
-        self._services: DictCollection = DictCollection()
-        self._factory.services = self._services
         
         self._layer_manager: LayerManager = LayerManager(self._services)
         self._debug_layer = self.create_layer("debug", _LAYER_DEBUG, self.engine.default_camera, interactable=False)
@@ -197,6 +196,10 @@ class State:
     # endregion
     
     # region SERVICES CREATION METHODS
+
+    @staticmethod
+    def _create_services_collection() -> ServicesCollection:
+        return ServicesCollection()
     
     @staticmethod
     def _create_event_manager() -> EventManager:
@@ -211,8 +214,8 @@ class State:
         return KeybindsManager(input_manager)
     
     @staticmethod
-    def _create_object_factory() -> ObjectFactory:
-        return ObjectFactory()
+    def _create_object_factory(services: ServicesCollection) -> ObjectFactory:
+        return ObjectFactory(services)
     
     @staticmethod
     def _create_dialog_manager(object_factory, window_manager, object_registration_method, object_unregistration_method) -> DialogManager:
@@ -330,15 +333,17 @@ class State:
         pass
     
     def init_services(self) -> None:
-        self._services.set(State, self)
-        self._services.set(AnimationManager, self.animation_manager)
-        self._services.set(InputManager, self.input)
-        self._services.set(ParticleSystem, self.particle_system)
-        self._services.set(ObjectFactory, self.factory)
-        self._services.set(EventManager, self.event_manager)
-        self._services.set(AsyncProcessManager, self.async_process_manager)
-        self._services.set(ResourceManager, self.resources)
-        self._services.set(QuickDebugManager, self.quick_debug_manager)
+        self._services.init(
+            self,
+            self.animation_manager,
+            self.input,
+            self.particle_system,
+            self.factory,
+            self.event_manager,
+            self.async_process_manager,
+            self.resources,
+            self.quick_debug_manager
+        )
     
     def init_keybinds(self) -> None:
         self.register_keybind(pg.K_F3, lambda: self.debug_layer.toggle_rendering())

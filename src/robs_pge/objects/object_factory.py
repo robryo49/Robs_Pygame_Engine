@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import Any, Callable, Optional, TYPE_CHECKING
 
 from .object_factories import ShapeFactory, SpriteObjectFactory, TextObjectFactory, UIObjectFactory, WindowObjectFactory
+from ..core.states.services_collection import ServicesCollection
 from ..rendering import Style
 from ..resources import ResourceManager
 from ..utils import DictCollection, Transform
@@ -12,8 +13,8 @@ if TYPE_CHECKING:
 
 
 class ObjectFactory:
-    def __init__(self):
-        self._services = DictCollection()
+    def __init__(self, services: ServicesCollection):
+        self._services = services
         
         self.shape = ShapeFactory(self)
         self.text = TextObjectFactory(self)
@@ -26,7 +27,7 @@ class ObjectFactory:
     # region PROPERTIES
     
     @property
-    def services(self):
+    def services(self) -> ServicesCollection:
         return self._services
     
     @services.setter
@@ -40,7 +41,7 @@ class ObjectFactory:
     # endregion
     
     def get_resource[T](self, resource: Optional[str | Any], resource_type: type[T]) -> T:
-        manager: ResourceManager = self._services[ResourceManager]
+        manager: ResourceManager = self._services.get_resource_manager()
         is_style = isinstance(resource_type, type) and issubclass(resource_type, Style)
 
         if is_style:

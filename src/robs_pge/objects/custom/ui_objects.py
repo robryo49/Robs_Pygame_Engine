@@ -15,10 +15,6 @@ if TYPE_CHECKING:
 
 
 class TextBoxObject(LayoutObject):
-    JUSTIFY_LEFT = vec2(0, 0)
-    JUSTIFY_CENTER = vec2(0.5, 0)
-    JUSTIFY_RIGHT = vec2(1, 0)
-
     def __init__(self, transform: Transform, renderer: RectRenderer, text, font: Font, text_objects: list[TextObject],
                  text_object_factory: Callable[..., TextObject], services: DictCollection,
                  sub_layer: int = 0, anchor: vec2 = Anchor.C):
@@ -74,11 +70,7 @@ class TextBoxObject(LayoutObject):
                 if obj in self._children:
                     self.remove_child(obj)
 
-            self._object_placements.clear()
-            self._object_spans.clear()
-            self._cells_objects.clear()
-            self._next_rows.clear()
-            self._max_row = 0
+            self._clear_objects()
 
             new_text_objects: list[TextObject] = []
             for i, line in enumerate(lines):

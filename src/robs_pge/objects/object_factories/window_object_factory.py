@@ -61,17 +61,17 @@ class WindowObjectFactory(SubObjectFactory):
             
         if title_object is not None and not title_in_header:
             title_panel: LayoutObject = self.factory.ui.layout.grid_layout(vec2(), width, title_panel_height, style=title_panel_style, layer=layer)
-            title_panel.add(title_object, 0, 0, anchor=title_align)
+            title_panel.set_object_in_cell(title_object, 0, 0, anchor=title_align)
             title_panel.set_padding(title_panel_margin)
             
         if title_object is not None and header is not None and title_in_header:
-            header.add(title_object, 0, 0, anchor=title_align)
+            header.set_object_in_cell(title_object, 0, 0, anchor=title_align)
             header.set_padding(header_margin)
         
         if header is not None and show_header_buttons:
             buttons_dims = vec2(1.2, 1) * (header_height - header_margin * 2)
             
-            header.add(self.factory.ui.button.icon_button(vec2(), Icons.XMARK, header_height*0.8, lambda: window.close, buttons_dims, style=icon_buttons_style), 1, 0, anchor=Anchor.R)
+            header.set_object_in_cell(self.factory.ui.button.icon_button(vec2(), Icons.XMARK, header_height * 0.8, lambda: window.close, buttons_dims, style=icon_buttons_style), 1, 0, anchor=Anchor.R)
             header.set_fixed_col_width(round(buttons_dims.x + header_margin * 2), 1)
         
         

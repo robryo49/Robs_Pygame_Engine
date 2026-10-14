@@ -5,36 +5,40 @@ from typing import Literal, TypeVar, cast
 from .behavior_manager import BehaviorManager
 from .behaviors import *
 from .object_collection import ObjectCollection
-from ..animation import Animation, AnimationManager
-from ..debug import QuickDebugManager
-from ..events import Event, EventManager
+from ..animation import Animation
+from ..events import Event
 from ..physics import BodyTypes, PhysicsBody, ShapeTypes
 from ..rendering import DrawCommand, ObjectRenderer
 from ..utils import Anchor, Callback, DictCollection, FRect, ObjectFlags, ObjectTags, Transform, length, vec2
 
 if TYPE_CHECKING:
     from .layer import Layer
+    from ..core.states.services_collection import ServicesCollection
 
 
 R = TypeVar('R', bound=ObjectRenderer)
+
+FOCUSED_LAYER = 10000
+DRAGGABLE_BEHAVIOR_ID = "draggable_behavior"
 
 
 class PygameObject[R]:
     DEFAULT_FLAGS = ObjectFlags.CULLABLE
     DEFAULT_TAGS = ObjectTags.NONE
     
-    def __init__(self, transform: Transform, renderer: R, services: DictCollection, sub_layer: int=0, anchor: vec2=Anchor.C):
+    def __init__(self, transform: Transform, renderer: R, services: ServicesCollection, sub_layer: int=0, anchor: vec2=Anchor.C):
         self._transform = transform
         self._anchor = anchor
         
         self._layer: Optional[Layer] = None
         self._sub_layer = sub_layer
+        self._focused = False
         
         self._flags = self.DEFAULT_FLAGS
         self._tags = self.DEFAULT_TAGS
         
-        self._behaviors = BehaviorManager(self)
-        self._services = services
+        self._behaviors = self._create_behavior_manager()
+        self._services: ServicesCollection = services
         
         self._properties: DictCollection = DictCollection()
         
@@ -59,6 +63,9 @@ class PygameObject[R]:
         self._visible_dirty = True
 
         self._physics_body: Optional[PhysicsBody] = None
+
+    def _create_behavior_manager(self) -> BehaviorManager:
+        return BehaviorManager(self)
 
     # region PROPERTIES
     
@@ -140,6 +147,9 @@ class PygameObject[R]:
     def modify_property[T](self, name: str, modifier: Callable[[T], T], default: Optional[T] = None):
         self.set_property(name, modifier(self.get_property(name, default)))
         return self
+
+    def remove_property(self, name):
+        return self.properties.pop(name, None)
     
     # endregion
     
@@ -243,6 +253,11 @@ class PygameObject[R]:
     def sub_layer(self, value: int):
         self._sub_layer = value
     # endregion
+
+    @property
+    def render_sub_layer(self):
+        parent = self.parent
+        return self._sub_layer + (FOCUSED_LAYER if self.focused else 0) + (parent.render_sub_layer if parent is not None else 0)
     
     # region clip_area
     
@@ -423,6 +438,27 @@ class PygameObject[R]:
     def enable_rendering(self):
         self.remove_flag(ObjectFlags.SKIP_RENDERING)
         return self
+
+
+    @property
+    def focused(self):
+        return self._focused
+
+    @focused.setter
+    def focused(self, value: bool):
+        self._focused = value
+
+    def focus(self) -> PygameObject[R]:
+        self.focused = True
+        return self
+
+    def unfocus(self) -> PygameObject[R]:
+        self.focused = False
+        return self
+
+    def toggle_focus(self) -> PygameObject[R]:
+        self.focused = not self.focused
+        return self
     
     
     @property
@@ -495,19 +531,22 @@ class PygameObject[R]:
     
     def has_tag(self, tag: ObjectTags):
         return (int(self._tags) & int(tag)) == int(tag)
-    
+
+
+    @property
+    def services(self) -> ServicesCollection:
+        return self._services
+
     
     @property
-    def behaviors(self):
+    def behaviors(self) -> BehaviorManager:
         return self._behaviors
     
-    def add_behavior(self, behavior: ObjectBehavior):
-        self.behaviors.add(behavior)
-        return self
+    def add_behavior[T: ObjectBehavior](self, behavior: T, behavior_id: Optional[str] = None) -> T:
+        return self.behaviors.add(behavior, behavior_id)
         
-    def remove_behavior(self, behavior: ObjectBehavior):
-        self.behaviors.remove(behavior)
-        return self
+    def remove_behavior[T: ObjectBehavior](self, behavior: T | str) -> Optional[T]:
+        return self.behaviors.remove(behavior)
     
     # endregion
     
@@ -530,98 +569,79 @@ class PygameObject[R]:
         else:
             self.transform.rotation = world_rotation - parent.world_transform.rotation
     
-    def get_service[T](self, cls: type[T]) -> T:
-        return self._services.get(cls)
-    
     # region REGISTRATION METHODS
     
     def register_event_callback(self, event_type: str, callback: Callback[[Event], Any]):
-        self.get_service(EventManager).register(event_type, callback)
-        return self
+        return self.services.get_event_manager().register(event_type, callback)
 
     def register_quick_debug(self, name: str, getter: Callable[[PygameObject], Any], template: str = "{}"):
-        self.get_service(QuickDebugManager).register_listener(name, lambda: getter(self), template)
-        return self
+        return self.services.get_quick_debug_manager().register_listener(name, lambda: getter(self), template)
 
     def do_on_update(self, action: Callback[[PygameObject], Any]):
-        self.add_behavior(ActionOnUpdateBehavior(action))
-        return self
+        return self.add_behavior(ActionOnUpdateBehavior(action))
 
     def do_on_click(self, button: int, on_click: Callback[[PygameObject], Any] = None, on_hold: Callback[[PygameObject], Any] = None, on_release: Callback[[PygameObject], Any] = None):
-        if on_click or on_hold or on_release:
-            self.add_behavior(ActionOnClickBehavior(button, on_click, on_hold, on_release))
-        return self
+        return self.add_behavior(ActionOnClickBehavior(button, on_click, on_hold, on_release))
 
     def do_on_hover(self, hover_start: Callback[[PygameObject], Any] = None, while_hovered: Callback[[PygameObject], Any] = None, hover_end: Callback[[PygameObject], Any] = None):
-        if hover_start or while_hovered or hover_end:
-            self.add_behavior(ActionOnHoverBehavior(hover_start, while_hovered, hover_end))
-        return self
+        return self.add_behavior(ActionOnHoverBehavior(hover_start, while_hovered, hover_end))
 
     def do_on_scroll(self, action: Callback[[PygameObject, int, vec2], Any]):
-        if action is not None:
-            self.add_behavior(ActionOnScrollBehavior(action))
-        return self
+        return self.add_behavior(ActionOnScrollBehavior(action))
 
     def do_on_collision(self, on_collision: Callback[[PygameObject, PygameObject], Any] = None, while_colliding: Callback[[PygameObject, PygameObject], Any] = None, on_collision_end: Callback[[PygameObject, PygameObject], Any] = None, condition_on_other: Optional[Callable[[PygameObject], bool]] = None):
-        if on_collision or while_colliding or on_collision_end:
-            self.add_behavior(ActionOnCollisionBehavior(on_collision, while_colliding, on_collision_end, condition_on_other))
+        return self.add_behavior(ActionOnCollisionBehavior(on_collision, while_colliding, on_collision_end, condition_on_other))
     
     
     def make_attribute_dynamic(self, attribute: str, value_getter: Any | Callable[[], Any | tuple[Any, ...]], template: Optional[str] = None, strength: float = 1,
                                attr_getter = getattr, attr_setter = setattr):
-        self.add_behavior(DynamicAttributeBehavior(attribute, value_getter, template, strength, attr_getter, attr_setter))
-        return self
+        return self.add_behavior(DynamicAttributeBehavior(attribute, value_getter, template, strength, attr_getter, attr_setter), f"attribute_{attribute}_setter")
         
     def make_attribute_fixed(self, attribute: str, value: Optional[Any | Callable[[], Any]] = None, strength: float = 1,
                              attr_getter = getattr, attr_setter = setattr):
-        self.add_behavior(AttributeFixingBehavior(attribute, value, strength, attr_getter, attr_setter))
-        return self
+        return self.add_behavior(AttributeFixingBehavior(attribute, value, strength, attr_getter, attr_setter), f"attribute_{attribute}_setter")
         
     def make_attribute_clamped(self, attribute: str, min_value: Optional[float | Callable[[],  float]] = None, max_value: Optional[float | Callable[[],  float]] = None, strength: float = 1,
                                attr_getter = getattr, attr_setter = setattr):
-        self.add_behavior(AttributeClampingBehavior(attribute, min_value, max_value, strength, attr_getter, attr_setter))
-        return self
+        return self.add_behavior(AttributeClampingBehavior(attribute, min_value, max_value, strength, attr_getter, attr_setter))
         
     def make_attribute_snap(self, attribute: str, values: list[float], offset: float = 0, strength: float = 1,
                             attr_getter = getattr, attr_setter = setattr):
-        self.add_behavior(AttributeValueSnappingBehavior(attribute, values, offset, strength, attr_getter, attr_setter))
-        return self
+        return self.add_behavior(AttributeValueSnappingBehavior(attribute, values, offset, strength, attr_getter, attr_setter))
         
     def make_attribute_snap_on_grid(self, attribute: str, step: float, offset: float = 0, strength: float = 1,
                                     attr_getter = getattr, attr_setter = setattr):
-        self.add_behavior(AttributeGridSnappingBehavior(attribute, step, offset, strength, attr_getter, attr_setter))
-        return self
+        return self.add_behavior(AttributeGridSnappingBehavior(attribute, step, offset, strength, attr_getter, attr_setter))
     
     
     def make_property_dynamic(self, prop_name: str, value_getter: Any | Callable[[], Any | tuple[Any, ...]], template: Optional[str] = None, strength: float = 1):
-        self.add_behavior(DynamicAttributeBehavior(prop_name, value_getter, template, strength,
-            lambda o, p: o.get_property(p), lambda o, p, v: o.set_property(p, v)))
-        return self
+        return self.add_behavior(DynamicAttributeBehavior(prop_name, value_getter, template, strength,
+            lambda o, p: o.get_property(p), lambda o, p, v: o.set_property(p, v)), f"property_{prop_name}_setter")
         
     def make_property_fixed(self, prop_name: str, value: Optional[Any | Callable[[], Any]] = None, strength: float = 1):
-        self.add_behavior(AttributeFixingBehavior(prop_name, value, strength,
-            lambda o, p: o.get_property(p), lambda o, p, v: o.set_property(p, v)))
-        return self
+        return self.add_behavior(AttributeFixingBehavior(prop_name, value, strength,
+            lambda o, p: o.get_property(p), lambda o, p, v: o.set_property(p, v)), f"property_{prop_name}_setter")
         
     def make_property_clamped(self, prop_name: str, min_value: Optional[float | Callable[[],  float]] = None, max_value: Optional[float | Callable[[],  float]] = None, strength: float = 1):
-        self.add_behavior(AttributeClampingBehavior(prop_name, min_value, max_value, strength,
+        return self.add_behavior(AttributeClampingBehavior(prop_name, min_value, max_value, strength,
             lambda o, p: o.get_property(p), lambda o, p, v: o.set_property(p, v)))
-        return self
         
     def make_property_snap(self, prop_name: str, values: list[float], offset: float = 0, strength: float = 1):
-        self.add_behavior(AttributeValueSnappingBehavior(prop_name, values, offset, strength,
+        return self.add_behavior(AttributeValueSnappingBehavior(prop_name, values, offset, strength,
             lambda o, p: o.get_property(p), lambda o, p, v: o.set_property(p, v)))
-        return self
         
     def make_property_snap_on_grid(self, prop_name: str, step: float, offset: float = 0, strength: float = 1):
-        self.add_behavior(AttributeGridSnappingBehavior(prop_name, step, offset, strength,
+        return self.add_behavior(AttributeGridSnappingBehavior(prop_name, step, offset, strength,
             lambda o, p: o.get_property(p), lambda o, p, v: o.set_property(p, v)))
-        return self
     
     
-    def make_draggable(self, button: int = 1, target: Optional["PygameObject"] = None):
-        self.add_behavior(DraggableBehavior(button, target))
-        return self
+    def make_draggable(
+            self, button: int = 1, target: Optional["PygameObject"] = None,
+            on_drag_start: Callback[[PygameObject], None] = None,
+            while_dragging: Callback[[PygameObject], None] = None,
+            on_drag_end: Callback[[PygameObject], None] = None
+    ):
+        return self.add_behavior(DraggableBehavior(button, target, on_drag_start, while_dragging, on_drag_end), "draggable_behavior")
 
     # endregion
 
@@ -852,20 +872,21 @@ class PygameObject[R]:
     # region OTHER
     
     def trigger_event(self, event: Event) -> PygameObject:
-        self.get_service(EventManager).trigger(event)
+        self.services.get_event_manager().trigger(event)
         return self
     
     def play_animation(self, animation: Animation) -> PygameObject:
-        self.get_service(AnimationManager).play(animation)
+        self.services.get_animation_manager().play(animation)
         return self
     
     def quick_debug(self, name: str, value: Any, duration: float = 0.0) -> PygameObject:
-        self.get_service(QuickDebugManager).quick_debug(name, value, duration)
+        self.services.get_quick_debug_manager().quick_debug(name, value, duration)
         return self
     
     # endregion
+
     def _render_self(self, submit: Callable[[DrawCommand], Any]):
-        self.renderer.render(submit, self.world_transform, self.layer, self.sub_layer, self.anchor, self.get_world_clip_area()) # type: ignore
+        self.renderer.render(submit, self.world_transform, self.layer, self.render_sub_layer, self.anchor, self.get_world_clip_area()) # type: ignore
         return self
     
     def _is_culled(self) -> bool:

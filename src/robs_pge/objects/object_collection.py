@@ -86,7 +86,12 @@ class ObjectCollection(TypedCollection):
         return self
     
     def add(self, item: PygameObject) -> PygameObject:
-        self._to_add.append(item)
+        # An explicit add wins over a queued removal, so re-adding an object that is
+        # being moved within the same frame neither drops it nor duplicates it.
+        if item in self._to_remove:
+            self._to_remove.remove(item)
+        if item not in self._to_add and not super().has(item):
+            self._to_add.append(item)
         return item
     
     def add_object(self, *obj: PygameObject | Iterable[PygameObject]) -> "ObjectCollection":

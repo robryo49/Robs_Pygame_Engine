@@ -78,7 +78,7 @@ class WindowObject(LayoutObject):
         self.hide()
 
     def add_content(self, obj: PygameObject, x: int, y: int, anchor: vec2 = Anchor.C) -> "WindowObject":
-        self.content.add(obj, x, y, anchor)
+        self.content.set_object_in_cell(obj, x, y, anchor)
         return self
 
     def stack_content_x(self, obj: PygameObject, row: int = 0, anchor: vec2 = Anchor.C) -> "WindowObject":

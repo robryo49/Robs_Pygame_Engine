@@ -1,4 +1,4 @@
-from typing import Callable, Optional
+from typing import Callable, Optional, Any
 
 from .tween import Tween
 from ..utils import Easing, EasingFunctionType, add, multiply, power, subtract, Callback
@@ -116,7 +116,7 @@ class AdderAnimation(Animation):
 
 
 class SetterAnimation(AdderAnimation):
-    def __init__(self, obj: object, attr: str, value, duration: float, easing_function: EasingFunctionType = Easing.LINEAR, start_value: Optional[float] = None):
+    def __init__(self, obj: object, attr: str, value, duration: float, easing_function: EasingFunctionType = Easing.LINEAR, start_value: Optional[Any] = None):
         super().__init__(obj, attr, subtract(value, getattr(obj, attr)), duration, easing_function)
         
         self._target = value

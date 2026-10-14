@@ -30,7 +30,7 @@ class TextObjectFactory(SubObjectFactory):
 
     def text_box(
             self, position: vec2, text: str, width: Optional[int] = None, height: Optional[int] = None,
-            justification: vec2 = TextBoxObject.JUSTIFY_LEFT,
+            justification: vec2 = Anchor.TL, margin: int = 0,
             font: StyleOrName[Font] = None, bg_style: StyleOrName[RectStyle] = None,
             rotation: float = 0.0, scale: float = 1.0, layer: int = 0, anchor: vec2 = Anchor.C, cache: bool = True
     ) -> TextBoxObject:
@@ -38,7 +38,6 @@ class TextObjectFactory(SubObjectFactory):
         font = self._get_resource(font, Font)
         bg_style = self._get_resource(bg_style, RectStyle)
 
-        margin = getattr(bg_style, "margin", 0) if bg_style else 0
         max_content_width = (width - 2 * margin) if width is not None else None
 
         lines = split_text(text, font, max_content_width)
@@ -48,10 +47,10 @@ class TextObjectFactory(SubObjectFactory):
             for line in lines
         ]
 
-        obj = self.factory.ui.layout.create_layout(
+        obj: TextBoxObject = self.factory.ui.layout.create_layout(
             TextBoxObject, position, width, height,
             TextBoxObject.GRID_MODE, TextBoxObject.PRESERVE_MODE, TextBoxObject.PRESERVE_MODE,
-            justification, bg_style, rotation, scale, layer, anchor, cache,
+            justification, False, bg_style, rotation, scale, layer, anchor, cache,
             text, font, text_objects, self.label
         )
 
@@ -59,6 +58,8 @@ class TextObjectFactory(SubObjectFactory):
 
         for text_obj in text_objects:
             obj.stack_y(text_obj, x=0)
+
+        obj.outer_padding = margin
 
         return obj
 

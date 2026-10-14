@@ -7,14 +7,15 @@ from .object import PygameObject
 from ..physics import PhysicsWorld
 from ..events import EventManager
 from ..rendering import DrawCommand
-from ..utils import CoordinateSystem, DictCollection, vec2
+from ..utils import CoordinateSystem, vec2
 
 if TYPE_CHECKING:
     from ..core import Camera
+    from ..core.states.services_collection import ServicesCollection
 
 
 class Layer:
-    def __init__(self, name: str, layer_value: float, camera: Camera, services: DictCollection, interactable: bool = True, coordinate_system: Optional[CoordinateSystem] = None):
+    def __init__(self, name: str, layer_value: float, camera: Camera, services: ServicesCollection, interactable: bool = True, coordinate_system: Optional[CoordinateSystem] = None):
         self._id = name.lower().replace(" ", "_")
         self._layer_value = layer_value
         self._interactable = interactable
@@ -62,7 +63,7 @@ class Layer:
     
     @property
     def event_manager(self) -> EventManager:
-        return cast(EventManager, self._services.get(EventManager))
+        return self._services.get_event_manager()
 
     @property
     def physics_world(self) -> Optional[PhysicsWorld]:
