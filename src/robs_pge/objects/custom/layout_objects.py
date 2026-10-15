@@ -13,6 +13,11 @@ from ...utils import Anchor, DictCollection, Transform, vec2
 CellPos = tuple[int, int]
 FitMode = Literal["stretch", "preserve"]
 LayoutMode = Literal["grid", "columns", "rows"]
+LayeringPriority = Literal[
+    None,
+    "left_right_top_bottom", "left_right_bottom_top", "right_left_top_bottom", "right_left_bottom_top",
+    "top_bottom_left_right", "top_bottom_right_left", "bottom_top_left_right", "bottom_top_right_left"
+]
 
 @dataclass
 class SizeConstraint:
@@ -39,6 +44,7 @@ class SizeConstraint:
 class LayoutObject(RectObject):
     Mode = LayoutMode
     FitMode = FitMode
+    LayeringPriority = LayeringPriority
     
     GRID_MODE: Literal["grid"] = "grid"
     COL_MODE: Literal["columns"] = "columns"
@@ -46,7 +52,16 @@ class LayoutObject(RectObject):
     
     STRETCH_MODE: Literal["stretch"] = "stretch"
     PRESERVE_MODE: Literal["preserve"] = "preserve"
-    
+
+    LAYER_PRIORITY_LEFT_RIGHT_TOP_BOTTOM: Literal["left_right_top_bottom"] = "left_right_top_bottom"
+    LAYER_PRIORITY_LEFT_RIGHT_BOTTOM_TOP: Literal["left_right_bottom_top"] = "left_right_bottom_top"
+    LAYER_PRIORITY_RIGHT_LEFT_TOP_BOTTOM: Literal["right_left_top_bottom"] = "right_left_top_bottom"
+    LAYER_PRIORITY_RIGHT_LEFT_BOTTOM_TOP: Literal["right_left_bottom_top"] = "right_left_bottom_top"
+    LAYER_PRIORITY_TOP_BOTTOM_LEFT_RIGHT: Literal["top_bottom_left_right"] = "top_bottom_left_right"
+    LAYER_PRIORITY_TOP_BOTTOM_RIGHT_LEFT: Literal["top_bottom_right_left"] = "top_bottom_right_left"
+    LAYER_PRIORITY_BOTTOM_TOP_LEFT_RIGHT: Literal["bottom_top_left_right"] = "bottom_top_left_right"
+    LAYER_PRIORITY_BOTTOM_TOP_RIGHT_LEFT: Literal["bottom_top_right_left"] = "bottom_top_right_left"
+
     # region INIT / STATE
     
     def __init__(self, transform: Transform, renderer: RectRenderer, services: DictCollection, sub_layer: int = 0, anchor: vec2 = Anchor.C):
@@ -71,6 +86,7 @@ class LayoutObject(RectObject):
         
         self._mode: LayoutMode = self.GRID_MODE
         self._justification = Anchor.C
+        self._layering_priority: LayeringPriority = None
         
         self._fit_mode: FitMode = self.STRETCH_MODE
         self._horizontal_fit_mode: Optional[FitMode] = None
@@ -379,7 +395,7 @@ class LayoutObject(RectObject):
     
     # endregion
     
-    # region fitting math
+    # region-fitting math
     
     @staticmethod
     def _calculate_offsets(dimensions: dict[int, int], spacing: int) -> dict[int, int]:
@@ -796,7 +812,7 @@ class LayoutObject(RectObject):
             previous_end_x = 0
             
             for start_col, end_col, start_x, end_x, _ in lane_cuts:
-                left = {c: widths[c] for c in ordered_cols if c < start_col and c >= previous_col}
+                left = {c: widths[c] for c in ordered_cols if start_col > c >= previous_col}
                 if left:
                     target = max(0, start_x - previous_end_x)
                     self._fit_local_col_dimensions(row, left, target)
@@ -1107,7 +1123,7 @@ class LayoutObject(RectObject):
     
     def _validate_relocation(self, moves: list[tuple[PygameObject, CellPos, tuple[int, int]]]) -> None:
         """Simulates `[(obj, new_anchor_cell, new_span), ...]` and raises before any state changes
-        if a moved object would land on a cell it does not vacate itself. Needed because the moved
+        if a moved object lands on a cell, it does not vacate itself. Needed because the moved
         objects vacate each other's cells, so ignoring them during the check is not enough - two
         movers can still be planned on top of one another."""
         occupied = dict(self._cells_objects)
@@ -1142,7 +1158,7 @@ class LayoutObject(RectObject):
     
     def _plan_lane_insert(self, horizontal: bool, lane: int, start: int, new: PygameObject,
                           new_span: tuple[int, int]) -> list[tuple[PygameObject, CellPos, tuple[int, int]]]:
-        """Works out where every object has to go when a lane is pushed back by one track."""
+        """Works out where every object has to go when one track pushes a lane back."""
         moves: list[tuple[PygameObject, CellPos, tuple[int, int]]] = [
             (new, (start, lane) if horizontal else (lane, start), new_span)
         ]
@@ -1425,6 +1441,11 @@ class LayoutObject(RectObject):
         return self
     
     # endregion
+
+    def set_layering_priority(self, priority: LayeringPriority) -> "LayoutObject":
+        self._layering_priority = priority
+        self._update_layering()
+        return self
     
     # region OBJECT PLACEMENT
     
@@ -1436,7 +1457,7 @@ class LayoutObject(RectObject):
     
     def set_object_in_cell(self, obj: PygameObject, x: int, y: int, anchor: Optional[vec2] = None,
                            span_x: int = 1, span_y: int = 1, ignore_callbacks: bool = False) -> "LayoutObject":
-        """Places obj at (x, y). Fires on_object_addition only when obj was not in this layout,
+        """Places obj at (x, y). Fires on_object_addition only when the obj was not in this layout,
         so moving an object already inside it is not an addition."""
         span = self._validate_span((span_x, span_y))
         cell = (x, y)
@@ -1561,7 +1582,7 @@ class LayoutObject(RectObject):
         return self
     
     def switch_cells_content(self, cell1: CellPos, cell2: CellPos) -> "LayoutObject":
-        """Swaps two cells, or moves the content when one side is empty. Nothing leaves the layout, so no hook fires."""
+        """Swaps two cells or moves the content when one side is empty. Nothing leaves the layout, so no hook fires."""
         if cell1 == cell2:
             return self
         
@@ -1678,9 +1699,38 @@ class LayoutObject(RectObject):
     
     # region UPDATE
     
+    def _update_layering(self) -> "LayoutObject":
+        if not self._layering_priority:
+            return self
+
+        vertical_first = "TOP_BOTTOM_" in self._layering_priority or "BOTTOM_TOP_" in self._layering_priority
+        top_first = "TOP_BOTTOM" in self._layering_priority
+        left_first = "LEFT_RIGHT" in self._layering_priority
+        
+        for obj, (x, y) in self._object_placements.items():
+
+            if left_first:
+                layer_x = self.max_col - x
+            else:
+                layer_x = x
+            if top_first:
+                layer_y = self.max_row - y
+            else:
+                layer_y = y
+
+            if vertical_first:
+                layer = layer_y + layer_x * self.max_row
+            else:
+                layer = layer_x + layer_y * self.max_col
+
+            obj.sub_layer = layer
+
+        return self
+            
+    
     def _update_self(self, dt: float) -> "LayoutObject":
         super()._update_self(dt)
-        if self._dirty_checking:
+        if self._dirty_checking and not self._dirty:
             self._check_if_dirty()
         if self._dirty:
             self._calculate_col_and_row_dims()
@@ -1688,6 +1738,7 @@ class LayoutObject(RectObject):
             self._fit_col_and_row_dims()
             self._calculate_row_and_col_offsets()
             self._position_objects()
+            self._update_layering()
             self.width = self._calculated_width
             self.height = self._calculated_height
             self._dirty = False
