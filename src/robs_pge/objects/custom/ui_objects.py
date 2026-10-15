@@ -1,22 +1,23 @@
 from __future__ import annotations
-from typing import cast, TYPE_CHECKING
 
-from .layout_objects import LayoutObject
+from typing import cast, Callable, TYPE_CHECKING, Any, Optional
+
 from .primitive_objects import CircleObject, LineObject, RectObject, TextObject
 from .sprite_objects import IconObject, SpriteObject
-from ..behaviors import *
+from .layout_objects import LayoutObject
 from ...animation import SetterAnimation
 from ...rendering import CircleRenderer, RectRenderer
-from ...utils import Anchor, Callback, DictCollection, Easing, Transform, clamp, inf, invert_y, vec2, Font, split_text
+from ...utils import Anchor, Callback, Easing, Transform, clamp, inf, invert_y, vec2, Font, split_text
 
 if TYPE_CHECKING:
     from ..object import PygameObject
+    from ...core import ServicesCollection
 
 
 
 class TextBoxObject(LayoutObject):
     def __init__(self, transform: Transform, renderer: RectRenderer, text, font: Font, text_objects: list[TextObject],
-                 text_object_factory: Callable[..., TextObject], services: DictCollection,
+                 text_object_factory: Callable[..., TextObject], services: ServicesCollection,
                  sub_layer: int = 0, anchor: vec2 = Anchor.C):
         super().__init__(transform, renderer, services, sub_layer, anchor)
 
@@ -92,14 +93,14 @@ class TextBoxObject(LayoutObject):
 
             self._text_objects = new_text_objects
 
-    def _update_self(self, dt: float) -> PygameObject:
+    def _update_self(self, dt: float) -> LayoutObject:
         if self._dirty:
             self._update_lines()
         return super()._update_self(dt)
 
 
 class ButtonObject(RectObject):
-    def __init__(self, transform: Transform, background: RectRenderer, text: TextObject, action: Callback[..., Any], services: DictCollection, sub_layer: int = 0, anchor: vec2 = Anchor.C):
+    def __init__(self, transform: Transform, background: RectRenderer, text: TextObject, action: Callback[..., Any], services: ServicesCollection, sub_layer: int = 0, anchor: vec2 = Anchor.C):
         
         super().__init__(transform, background, services, sub_layer, anchor)
         
@@ -137,7 +138,7 @@ class ButtonObject(RectObject):
 
 
 class SpriteButtonObject(RectObject):
-    def __init__(self, transform: Transform, background: RectRenderer, sprite: SpriteObject, action: Callback[..., Any], services: DictCollection, sub_layer: int = 0, anchor: vec2 = Anchor.C):
+    def __init__(self, transform: Transform, background: RectRenderer, sprite: SpriteObject, action: Callback[..., Any], services: ServicesCollection, sub_layer: int = 0, anchor: vec2 = Anchor.C):
         
         super().__init__(transform, background, services, sub_layer, anchor)
         
@@ -199,7 +200,7 @@ class IconButtonObject(SpriteButtonObject):
 
 
 class CycleButtonObject(ButtonObject):
-    def __init__(self, transform: Transform, background: RectRenderer, text: TextObject, texts: tuple[str, ...], values: tuple[Any, ...], callback: Callback[[Any], Any], services: DictCollection, sub_layer: int = 0, anchor: vec2 = Anchor.C):
+    def __init__(self, transform: Transform, background: RectRenderer, text: TextObject, texts: tuple[str, ...], values: tuple[Any, ...], callback: Callback[[Any], Any], services: ServicesCollection, sub_layer: int = 0, anchor: vec2 = Anchor.C):
         super().__init__(transform, background, text, None, services, sub_layer, anchor)
         
         self._texts = texts
@@ -252,7 +253,7 @@ class CycleButtonObject(ButtonObject):
 
 class CheckBoxObject(RectObject):
     def __init__(self, transform: Transform, background: RectRenderer, checked_icon: IconObject, callback: Callback[[PygameObject], Any],
-                 services: DictCollection, sub_layer: int = 0, anchor: vec2 = Anchor.C):
+                 services: ServicesCollection, sub_layer: int = 0, anchor: vec2 = Anchor.C):
         super().__init__(transform, background, services, sub_layer, anchor)
         
         self._checked_icon = checked_icon
@@ -287,7 +288,7 @@ class CheckBoxObject(RectObject):
 
 class RadioButtonObject(CircleObject):
     def __init__(self, transform: Transform, background: CircleRenderer, tick: CircleObject, callback: Callback[[PygameObject], Any],
-                 services: DictCollection, sub_layer: int = 0, anchor: vec2 = Anchor.C):
+                 services: ServicesCollection, sub_layer: int = 0, anchor: vec2 = Anchor.C):
         super().__init__(transform, background, services, sub_layer, anchor)
         
         self._tick = tick
@@ -322,7 +323,7 @@ class RadioButtonObject(CircleObject):
 
 class ToggleButtonObject(RectObject):
     def __init__(self, transform: Transform, background: RectRenderer, toggle: RectObject, toggle_background: RectObject, toggle_movement_range: tuple[int, int], callback: Callback[[PygameObject], Any],
-                 services: DictCollection, sub_layer: int = 0, anchor: vec2 = Anchor.C):
+                 services: ServicesCollection, sub_layer: int = 0, anchor: vec2 = Anchor.C):
         super().__init__(transform, background, services, sub_layer, anchor)
         
         self._toggle_min_x = toggle_movement_range[0]
@@ -381,7 +382,7 @@ class ToggleButtonObject(RectObject):
 
 class SliderObject(LayoutObject):
     def __init__(self, transform: Transform, background: RectRenderer, bar: RectObject, handle: RectObject | CircleObject, text: TextObject, min_value: float, max_value: float, step: Optional[float],
-                 services: DictCollection, sub_layer: int = 0, anchor: vec2 = Anchor.C):
+                 services: ServicesCollection, sub_layer: int = 0, anchor: vec2 = Anchor.C):
         super().__init__(transform, background, services, sub_layer, anchor)
         
         self._min_value = min_value
@@ -443,7 +444,7 @@ class SliderObject(LayoutObject):
 
 
 class ValueSelectorObject(LayoutObject):
-    def __init__(self, transform: Transform, background: RectRenderer, text: TextObject, min_value: float, max_value: float, increments: tuple[float, ...], start_value: float, callback: Callback[[float], Any], services: DictCollection, sub_layer: int = 0, anchor: vec2 = Anchor.C):
+    def __init__(self, transform: Transform, background: RectRenderer, text: TextObject, min_value: float, max_value: float, increments: tuple[float, ...], start_value: float, callback: Callback[[float], Any], services: ServicesCollection, sub_layer: int = 0, anchor: vec2 = Anchor.C):
         super().__init__(transform, background, services, sub_layer, anchor)
         
         self._min_value = min_value
@@ -495,7 +496,7 @@ class ValueSelectorObject(LayoutObject):
 
 
 class ValueCyclerObject(LayoutObject):
-    def __init__(self, transform: Transform, background: RectRenderer, text: TextObject, values: tuple[Any, ...], default_index: int, callback: Callback[[Any], Any], services: DictCollection, sub_layer: int = 0, anchor: vec2 = Anchor.C):
+    def __init__(self, transform: Transform, background: RectRenderer, text: TextObject, values: tuple[Any, ...], default_index: int, callback: Callback[[Any], Any], services: ServicesCollection, sub_layer: int = 0, anchor: vec2 = Anchor.C):
         super().__init__(transform, background, services, sub_layer, anchor)
         
         if not values:
@@ -546,7 +547,7 @@ class ValueCyclerObject(LayoutObject):
 
 
 class ProgressBarObject(RectObject):
-    def __init__(self, transform: Transform, background: RectRenderer, bar: RectObject, services: DictCollection, sub_layer: int = 0, anchor: vec2 = Anchor.C):
+    def __init__(self, transform: Transform, background: RectRenderer, bar: RectObject, services: ServicesCollection, sub_layer: int = 0, anchor: vec2 = Anchor.C):
         super().__init__(transform, background, services, sub_layer, anchor)
         
         self._value = 0.0
@@ -625,7 +626,7 @@ class ProgressBarObject(RectObject):
 
 class ScrollbarObject(RectObject):
     def __init__(self, transform: Transform, background: RectRenderer, handle: RectObject,
-                 services: DictCollection, sub_layer: int = 0, anchor: vec2 = Anchor.C):
+                 services: ServicesCollection, sub_layer: int = 0, anchor: vec2 = Anchor.C):
         super().__init__(transform, background, services, sub_layer, anchor)
         
         self._handle = handle
@@ -692,7 +693,7 @@ class ScrollbarObject(RectObject):
 
 
 class LineChartObject(RectObject):
-    def __init__(self, transform: Transform, background: RectRenderer, line: LineObject, services: DictCollection, sub_layer: int = 0, anchor: vec2 = Anchor.C):
+    def __init__(self, transform: Transform, background: RectRenderer, line: LineObject, services: ServicesCollection, sub_layer: int = 0, anchor: vec2 = Anchor.C):
         super().__init__(transform, background, services, sub_layer, anchor)
         
         self._pad_x = 0

@@ -5,21 +5,21 @@ from typing import Any, Callable, Iterable, Optional, TYPE_CHECKING
 import pygame as pg
 
 from .services_collection import ServicesCollection
-from ..clock import Clock
 from ..camera import Camera
-from ...input import Mouse
+from ..clock import Clock
 from ...animation import AnimationManager
 from ...debug import FrameTimer, QuickDebugManager
 from ...events import Event, EventManager
 from ...input import InputManager, Keybind, KeybindsManager
+from ...input import Mouse
 from ...objects import DebugOverlay, InteractionManager, Layer, LayerManager, ObjectFactory, ParticleSystem, WindowManager, WindowObject, DialogManager
 from ...physics import PhysicsWorld
 from ...rendering import WindowStyle, Renderer
 from ...resources import ResourceManager
-from ...utils import Anchor, AsyncProcessManager, Callback, DictCollection, ScreenAnchor, round_sig, vec2
+from ...utils import Anchor, AsyncProcessManager, Callback, ScreenAnchor, round_sig, vec2
 
 if TYPE_CHECKING:
-    from ..engine import Engine
+    from ...core import Engine
     from ...objects import PygameObject
     
     

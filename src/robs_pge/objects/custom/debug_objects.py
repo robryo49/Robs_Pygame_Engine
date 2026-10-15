@@ -8,7 +8,7 @@ from ...utils import Anchor, DictCollection, Transform, vec2
 
 
 class DebugOverlay(LayoutObject):
-    def __init__(self, transform: Transform, renderer: RectRenderer, services: DictCollection, sub_layer: int = 0, anchor: vec2 = Anchor.C):
+    def __init__(self, transform: Transform, renderer: RectRenderer, services: ServicesCollection, sub_layer: int = 0, anchor: vec2 = Anchor.C):
         super().__init__(transform, renderer, services, sub_layer, anchor)
     
     def toggle(self) -> LayoutObject:
@@ -24,7 +24,7 @@ class DebugInfoWindow(WindowObject):
                  title: str, content_panel: LayoutObject,
                  header: Optional[LayoutObject], title_panel: Optional[RectObject], title_object: Optional[TextObject],
                  title_factory_method, value_factory_method,
-                 services: DictCollection, sub_layer: int = 0, anchor: vec2 = Anchor.C):
+                 services: ServicesCollection, sub_layer: int = 0, anchor: vec2 = Anchor.C):
         super().__init__(transform, renderer, title, content_panel, header, title_panel, title_object, services, sub_layer, anchor)
         
         self._title_factory = title_factory_method

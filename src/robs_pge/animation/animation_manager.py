@@ -1,6 +1,7 @@
+from typing import Any
+
 from .animation import Animation
 from ..utils import Callback
-from typing import Any
 
 
 class AnimationManager:

@@ -10,7 +10,7 @@ SR = TypeVar("SR", bound=SpriteRenderer)
 
 
 class SpriteObject[SR](PygameObject[SR]):
-    def __init__(self, transform: Transform, renderer: SpriteRenderer, services: DictCollection, sub_layer: int = 0, anchor: vec2 = Anchor.C):
+    def __init__(self, transform: Transform, renderer: SpriteRenderer, services: ServicesCollection, sub_layer: int = 0, anchor: vec2 = Anchor.C):
         super().__init__(transform, renderer, services, sub_layer, anchor)
     
     # region PROPERTIES
@@ -35,7 +35,7 @@ class SpriteObject[SR](PygameObject[SR]):
 
 
 class SubSurfaceSpriteObject(PygameObject[SubSurfaceRenderer]):
-    def __init__(self, transform: Transform, renderer: SubSurfaceRenderer, services: DictCollection, sub_layer: int = 0, anchor: vec2 = Anchor.C):
+    def __init__(self, transform: Transform, renderer: SubSurfaceRenderer, services: ServicesCollection, sub_layer: int = 0, anchor: vec2 = Anchor.C):
         super().__init__(transform, renderer, services, sub_layer, anchor)
     
     # region PROPERTIES
@@ -92,7 +92,7 @@ class SubSurfaceSpriteObject(PygameObject[SubSurfaceRenderer]):
 
 
 class ChunkedSpriteObject(PygameObject[ChunkedSpriteRenderer]):
-    def __init__(self, transform: Transform, renderer: ChunkedSpriteRenderer, services: DictCollection, sub_layer: int = 0, anchor: vec2 = Anchor.C):
+    def __init__(self, transform: Transform, renderer: ChunkedSpriteRenderer, services: ServicesCollection, sub_layer: int = 0, anchor: vec2 = Anchor.C):
         super().__init__(transform, renderer, services, sub_layer, anchor)
     
     # region PROPERTIES
@@ -123,7 +123,7 @@ class ChunkedSpriteObject(PygameObject[ChunkedSpriteRenderer]):
     
     
 class IconObject(SpriteObject[IconRenderer]):
-    def __init__(self, transform: Transform, renderer: IconRenderer, services: DictCollection, sub_layer: int = 0, anchor: vec2 = Anchor.C):
+    def __init__(self, transform: Transform, renderer: IconRenderer, services: ServicesCollection, sub_layer: int = 0, anchor: vec2 = Anchor.C):
         super().__init__(transform, renderer, services, sub_layer, anchor)
     
     # region PROPERTIES

@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import Any, Optional, TYPE_CHECKING
 
 from ..resources import Texture
-from..rendering import Style
+from ..rendering import Style
 from ..utils import Color, ColorPalette, Font, TypedDictCollection, vec2, StyleOrName
 
 if TYPE_CHECKING:

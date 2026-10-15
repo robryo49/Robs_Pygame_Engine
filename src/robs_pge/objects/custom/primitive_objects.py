@@ -1,15 +1,18 @@
 from __future__ import annotations
 
-from typing import Any, Literal
+from typing import Any, Literal, TYPE_CHECKING
 
 from ..object import PygameObject
 from ...physics import ShapeTypes
 from ...rendering import CircleRenderer, LineRenderer, RectRenderer, TextRenderer
-from ...utils import Anchor, Color, DictCollection, Transform, vec2
+from ...utils import Anchor, Color, Transform, vec2
+
+if TYPE_CHECKING:
+    from ...core import ServicesCollection
 
 
 class RectObject(PygameObject[RectRenderer]):
-    def __init__(self, transform: Transform, renderer: RectRenderer, services: DictCollection, sub_layer: int = 0, anchor: vec2 = Anchor.C):
+    def __init__(self, transform: Transform, renderer: RectRenderer, services: ServicesCollection, sub_layer: int = 0, anchor: vec2 = Anchor.C):
         super().__init__(transform, renderer, services, sub_layer, anchor)
     
     # region PROPERTIES
@@ -85,7 +88,7 @@ class RectObject(PygameObject[RectRenderer]):
 
 
 class CircleObject(PygameObject[CircleRenderer]):
-    def __init__(self, transform: Transform, renderer: CircleRenderer, services: DictCollection, sub_layer: int = 0, anchor: vec2 = Anchor.C):
+    def __init__(self, transform: Transform, renderer: CircleRenderer, services: ServicesCollection, sub_layer: int = 0, anchor: vec2 = Anchor.C):
         super().__init__(transform, renderer, services, sub_layer, anchor)
     
     # region PROPERTIES
@@ -170,7 +173,7 @@ class CircleObject(PygameObject[CircleRenderer]):
 
 
 class LineObject(PygameObject[LineRenderer]):
-    def __init__(self, transform: Transform, renderer: LineRenderer, services: DictCollection, sub_layer: int = 0, anchor: vec2 = Anchor.C):
+    def __init__(self, transform: Transform, renderer: LineRenderer, services: ServicesCollection, sub_layer: int = 0, anchor: vec2 = Anchor.C):
         super().__init__(transform, renderer, services, sub_layer, anchor)
     
     # region PROPERTIES
@@ -210,7 +213,7 @@ class LineObject(PygameObject[LineRenderer]):
 
 
 class TextObject(PygameObject[TextRenderer]):
-    def __init__(self, transform: Transform, renderer: TextRenderer, services: DictCollection, sub_layer: int = 0, anchor: vec2 = Anchor.C):
+    def __init__(self, transform: Transform, renderer: TextRenderer, services: ServicesCollection, sub_layer: int = 0, anchor: vec2 = Anchor.C):
         super().__init__(transform, renderer, services, sub_layer, anchor)
     
     # region PROPERTIES

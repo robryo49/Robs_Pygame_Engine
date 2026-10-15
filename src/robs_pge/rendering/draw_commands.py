@@ -4,8 +4,8 @@ import math
 from dataclasses import dataclass
 from typing import Optional, TYPE_CHECKING
 
-from pyglm import glm
 import pygame as pg
+from pyglm import glm
 
 from .styles import CircleStyle, LineStyle, RectStyle
 from ..resources import SurfaceCache, Texture

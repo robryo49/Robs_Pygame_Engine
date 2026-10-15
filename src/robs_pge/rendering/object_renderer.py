@@ -1,8 +1,10 @@
 from __future__ import annotations
-from ..utils import Transform, vec2, FRect
+
 from typing import Optional, TYPE_CHECKING
 
 from pyglm import glm
+
+from ..utils import Transform, vec2, FRect
 
 if TYPE_CHECKING:
     from ..objects import Layer

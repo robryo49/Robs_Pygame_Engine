@@ -1,13 +1,16 @@
 from __future__ import annotations
+
 from typing import TYPE_CHECKING
 
-
 if TYPE_CHECKING:
-    from ... import (
-        State, AnimationManager, InputManager,
-        ParticleSystem, ObjectFactory, EventManager,
-        AsyncProcessManager, ResourceManager, QuickDebugManager
-    )
+    from ...core import State
+    from ...animation import AnimationManager
+    from ...input import InputManager
+    from ...objects import ParticleSystem, ObjectFactory
+    from ...events import EventManager
+    from ...utils import AsyncProcessManager
+    from ...resources import ResourceManager
+    from ...debug import QuickDebugManager
 
 
 class ServicesCollection:

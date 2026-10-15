@@ -2,7 +2,7 @@ from typing import Optional
 
 from ..events import Event, EventManager, Events
 from ..objects import WindowObject
-from ..utils import ObjectFlags, TypedDictCollection
+from ..utils import TypedDictCollection
 
 
 class WindowManager:

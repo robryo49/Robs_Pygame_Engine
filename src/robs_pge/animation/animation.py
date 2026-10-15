@@ -1,4 +1,4 @@
-from typing import Callable, Optional, Any
+from typing import Optional, Any
 
 from .tween import Tween
 from ..utils import Easing, EasingFunctionType, add, multiply, power, subtract, Callback

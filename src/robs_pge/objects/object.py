@@ -12,8 +12,8 @@ from ..rendering import DrawCommand, ObjectRenderer
 from ..utils import Anchor, Callback, DictCollection, FRect, ObjectFlags, ObjectTags, Transform, length, vec2
 
 if TYPE_CHECKING:
-    from .layer import Layer
-    from ..core.states.services_collection import ServicesCollection
+    from ..objects import Layer
+    from ..core import ServicesCollection
 
 
 R = TypeVar('R', bound=ObjectRenderer)

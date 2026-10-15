@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 from dataclasses import dataclass
 from typing import Literal, cast
 
@@ -60,7 +58,7 @@ class LayoutObject(RectObject):
 
     # region INIT / STATE
     
-    def __init__(self, transform: Transform, renderer: RectRenderer, services: DictCollection, sub_layer: int = 0, anchor: vec2 = Anchor.C):
+    def __init__(self, transform: Transform, renderer: RectRenderer, services: ServicesCollection, sub_layer: int = 0, anchor: vec2 = Anchor.C):
         super().__init__(transform, renderer, services, sub_layer, anchor)
         
         self._object_placements: dict[PygameObject, CellPos] = {}
