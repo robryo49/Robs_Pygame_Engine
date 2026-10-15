@@ -1,12 +1,16 @@
+from __future__ import annotations
 from dataclasses import dataclass
-from typing import Literal, cast
+from typing import Literal, cast, TYPE_CHECKING, Optional
 
 from .primitive_objects import RectObject
-from ..behaviors import *
 from ..behavior_manager import LayoutBehaviorManager
+from ..behaviors import ReorderableLayoutBehavior
 from ..object import PygameObject
-from ...rendering import RectRenderer
-from ...utils import Anchor, DictCollection, Transform, vec2
+from ...rendering import RectRenderer, RectStyle
+from ...utils import Anchor, Transform, vec2
+
+if TYPE_CHECKING:
+    from ...core import ServicesCollection
 
 CellPos = tuple[int, int]
 FitMode = Literal["stretch", "preserve"]
@@ -314,7 +318,7 @@ class LayoutObject(RectObject):
     @staticmethod
     def _indices_between(start: int, span: int) -> list[int]:
         return list(range(start, start + span))
-    
+
     def _span_cells(self, cell: CellPos, span: tuple[int, int]) -> list[CellPos]:
         col, row = cell
         sx, sy = span
