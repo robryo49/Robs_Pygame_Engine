@@ -1,6 +1,6 @@
 from __future__ import annotations
 from dataclasses import dataclass
-from typing import Literal, cast, TYPE_CHECKING, Optional
+from typing import Iterator, Literal, Optional, TYPE_CHECKING, cast
 
 from .primitive_objects import RectObject
 from ..behavior_manager import LayoutBehaviorManager
@@ -15,11 +15,10 @@ if TYPE_CHECKING:
 CellPos = tuple[int, int]
 FitMode = Literal["stretch", "preserve"]
 LayoutMode = Literal["grid", "columns", "rows"]
-LayeringPriority = Literal[
-    None,
+LayeringPriority = Optional[Literal[
     "left_right_top_bottom", "left_right_bottom_top", "right_left_top_bottom", "right_left_bottom_top",
     "top_bottom_left_right", "top_bottom_right_left", "bottom_top_left_right", "bottom_top_right_left"
-]
+]]
 
 @dataclass
 class SizeConstraint:
@@ -158,16 +157,16 @@ class LayoutObject(RectObject):
     
     @property
     def justification(self) -> vec2:
-        return self._justification
+        return vec2(self._justification)
     
     @justification.setter
-    def justification(self, value: vec2):
-        self._justification = value
+    def justification(self, value: vec2 | int):
+        self._justification = vec2(value)
         self.mark_dirty()
     
     @property
     def outer_padding(self) -> vec2:
-        return self._outer_padding
+        return vec2(self._outer_padding)
     
     @outer_padding.setter
     def outer_padding(self, value: vec2 | int):
@@ -176,7 +175,7 @@ class LayoutObject(RectObject):
     
     @property
     def cell_spacing(self) -> vec2:
-        return self._cell_spacing
+        return vec2(self._cell_spacing)
     
     @cell_spacing.setter
     def cell_spacing(self, value: vec2 | int):
@@ -185,7 +184,7 @@ class LayoutObject(RectObject):
     
     @property
     def cell_padding(self) -> vec2:
-        return self._cell_padding
+        return vec2(self._cell_padding)
     
     @cell_padding.setter
     def cell_padding(self, value: vec2 | int):
@@ -197,8 +196,8 @@ class LayoutObject(RectObject):
         return vec2(self._content_offset)
     
     @content_offset.setter
-    def content_offset(self, value: vec2):
-        self._content_offset = value
+    def content_offset(self, value: vec2 | int):
+        self._content_offset = vec2(value)
         self.mark_dirty()
     
     @property
@@ -292,6 +291,10 @@ class LayoutObject(RectObject):
     @property
     def object_spans(self) -> dict[PygameObject, tuple[int, int]]:
         return dict(self._object_spans)
+    
+    @property
+    def objects(self) -> tuple[PygameObject, ...]:
+        return tuple(self._object_placements)
     
     # endregion
     
@@ -393,7 +396,7 @@ class LayoutObject(RectObject):
     
     # endregion
     
-    # region-fitting math
+    # region fitting math
     
     @staticmethod
     def _calculate_offsets(dimensions: dict[int, int], spacing: int) -> dict[int, int]:
@@ -668,6 +671,22 @@ class LayoutObject(RectObject):
         
         self._calculated_width = self._width_constraint.apply(self._calculated_row_widths + 2 * outer_pad_x)
         self._calculated_height = self._height_constraint.apply(self._calculated_col_heights + 2 * outer_pad_y)
+    
+    def _content_size(self) -> tuple[int, int]:
+        spacing_x = round(self._cell_spacing.x)
+        spacing_y = round(self._cell_spacing.y)
+        
+        if self._mode == self.GRID_MODE:
+            content_w = self._calculate_total_size(self._calculated_col_widths, spacing_x)
+            content_h = self._calculate_total_size(self._calculated_row_heights, spacing_y)
+        elif self._mode == self.ROW_MODE:
+            content_w = max(self._row_mode_calculated_row_widths.values(), default=0)
+            content_h = self._calculate_total_size(self._calculated_row_heights, spacing_y)
+        else:
+            content_w = self._calculate_total_size(self._calculated_col_widths, spacing_x)
+            content_h = max(self._col_mode_calculated_col_heights.values(), default=0)
+        
+        return content_w, content_h
     
     def _fit_col_and_row_dims(self):
         outer_pad_x = round(self._outer_padding.x)
@@ -1003,16 +1022,7 @@ class LayoutObject(RectObject):
         outer_pad_y = round(self._outer_padding.y)
         justify_x, justify_y = self._justification
         layout_w, layout_h = self._calculated_width, self._calculated_height
-        
-        if self._mode == self.GRID_MODE:
-            content_w = self._calculate_total_size(self._calculated_col_widths, round(self._cell_spacing.x))
-            content_h = self._calculate_total_size(self._calculated_row_heights, round(self._cell_spacing.y))
-        elif self._mode == self.ROW_MODE:
-            content_w = max(self._row_mode_calculated_row_widths.values(), default=0)
-            content_h = self._calculate_total_size(self._calculated_row_heights, round(self._cell_spacing.y))
-        else:
-            content_w = self._calculate_total_size(self._calculated_col_widths, round(self._cell_spacing.x))
-            content_h = max(self._col_mode_calculated_col_heights.values(), default=0)
+        content_w, content_h = self._content_size()
         
         start_x = round(outer_pad_x + (layout_w - 2 * outer_pad_x - content_w) * justify_x)
         start_y = round(outer_pad_y + (layout_h - 2 * outer_pad_y - content_h) * justify_y)
@@ -1173,16 +1183,27 @@ class LayoutObject(RectObject):
         self._validate_relocation(moves)
         return moves
     
-    def _clear_objects(self) -> None:
-        """Drops every placed object without firing on_object_removal."""
-        for obj in list(self._object_placements):
+    def _clear_objects(self, ignore_callbacks: bool = True) -> None:
+        """Drops every placed object; on_object_removal fires per object unless ignored."""
+        removed = list(self._object_placements)
+        for obj in removed:
             self._forget_object(obj)
         self._recompute_max_col_and_rows()
         self.mark_dirty()
+        
+        if not ignore_callbacks:
+            for obj in removed:
+                self.on_object_removal(obj)
     
     # endregion
     
     # region OBJECT QUERIES
+    
+    def __len__(self) -> int:
+        return len(self._object_placements)
+    
+    def __iter__(self) -> Iterator[PygameObject]:
+        return iter(self._object_placements)
     
     def has_object(self, obj: PygameObject) -> bool:
         return obj in self._object_placements
@@ -1248,6 +1269,10 @@ class LayoutObject(RectObject):
     
     def get_next_row(self, col: int) -> int:
         return self._next_rows.get(col, 0)
+    
+    def get_content_size(self) -> tuple[int, int]:
+        """Size of the laid out content (children + spacing, without outer padding), from the last relayout."""
+        return self._content_size()
     
     # endregion
     
@@ -1338,6 +1363,12 @@ class LayoutObject(RectObject):
     
     def set_content_offset_y(self, value: float) -> "LayoutObject":
         self.content_offset_y = value
+        return self
+    
+    def set_layering_priority(self, priority: LayeringPriority) -> "LayoutObject":
+        """Sets the z-ordering rule applied on every relayout. See `_update_layering`."""
+        self._layering_priority = priority
+        self.mark_dirty()
         return self
     
     # endregion
@@ -1439,11 +1470,6 @@ class LayoutObject(RectObject):
         return self
     
     # endregion
-
-    def set_layering_priority(self, priority: LayeringPriority) -> "LayoutObject":
-        self._layering_priority = priority
-        self._update_layering()
-        return self
     
     # region OBJECT PLACEMENT
     
@@ -1493,6 +1519,11 @@ class LayoutObject(RectObject):
         obj = self._cells_objects[(x, y)]
         return self.remove_object(obj, ignore_callbacks=ignore_callbacks)
     
+    def clear(self, ignore_callbacks: bool = False) -> "LayoutObject":
+        """Removes every object from the layout. on_object_removal fires per object unless ignored."""
+        self._clear_objects(ignore_callbacks)
+        return self
+    
     def replace_object(self, prev: PygameObject, new: Optional[PygameObject], ignore_callbacks: bool = False) -> "LayoutObject":
         """Hands prev's cell over to new (or clears the cell when new is None). Fires
         on_object_removal(prev) plus, when new is new to this layout, on_object_addition(new)."""
@@ -1502,16 +1533,17 @@ class LayoutObject(RectObject):
         if new is None:
             self.remove_object(prev, ignore_callbacks=ignore_callbacks)
         else:
-            self.replace_object_in_cell(self._object_placements[prev], new, ignore_callbacks=ignore_callbacks)
+            self.replace_object_in_cell(*self._object_placements[prev], new, ignore_callbacks=ignore_callbacks)
         
         return self
     
-    def replace_object_in_cell(self, pos: CellPos, new: PygameObject, anchor: Optional[vec2] = None,
+    def replace_object_in_cell(self, x: int, y: int, new: PygameObject, anchor: Optional[vec2] = None,
                                span: Optional[tuple[int, int]] = None, ignore_callbacks: bool = False) -> "LayoutObject":
-        """Swaps whatever occupies pos for new. Span of new is, in order of precedence: the
+        """Swaps whatever occupies cell (x, y) for new. Span of new is, in order of precedence: the
         explicit `span` argument, new's own span when it is already in this layout, otherwise
         the span of the object it replaces. Either way the swap is all or nothing - a rejected
         replacement leaves every object exactly where it was and fires no hook."""
+        pos: CellPos = (x, y)
         prev = self._cells_objects.get(pos, None)
         
         if new is prev:
@@ -1579,8 +1611,10 @@ class LayoutObject(RectObject):
         
         return self
     
-    def switch_cells_content(self, cell1: CellPos, cell2: CellPos) -> "LayoutObject":
+    def switch_cells_content(self, x1: int, y1: int, x2: int, y2: int) -> "LayoutObject":
         """Swaps two cells or moves the content when one side is empty. Nothing leaves the layout, so no hook fires."""
+        cell1: CellPos = (x1, y1)
+        cell2: CellPos = (x2, y2)
         if cell1 == cell2:
             return self
         
@@ -1698,33 +1732,33 @@ class LayoutObject(RectObject):
     # region UPDATE
     
     def _update_layering(self) -> "LayoutObject":
+        """Assigns every placed object a sub_layer derived from its cell, honoring `_layering_priority`.
+        The first-listed axis is the primary one and the first-listed direction ranks highest
+        (drawn last, hovered first), so `"top_bottom_left_right"` puts the topmost object on
+        top and breaks ties left to right."""
         if not self._layering_priority:
             return self
-
-        vertical_first = "TOP_BOTTOM_" in self._layering_priority or "BOTTOM_TOP_" in self._layering_priority
-        top_first = "TOP_BOTTOM" in self._layering_priority
-        left_first = "LEFT_RIGHT" in self._layering_priority
+        
+        priority = self._layering_priority.upper()
+        vertical_first = "top_bottom_" in priority or "bottom_top_" in priority
+        top_first = "top_bottom" in priority
+        left_first = "left_right" in priority
+        
+        col_count = self.max_col + 1
+        row_count = self.max_row + 1
         
         for obj, (x, y) in self._object_placements.items():
-
-            if left_first:
-                layer_x = self.max_col - x
-            else:
-                layer_x = x
-            if top_first:
-                layer_y = self.max_row - y
-            else:
-                layer_y = y
-
-            if vertical_first:
-                layer = layer_y + layer_x * self.max_row
-            else:
-                layer = layer_x + layer_y * self.max_col
-
-            obj.sub_layer = layer
-
-        return self
+            layer_x = x if left_first else (col_count - 1 - x)
+            layer_y = y if top_first else (row_count - 1 - y)
             
+            if vertical_first:
+                layer = layer_x + layer_y * col_count
+            else:
+                layer = layer_y + layer_x * row_count
+            
+            obj.sub_layer = layer
+        
+        return self
     
     def _update_self(self, dt: float) -> "LayoutObject":
         super()._update_self(dt)
@@ -1742,11 +1776,15 @@ class LayoutObject(RectObject):
             self._dirty = False
         return self
     
-    def __repr__(self) -> str:
-        return f"LayoutObject({id(self)})"
-    
     # endregion
+    
+    # region MISC
+    
+    def __repr__(self) -> str:
+        return f"LayoutObject({self._mode}, children={len(self._object_placements)}, dirty={self._dirty})"
 
     def make_reorderable(self, placeholder_style: RectStyle = RectStyle()) -> "LayoutObject":
         self.add_behavior(ReorderableLayoutBehavior(placeholder_style))
         return self
+    
+    # endregion

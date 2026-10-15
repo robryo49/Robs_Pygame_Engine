@@ -1,7 +1,7 @@
 from typing import Any, Callable, Iterable, Literal, Optional, cast
 
 from .sub_factory import SubObjectFactory
-from ..custom import LayoutObject
+from ..custom import FitMode, LayoutMode, LayoutObject
 from ..object import PygameObject
 from ...rendering import RectRenderer, RectStyle
 from ...utils import Anchor, StyleOrName, vec2
@@ -11,8 +11,8 @@ class LayoutObjectFactory(SubObjectFactory):
     
     def create_layout[LT: LayoutObject](
             self, layout_type: type[LT], position: vec2, width: Optional[int] = None, height: Optional[int] = None,
-            mode: LayoutObject.Mode = LayoutObject.GRID_MODE, fit_mode: LayoutObject.FitMode = LayoutObject.STRETCH_MODE,
-            overflow_mode: LayoutObject.FitMode = LayoutObject.STRETCH_MODE, justification: vec2 = Anchor.C, reorderable: bool = False,
+            mode: LayoutMode = LayoutObject.GRID_MODE, fit_mode: FitMode = LayoutObject.STRETCH_MODE,
+            overflow_mode: FitMode = LayoutObject.STRETCH_MODE, justification: vec2 = Anchor.C, reorderable: bool = False,
             style: StyleOrName[RectStyle] = None,
             rotation: float = 0.0, scale: float = 1.0, layer: int = 0, anchor: vec2 = Anchor.C, cache: bool = True, *args
     ) -> LT:
@@ -39,8 +39,8 @@ class LayoutObjectFactory(SubObjectFactory):
 
     def grid_layout(
             self, position: vec2, width: Optional[int] = None, height: Optional[int] = None,
-            mode: LayoutObject.Mode = LayoutObject.GRID_MODE, fit_mode: LayoutObject.FitMode = LayoutObject.STRETCH_MODE,
-            overflow_mode: LayoutObject.FitMode = LayoutObject.STRETCH_MODE, justification: vec2 = Anchor.C, reorderable: bool = False,
+            mode: LayoutMode = LayoutObject.GRID_MODE, fit_mode: FitMode = LayoutObject.STRETCH_MODE,
+            overflow_mode: FitMode = LayoutObject.STRETCH_MODE, justification: vec2 = Anchor.C, reorderable: bool = False,
             style: StyleOrName[RectStyle] = None,
             rotation: float = 0.0, scale: float = 1.0, layer: int = 0, anchor: vec2 = Anchor.C, cache: bool = True
     ) -> LayoutObject:
@@ -48,8 +48,8 @@ class LayoutObjectFactory(SubObjectFactory):
 
     def stack_in_row(
             self, position: vec2, width: Optional[int] = None, height: Optional[int] = None, objects: Optional[Iterable[PygameObject]] = None, cell_anchor: vec2 = Anchor.C,
-            mode: LayoutObject.Mode = LayoutObject.GRID_MODE, fit_mode: LayoutObject.FitMode = LayoutObject.STRETCH_MODE,
-            overflow_mode: LayoutObject.FitMode = LayoutObject.STRETCH_MODE, justification: vec2 = Anchor.C, reorderable: bool = False,
+            mode: LayoutMode = LayoutObject.GRID_MODE, fit_mode: FitMode = LayoutObject.STRETCH_MODE,
+            overflow_mode: FitMode = LayoutObject.STRETCH_MODE, justification: vec2 = Anchor.C, reorderable: bool = False,
             style: StyleOrName[RectStyle] = None,
             rotation: float = 0.0, scale: float = 1.0, layer: int = 0, anchor: vec2 = Anchor.C, cache: bool = True
     ) -> LayoutObject:
@@ -64,8 +64,8 @@ class LayoutObjectFactory(SubObjectFactory):
 
     def stack_in_col(
             self, position: vec2, width: Optional[int] = None, height: Optional[int] = None, objects: Optional[Iterable[PygameObject]] = None, cell_anchor: vec2 = Anchor.C, style: StyleOrName[RectStyle] = None,
-            mode: LayoutObject.Mode = LayoutObject.GRID_MODE, fit_mode: LayoutObject.FitMode = LayoutObject.STRETCH_MODE,
-            overflow_mode: LayoutObject.FitMode = LayoutObject.STRETCH_MODE, justification: vec2 = Anchor.C, reorderable: bool = False,
+            mode: LayoutMode = LayoutObject.GRID_MODE, fit_mode: FitMode = LayoutObject.STRETCH_MODE,
+            overflow_mode: FitMode = LayoutObject.STRETCH_MODE, justification: vec2 = Anchor.C, reorderable: bool = False,
             rotation: float = 0.0, scale: float = 1.0, layer: int = 0, anchor: vec2 = Anchor.C, cache: bool = True
     ) -> LayoutObject:
 
@@ -79,8 +79,8 @@ class LayoutObjectFactory(SubObjectFactory):
 
     def stack_in_grid(
             self, position: vec2, width: Optional[int] = None, height: Optional[int] = None, objects: Optional[Iterable[Iterable[PygameObject]]] = None, cell_anchor: vec2 = Anchor.C,
-            mode: LayoutObject.Mode = LayoutObject.GRID_MODE, fit_mode: LayoutObject.FitMode = LayoutObject.STRETCH_MODE,
-            overflow_mode: LayoutObject.FitMode = LayoutObject.STRETCH_MODE, justification: vec2 = Anchor.C, reorderable: bool = False,
+            mode: LayoutMode = LayoutObject.GRID_MODE, fit_mode: FitMode = LayoutObject.STRETCH_MODE,
+            overflow_mode: FitMode = LayoutObject.STRETCH_MODE, justification: vec2 = Anchor.C, reorderable: bool = False,
             style: StyleOrName[RectStyle] = None,
             rotation: float = 0.0, scale: float = 1.0, layer: int = 0, anchor: vec2 = Anchor.C, cache: bool = True
     ) -> LayoutObject:
@@ -98,8 +98,8 @@ class LayoutObjectFactory(SubObjectFactory):
 
     def stack_in_cols(
         self, position: vec2, width: Optional[int] = None, height: Optional[int] = None, objects: Optional[Iterable[Iterable[PygameObject]]] = None, cell_anchor: vec2 = Anchor.C,
-        fit_mode: LayoutObject.FitMode = LayoutObject.STRETCH_MODE,
-        overflow_mode: LayoutObject.FitMode = LayoutObject.STRETCH_MODE, justification: vec2 = Anchor.C, reorderable: bool = False,
+        fit_mode: FitMode = LayoutObject.STRETCH_MODE,
+        overflow_mode: FitMode = LayoutObject.STRETCH_MODE, justification: vec2 = Anchor.C, reorderable: bool = False,
         style: StyleOrName[RectStyle] = None,
         rotation: float = 0.0, scale: float = 1.0, layer: int = 0, anchor: vec2 = Anchor.C, cache: bool = True
     ) -> LayoutObject:
@@ -108,18 +108,18 @@ class LayoutObjectFactory(SubObjectFactory):
 
     def stack_in_rows(
         self, position: vec2, width: Optional[int] = None, height: Optional[int] = None, objects: Optional[Iterable[Iterable[PygameObject]]] = None, cell_anchor: vec2 = Anchor.C,
-        fit_mode: LayoutObject.FitMode = LayoutObject.STRETCH_MODE,
-        overflow_mode: LayoutObject.FitMode = LayoutObject.STRETCH_MODE, justification: vec2 = Anchor.C, reorderable: bool = False,
+        fit_mode: FitMode = LayoutObject.STRETCH_MODE,
+        overflow_mode: FitMode = LayoutObject.STRETCH_MODE, justification: vec2 = Anchor.C, reorderable: bool = False,
         style: StyleOrName[RectStyle] = None,
         rotation: float = 0.0, scale: float = 1.0, layer: int = 0, anchor: vec2 = Anchor.C, cache: bool = True
     ) -> LayoutObject:
-        layout = self.stack_in_grid(position, width, height, objects, cell_anchor, LayoutObject.GRID_MODE, fit_mode, overflow_mode, justification, reorderable, style, rotation, scale, layer, anchor, cache)
+        layout = self.stack_in_grid(position, width, height, objects, cell_anchor, LayoutObject.ROW_MODE, fit_mode, overflow_mode, justification, reorderable, style, rotation, scale, layer, anchor, cache)
         return layout
 
     def create_in_row(
             self, position: vec2, values: list[tuple[Any, vec2, tuple[Any, ...]]], constructors: dict[str, Callable[[Any, ...], PygameObject]],
-            width: Optional[int] = None, height: Optional[int] = None, mode: LayoutObject.Mode = LayoutObject.GRID_MODE, fit_mode: LayoutObject.FitMode = LayoutObject.STRETCH_MODE,
-            overflow_mode: LayoutObject.FitMode = LayoutObject.PRESERVE_MODE, justification: vec2 = Anchor.C, reorderable: bool = False, style: StyleOrName[RectStyle] = None,
+            width: Optional[int] = None, height: Optional[int] = None, mode: LayoutMode = LayoutObject.GRID_MODE, fit_mode: FitMode = LayoutObject.STRETCH_MODE,
+            overflow_mode: FitMode = LayoutObject.PRESERVE_MODE, justification: vec2 = Anchor.C, reorderable: bool = False, style: StyleOrName[RectStyle] = None,
             rotation: float = 0.0, scale: float = 1.0, layer: int = 0, anchor: vec2 = Anchor.C, cache: bool = True
     ) -> LayoutObject:
 
@@ -133,8 +133,8 @@ class LayoutObjectFactory(SubObjectFactory):
 
     def create_in_column(
             self, position: vec2, values: list[tuple[Any, vec2, tuple[Any, ...]]], constructors: dict[str, Callable[[Any, ...], PygameObject]],
-            width: Optional[int] = None, height: Optional[int] = None, mode: LayoutObject.Mode = LayoutObject.GRID_MODE, fit_mode: LayoutObject.FitMode = LayoutObject.STRETCH_MODE,
-            overflow_mode: LayoutObject.FitMode = LayoutObject.PRESERVE_MODE, justification: vec2 = Anchor.C, reorderable: bool = False, style: StyleOrName[RectStyle] = None,
+            width: Optional[int] = None, height: Optional[int] = None, mode: LayoutMode = LayoutObject.GRID_MODE, fit_mode: FitMode = LayoutObject.STRETCH_MODE,
+            overflow_mode: FitMode = LayoutObject.PRESERVE_MODE, justification: vec2 = Anchor.C, reorderable: bool = False, style: StyleOrName[RectStyle] = None,
             rotation: float = 0.0, scale: float = 1.0, layer: int = 0, anchor: vec2 = Anchor.C, cache: bool = True
     ) -> LayoutObject:
 
@@ -148,8 +148,8 @@ class LayoutObjectFactory(SubObjectFactory):
 
     def create_in_grid(
             self, position: vec2, grid_values: list[list[tuple[Any, vec2, tuple[Any, ...]]]], constructors: dict[str, Callable[[Any, ...], PygameObject]],
-            width: Optional[int] = None, height: Optional[int] = None, mode: LayoutObject.Mode = LayoutObject.GRID_MODE, fit_mode: LayoutObject.FitMode = LayoutObject.STRETCH_MODE,
-            overflow_mode: LayoutObject.FitMode = LayoutObject.PRESERVE_MODE, justification: vec2 = Anchor.C, reorderable: bool = False, style: StyleOrName[RectStyle] = None,
+            width: Optional[int] = None, height: Optional[int] = None, mode: LayoutMode = LayoutObject.GRID_MODE, fit_mode: FitMode = LayoutObject.STRETCH_MODE,
+            overflow_mode: FitMode = LayoutObject.PRESERVE_MODE, justification: vec2 = Anchor.C, reorderable: bool = False, style: StyleOrName[RectStyle] = None,
             rotation: float = 0.0, scale: float = 1.0, layer: int = 0, anchor: vec2 = Anchor.C, cache: bool = True
     ) -> LayoutObject:
 
@@ -164,8 +164,8 @@ class LayoutObjectFactory(SubObjectFactory):
 
     def __call__(
             self, position: vec2, width: Optional[int] = None, height: Optional[int] = None,
-            mode: LayoutObject.Mode = LayoutObject.GRID_MODE, fit_mode: LayoutObject.FitMode = LayoutObject.STRETCH_MODE,
-            overflow_mode: LayoutObject.FitMode = LayoutObject.STRETCH_MODE, justification: vec2 = Anchor.C, reorderable: bool = False,
+            mode: LayoutMode = LayoutObject.GRID_MODE, fit_mode: FitMode = LayoutObject.STRETCH_MODE,
+            overflow_mode: FitMode = LayoutObject.STRETCH_MODE, justification: vec2 = Anchor.C, reorderable: bool = False,
             style: StyleOrName[RectStyle] = None,
             rotation: float = 0.0, scale: float = 1.0, layer: int = 0, anchor: vec2 = Anchor.C, cache: bool = True
     ) -> LayoutObject:
