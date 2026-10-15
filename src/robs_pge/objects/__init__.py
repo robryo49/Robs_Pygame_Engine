@@ -1,7 +1,14 @@
-from .behavior import ObjectBehavior
+from .behavior import ObjectBehavior, LayoutObjectBehavior
 from .behaviors import (
     ActionOnUpdateBehavior,
     ActionOnClickBehavior,
+    ActionOnEventBehavior,
+    ActionOnHoverBehavior,
+    ActionOnScrollBehavior,
+    ActionOnAttributeChangeBehavior,
+    AnimationOnClickBehavior,
+    AnimationOnHoverBehavior,
+    AnimationOnAttributeChangeBehavior,
     MultiplyAttributeOnClickBehavior,
     MultiplyAttributeOnHoverBehavior,
     AddToAttributeOnClickBehavior,
@@ -14,9 +21,12 @@ from .behaviors import (
     AttributeValueSnappingBehavior,
     AttributeClampingBehavior,
     AttributeFixingBehavior,
-    ActionOnCollisionBehavior
+    HideOnCameraZoomBehavior,
+    ActionOnCollisionBehavior,
+    ActionOnObjectAdditionBehavior,
+    ReorderableLayoutBehavior
 )
-from .behavior_manager import BehaviorManager
+from .behavior_manager import BehaviorManager, LayoutBehaviorManager
 from .interaction_manager import InteractionManager
 from .object_collection import ObjectCollection
 from .object_factory import ObjectFactory
@@ -41,13 +51,20 @@ from .layer_manager import LayerManager
 __all__ = [
     # behaviors
     "ObjectBehavior",
+    "LayoutObjectBehavior",
     "ActionOnUpdateBehavior", "ActionOnClickBehavior",
+    "ActionOnEventBehavior", "ActionOnHoverBehavior", "ActionOnScrollBehavior",
+    "ActionOnAttributeChangeBehavior",
+    "AnimationOnClickBehavior", "AnimationOnHoverBehavior", "AnimationOnAttributeChangeBehavior",
     "MultiplyAttributeOnClickBehavior", "MultiplyAttributeOnHoverBehavior",
     "AddToAttributeOnClickBehavior", "AddToAttributeOnHoverBehavior",
     "SetAttributeOnClickBehavior", "SetAttributeOnHoverBehavior",
     "DynamicAttributeBehavior", "DraggableBehavior", "AttributeClampingBehavior", "AttributeGridSnappingBehavior", "AttributeValueSnappingBehavior", "AttributeFixingBehavior",
+    "HideOnCameraZoomBehavior",
     "ActionOnCollisionBehavior",
+    "ActionOnObjectAdditionBehavior", "ReorderableLayoutBehavior",
     "BehaviorManager",
+    "LayoutBehaviorManager",
     # core
     "InteractionManager",
     "ObjectCollection",

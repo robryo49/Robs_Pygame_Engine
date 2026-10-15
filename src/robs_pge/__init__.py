@@ -16,7 +16,17 @@ from .objects import (
     DraggableBehavior, AttributeGridSnappingBehavior, AttributeValueSnappingBehavior,
     AttributeClampingBehavior, AttributeFixingBehavior, ActionOnCollisionBehavior,
     BehaviorManager, InteractionManager, WindowManager, LayerManager,
+    DialogManager,
     Particle, ParticleEmitter, BurstParticleEmitter, ParticleSystem, ParticlePool,
+)
+from .objects.custom import (
+    TextBoxObject, SliderObject, SpriteButtonObject, IconObject, CheckBoxObject,
+    ToggleButtonObject, IconButtonObject, RadioButtonObject, ScrollbarObject, DebugInfoWindow,
+)
+from .objects.particles import FadingTypes
+from .objects.object_factories import (
+    ButtonObjectFactory, DebugObjectFactory, LayoutObjectFactory, SpriteObjectFactory,
+    TextObjectFactory, UIObjectFactory, ShapeFactory, WindowObjectFactory,
 )
 from .physics import PhysicsBody, BodyTypes, PhysicsWorld, ShapeTypes
 from .utils import (
@@ -26,6 +36,7 @@ from .utils import (
     Color, Colors, ColorPalette,
     Font,
     Keybinds, ObjectFlags, KeybindFlags, ObjectTags,
+    CoordinateSystem, invert_uv, split_text, replace_color,
     clamp, lerp, inf, pi,
     random, round_sig, invert_y, invert_uv_y, invert_x, invert_uv_x,
     add, subtract, multiply, divide, power, length,
@@ -51,7 +62,7 @@ from .rendering import (
     DrawCommand, DrawRect, DrawCircle, DrawTexture, DrawText, DrawLine, DrawSubSurface, DrawChunkedSprite,
     ObjectRenderer, RectRenderer, CircleRenderer, LineRenderer, SpriteRenderer, TextRenderer,
     SubSurfaceRenderer, ChunkedSpriteRenderer, IconRenderer,
-    Renderer, SlicedRectBuilder,
+    Renderer, RectBuilder, SlicedRectBuilder,
 )
 from .events import Event, Events, EventManager
 from .debug import FrameTimer, QuickDebugManager
@@ -72,7 +83,10 @@ __all__ = [
     "ButtonObject", "ProgressBarObject", "LineChartObject",
     "ValueSelectorObject", "ValueCyclerObject",
     "ObjectFactory", "ObjectCollection", "ObjectBehavior",
-    "Layer",
+    "Layer", "DialogManager",
+    # custom UI objects
+    "TextBoxObject", "SliderObject", "SpriteButtonObject", "IconObject", "CheckBoxObject",
+    "ToggleButtonObject", "IconButtonObject", "RadioButtonObject", "ScrollbarObject", "DebugInfoWindow",
     # behaviors
     "ActionOnUpdateBehavior", "ActionOnClickBehavior", "MultiplyAttributeOnClickBehavior",
     "MultiplyAttributeOnHoverBehavior", "AddToAttributeOnClickBehavior", "AddToAttributeOnHoverBehavior",
@@ -81,8 +95,11 @@ __all__ = [
     "AttributeClampingBehavior", "AttributeFixingBehavior", "ActionOnCollisionBehavior",
     # object managers/collections
     "BehaviorManager", "InteractionManager", "WindowManager", "LayerManager",
+    # object factories
+    "ButtonObjectFactory", "DebugObjectFactory", "LayoutObjectFactory", "SpriteObjectFactory",
+    "TextObjectFactory", "UIObjectFactory", "ShapeFactory", "WindowObjectFactory",
     # particles
-    "Particle", "ParticleEmitter", "BurstParticleEmitter", "ParticleSystem", "ParticlePool",
+    "Particle", "ParticleEmitter", "BurstParticleEmitter", "ParticleSystem", "ParticlePool", "FadingTypes",
     # physics
     "PhysicsBody", "BodyTypes", "PhysicsWorld", "ShapeTypes",
     # utils - math/geometry
@@ -91,6 +108,7 @@ __all__ = [
     "Color", "Colors", "ColorPalette",
     "Font",
     "Keybinds", "ObjectFlags", "KeybindFlags", "ObjectTags",
+    "CoordinateSystem", "invert_uv", "split_text", "replace_color",
     "clamp", "lerp", "inf", "pi",
     "random", "round_sig", "invert_y", "invert_uv_y", "invert_x", "invert_uv_x",
     "add", "subtract", "multiply", "divide", "power", "length",
@@ -121,7 +139,7 @@ __all__ = [
     # rendering - renderers
     "ObjectRenderer", "RectRenderer", "CircleRenderer", "LineRenderer", "SpriteRenderer", "TextRenderer",
     "SubSurfaceRenderer", "ChunkedSpriteRenderer", "IconRenderer",
-    "Renderer",
+    "Renderer", "RectBuilder",
     # events
     "Event", "Events", "EventManager",
     # debug

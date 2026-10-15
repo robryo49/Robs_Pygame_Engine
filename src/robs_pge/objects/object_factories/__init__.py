@@ -1,3 +1,4 @@
+from .sub_factory import SubObjectFactory
 from .button_object_factory import ButtonObjectFactory
 from .debug_object_factory import DebugObjectFactory
 from .layout_object_factory import LayoutObjectFactory
@@ -8,6 +9,7 @@ from .ui_object_factory import UIObjectFactory
 from .window_object_factory import WindowObjectFactory
 
 __all__ = [
+    "SubObjectFactory",
     "ButtonObjectFactory",
     "DebugObjectFactory",
     "LayoutObjectFactory",

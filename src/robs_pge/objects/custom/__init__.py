@@ -1,6 +1,6 @@
 from .primitive_objects import RectObject, CircleObject, LineObject, TextObject
 from .sprite_objects import SpriteObject, ChunkedSpriteObject, SubSurfaceSpriteObject, IconObject
-from .layout_objects import LayoutObject
+from .layout_objects import LayoutObject, SizeConstraint
 from .ui_objects import (
     TextBoxObject,
     CheckBoxObject, SliderObject, ButtonObject, LineChartObject,
@@ -19,6 +19,7 @@ __all__ = [
     "ChunkedSpriteObject",
     "SubSurfaceSpriteObject",
     "LayoutObject",
+    "SizeConstraint",
     "DebugOverlay",
     "TextObject",
     "TextBoxObject",
