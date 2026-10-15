@@ -42,10 +42,6 @@ class SizeConstraint:
 
 
 class LayoutObject(RectObject):
-    Mode = LayoutMode
-    FitMode = FitMode
-    LayeringPriority = LayeringPriority
-    
     GRID_MODE: Literal["grid"] = "grid"
     COL_MODE: Literal["columns"] = "columns"
     ROW_MODE: Literal["rows"] = "rows"
