@@ -1045,7 +1045,7 @@ class LayoutObject(RectObject):
             
             obj_x = anchor_x + obj_w * (obj_anchor_x - cell_anchor_x) + self._content_offset.x
             obj_y = anchor_y + obj_h * (obj_anchor_y - cell_anchor_y) + self._content_offset.y
-            
+
             obj.x_pos = round(obj_x)
             obj.y_pos = round(obj_y)
             self._dirty_checking_values[obj] = (vec2(obj.pos), vec2(obj.dims), vec2(obj.anchor))

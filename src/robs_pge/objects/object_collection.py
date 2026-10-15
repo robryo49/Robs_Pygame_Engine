@@ -94,24 +94,18 @@ class ObjectCollection(TypedCollection):
             self._to_add.append(item)
         return item
     
-    def add_object(self, *obj: PygameObject | Iterable[PygameObject]) -> "ObjectCollection":
+    def add_object(self, *obj: PygameObject) -> "ObjectCollection":
         for o in obj:
-            if isinstance(o, Iterable):
-                self.add_object(*o)
-            else:
-                self._to_add.append(o)
+            self._to_add.append(o)
         return self
     
     def remove(self, item: PygameObject) -> PygameObject:
         self._to_remove.append(item)
         return item
         
-    def remove_object(self, *obj: PygameObject | Iterable[PygameObject]) -> "ObjectCollection":
+    def remove_object(self, *obj: PygameObject) -> "ObjectCollection":
         for o in obj:
-            if isinstance(o, Iterable):
-                self.remove_object(*o)
-            else:
-                self._to_remove.append(o)
+            self._to_remove.append(o)
         return self
         
     def update(self, dt: float) -> "ObjectCollection":
