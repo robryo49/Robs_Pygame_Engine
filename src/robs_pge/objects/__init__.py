@@ -1,30 +1,16 @@
 from .behavior import ObjectBehavior, LayoutObjectBehavior
 from .behaviors import (
-    ActionOnUpdateBehavior,
-    ActionOnClickBehavior,
-    ActionOnEventBehavior,
-    ActionOnHoverBehavior,
-    ActionOnScrollBehavior,
-    ActionOnAttributeChangeBehavior,
-    AnimationOnClickBehavior,
-    AnimationOnHoverBehavior,
-    AnimationOnAttributeChangeBehavior,
-    MultiplyAttributeOnClickBehavior,
-    MultiplyAttributeOnHoverBehavior,
-    AddToAttributeOnClickBehavior,
-    AddToAttributeOnHoverBehavior,
-    SetAttributeOnClickBehavior,
-    SetAttributeOnHoverBehavior,
-    DynamicAttributeBehavior,
-    DraggableBehavior,
-    AttributeGridSnappingBehavior,
-    AttributeValueSnappingBehavior,
-    AttributeClampingBehavior,
-    AttributeFixingBehavior,
-    HideOnCameraZoomBehavior,
-    ActionOnCollisionBehavior,
-    ActionOnObjectAdditionBehavior,
-    ReorderableLayoutBehavior
+    ActionOnUpdateBehavior, ActionOnClickBehavior, ActionOnEventBehavior,
+    ActionOnHoverBehavior, ActionOnScrollBehavior, ActionOnAttributeChangeBehavior,
+    AnimationOnClickBehavior, AnimationOnHoverBehavior, AnimationOnAttributeChangeBehavior,
+    MultiplyAttributeOnClickBehavior, MultiplyAttributeOnHoverBehavior,
+    AddToAttributeOnClickBehavior, AddToAttributeOnHoverBehavior,
+    SetAttributeOnClickBehavior, SetAttributeOnHoverBehavior,
+    DynamicAttributeBehavior, DraggableBehavior,
+    AttributeGridSnappingBehavior, AttributeValueSnappingBehavior,
+    AttributeClampingBehavior, AttributeFixingBehavior,
+    HideOnCameraZoomBehavior, ActionOnCollisionBehavior,
+    ActionOnObjectAdditionBehavior, ReorderableLayoutBehavior
 )
 from .behavior_manager import BehaviorManager, LayoutBehaviorManager
 from .interaction_manager import InteractionManager

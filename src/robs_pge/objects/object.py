@@ -1,8 +1,9 @@
 from __future__ import annotations
 
-from typing import Literal, TypeVar, cast
+from typing import Literal, TypeVar, cast, TYPE_CHECKING, Optional, Any, Callable
 
 from .behavior_manager import BehaviorManager
+from .behavior import ObjectBehavior
 from .behaviors import *
 from .object_collection import ObjectCollection
 from ..animation import Animation
