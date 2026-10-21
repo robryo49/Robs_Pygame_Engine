@@ -41,7 +41,6 @@ from .utils import (
     apply_transformation_matrix_on_point, apply_transformation_matrix_on_vec,
     get_transformation_matrix, get_inverse_transformation_matrix,
     rotate, rotate_rad, rotated_surface_dims, surface_pos_from_pixel_pos, surface_pos_from_uv_pos, get_object_dims,
-    Collection, DictCollection, TypedDictCollection, TypedCollection,
     Vec2Like, Vec3Like, Callback, EasingFunctionType, StyleOrName, ValueOrGetter, validate_signature,
     create_linear_gradient_array, create_angular_gradient_array, create_radial_gradient_array,
     create_circle_mask, create_rect_mask,
@@ -111,8 +110,6 @@ __all__ = [
     "apply_transformation_matrix_on_point", "apply_transformation_matrix_on_vec",
     "get_transformation_matrix", "get_inverse_transformation_matrix",
     "rotate", "rotate_rad", "rotated_surface_dims", "surface_pos_from_pixel_pos", "surface_pos_from_uv_pos", "get_object_dims",
-    # utils - collections
-    "Collection", "DictCollection", "TypedDictCollection", "TypedCollection",
     # utils - types
     "Vec2Like", "Vec3Like", "Callback", "EasingFunctionType", "StyleOrName", "ValueOrGetter", "validate_signature",
     # utils - array tools

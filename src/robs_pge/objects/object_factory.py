@@ -3,13 +3,13 @@ from __future__ import annotations
 from typing import Any, Callable, Optional, TYPE_CHECKING
 
 from .object_factories import ShapeFactory, SpriteObjectFactory, TextObjectFactory, UIObjectFactory, WindowObjectFactory
-from ..core.states.services_collection import ServicesCollection
 from ..rendering import Style
 from ..resources import ResourceManager
-from ..utils import DictCollection, Transform
+from ..utils import Transform
 
 if TYPE_CHECKING:
     from ..objects import PygameObject
+    from ..core import ServicesCollection
 
 
 class ObjectFactory:
@@ -31,7 +31,7 @@ class ObjectFactory:
         return self._services
     
     @services.setter
-    def services(self, value: DictCollection):
+    def services(self, value: ServicesCollection):
         self._services = value
         
     @property

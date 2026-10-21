@@ -1,6 +1,6 @@
 from .input_manager import InputManager
 from .keybind import Keybind
-from ..utils import KeybindFlags, Keybinds, DictCollection
+from ..utils import KeybindFlags, Keybinds
 
 
 class KeybindsManager:
@@ -8,7 +8,7 @@ class KeybindsManager:
         
         self._input_manager = input_manager
         
-        self._keybinds: DictCollection = DictCollection()
+        self._keybinds: dict = {}
         
     # region PROPERTIES
     
@@ -17,20 +17,20 @@ class KeybindsManager:
         return self._input_manager
     
     @property
-    def keybinds(self) -> DictCollection:
+    def keybinds(self) -> dict:
         return self._keybinds
     
     # endregion
     
     def has(self, kb: int | tuple[int, ...]) -> bool:
-        return self.keybinds.has(kb)
+        return kb in self._keybinds
     
     def remove(self, kb: int | tuple[int, ...]) -> "KeybindsManager":
         self.keybinds.pop(kb)
         return self
         
     def set(self, keybind: Keybind) -> "KeybindsManager":
-        self.keybinds.set(keybind.key, [keybind])
+        self.keybinds[keybind.key] = [keybind]
         return self
         
     def register(self, keybind: Keybind) -> "KeybindsManager":

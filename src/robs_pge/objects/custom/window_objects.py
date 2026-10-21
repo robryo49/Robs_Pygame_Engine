@@ -1,10 +1,15 @@
-from typing import Callable, Optional
+from __future__ import annotations
+
+from typing import Optional, TYPE_CHECKING
 
 from .primitive_objects import RectObject, TextObject
-from .ui_objects import LayoutObject, ScrollbarObject
+from .ui_objects import LayoutObject
 from ..object import PygameObject
 from ...rendering import RectRenderer
-from ...utils import Anchor, DictCollection, Transform, vec2, ObjectFlags
+from ...utils import Anchor, Transform, vec2, ObjectFlags
+
+if TYPE_CHECKING:
+    from ...core import ServicesCollection
 
 
 class WindowObject(LayoutObject):

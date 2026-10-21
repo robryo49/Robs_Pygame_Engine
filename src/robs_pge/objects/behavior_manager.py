@@ -1,19 +1,18 @@
 from __future__ import annotations
 
-from typing import Iterator, TYPE_CHECKING, overload, Optional
+from typing import Iterator, TYPE_CHECKING, Optional
 
 from .behavior import ObjectBehavior, LayoutObjectBehavior
 from ..events import Event
-from ..utils import TypedCollection, vec2
+from ..utils import vec2
 
 if TYPE_CHECKING:
     from .object import PygameObject
     from .custom import LayoutObject
 
-class BehaviorManager(TypedCollection):
+class BehaviorManager:
     def __init__(self, owner: PygameObject):
-        super().__init__(ObjectBehavior)
-        self._behavior_ids: dict[str, ObjectBehavior] = {}
+        self._behaviors: dict[str, ObjectBehavior] = {}
         self._owner: PygameObject = owner
         
     # region PROPERTIES
@@ -23,41 +22,44 @@ class BehaviorManager(TypedCollection):
         return self._owner
     
     def __iter__(self) -> Iterator[ObjectBehavior]:
-        return super().__iter__()
+        return iter(self._behaviors.values())
     
     # endregion
     
-    def add(self, item: ObjectBehavior, behavior_id: Optional[str] = None) -> ObjectBehavior:
-        if behavior_id is not None:
-            if b := self.get(behavior_id) is not None:
-                self.remove(b)
-            self._behavior_ids[behavior_id] = item
+    def add(self, behavior: ObjectBehavior, behavior_id: Optional[str] = None) -> ObjectBehavior:
+        if behavior_id is None:
+            behavior_id = str(hash(behavior))
 
-        super().add(item)
+        if b := self.get(behavior_id) is not None:
+            self.remove(b)
+        self._behaviors[behavior_id] = behavior
         
-        if isinstance(item, ObjectBehavior):
-            item.owner = self.owner
-            item.on_attach()
+        behavior.owner = self.owner
+        behavior.on_attach()
             
-        return item
+        return behavior
 
     def get(self, behavior_id: str) -> Optional[ObjectBehavior]:
-        return self._behavior_ids.get(behavior_id)
+        return self._behaviors.get(behavior_id)
 
     def get_id(self, behavior: ObjectBehavior) -> Optional[str]:
-        return next((k for k, v in self._behavior_ids.items() if v is behavior), None)
+        return next((k for k, v in self._behaviors.items() if v is behavior), None)
 
-    def remove(self, item: ObjectBehavior | str) -> Optional[ObjectBehavior]:
-        if isinstance(item, str):
-            item = self.get(item)
+    def remove(self, behavior: ObjectBehavior | str) -> Optional[ObjectBehavior]:
+        if isinstance(behavior, str):
+            behavior_id = behavior
+            behavior = self._behaviors.get(behavior_id)
+        else:
+            behavior_id = self.get_id(behavior)
 
-        super().remove(item)
-        
-        if isinstance(item, ObjectBehavior):
-            item.on_detach()
-            item.owner = None
+        if behavior_id is not None:
+            self._behaviors.pop(behavior_id)
+
+        if behavior is not None:
+            behavior.on_detach()
+            behavior.owner = None
             
-        return item
+        return behavior
     
     def on_hover(self) -> None:
         for b in self:

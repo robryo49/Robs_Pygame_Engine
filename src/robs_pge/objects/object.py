@@ -10,7 +10,7 @@ from ..animation import Animation
 from ..events import Event
 from ..physics import BodyTypes, PhysicsBody, ShapeTypes
 from ..rendering import DrawCommand, ObjectRenderer
-from ..utils import Anchor, Callback, DictCollection, FRect, ObjectFlags, ObjectTags, Transform, length, vec2
+from ..utils import Anchor, Callback, FRect, ObjectFlags, ObjectTags, Transform, length, vec2
 
 if TYPE_CHECKING:
     from ..objects import Layer
@@ -41,7 +41,7 @@ class PygameObject[R]:
         self._behaviors = self._create_behavior_manager()
         self._services: ServicesCollection = services
         
-        self._properties: DictCollection = DictCollection()
+        self._properties: dict = {}
         
         self._renderer = renderer
         
@@ -166,11 +166,11 @@ class PygameObject[R]:
     # region properties
     
     @property
-    def properties(self) -> DictCollection[str, Any]:
+    def properties(self) -> dict[str, Any]:
         return self._properties
     
     def get_property[T](self, name: str, default: Optional[T] = None, ignore_missing=True) -> T:
-        if not ignore_missing and not self.properties.has(name): raise AttributeError(f"Unknown property '{name}', only has {self.properties.keys()}")
+        if not ignore_missing and not name in self.properties: raise AttributeError(f"Unknown property '{name}', only has {self.properties.keys()}")
         return self.properties.get(name, default)
     
     def set_property(self, name: str, value: Any):

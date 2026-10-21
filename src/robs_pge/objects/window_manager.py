@@ -2,13 +2,12 @@ from typing import Optional
 
 from ..events import Event, EventManager, Events
 from ..objects import WindowObject
-from ..utils import TypedDictCollection
 
 
 class WindowManager:
     def __init__(self, event_manager: EventManager):
         self._event_manager = event_manager
-        self._windows = TypedDictCollection(str, WindowObject)
+        self._windows: dict[str, WindowObject] = {}
         self._groups: dict[str, set[str]] = {}
         self._window_group: dict[str, str] = {}
     
@@ -22,7 +21,7 @@ class WindowManager:
     
     def register(self, window: WindowObject, group: Optional[str] = None) -> WindowObject:
         window_id = window.id
-        self._windows.set(window_id, window)
+        self._windows[window_id] = window
         window.hide()
         if group:
             self._groups.setdefault(group, set()).add(window_id)

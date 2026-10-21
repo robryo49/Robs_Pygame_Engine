@@ -4,7 +4,6 @@ from .color import Color, Colors, ColorPalette
 from .keybinds import Keybinds
 from .management_tools import (
     ObjectTags, Vec2Like, Vec3Like, Callback, EasingFunctionType, StyleOrName, Style, ValueOrGetter, validate_signature, ObjectFlags, KeybindFlags,
-    Collection, DictCollection, TypedCollection, TypedDictCollection
 )
 from .array_tools import *
 from .async_tools import *
@@ -32,8 +31,6 @@ __all__ = [
     "ObjectFlags", "KeybindFlags", "ObjectTags",
     # keys
     "Keybinds",
-    # collection
-    "Collection", "DictCollection", "TypedDictCollection", "TypedCollection",
     # types
     "Vec2Like", "Vec3Like", "Callback", "EasingFunctionType", "StyleOrName", "Style", "ValueOrGetter", "validate_signature",
     # array_tools

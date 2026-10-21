@@ -3,17 +3,14 @@ from __future__ import annotations
 from typing import Any, Callable, Iterable, TYPE_CHECKING
 
 from ..rendering import DrawCommand
-from ..utils import TypedCollection
 
 if TYPE_CHECKING:
     from ..objects import PygameObject
     
 
-class ObjectCollection(TypedCollection):
+class ObjectCollection:
     def __init__(self, objects: Iterable[PygameObject] = ()):
-        from ..objects import PygameObject
-        
-        super().__init__(PygameObject, objects)
+        self._objects: list[PygameObject] = []
         
         self._to_remove: list[PygameObject] = []
         self._to_add: list[PygameObject] = []
@@ -33,15 +30,15 @@ class ObjectCollection(TypedCollection):
     
     @property
     def size(self):
-        return len(self)
+        return len(self._objects)
     
     @property
     def full_size(self):
-        return self.size + sum(o.children.full_size for o in self)
+        return self.size + sum(o.children.full_size for o in self._objects)
     
     # endregion
     
-    
+
     def toggle_rendering(self) -> "ObjectCollection":
         self._rendering_enabled = not self._rendering_enabled
         return self
@@ -71,7 +68,7 @@ class ObjectCollection(TypedCollection):
         if not self._to_add:
             return self
         
-        self.extend(self._to_add)
+        self._objects.extend(self._to_add)
         self._to_add.clear()
         return self
         
@@ -80,7 +77,7 @@ class ObjectCollection(TypedCollection):
             return self
         
         for o in self._to_remove:
-            super().remove(o)
+            self._objects.remove(o)
             
         self._to_remove.clear()
         return self
@@ -88,7 +85,7 @@ class ObjectCollection(TypedCollection):
     def add(self, item: PygameObject) -> PygameObject:
         if item in self._to_remove:
             self._to_remove.remove(item)
-        if item not in self._to_add and not super().has(item):
+        if not self.has(item):
             self._to_add.append(item)
         return item
     
@@ -111,7 +108,7 @@ class ObjectCollection(TypedCollection):
         self._handle_object_removals()
         
         if not self._frozen:
-            for o in self:
+            for o in self._objects:
                 o.update(dt)
             
         return self
@@ -119,15 +116,18 @@ class ObjectCollection(TypedCollection):
     def render(self, submit: Callable[[DrawCommand], Any]) -> "ObjectCollection":
         
         if self.rendering_enabled:
-            for o in self:
+            for o in self._objects:
                 o.render(submit)
         
         return self
 
     def has(self, item: PygameObject) -> bool:
-        return (super().has(item) or item in self._to_add) and item not in self._to_remove
+        return (item in self._objects or item in self._to_add) and item not in self._to_remove
 
     def __contains__(self, item: object) -> bool:
-        return (super().__contains__(item) or item in self._to_add) and item not in self._to_remove
+        return (self._objects.__contains__(item) or item in self._to_add) and item not in self._to_remove
+
+    def __iter__(self):
+        return iter(self._objects)
         
     

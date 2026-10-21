@@ -1,10 +1,13 @@
 from __future__ import annotations
 
-from typing import TypeVar
+from typing import TypeVar, TYPE_CHECKING
 
 from ..object import PygameObject
 from ...rendering import ChunkedSpriteRenderer, IconRenderer, SpriteRenderer, SubSurfaceRenderer
-from ...utils import Anchor, Color, DictCollection, Rect, Transform, vec2
+from ...utils import Anchor, Color, Rect, Transform, vec2
+
+if TYPE_CHECKING:
+    from ...core import ServicesCollection
 
 SR = TypeVar("SR", bound=SpriteRenderer)
 

@@ -1,10 +1,15 @@
-from typing import Callable, Optional
+from __future__ import annotations
+
+from typing import Callable, Optional, TYPE_CHECKING
 
 from .primitive_objects import RectObject, TextObject
 from .ui_objects import LayoutObject
 from .window_objects import WindowObject
 from ...rendering import RectRenderer
-from ...utils import Anchor, DictCollection, Transform, vec2
+from ...utils import Anchor, Transform, vec2
+
+if TYPE_CHECKING:
+    from ...core import ServicesCollection
 
 
 class DebugOverlay(LayoutObject):

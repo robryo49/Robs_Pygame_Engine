@@ -6,7 +6,7 @@ from typing import Any, Optional, TYPE_CHECKING
 
 from ..resources import Texture
 from ..rendering import Style
-from ..utils import Color, ColorPalette, Font, TypedDictCollection, vec2, StyleOrName
+from ..utils import Color, ColorPalette, Font, vec2, StyleOrName
 
 if TYPE_CHECKING:
     from ..core import Camera
@@ -14,8 +14,8 @@ if TYPE_CHECKING:
 
 class ResourceManager:
     def __init__(self):
-        self._folders = TypedDictCollection(str, Path)
-        self._resources = TypedDictCollection(type, TypedDictCollection)
+        self._folders: dict[str, Path] = {}
+        self._resources: dict[type, dict] = {}
         self._defaults: dict[type, Any] = {}
     
     # region CORE
@@ -25,10 +25,10 @@ class ResourceManager:
             raise TypeError(f"Resource '{resource_name}' is not of type '{resource_type.__name__}' but of type '{type(resource).__name__}'")
         
         if resource_type not in self._resources:
-            self._resources[resource_type] = TypedDictCollection(str, resource_type)
+            self._resources[resource_type] = {}
         
         logging.info(f"Registering {resource_type.__name__} : {resource_name}")
-        self._resources[resource_type].set(resource_name, resource)
+        self._resources[resource_type][resource_name] = resource
         return resource
     
     def get[T](self, resource_type: type[T], name: str) -> T:
@@ -116,7 +116,7 @@ class ResourceManager:
             raise FileNotFoundError(f"Folder '{path}' does not exist")
         if not path.is_dir():
             raise NotADirectoryError(f"'{path}' is not a directory")
-        self._folders.set(name, path)
+        self._folders[name] = path
     
     def get_path(self, folder: str) -> Path:
         path = self._folders.get(folder)
