@@ -79,10 +79,14 @@ class Display:
     
     # endregion
     
-    
     @property
     def clear_color(self) -> Color:
         return self._clear_color
+
+    @clear_color.setter
+    def clear_color(self, value: Color):
+        self._clear_color = value
+
     
     # endregion
     

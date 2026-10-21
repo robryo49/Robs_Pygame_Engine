@@ -12,7 +12,7 @@ from ...debug import FrameTimer, QuickDebugManager
 from ...events import Event, EventManager
 from ...input import InputManager, Keybind, KeybindsManager
 from ...input import Mouse
-from ...objects import DebugOverlay, InteractionManager, Layer, LayerManager, ObjectFactory, ParticleSystem, WindowManager, WindowObject, DialogManager
+from ...objects import DebugOverlay, InteractionManager, Layer, LayerManager, ObjectFactory, WindowManager, WindowObject, DialogManager
 from ...physics import PhysicsWorld
 from ...rendering import WindowStyle, Renderer
 from ...resources import ResourceManager
@@ -48,7 +48,6 @@ class State:
         self._event_manager = self._create_event_manager()
         self._animation_manager = self._create_animation_manager()
         self._keybinds_manager = self._create_keybinds_manager(self.input)
-        self._particle_system = self._create_particle_system()
         self._async_process_manager = self._create_async_process_manager()
         self._window_manager = self._create_window_manager(self.event_manager)
         self._quick_debug_manager = self._create_quick_debug_manager()
@@ -145,10 +144,6 @@ class State:
         return self._event_manager
     
     @property
-    def particle_system(self) -> ParticleSystem:
-        return self._particle_system
-    
-    @property
     def async_process_manager(self) -> AsyncProcessManager:
         return self._async_process_manager
     
@@ -220,10 +215,6 @@ class State:
     @staticmethod
     def _create_dialog_manager(object_factory, window_manager, object_registration_method, object_unregistration_method) -> DialogManager:
         return DialogManager(object_factory, window_manager, object_registration_method, object_unregistration_method)
-    
-    @staticmethod
-    def _create_particle_system() -> ParticleSystem:
-        return ParticleSystem()
     
     @staticmethod
     def _create_async_process_manager() -> AsyncProcessManager:
@@ -337,7 +328,6 @@ class State:
             self,
             self.animation_manager,
             self.input,
-            self.particle_system,
             self.factory,
             self.event_manager,
             self.async_process_manager,
@@ -434,7 +424,6 @@ class State:
         self.frame_timer.time("Update.State.Interactions",     lambda: self.interaction_manager.update(self._layer_manager))
         self.frame_timer.time("Update.State.Async Generation", self.async_process_manager.update)
         self.frame_timer.time("Update.State.Layers",           lambda: self._layer_manager.update(dt))
-        self.frame_timer.time("Update.State.Particles",        lambda: self.particle_system.update(dt))
         self.frame_timer.time("Update.State.Camera",           lambda: self.camera.update(dt))
         
         self.quick_debug_manager.update(dt)

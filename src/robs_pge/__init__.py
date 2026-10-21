@@ -17,13 +17,11 @@ from .objects import (
     AttributeClampingBehavior, AttributeFixingBehavior, ActionOnCollisionBehavior,
     BehaviorManager, InteractionManager, WindowManager, LayerManager,
     DialogManager,
-    Particle, ParticleEmitter, BurstParticleEmitter, ParticleSystem, ParticlePool,
 )
 from .objects.custom import (
     TextBoxObject, SliderObject, SpriteButtonObject, IconObject, CheckBoxObject,
     ToggleButtonObject, IconButtonObject, RadioButtonObject, ScrollbarObject, DebugInfoWindow,
 )
-from .objects.particles import FadingTypes
 from .objects.object_factories import (
     ButtonObjectFactory, DebugObjectFactory, LayoutObjectFactory, SpriteObjectFactory,
     TextObjectFactory, UIObjectFactory, ShapeFactory, WindowObjectFactory,
@@ -98,8 +96,6 @@ __all__ = [
     # object factories
     "ButtonObjectFactory", "DebugObjectFactory", "LayoutObjectFactory", "SpriteObjectFactory",
     "TextObjectFactory", "UIObjectFactory", "ShapeFactory", "WindowObjectFactory",
-    # particles
-    "Particle", "ParticleEmitter", "BurstParticleEmitter", "ParticleSystem", "ParticlePool", "FadingTypes",
     # physics
     "PhysicsBody", "BodyTypes", "PhysicsWorld", "ShapeTypes",
     # utils - math/geometry

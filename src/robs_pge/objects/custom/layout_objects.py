@@ -16,8 +16,8 @@ CellPos = tuple[int, int]
 FitMode = Literal["stretch", "preserve"]
 LayoutMode = Literal["grid", "columns", "rows"]
 LayeringPriority = Optional[Literal[
-    "left_right_top_bottom", "left_right_bottom_top", "right_left_top_bottom", "right_left_bottom_top",
-    "top_bottom_left_right", "top_bottom_right_left", "bottom_top_left_right", "bottom_top_right_left"
+    "LEFT_RIGHT_TOP_BOTTOM", "LEFT_RIGHT_BOTTOM_TOP", "RIGHT_LEFT_TOP_BOTTOM", "RIGHT_LEFT_BOTTOM_TOP",
+    "TOP_BOTTOM_LEFT_RIGHT", "TOP_BOTTOM_RIGHT_LEFT", "BOTTOM_TOP_LEFT_RIGHT", "BOTTOM_TOP_RIGHT_LEFT"
 ]]
 
 @dataclass
@@ -1732,17 +1732,13 @@ class LayoutObject(RectObject):
     # region UPDATE
     
     def _update_layering(self) -> "LayoutObject":
-        """Assigns every placed object a sub_layer derived from its cell, honoring `_layering_priority`.
-        The first-listed axis is the primary one and the first-listed direction ranks highest
-        (drawn last, hovered first), so `"top_bottom_left_right"` puts the topmost object on
-        top and breaks ties left to right."""
         if not self._layering_priority:
             return self
         
         priority = self._layering_priority.upper()
-        vertical_first = "top_bottom_" in priority or "bottom_top_" in priority
-        top_first = "top_bottom" in priority
-        left_first = "left_right" in priority
+        vertical_first = "TOP_BOTTOM_" in priority or "BOTTOM_TOP_" in priority
+        top_first = "TOP_BOTTOM" in priority
+        left_first = "LEFT_RIGHT" in priority
         
         col_count = self.max_col + 1
         row_count = self.max_row + 1

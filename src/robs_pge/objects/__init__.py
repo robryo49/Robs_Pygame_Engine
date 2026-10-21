@@ -40,11 +40,6 @@ from .custom import (
 )
 from .object import PygameObject
 from .window_manager import WindowManager
-from .particles import (
-    Particle, ParticlePool,
-    ParticleEmitter, BurstParticleEmitter,
-    ParticleSystem
-)
 from .layer import Layer
 from .layer_manager import LayerManager
 
@@ -78,9 +73,6 @@ __all__ = [
     "LayoutObject", "DebugOverlay",
     "ButtonObject", "ProgressBarObject", "LineChartObject", "WindowObject",
     "ValueSelectorObject", "ValueCyclerObject",
-    # particles
-    "Particle", "ParticleEmitter", "BurstParticleEmitter",
-    "ParticleSystem", "ParticlePool",
     
     "Layer", "LayerManager"
 ]
