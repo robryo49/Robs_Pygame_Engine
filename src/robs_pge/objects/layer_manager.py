@@ -15,7 +15,10 @@ class LayerManager:
         self._services = services
         
         self._layers: dict[str, Layer] = {}
-        self._sorted_layers: list[Layer] = []  # maintained in ascending z-order
+        self._sorted_layers: list[Layer] = []
+
+        self._update_blacklist: set[Layer] = set()
+        self._render_blacklist: set[Layer] = set()
     
     # region PROPERTIES
     
@@ -42,44 +45,82 @@ class LayerManager:
         self._rebuild_sorted()
         return layer
     
-    def remove_layer(self, name: str) -> "LayerManager":
-        layer_id = name.lower().replace(" ", "_")
+    def remove_layer(self, layer: Layer | str) -> "LayerManager":
+        if isinstance(layer, Layer):
+            layer_id = layer.id
+        else:
+            layer_id = layer.lower().replace(" ", "_")
+
         if layer_id in self._layers:
             del self._layers[layer_id]
             self._rebuild_sorted()
         return self
     
-    def get_layer(self, name: str) -> Layer:
-        layer_id = name.lower().replace(" ", "_")
+    def get_layer(self, layer: Layer | str) -> Layer:
+        if isinstance(layer, Layer):
+            layer_id = layer.id
+        else:
+            layer_id = layer.lower().replace(" ", "_")
+
         layer = self._layers.get(layer_id)
         if layer is None:
             raise KeyError(f"Layer '{layer_id}' not found. Available: {list(self._layers.keys())}")
         return layer
     
-    def has_layer(self, name: str) -> bool:
-        return name.lower().replace(" ", "_") in self._layers
+    def has_layer(self, layer: Layer | str) -> bool:
+        if isinstance(layer, Layer):
+            return layer in self.layers.values()
+        return layer.lower().replace(" ", "_") in self._layers
     
-    def add_object(self, layer_name: str, obj) -> "LayerManager":
-        self.get_layer(layer_name).add_object(obj)
+    def add_object(self, layer: Layer | str, obj) -> "LayerManager":
+        self.get_layer(layer).add_object(obj)
         return self
     
-    def remove_object(self, layer_name: str, obj) -> "LayerManager":
-        self.get_layer(layer_name).remove_object(obj)
+    def remove_object(self, layer: Layer | str, obj) -> "LayerManager":
+        self.get_layer(layer).remove_object(obj)
         return self
     
     def update(self, dt: float) -> "LayerManager":
         for layer in self._sorted_layers:
-            layer.update(dt)
+            if layer not in self._update_blacklist:
+                layer.update(dt)
         return self
     
     def render(self, submit: Callable[[DrawCommand], Any]) -> "LayerManager":
         for layer in self._sorted_layers:
-            layer.render(submit)
+            if layer not in self._render_blacklist:
+                layer.render(submit)
         return self
     
     def interactable_layers_reversed(self) -> list[Layer]:
         """Interactable layers in descending z-order for hit testing (topmost wins)."""
         return [l for l in reversed(self._sorted_layers) if l.interactable]
-    
+
+    def add_layer_to_update_blacklist(self, layer: Layer | str):
+        if isinstance(layer, str):
+            layer = self.get_layer(layer)
+        self._update_blacklist.add(layer)
+
+    def remove_layer_from_update_blacklist(self, layer: Layer | str):
+        if isinstance(layer, str):
+            layer = self.get_layer(layer)
+        try:
+            self._update_blacklist.remove(layer)
+        except KeyError:
+            pass
+
+    def add_layer_to_render_blacklist(self, layer: Layer | str):
+        if isinstance(layer, str):
+            layer = self.get_layer(layer)
+        self._render_blacklist.add(layer)
+
+    def remove_layer_from_render_blacklist(self, layer: Layer | str):
+        if isinstance(layer, str):
+            layer = self.get_layer(layer)
+        try:
+            self._render_blacklist.remove(layer)
+        except KeyError:
+            pass
+
     def __repr__(self):
         return f"LayerManager({[l.id for l in self._sorted_layers]})"

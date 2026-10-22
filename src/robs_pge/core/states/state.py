@@ -53,18 +53,19 @@ class State:
         self._quick_debug_manager = self._create_quick_debug_manager()
         
         self._factory = self._create_object_factory(self._services)
+
         
+        self._layer_manager: LayerManager = LayerManager(self._services)
+        self._debug_layer = self.create_layer("debug", _LAYER_DEBUG, self.engine.default_camera, interactable=False)
+        self._ui_layer = self.create_layer("ui", _LAYER_UI, self.engine.default_camera, interactable=True)
+        self._world_layer = self.create_layer("world", _LAYER_WORLD, self.camera, interactable=True)
+
         self._dialogs_layer_id = "ui"
         self._dialogs_manager = self._create_dialog_manager(
             self._factory, self._window_manager,
             lambda o: self.register_object(self._dialogs_layer_id, o),
             lambda o: self.unregister_object(self._dialogs_layer_id, o)
         )
-        
-        self._layer_manager: LayerManager = LayerManager(self._services)
-        self._debug_layer = self.create_layer("debug", _LAYER_DEBUG, self.engine.default_camera, interactable=False)
-        self._ui_layer = self.create_layer("ui", _LAYER_UI, self.engine.default_camera, interactable=True)
-        self._world_layer = self.create_layer("world", _LAYER_WORLD, self.camera, interactable=True)
         
         self._debug_mode = debug_mode
         self._debug_overlay = (
