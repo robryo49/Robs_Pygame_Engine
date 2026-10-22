@@ -46,6 +46,7 @@ class DraggableBehavior(ObjectBehavior):
         self._button: int = button
         self._target: Optional[PygameObject] = target
         self._dragging: bool = False
+        self._has_moved: bool = False
         self._offset: vec2 = vec2(0, 0)
 
         self._on_drag_start: Callback[[PygameObject], Any] = on_drag_start
@@ -55,6 +56,10 @@ class DraggableBehavior(ObjectBehavior):
     @property
     def target(self) -> Optional[PygameObject]:
         return self._target if self._target is not None else self.owner
+
+    @property
+    def has_moved(self):
+        return self._has_moved
 
     def on_attach(self) -> None:
         if (owner := self.owner) is None: return
@@ -72,11 +77,15 @@ class DraggableBehavior(ObjectBehavior):
         if (target := self.target) is None: return
 
         if self._dragging and button == self._button:
-            target.pos = target.world_to_parent_children_local(pos) + self._offset
+            prev = target.pos
+            new = target.world_to_parent_children_local(pos) + self._offset
+            target.pos = new
+            self._has_moved = prev != new
             self._exec(self._while_dragging, self.owner)
 
     def on_release(self, button: int, pos: vec2) -> None:
         if button == self._button:
             self._dragging = False
             self._exec(self._on_drag_end, self.owner)
+            self._has_moved = False
 
