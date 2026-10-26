@@ -1,7 +1,11 @@
+"""Normalized and screen-scaled anchor point constants."""
+
 from glm import vec2
 
 
 class Anchor:
+    """Anchor points in normalized object-local coordinates."""
+
     TL =    vec2(0,     0)
     T =     vec2(0.5,   0)
     TR =    vec2(1,     0)
@@ -14,6 +18,8 @@ class Anchor:
 
 
 class ScreenAnchor:
+    """Anchor points scaled to the current screen dimensions."""
+
     TL =    vec2(0,     0)
     T =     vec2(0.5,   0)
     TR =    vec2(1,     0)
@@ -28,6 +34,10 @@ class ScreenAnchor:
     
     @staticmethod
     def set_screen_dims(dims: vec2):
+        """Rescale all screen anchors to the given dimensions.
+
+        :param dims: Screen dimensions used to scale the normalized anchor points.
+        """
         ScreenAnchor.TL =    vec2(0,     0) * dims
         ScreenAnchor.T =     vec2(0.5,   0) * dims
         ScreenAnchor.TR =    vec2(1,     0) * dims

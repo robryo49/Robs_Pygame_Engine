@@ -1,3 +1,7 @@
+"""
+Factories for creating interactive UI widgets such as sliders, progress bars, charts, and selectors.
+"""
+
 from typing import Any, Optional
 
 from .button_object_factory import ButtonObjectFactory
@@ -12,7 +16,15 @@ from ...utils import Anchor, StyleOrName, length, vec2, Callback, Font, inf, cla
 
 
 class UIObjectFactory(SubObjectFactory):
-    def __init__(self, object_factory):
+    """
+    Create interactive UI widgets and expose the button, layout, and debug sub-factories.
+    """
+    def __init__(self, object_factory) -> None:
+        """
+        Initialize the UI factory and its button, layout, and debug sub-factories.
+
+        :param object_factory: Main object factory used for resource lookup and object creation.
+        """
         super().__init__(object_factory)
         
         self.button = ButtonObjectFactory(object_factory)
@@ -23,6 +35,23 @@ class UIObjectFactory(SubObjectFactory):
             self, position: vec2, dims: vec2, min_value: float, max_value: float, step: Optional[float] = None, start_value=None, style: StyleOrName[SliderStyle] = None,
             rotation: float = 0.0, scale: float = 1.0, layer: int = 0, anchor: vec2 = Anchor.C, cache: bool = True
     ) -> SliderObject:
+        """
+        Create a slider with a bar, handle, and value label.
+
+        :param position: World-space position of the object.
+        :param dims: Dimensions of the slider.
+        :param min_value: Minimum selectable value.
+        :param max_value: Maximum selectable value.
+        :param step: Increment between values; continuous when omitted.
+        :param start_value: Initial value; defaults to the minimum.
+        :param style: Slider style or registered slider style name.
+        :param rotation: Rotation angle in degrees.
+        :param scale: Uniform scale factor.
+        :param layer: Rendering layer.
+        :param anchor: Anchor point used to position the object.
+        :param cache: Whether to cache the rendered surface.
+        :return: The created slider object.
+        """
         
         slider_style = self._get_resource(style, SliderStyle)
         bg_style = slider_style.bg_style
@@ -73,10 +102,24 @@ class UIObjectFactory(SubObjectFactory):
             self, position: vec2, dims: vec2, style: StyleOrName[ProgressBarStyle] = None,
             rotation: float = 0.0, scale: float = 1.0, layer: int = 0, anchor: vec2 = Anchor.C, cache: bool = True, cache_bar: bool = False
     ) -> ProgressBarObject:
+        """
+        Create a progress bar filled from the left according to its value.
+
+        :param position: World-space position of the object.
+        :param dims: Dimensions of the progress bar.
+        :param style: Progress bar style or registered style name.
+        :param rotation: Rotation angle in degrees.
+        :param scale: Uniform scale factor.
+        :param layer: Rendering layer.
+        :param anchor: Anchor point used to position the object.
+        :param cache: Whether to cache the rendered surface.
+        :param cache_bar: Whether to cache the bar surface.
+        :return: The created progress bar object.
+        """
         
         progress_bar_style = self._get_resource(style, ProgressBarStyle)
         bg_style = progress_bar_style.bg_style
-        bar_style = RectStyle(progress_bar_style.color, bd_radius=(bg_style.bd_radius-bg_style.bd) if bg_style.bd_radius > 0 else 0)
+        bar_style = RectStyle(progress_bar_style.color, bd_radius=bg_style.inset_bd_radius())
         
         bar = self.factory.shape.rect(vec2(), vec2(0, dims.y), bar_style, 0.0, 1.0, layer, Anchor.C, cache_bar)
         obj = self._create_object(ProgressBarObject, position, rotation, scale, RectRenderer(dims, bg_style, cache), layer, anchor, bar)
@@ -88,6 +131,29 @@ class UIObjectFactory(SubObjectFactory):
             max_data_points=None, max_data_x_range=None, update_action: Callback[[PygameObject], Any] = None,
             rotation: float = 0.0, scale: float = 1.0, layer: int = 0, anchor: vec2 = Anchor.C, cache: bool = True, cache_line: bool = False
     ) -> LineChartObject:
+        """
+        Create a line chart with configurable axes, data limits, and update callback.
+
+        :param position: World-space position of the object.
+        :param dims: Dimensions of the chart.
+        :param style: Line chart style or registered style name.
+        :param pad_x: Horizontal padding inside the chart.
+        :param pad_y: Vertical padding inside the chart.
+        :param min_x: Initial minimum x-axis value.
+        :param max_x: Initial maximum x-axis value.
+        :param min_y: Initial minimum y-axis value.
+        :param max_y: Initial maximum y-axis value.
+        :param max_data_points: Maximum number of data points retained.
+        :param max_data_x_range: Maximum x-value range retained.
+        :param update_action: Callback invoked when the chart updates.
+        :param rotation: Rotation angle in degrees.
+        :param scale: Uniform scale factor.
+        :param layer: Rendering layer.
+        :param anchor: Anchor point used to position the object.
+        :param cache: Whether to cache the rendered surface.
+        :param cache_line: Whether to cache the line surface.
+        :return: The created line chart object.
+        """
         
         line_chart_style = self._get_resource(style, LineChartStyle)
         bg_style = line_chart_style.bg_style
@@ -114,6 +180,21 @@ class UIObjectFactory(SubObjectFactory):
             start_value: float = 0.0, handle_height: Optional[float] = None,
             rotation: float = 0.0, scale: float = 1.0, layer: int = 0, anchor: vec2 = Anchor.C, cache: bool = True
     ) -> ScrollbarObject:
+        """
+        Create a vertical scrollbar with a draggable handle.
+
+        :param position: World-space position of the object.
+        :param dims: Dimensions of the scrollbar.
+        :param style: Scrollbar style or registered style name.
+        :param start_value: Initial scroll value.
+        :param handle_height: Height of the scrollbar handle; defaults to a fraction of the widget height.
+        :param rotation: Rotation angle in degrees.
+        :param scale: Uniform scale factor.
+        :param layer: Rendering layer.
+        :param anchor: Anchor point used to position the object.
+        :param cache: Whether to cache the rendered surface.
+        :return: The created scrollbar object.
+        """
         
         scrollbar_style = self._get_resource(style, ScrollbarStyle)
         bg_style = scrollbar_style.bg_style
@@ -121,7 +202,8 @@ class UIObjectFactory(SubObjectFactory):
         
         margin = scrollbar_style.margin
         
-        handle_height = min(handle_height, dims.y - margin*2) if handle_height is not None else dims.y * 0.2
+        available_height = max(1.0, dims.y - margin * 2)
+        handle_height = clamp(handle_height if handle_height is not None else dims.y * 0.2, 1.0, available_height)
         
         handle = self.factory.shape.rect(vec2(), vec2(dims.x - margin * 2, handle_height), handle_style, layer=layer)
         
@@ -137,6 +219,25 @@ class UIObjectFactory(SubObjectFactory):
             style: StyleOrName[ValueSelectorStyle] = None, rotation: float = 0.0, scale: float = 1.0,
             layer: int = 0, anchor: vec2 = Anchor.C, cache: bool = True
     ) -> ValueSelectorObject:
+        """
+        Create a value selector with decrement buttons, a value label, and increment buttons.
+
+        :param position: World-space position of the object.
+        :param dims: Dimensions of the selector.
+        :param start_value: Initial value, clamped to the allowed range.
+        :param min_value: Minimum allowed value.
+        :param max_value: Maximum allowed value.
+        :param increments: Positive increments offered by the selector.
+        :param callback: Callback invoked when the value changes.
+        :param style: Value selector style or registered style name.
+        :param rotation: Rotation angle in degrees.
+        :param scale: Uniform scale factor.
+        :param layer: Rendering layer.
+        :param anchor: Anchor point used to position the object.
+        :param cache: Whether to cache the rendered surface.
+        :return: The created value selector object.
+        :raises ValueError: If any increment is not positive.
+        """
         selector_style = self._get_resource(style, ValueSelectorStyle)
         bg_style = selector_style.bg_style
         button_style = selector_style.button_style
@@ -209,6 +310,26 @@ class UIObjectFactory(SubObjectFactory):
             previous_icon: str = Icons.CHEVRON_LEFT, next_icon: str = Icons.CHEVRON_RIGHT,
             rotation: float = 0.0, scale: float = 1.0, layer: int = 0, anchor: vec2 = Anchor.C, cache: bool = True
     ) -> ValueCyclerObject:
+        """
+        Create a value cycler with previous and next icon buttons.
+
+        :param position: World-space position of the object.
+        :param dims: Dimensions of the value cycler.
+        :param values: Values the cycler can display.
+        :param default_index: Index of the initially selected value.
+        :param callback: Callback invoked when the selected value changes.
+        :param style: Value cycler style or registered style name.
+        :param previous_icon: Icon identifier for the previous-value button.
+        :param next_icon: Icon identifier for the next-value button.
+        :param rotation: Rotation angle in degrees.
+        :param scale: Uniform scale factor.
+        :param layer: Rendering layer.
+        :param anchor: Anchor point used to position the object.
+        :param cache: Whether to cache the rendered surface.
+        :return: The created value cycler object.
+        :raises ValueError: If ``values`` is empty.
+        :raises ValueError: If ``default_index`` is outside the range of ``values``.
+        """
         vals = tuple(values)
         if not vals:
             raise ValueError("ValueCycler requires at least one value")

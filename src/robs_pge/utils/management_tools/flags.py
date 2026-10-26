@@ -1,8 +1,12 @@
+"""Bit flags for object behavior and keybind activation state."""
+
 from enum import IntFlag, auto
 
 
 
 class ObjectFlags(IntFlag):
+    """Flags controlling object interaction, rendering, updates, and physics."""
+
     NONE = 0
     INTERACTABLE = auto()
 
@@ -29,6 +33,8 @@ class ObjectFlags(IntFlag):
 
 
 class KeybindFlags(IntFlag):
+    """Flags describing keybind activation phases."""
+
     PRESS = auto()
     HOLD = auto()
     RELEASE = auto()

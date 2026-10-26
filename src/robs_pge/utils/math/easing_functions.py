@@ -1,3 +1,5 @@
+"""Easing functions that map normalized progress to eased progress."""
+
 from __future__ import annotations
 from math import cos, sin, pi
 from typing import TYPE_CHECKING
@@ -8,6 +10,8 @@ if TYPE_CHECKING:
 
 
 class Easing:
+    """Collection of easing functions that accept normalized progress values."""
+
     JUMP: EasingFunctionType = lambda x: int(clamp(x, 0, 1))
     LINEAR: EasingFunctionType = lambda x: x
     

@@ -1,3 +1,7 @@
+"""
+Factories for creating debug overlays and debug information windows.
+"""
+
 from typing import Optional, Callable, Any
 
 from pygame import Color
@@ -9,11 +13,27 @@ from ...utils import Anchor, Transform, vec2, StyleOrName
 
 
 class DebugObjectFactory(SubObjectFactory):
+    """
+    Create debug overlays and debug information window objects.
+    """
 
     def debug_overlay(
             self, position: vec2, width: Optional[float] = None, height: Optional[float] = None,
             rotation: float = 0.0, scale: float = 1.0, layer: int = 0, anchor: vec2 = Anchor.C, cache: bool = True
     ) -> DebugOverlay:
+        """
+        Create a transparent debug overlay used to display debug information.
+
+        :param position: World-space position of the object.
+        :param width: Fixed width of the overlay.
+        :param height: Fixed height of the overlay.
+        :param rotation: Rotation angle in degrees.
+        :param scale: Uniform scale factor.
+        :param layer: Rendering layer.
+        :param anchor: Anchor point used to position the object.
+        :param cache: Whether to cache the rendered surface.
+        :return: The created debug overlay.
+        """
         obj = DebugOverlay(
             Transform(position, rotation, scale),
             RectRenderer(vec2(), RectStyle(Color(255, 255, 255, 100), 10, Color(255, 255, 255, 200)), cache),
@@ -36,6 +56,24 @@ class DebugObjectFactory(SubObjectFactory):
             title_font: StyleOrName[Font] = None, value_font: StyleOrName[Font] = None, style: StyleOrName[WindowStyle] = None,
             rotation: float = 0.0, scale: float = 1.0, layer: int = 0, anchor: vec2 = Anchor.C, cache: bool = True
     ) -> DebugInfoWindow:
+        """
+        Create a debug window that displays key-value pairs in a grid.
+
+        :param position: World-space position of the object.
+        :param title: Window title.
+        :param width: Fixed width of the window.
+        :param title_column_width: Fixed width of the title column.
+        :param value_column_width: Fixed width of the value column.
+        :param title_font: Font or registered font name for the titles.
+        :param value_font: Font or registered font name for the values.
+        :param style: Window style or registered window style name.
+        :param rotation: Rotation angle in degrees.
+        :param scale: Uniform scale factor.
+        :param layer: Rendering layer.
+        :param anchor: Anchor point used to position the object.
+        :param cache: Whether to cache the rendered surface.
+        :return: The created debug information window.
+        """
         
         title_font = self._get_resource(title_font, Font)
         value_font = self._get_resource(value_font, Font)
@@ -61,6 +99,25 @@ class DebugObjectFactory(SubObjectFactory):
             title_font: StyleOrName[Font] = None, value_font: StyleOrName[Font] = None, style: StyleOrName[WindowStyle] = None,
             rotation: float = 0.0, scale: float = 1.0, layer: int = 0, anchor: vec2 = Anchor.C, cache: bool = True
     ):
+        """
+        Create a debug window whose key-value rows are refreshed from a getter each update.
+
+        :param position: World-space position of the object.
+        :param title: Window title.
+        :param width: Fixed width of the window.
+        :param values_getter: Callable returning the key-value mapping to display.
+        :param title_column_width: Fixed width of the title column.
+        :param value_column_width: Fixed width of the value column.
+        :param title_font: Font or registered font name for the titles.
+        :param value_font: Font or registered font name for the values.
+        :param style: Window style or registered window style name.
+        :param rotation: Rotation angle in degrees.
+        :param scale: Uniform scale factor.
+        :param layer: Rendering layer.
+        :param anchor: Anchor point used to position the object.
+        :param cache: Whether to cache the rendered surface.
+        :return: The created dynamic debug information window.
+        """
         window = self.factory.window.regular(
             position, title, width, None, DebugInfoWindow.GRID_MODE, DebugInfoWindow.STRETCH_MODE, DebugInfoWindow.STRETCH_MODE, Anchor.T, False,
             style, rotation, scale, layer, anchor, cache

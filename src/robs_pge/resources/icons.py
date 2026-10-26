@@ -1,3 +1,5 @@
+"""Provides built-in SVG icons rendered to cached textures at requested sizes and colors."""
+
 import io
 
 import pygame as pg
@@ -8,6 +10,8 @@ from ..utils import Color, vec2
 
 
 class Icons:
+    """Collection of built-in icon names and the cache used to render them."""
+
     _cache = {}
     
     NUMBER_0 = "number_0"
@@ -205,6 +209,14 @@ class Icons:
     
     @staticmethod
     def get(icon: str, size: int, color: Color):
+        """
+        Return a cached texture of the requested icon rendered in the given color.
+
+        :param icon: name of the icon to render
+        :param size: width and height in pixels
+        :param color: fill color applied to the SVG
+        :return: texture wrapping the rendered icon surface
+        """
         key = f"{icon}_{size}_{color.hex}"
         
         if Icons._cache.get(key, None) is None:

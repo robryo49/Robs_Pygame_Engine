@@ -1,9 +1,13 @@
+"""Named color constants and a palette builder for consistent engine theming."""
+
 from typing import Optional
 
 from pygame import Color
 
 
 class Colors:
+    """Container of named pygame Color constants and color manipulation helpers."""
+
     WHITE           = Color(255, 255, 255)
     LIGHT_GRAY      = Color(211, 211, 211)
     SILVER          = Color(192, 192, 192)
@@ -83,10 +87,22 @@ class Colors:
     
     @staticmethod
     def gray(value: int, alpha: int = 255) -> Color:
+        """Create a gray color with equal RGB channels.
+
+        :param value: Intensity used for the red, green, and blue channels.
+        :param alpha: Alpha channel value for the resulting color.
+        :return: A gray color with the requested intensity and alpha.
+        """
         return Color(value, value, value, alpha)
     
     @staticmethod
     def lighten(color: Color, amount: int) -> Color:
+        """Lighten a color by increasing each RGB channel.
+
+        :param color: Color to lighten.
+        :param amount: Value added to each RGB channel; negative values delegate to darken.
+        :return: A new color with brighter RGB channels and the original alpha.
+        """
         if amount < 0:
             return Colors.darken(color, -amount)
         return Color(
@@ -98,6 +114,12 @@ class Colors:
     
     @staticmethod
     def darken(color: Color, amount: int) -> Color:
+        """Darken a color by decreasing each RGB channel.
+
+        :param color: Color to darken.
+        :param amount: Value subtracted from each RGB channel; negative values delegate to lighten.
+        :return: A new color with darker RGB channels and the original alpha.
+        """
         if amount < 0:
             return Colors.lighten(color, -amount)
         return Color(
@@ -109,6 +131,12 @@ class Colors:
     
     @staticmethod
     def multiply(color: Color, factor: float) -> Color:
+        """Scale a color's RGB channels by a factor.
+
+        :param color: Color to scale.
+        :param factor: Multiplier applied to each RGB channel before clamping to 255.
+        :return: A new color with scaled RGB channels and the original alpha.
+        """
         return Color(
             min(int(color.r * factor), 255),
             min(int(color.g * factor), 255),
@@ -118,18 +146,42 @@ class Colors:
     
     @staticmethod
     def with_alpha(color: Color, alpha: int) -> Color:
+        """Return a copy of a color with a different alpha channel.
+
+        :param color: Source color.
+        :param alpha: Alpha channel value for the resulting color.
+        :return: A new color with the same RGB channels and the given alpha.
+        """
         return Color(color.r, color.g, color.b, alpha)
     
     @staticmethod
     def transparent(color: Color, alpha: int) -> Color:
+        """Return a copy of a color with the given alpha channel.
+
+        :param color: Source color.
+        :param alpha: Alpha channel value for the resulting color.
+        :return: A new color with the same RGB channels and the given alpha.
+        """
         return Colors.with_alpha(color, alpha)
     
     @staticmethod
     def grayscale(color: Color) -> Color:
+        """Convert a color to grayscale.
+
+        :param color: Color to convert.
+        :return: The grayscale equivalent of the color.
+        """
         return color.grayscale()
     
     @staticmethod
     def blend(color1: Color, color2: Color, factor: float) -> Color:
+        """Blend two colors by a factor.
+
+        :param color1: Color weighted by ``factor``.
+        :param color2: Color weighted by ``1 - factor``.
+        :param factor: Blend weight for ``color1``, typically between 0 and 1.
+        :return: The blended color, including its alpha channel.
+        """
         return Color(
             round(color1.r * factor + color2.r * (1 - factor)),
             round(color1.g * factor + color2.g * (1 - factor)),
@@ -139,6 +191,12 @@ class Colors:
     
     @staticmethod
     def pastel(color: Color, factor: float = 0.5) -> Color:
+        """Lighten a color toward white by a factor.
+
+        :param color: Color to soften.
+        :param factor: Fraction of the distance to white applied to each RGB channel.
+        :return: A new pastel color with the original alpha.
+        """
         return Color(
             int(color.r + (255 - color.r) * factor),
             int(color.g + (255 - color.g) * factor),
@@ -148,12 +206,20 @@ class Colors:
 
 
 class ColorPalette:
+    """Manage named primary colors, standalone colors, and derived shade variants."""
+
     def __init__(
             self,
             colors: Optional[dict[str, Color]] = None,
             shades: Optional[dict[str, float]] = None,
             single_colors: Optional[dict[str, Color]] = None
-    ):
+    ) -> None:
+        """Initialize the palette and optionally populate it with colors and shades.
+
+        :param colors: Primary colors used to generate shade variants.
+        :param shades: Shade templates mapped to multiplicative factors.
+        :param single_colors: Standalone colors added without shade variants.
+        """
         self.primary_colors: dict[str, Color] = {}
         self.single_colors: dict[str, Color] = {}
         self.shades: dict[str, float] = {}
@@ -170,11 +236,22 @@ class ColorPalette:
     # region SINGLE COLORS
     
     def add_single_color(self, name: str, color: Color) -> "ColorPalette":
+        """Add a standalone color without generating shade variants.
+
+        :param name: Palette key for the color.
+        :param color: Color to store.
+        :return: This palette for chained calls.
+        """
         self.single_colors[name] = color
         self.all_colors[name] = color
         return self
     
     def add_single_colors(self, colors: dict[str, Color]) -> "ColorPalette":
+        """Add multiple standalone colors without generating shade variants.
+
+        :param colors: Mapping of palette keys to colors.
+        :return: This palette for chained calls.
+        """
         for name, color in colors.items():
             self.add_single_color(name, color)
         return self
@@ -184,18 +261,29 @@ class ColorPalette:
     # region PRIMARY COLORS
     
     def add_color(self, name: str, color: Color) -> "ColorPalette":
+        """Add a primary color and generate variants for every registered shade.
+
+        :param name: Palette key for the primary color.
+        :param color: Primary color to store.
+        :return: This palette for chained calls.
+        """
         self.primary_colors[name] = color
         self.all_colors[name] = color
         
         for shade_name, factor in self.shades.items():
             shaded_name = shade_name.format(name)
-            shaded_color = Colors.lighten(color, round(color.a * factor))
+            shaded_color = Colors.multiply(color, factor)
             self.shaded_colors[shaded_name] = shaded_color
             self.all_colors[shaded_name] = shaded_color
         
         return self
     
     def add_colors(self, colors: dict[str, Color]) -> "ColorPalette":
+        """Add multiple primary colors and generate their shade variants.
+
+        :param colors: Mapping of palette keys to primary colors.
+        :return: This palette for chained calls.
+        """
         for name, color in colors.items():
             self.add_color(name, color)
         return self
@@ -205,6 +293,12 @@ class ColorPalette:
     # region SHADES
     
     def add_shade(self, name: str, factor: float) -> "ColorPalette":
+        """Register a shade factor and apply it to all existing primary colors.
+
+        :param name: Format template for generated shade keys, with ``{}`` replaced by the color name.
+        :param factor: Multiplier applied to each primary color's RGB channels.
+        :return: This palette for chained calls.
+        """
         for color_name, color in self.primary_colors.items():
             shaded_name = name.format(color_name)
             shaded_color = Colors.multiply(color, factor)
@@ -215,6 +309,11 @@ class ColorPalette:
         return self
     
     def add_shades(self, shades: dict[str, float]) -> "ColorPalette":
+        """Register multiple shade templates and apply them to existing primary colors.
+
+        :param shades: Mapping of shade key templates to multiplicative factors.
+        :return: This palette for chained calls.
+        """
         for name, factor in shades.items():
             self.add_shade(name, factor)
         return self
@@ -222,11 +321,23 @@ class ColorPalette:
     # endregion
     
     def get(self, color_name: str) -> Color:
+        """Look up a color by name, including generated shade names.
+
+        :param color_name: Palette key to retrieve.
+        :return: The color stored under the key.
+        :raises KeyError: If the palette contains no color with that name.
+        """
         if color_name not in self.all_colors:
             raise KeyError(f"Color '{color_name}' not found in palette")
         return self.all_colors[color_name]
     
     def __getattr__(self, name: str) -> Color:
+        """Resolve palette color names as attributes.
+
+        :param name: Attribute name to resolve.
+        :return: The color stored under the attribute name.
+        :raises AttributeError: If the palette contains no color with that name.
+        """
         try:
             return self.get(name)
         except KeyError:

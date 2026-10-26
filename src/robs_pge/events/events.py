@@ -1,6 +1,9 @@
+"""Provides string constants for built-in engine event types."""
 
 
 class Events:
+    """Collect the built-in event type identifiers used by the engine."""
+
     WINDOW_OPENED ="window_opened"
     WINDOW_CLOSED = "window_closed"
     STATE_ENTER = "state_enter"

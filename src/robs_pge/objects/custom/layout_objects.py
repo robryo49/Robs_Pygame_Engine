@@ -1,3 +1,5 @@
+"""Grid, row, and column layout object with configurable sizing, spacing, anchors, and placement operations."""
+
 from __future__ import annotations
 from dataclasses import dataclass
 from typing import Iterator, Literal, Optional, TYPE_CHECKING, cast
@@ -16,17 +18,24 @@ CellPos = tuple[int, int]
 FitMode = Literal["stretch", "preserve"]
 LayoutMode = Literal["grid", "columns", "rows"]
 LayeringPriority = Optional[Literal[
-    "LEFT_RIGHT_TOP_BOTTOM", "LEFT_RIGHT_BOTTOM_TOP", "RIGHT_LEFT_TOP_BOTTOM", "RIGHT_LEFT_BOTTOM_TOP",
-    "TOP_BOTTOM_LEFT_RIGHT", "TOP_BOTTOM_RIGHT_LEFT", "BOTTOM_TOP_LEFT_RIGHT", "BOTTOM_TOP_RIGHT_LEFT"
+    "left_right_top_bottom", "left_right_bottom_top", "right_left_top_bottom", "right_left_bottom_top",
+    "top_bottom_left_right", "top_bottom_right_left", "bottom_top_left_right", "bottom_top_right_left"
 ]]
 
 @dataclass
 class SizeConstraint:
+    """Minimum, maximum, and fixed bounds applied to a single size value."""
     min: Optional[int] = None
     max: Optional[int] = None
     fixed: Optional[int] = None
     
     def apply(self, value: int) -> int:
+        """
+        Return the value after applying the fixed, minimum, or maximum bound.
+
+        :param value: Size value to constrain.
+        :return: The constrained size value.
+        """
         if self.fixed is not None:
             return self.fixed
         if self.min is not None and value < self.min:
@@ -36,13 +45,24 @@ class SizeConstraint:
         return value
     
     def __iter__(self):
+        """
+        Iterate over the minimum, maximum, and fixed bounds in that order.
+
+        :return: An iterator over the three bound values.
+        """
         return iter([self.min, self.max, self.fixed])
     
     def copy(self):
+        """
+        Return a copy of the constraint.
+
+        :return: A new constraint with the same bounds.
+        """
         return SizeConstraint(self.min, self.max, self.fixed)
 
 
 class LayoutObject(RectObject):
+    """Layout container that arranges child objects in grid, row, or column tracks."""
     GRID_MODE: Literal["grid"] = "grid"
     COL_MODE: Literal["columns"] = "columns"
     ROW_MODE: Literal["rows"] = "rows"
@@ -61,7 +81,16 @@ class LayoutObject(RectObject):
 
     # region INIT / STATE
     
-    def __init__(self, transform: Transform, renderer: RectRenderer, services: ServicesCollection, sub_layer: int = 0, anchor: vec2 = Anchor.C):
+    def __init__(self, transform: Transform, renderer: RectRenderer, services: ServicesCollection, sub_layer: int = 0, anchor: vec2 = Anchor.C) -> None:
+        """
+        Initialize the layout and all of its track and constraint state.
+
+        :param transform: Transform applied to the layout.
+        :param renderer: Rectangle renderer used by the layout.
+        :param services: Service collection available to the object.
+        :param sub_layer: Sub-layer used for draw ordering.
+        :param anchor: Anchor point of the layout.
+        """
         super().__init__(transform, renderer, services, sub_layer, anchor)
         
         self._object_placements: dict[PygameObject, CellPos] = {}
@@ -140,160 +169,262 @@ class LayoutObject(RectObject):
     
     @property
     def dirty(self) -> bool:
+        """Return whether the layout needs to be recalculated."""
         return self._dirty
+
+    @property
+    def width_constraint(self) -> SizeConstraint:
+        """Return a copy of the width size constraint."""
+        return self._width_constraint.copy()
+
+    @property
+    def height_constraint(self) -> SizeConstraint:
+        """Return a copy of the height size constraint."""
+        return self._height_constraint.copy()
     
     @property
     def mode(self) -> Literal["grid", "columns", "rows"]:
+        """Return the current layout mode."""
         return cast(Literal["grid", "columns", "rows"], self._mode)
     
     @mode.setter
     def mode(self, value: Literal["grid", "columns", "rows"]):
+        """
+        Set the layout mode and mark the layout dirty.
+
+        :param value: The new value.
+        """
         self._mode = value
         self.mark_dirty()
     
     @property
     def behaviors(self) -> LayoutBehaviorManager:
+        """Return the layout behavior manager."""
         return self._behaviors
     
     @property
     def justification(self) -> vec2:
+        """Return the content justification vector."""
         return vec2(self._justification)
     
     @justification.setter
     def justification(self, value: vec2 | int):
+        """
+        Set the content justification vector and mark the layout dirty.
+
+        :param value: The new value.
+        """
         self._justification = vec2(value)
         self.mark_dirty()
     
     @property
     def outer_padding(self) -> vec2:
+        """Return the outer padding vector."""
         return vec2(self._outer_padding)
     
     @outer_padding.setter
     def outer_padding(self, value: vec2 | int):
+        """
+        Set the outer padding vector and mark the layout dirty.
+
+        :param value: The new value.
+        """
         self._outer_padding = vec2(value)
         self.mark_dirty()
     
     @property
     def cell_spacing(self) -> vec2:
+        """Return the spacing between cells."""
         return vec2(self._cell_spacing)
     
     @cell_spacing.setter
     def cell_spacing(self, value: vec2 | int):
+        """
+        Set the spacing between cells and mark the layout dirty.
+
+        :param value: The new value.
+        """
         self._cell_spacing = vec2(value)
         self.mark_dirty()
     
     @property
     def cell_padding(self) -> vec2:
+        """Return the padding inside cells."""
         return vec2(self._cell_padding)
     
     @cell_padding.setter
     def cell_padding(self, value: vec2 | int):
+        """
+        Set the padding inside cells and mark the layout dirty.
+
+        :param value: The new value.
+        """
         self._cell_padding = vec2(value)
         self.mark_dirty()
     
     @property
     def content_offset(self) -> vec2:
+        """Return the content offset vector."""
         return vec2(self._content_offset)
     
     @content_offset.setter
     def content_offset(self, value: vec2 | int):
+        """
+        Set the content offset vector and mark the layout dirty.
+
+        :param value: The new value.
+        """
         self._content_offset = vec2(value)
         self.mark_dirty()
     
     @property
     def content_offset_x(self) -> float:
+        """Return the horizontal content offset."""
         return self._content_offset.x
     
     @content_offset_x.setter
     def content_offset_x(self, value: float):
+        """
+        Set the horizontal content offset and mark the layout dirty.
+
+        :param value: The new value.
+        """
         self._content_offset.x = value
         self.mark_dirty()
     
     @property
     def content_offset_y(self) -> float:
+        """Return the vertical content offset."""
         return self._content_offset.y
     
     @content_offset_y.setter
     def content_offset_y(self, value: float):
+        """
+        Set the vertical content offset and mark the layout dirty.
+
+        :param value: The new value.
+        """
         self._content_offset.y = value
         self.mark_dirty()
     
     @property
     def fit_mode(self) -> FitMode:
+        """Return the mode used when content is smaller than the layout."""
         return cast(FitMode, self._fit_mode)
     
     @fit_mode.setter
     def fit_mode(self, value: FitMode):
+        """
+        Set the fit mode and mark the layout dirty.
+
+        :param value: The new value.
+        """
         self._fit_mode = value
         self.mark_dirty()
     
     @property
     def overflow_mode(self) -> FitMode:
+        """Return the mode used when content is larger than the layout."""
         return cast(FitMode, self._overflow_mode)
     
     @overflow_mode.setter
     def overflow_mode(self, value: FitMode):
+        """
+        Set the overflow mode and mark the layout dirty.
+
+        :param value: The new value.
+        """
         self._overflow_mode = value
         self.mark_dirty()
     
     @property
     def horizontal_fit_mode(self) -> FitMode:
+        """Return the effective horizontal fit mode."""
         return cast(FitMode, self._horizontal_fit_mode or self._fit_mode)
     
     @horizontal_fit_mode.setter
     def horizontal_fit_mode(self, value: Optional[FitMode]):
+        """
+        Set the horizontal fit mode and mark the layout dirty.
+
+        :param value: The new value.
+        """
         self._horizontal_fit_mode = value
         self.mark_dirty()
     
     @property
     def vertical_fit_mode(self) -> FitMode:
+        """Return the effective vertical fit mode."""
         return cast(FitMode, self._vertical_fit_mode or self._fit_mode)
     
     @vertical_fit_mode.setter
     def vertical_fit_mode(self, value: Optional[FitMode]):
+        """
+        Set the vertical fit mode and mark the layout dirty.
+
+        :param value: The new value.
+        """
         self._vertical_fit_mode = value
         self.mark_dirty()
     
     @property
     def horizontal_overflow_mode(self) -> FitMode:
+        """Return the effective horizontal overflow mode."""
         return cast(FitMode, self._horizontal_overflow_mode or self._overflow_mode)
     
     @horizontal_overflow_mode.setter
     def horizontal_overflow_mode(self, value: Optional[FitMode]):
+        """
+        Set the horizontal overflow mode and mark the layout dirty.
+
+        :param value: The new value.
+        """
         self._horizontal_overflow_mode = value
         self.mark_dirty()
     
     @property
     def vertical_overflow_mode(self) -> FitMode:
+        """Return the effective vertical overflow mode."""
         return cast(FitMode, self._vertical_overflow_mode or self._overflow_mode)
     
     @vertical_overflow_mode.setter
     def vertical_overflow_mode(self, value: Optional[FitMode]):
+        """
+        Set the vertical overflow mode and mark the layout dirty.
+
+        :param value: The new value.
+        """
         self._vertical_overflow_mode = value
         self.mark_dirty()
     
     @property
     def max_col(self) -> int:
+        """Return the highest occupied column index."""
         return self._max_col
     
     @property
     def max_cols(self) -> dict[int, int]:
+        """Return a copy of the maximum column index per row."""
         return dict(self._max_cols)
     
     @property
     def max_row(self) -> int:
+        """Return the highest occupied row index."""
         return self._max_row
     
     @property
     def max_rows(self) -> dict[int, int]:
+        """Return a copy of the maximum row index per column."""
         return dict(self._max_rows)
     
     @property
     def object_spans(self) -> dict[PygameObject, tuple[int, int]]:
+        """Return a copy of the span of every placed object."""
         return dict(self._object_spans)
     
     @property
     def objects(self) -> tuple[PygameObject, ...]:
+        """Return the placed objects as a tuple."""
         return tuple(self._object_placements)
     
     # endregion
@@ -593,7 +724,6 @@ class LayoutObject(RectObject):
                 heights[row] = self._apply_row_height_constraints(row, heights[row])
         
         for _ in range(16):
-            changed = False
             before = self._snapshot_dimensions()
             
             for obj, (col, row) in self._object_placements.items():
@@ -731,7 +861,11 @@ class LayoutObject(RectObject):
     # region SPANNING CUTS
     
     def _build_col_mode_cuts(self) -> dict[int, list[tuple[int, int, int, int, PygameObject]]]:
-        """For each column, return (start_row, end_row, start_y, end_y, object) barriers."""
+        """
+        Return, per column, the row barriers created by spanning objects.
+
+        :return: Mapping of column index to (start_row, end_row, start_y, end_y, object) barriers.
+        """
         cuts: dict[int, list[tuple[int, int, int, int, PygameObject]]] = {}
         offsets = {
             col: self._calculate_offsets(heights, round(self._cell_spacing.y))
@@ -752,7 +886,11 @@ class LayoutObject(RectObject):
         return cuts
     
     def _build_row_mode_cuts(self) -> dict[int, list[tuple[int, int, int, int, PygameObject]]]:
-        """For each row, return (start_col, end_col, start_x, end_x, object) barriers."""
+        """
+        Return, per row, the column barriers created by spanning objects.
+
+        :return: Mapping of row index to (start_col, end_col, start_x, end_x, object) barriers.
+        """
         cuts: dict[int, list[tuple[int, int, int, int, PygameObject]]] = {}
         offsets = {
             row: self._calculate_offsets(widths, round(self._cell_spacing.x))
@@ -1071,7 +1209,7 @@ class LayoutObject(RectObject):
         self._next_rows[x] = max(self._next_rows.get(x, 0), y + sy)
     
     def _recompute_max_col_and_rows(self) -> None:
-        """Rebuilds every track value from scratch, so stale maxima can shrink again."""
+        """Rebuild every track maximum from scratch so stale maxima can shrink."""
         self._clear_max_col_and_rows()
         for placed, (x, y) in self._object_placements.items():
             sx, sy = self._get_span(placed)
@@ -1082,11 +1220,25 @@ class LayoutObject(RectObject):
     # region OBJECT REGISTRATION (internal)
     
     def _find_occupant(self, cell: CellPos, span: tuple[int, int], ignore: Optional[PygameObject] = None) -> Optional[PygameObject]:
-        """Returns the first object covering `cell`'s span, skipping `ignore`."""
+        """
+        Return the first object covering a cell's span, skipping an optional object.
+
+        :param cell: Anchor cell of the queried span.
+        :param span: Column and row span to check.
+        :param ignore: Optional object to skip during the search.
+        :return: The occupying object, or None when the span is free.
+        """
         return self._find_foreign_occupant(cell, span, () if ignore is None else (ignore, ))
     
     def _find_foreign_occupant(self, cell: CellPos, span: tuple[int, int], moving: tuple[PygameObject, ...]) -> Optional[PygameObject]:
-        """Returns the first object covering `cell`'s span that is not one of the `moving` objects."""
+        """
+        Return the first object covering a cell's span that is not one of the moving objects.
+
+        :param cell: Anchor cell of the queried span.
+        :param span: Column and row span to check.
+        :param moving: Objects that should be ignored because they are being moved.
+        :return: The occupying object, or None when the span is free.
+        """
         for candidate in self._span_cells(cell, self._validate_span(span)):
             other = self._cells_objects.get(candidate)
             if other is not None and other not in moving:
@@ -1094,7 +1246,14 @@ class LayoutObject(RectObject):
         return None
     
     def _attach_object(self, obj: PygameObject, cell: CellPos, span: tuple[int, int] = (1, 1), anchor: Optional[vec2] = None) -> None:
-        """Registers obj at cell. Does not fire on_object_addition."""
+        """
+        Register an object at a cell without firing the addition hook.
+
+        :param obj: Object to register.
+        :param cell: Anchor cell for the object.
+        :param span: Column and row span covered by the object.
+        :param anchor: Optional anchor stored for the cell.
+        """
         span = self._validate_span(span)
         
         for candidate in self._span_cells(cell, span):
@@ -1109,7 +1268,12 @@ class LayoutObject(RectObject):
         self.mark_dirty()
     
     def _detach_object(self, obj: PygameObject) -> CellPos:
-        """Unregisters obj from every cell it occupies. Does not fire on_object_removal."""
+        """
+        Unregister an object from every cell it occupies without firing the removal hook.
+
+        :param obj: Object to unregister.
+        :return: The anchor cell the object occupied.
+        """
         cell = self._object_placements.pop(obj)
         span = self._object_spans.pop(obj, (1, 1))
         
@@ -1123,17 +1287,24 @@ class LayoutObject(RectObject):
         return cell
     
     def _forget_object(self, obj: PygameObject) -> CellPos:
-        """`_detach_object` plus dropping every per-object blacklist entry."""
+        """
+        Detach an object and drop its per-object blacklist entries.
+
+        :param obj: Object to forget.
+        :return: The anchor cell the object occupied.
+        """
         cell = self._detach_object(obj)
         self._dirty_checking_blacklist.discard(obj)
         self._object_positioning_blacklist.discard(obj)
         return cell
     
     def _validate_relocation(self, moves: list[tuple[PygameObject, CellPos, tuple[int, int]]]) -> None:
-        """Simulates `[(obj, new_anchor_cell, new_span), ...]` and raises before any state changes
-        if a moved object lands on a cell, it does not vacate itself. Needed because the moved
-        objects vacate each other's cells, so ignoring them during the check is not enough - two
-        movers can still be planned on top of one another."""
+        """
+        Check a planned relocation and raise before changing any state if it overlaps.
+
+        :param moves: Planned (object, new_anchor_cell, new_span) moves.
+        :raises ValueError: A moved object would land on an occupied cell or another mover's cell.
+        """
         occupied = dict(self._cells_objects)
         moving = {id(o) for o, _, _ in moves}
         
@@ -1153,7 +1324,11 @@ class LayoutObject(RectObject):
                 claimed[candidate] = o
     
     def _apply_relocation(self, moves: list[tuple[PygameObject, CellPos, tuple[int, int]]]) -> None:
-        """Applies a validated `_validate_relocation` plan. Pure reordering, so no hook fires."""
+        """
+        Apply a relocation plan that has already been validated.
+
+        :param moves: Validated (object, new_anchor_cell, new_span) moves.
+        """
         for o, _, _ in moves:
             if self.has_object(o):
                 self._detach_object(o)
@@ -1166,7 +1341,17 @@ class LayoutObject(RectObject):
     
     def _plan_lane_insert(self, horizontal: bool, lane: int, start: int, new: PygameObject,
                           new_span: tuple[int, int]) -> list[tuple[PygameObject, CellPos, tuple[int, int]]]:
-        """Works out where every object has to go when one track pushes a lane back."""
+        """
+        Plan how every object moves when an insertion pushes a lane back.
+
+        :param horizontal: Whether the insertion pushes along a row.
+        :param lane: Row or column index that receives the insertion.
+        :param start: Column or row index where the new object is inserted.
+        :param new: Object being inserted.
+        :param new_span: Column and row span of the new object.
+        :return: The validated move plan including the new object.
+        :raises ValueError: The planned moves would overlap existing objects.
+        """
         moves: list[tuple[PygameObject, CellPos, tuple[int, int]]] = [
             (new, (start, lane) if horizontal else (lane, start), new_span)
         ]
@@ -1184,7 +1369,11 @@ class LayoutObject(RectObject):
         return moves
     
     def _clear_objects(self, ignore_callbacks: bool = True) -> None:
-        """Drops every placed object; on_object_removal fires per object unless ignored."""
+        """
+        Remove every placed object, firing removal hooks unless ignored.
+
+        :param ignore_callbacks: Whether to suppress removal hooks for every object.
+        """
         removed = list(self._object_placements)
         for obj in removed:
             self._forget_object(obj)
@@ -1200,30 +1389,84 @@ class LayoutObject(RectObject):
     # region OBJECT QUERIES
     
     def __len__(self) -> int:
+        """
+        Return the number of placed objects.
+
+        :return: The number of placed objects.
+        """
         return len(self._object_placements)
     
     def __iter__(self) -> Iterator[PygameObject]:
+        """
+        Iterate over the placed objects in insertion order.
+
+        :return: An iterator over the placed objects.
+        """
         return iter(self._object_placements)
     
     def has_object(self, obj: PygameObject) -> bool:
+        """
+        Return whether an object is placed in this layout.
+
+        :param obj: Object to look up.
+        :return: True when the object is placed in the layout.
+        """
         return obj in self._object_placements
     
     def get_object_column(self, obj: PygameObject) -> int:
+        """
+        Return the anchor column of an object.
+
+        :param obj: Placed object to query.
+        :return: The object's anchor column index.
+        """
         return self._object_placements[obj][0]
     
     def get_object_row(self, obj: PygameObject) -> int:
+        """
+        Return the anchor row of an object.
+
+        :param obj: Placed object to query.
+        :return: The object's anchor row index.
+        """
         return self._object_placements[obj][1]
     
     def get_object_placement(self, obj: PygameObject) -> CellPos:
+        """
+        Return the anchor cell of an object.
+
+        :param obj: Placed object to query.
+        :return: The (column, row) anchor cell.
+        """
         return self._object_placements[obj]
     
     def get_object_span(self, obj: PygameObject) -> tuple[int, int]:
+        """
+        Return the column and row span of an object.
+
+        :param obj: Placed object to query.
+        :return: The (column, row) span.
+        """
         return self._get_span(obj)
     
     def get_object_in_cell(self, x: int, y: int) -> PygameObject:
+        """
+        Return the object occupying a cell.
+
+        :param x: Column index.
+        :param y: Row index.
+        :return: The object occupying the cell.
+        """
         return self._cells_objects[(x, y)]
     
     def find_object_in_cell(self, x: int, y: int) -> Optional[PygameObject]:
+        """
+        Return the object occupying a cell, or None when it is empty.
+
+        :param x: Column index.
+        :param y: Row index.
+        :return: The occupying object or None.
+        """
         return self._cells_objects.get((x, y))
     
     # endregion
@@ -1231,6 +1474,13 @@ class LayoutObject(RectObject):
     # region TRACK QUERIES
     
     def get_col_width(self, col: int, row: Optional[int] = None) -> int:
+        """
+        Return the calculated width of a column, optionally for one row.
+
+        :param col: Column index.
+        :param row: Row index used in row mode.
+        :return: The calculated column width.
+        """
         if self.mode == self.GRID_MODE or self.mode == self.COL_MODE:
             return self._calculated_col_widths.get(col, 0)
         if self.mode == self.ROW_MODE and row is not None:
@@ -1238,6 +1488,12 @@ class LayoutObject(RectObject):
         return 0
     
     def get_col_height(self, col: int) -> int:
+        """
+        Return the calculated height of a column.
+
+        :param col: Column index.
+        :return: The calculated column height.
+        """
         if self.mode == self.GRID_MODE or self.mode == self.ROW_MODE:
             return self._calculated_col_heights
         if self.mode == self.COL_MODE:
@@ -1245,6 +1501,12 @@ class LayoutObject(RectObject):
         return 0
     
     def get_row_width(self, row: int) -> int:
+        """
+        Return the calculated width of a row.
+
+        :param row: Row index.
+        :return: The calculated row width.
+        """
         if self.mode == self.GRID_MODE or self.mode == self.COL_MODE:
             return self._calculated_row_widths
         if self.mode == self.ROW_MODE:
@@ -1252,6 +1514,13 @@ class LayoutObject(RectObject):
         return 0
     
     def get_row_height(self, row: int, col: Optional[int] = None) -> int:
+        """
+        Return the calculated height of a row, optionally for one column.
+
+        :param row: Row index.
+        :param col: Column index used in column mode.
+        :return: The calculated row height.
+        """
         if self.mode == self.GRID_MODE or self.mode == self.ROW_MODE:
             return self._calculated_row_heights.get(row, 0)
         if self.mode == self.COL_MODE and col is not None:
@@ -1259,19 +1528,47 @@ class LayoutObject(RectObject):
         return 0
     
     def get_max_col_in_row(self, row: int) -> int:
+        """
+        Return the highest occupied column index in a row.
+
+        :param row: Row index.
+        :return: The highest occupied column index.
+        """
         return self._max_cols.get(row, 0)
     
     def get_max_row_in_col(self, col: int) -> int:
+        """
+        Return the highest occupied row index in a column.
+
+        :param col: Column index.
+        :return: The highest occupied row index.
+        """
         return self._max_rows.get(col, 0)
     
     def get_next_col(self, row: int) -> int:
+        """
+        Return the next free column index in a row.
+
+        :param row: Row index.
+        :return: The next free column index.
+        """
         return self._next_cols.get(row, 0)
     
     def get_next_row(self, col: int) -> int:
+        """
+        Return the next free row index in a column.
+
+        :param col: Column index.
+        :return: The next free row index.
+        """
         return self._next_rows.get(col, 0)
     
     def get_content_size(self) -> tuple[int, int]:
-        """Size of the laid out content (children + spacing, without outer padding), from the last relayout."""
+        """
+        Return the laid out content size, excluding outer padding.
+
+        :return: The (width, height) content size.
+        """
         return self._content_size()
     
     # endregion
@@ -1279,22 +1576,53 @@ class LayoutObject(RectObject):
     # region LAYOUT SETTERS
     
     def set_mode(self, mode: Literal["grid", "rows", "columns"]) -> "LayoutObject":
+        """
+        Set the layout mode.
+
+        :param mode: Layout mode to use.
+        :return: This layout, allowing chained calls.
+        """
         self.mode = mode
         return self
     
     def set_justify(self, value: vec2) -> "LayoutObject":
+        """
+        Set the content justification.
+
+        :param value: Justification vector.
+        :return: This layout, allowing chained calls.
+        """
         self.justification = value
         return self
     
     def set_fit_mode(self, mode: FitMode) -> "LayoutObject":
+        """
+        Set the fit mode used when content is smaller than the layout.
+
+        :param mode: Fit mode to use.
+        :return: This layout, allowing chained calls.
+        """
         self.fit_mode = mode
         return self
     
     def set_overflow_mode(self, mode: FitMode) -> "LayoutObject":
+        """
+        Set the mode used when content is larger than the layout.
+
+        :param mode: Overflow mode to use.
+        :return: This layout, allowing chained calls.
+        """
         self.overflow_mode = mode
         return self
     
     def set_horizontal_fit_mode(self, mode: FitMode, col: Optional[int] = None) -> "LayoutObject":
+        """
+        Set the horizontal fit mode globally or for one column.
+
+        :param mode: Fit mode to use.
+        :param col: Optional column index; None applies the mode globally.
+        :return: This layout, allowing chained calls.
+        """
         if col is None:
             self.horizontal_fit_mode = mode
         else:
@@ -1303,6 +1631,13 @@ class LayoutObject(RectObject):
         return self
     
     def set_vertical_fit_mode(self, mode: FitMode, row: Optional[int] = None) -> "LayoutObject":
+        """
+        Set the vertical fit mode globally or for one row.
+
+        :param mode: Fit mode to use.
+        :param row: Optional row index; None applies the mode globally.
+        :return: This layout, allowing chained calls.
+        """
         if row is None:
             self.vertical_fit_mode = mode
         else:
@@ -1311,6 +1646,13 @@ class LayoutObject(RectObject):
         return self
     
     def set_horizontal_overflow_mode(self, mode: FitMode, col: Optional[int] = None) -> "LayoutObject":
+        """
+        Set the horizontal overflow mode globally or for one column.
+
+        :param mode: Overflow mode to use.
+        :param col: Optional column index; None applies the mode globally.
+        :return: This layout, allowing chained calls.
+        """
         if col is None:
             self.horizontal_overflow_mode = mode
         else:
@@ -1319,6 +1661,13 @@ class LayoutObject(RectObject):
         return self
     
     def set_vertical_overflow_mode(self, mode: FitMode, row: Optional[int] = None) -> "LayoutObject":
+        """
+        Set the vertical overflow mode globally or for one row.
+
+        :param mode: Overflow mode to use.
+        :param row: Optional row index; None applies the mode globally.
+        :return: This layout, allowing chained calls.
+        """
         if row is None:
             self.vertical_overflow_mode = mode
         else:
@@ -1327,6 +1676,13 @@ class LayoutObject(RectObject):
         return self
     
     def set_padding(self, value: int | vec2, cell: Optional[CellPos] = None) -> "LayoutObject":
+        """
+        Set outer padding globally or cell padding when a cell is given.
+
+        :param value: Padding value.
+        :param cell: Optional cell whose padding is set.
+        :return: This layout, allowing chained calls.
+        """
         if cell is None:
             self.outer_padding = value
         else:
@@ -1334,6 +1690,13 @@ class LayoutObject(RectObject):
         return self
     
     def set_cell_padding(self, value: int | vec2, cell: Optional[CellPos] = None) -> "LayoutObject":
+        """
+        Set cell padding globally or for one cell.
+
+        :param value: Padding value.
+        :param cell: Optional cell whose padding is set.
+        :return: This layout, allowing chained calls.
+        """
         if cell is None:
             self.cell_padding = value
         else:
@@ -1342,10 +1705,24 @@ class LayoutObject(RectObject):
         return self
     
     def set_cell_spacing(self, value: int | vec2, outer: bool = False) -> "LayoutObject":
+        """
+        Set cell spacing, optionally applying the same value as outer padding.
+
+        :param value: Spacing value.
+        :param outer: Whether to also use the value as outer padding.
+        :return: This layout, allowing chained calls.
+        """
         self.cell_spacing = value
         return self.set_padding(value) if outer else self
     
     def set_cell_anchor(self, value: vec2, cell: Optional[CellPos] = None) -> "LayoutObject":
+        """
+        Set the content anchor globally or for one cell.
+
+        :param value: Anchor vector.
+        :param cell: Optional cell whose anchor is set.
+        :return: This layout, allowing chained calls.
+        """
         if cell is None:
             self._cell_anchor = vec2(value)
         else:
@@ -1354,19 +1731,42 @@ class LayoutObject(RectObject):
         return self
     
     def set_content_offset(self, value: vec2) -> "LayoutObject":
+        """
+        Set the content offset.
+
+        :param value: Content offset vector.
+        :return: This layout, allowing chained calls.
+        """
         self.content_offset = value
         return self
     
     def set_content_offset_x(self, value: float) -> "LayoutObject":
+        """
+        Set the horizontal content offset.
+
+        :param value: Horizontal offset.
+        :return: This layout, allowing chained calls.
+        """
         self.content_offset_x = value
         return self
     
     def set_content_offset_y(self, value: float) -> "LayoutObject":
+        """
+        Set the vertical content offset.
+
+        :param value: Vertical offset.
+        :return: This layout, allowing chained calls.
+        """
         self.content_offset_y = value
         return self
     
     def set_layering_priority(self, priority: LayeringPriority) -> "LayoutObject":
-        """Sets the z-ordering rule applied on every relayout. See `_update_layering`."""
+        """
+        Set the z-ordering rule applied on every relayout.
+
+        :param priority: Layering priority rule, or None to disable automatic layering.
+        :return: This layout, allowing chained calls.
+        """
         self._layering_priority = priority
         self.mark_dirty()
         return self
@@ -1377,6 +1777,14 @@ class LayoutObject(RectObject):
     
     def set_width_constraint(self, min_value: Optional[int] = None, max_value: Optional[int] = None,
                              fixed_value: Optional[int] = None) -> "LayoutObject":
+        """
+        Set the minimum, maximum, and fixed width bounds.
+
+        :param min_value: Minimum width.
+        :param max_value: Maximum width.
+        :param fixed_value: Fixed width that overrides the other bounds.
+        :return: This layout, allowing chained calls.
+        """
         self._width_constraint.min = min_value
         self._width_constraint.max = max_value
         self._width_constraint.fixed = fixed_value
@@ -1384,22 +1792,48 @@ class LayoutObject(RectObject):
         return self
     
     def set_fixed_width(self, value: int) -> "LayoutObject":
+        """
+        Set the fixed width.
+
+        :param value: Fixed width.
+        :return: This layout, allowing chained calls.
+        """
         self._width_constraint.fixed = value
         self.mark_dirty()
         return self
     
     def set_min_width(self, value: int) -> "LayoutObject":
+        """
+        Set the minimum width.
+
+        :param value: Minimum width.
+        :return: This layout, allowing chained calls.
+        """
         self._width_constraint.min = value
         self.mark_dirty()
         return self
     
     def set_max_width(self, value: int) -> "LayoutObject":
+        """
+        Set the maximum width.
+
+        :param value: Maximum width.
+        :return: This layout, allowing chained calls.
+        """
         self._width_constraint.max = value
         self.mark_dirty()
         return self
     
     def set_height_constraint(self, min_value: Optional[int] = None, max_value: Optional[int] = None,
                               fixed_value: Optional[int] = None) -> "LayoutObject":
+        """
+        Set the minimum, maximum, and fixed height bounds.
+
+        :param min_value: Minimum height.
+        :param max_value: Maximum height.
+        :param fixed_value: Fixed height that overrides the other bounds.
+        :return: This layout, allowing chained calls.
+        """
         self._height_constraint.min = min_value
         self._height_constraint.max = max_value
         self._height_constraint.fixed = fixed_value
@@ -1407,22 +1841,49 @@ class LayoutObject(RectObject):
         return self
     
     def set_fixed_height(self, value: int) -> "LayoutObject":
+        """
+        Set the fixed height.
+
+        :param value: Fixed height.
+        :return: This layout, allowing chained calls.
+        """
         self._height_constraint.fixed = value
         self.mark_dirty()
         return self
     
     def set_min_height(self, value: int) -> "LayoutObject":
+        """
+        Set the minimum height.
+
+        :param value: Minimum height.
+        :return: This layout, allowing chained calls.
+        """
         self._height_constraint.min = value
         self.mark_dirty()
         return self
     
     def set_max_height(self, value: int) -> "LayoutObject":
+        """
+        Set the maximum height.
+
+        :param value: Maximum height.
+        :return: This layout, allowing chained calls.
+        """
         self._height_constraint.max = value
         self.mark_dirty()
         return self
     
     def set_col_width_constraint(self, min_value: Optional[int] = None, max_value: Optional[int] = None,
                                  fixed_value: Optional[int] = None, col: Optional[int] = None) -> "LayoutObject":
+        """
+        Set column width bounds globally or for one column.
+
+        :param min_value: Minimum column width.
+        :param max_value: Maximum column width.
+        :param fixed_value: Fixed column width that overrides the other bounds.
+        :param col: Optional column index; None applies to all columns.
+        :return: This layout, allowing chained calls.
+        """
         c = self._get_col_constraint(col)
         c.min = min_value
         c.max = max_value
@@ -1431,22 +1892,52 @@ class LayoutObject(RectObject):
         return self
     
     def set_fixed_col_width(self, value: int, col: Optional[int] = None) -> "LayoutObject":
+        """
+        Set a fixed column width globally or for one column.
+
+        :param value: Fixed column width.
+        :param col: Optional column index; None applies to all columns.
+        :return: This layout, allowing chained calls.
+        """
         self._get_col_constraint(col).fixed = value
         self.mark_dirty()
         return self
     
     def set_min_col_width(self, value: int, col: Optional[int] = None) -> "LayoutObject":
+        """
+        Set a minimum column width globally or for one column.
+
+        :param value: Minimum column width.
+        :param col: Optional column index; None applies to all columns.
+        :return: This layout, allowing chained calls.
+        """
         self._get_col_constraint(col).min = value
         self.mark_dirty()
         return self
     
     def set_max_col_width(self, value: int, col: Optional[int] = None) -> "LayoutObject":
+        """
+        Set a maximum column width globally or for one column.
+
+        :param value: Maximum column width.
+        :param col: Optional column index; None applies to all columns.
+        :return: This layout, allowing chained calls.
+        """
         self._get_col_constraint(col).max = value
         self.mark_dirty()
         return self
     
     def set_row_height_constraint(self, min_value: Optional[int] = None, max_value: Optional[int] = None,
                                   fixed_value: Optional[int] = None, row: Optional[int] = None) -> "LayoutObject":
+        """
+        Set row height bounds globally or for one row.
+
+        :param min_value: Minimum row height.
+        :param max_value: Maximum row height.
+        :param fixed_value: Fixed row height that overrides the other bounds.
+        :param row: Optional row index; None applies to all rows.
+        :return: This layout, allowing chained calls.
+        """
         c = self._get_row_constraint(row)
         c.min = min_value
         c.max = max_value
@@ -1455,16 +1946,37 @@ class LayoutObject(RectObject):
         return self
     
     def set_fixed_row_height(self, value: int, row: Optional[int] = None) -> "LayoutObject":
+        """
+        Set a fixed row height globally or for one row.
+
+        :param value: Fixed row height.
+        :param row: Optional row index; None applies to all rows.
+        :return: This layout, allowing chained calls.
+        """
         self._get_row_constraint(row).fixed = value
         self.mark_dirty()
         return self
     
     def set_min_row_height(self, value: int, row: Optional[int] = None) -> "LayoutObject":
+        """
+        Set a minimum row height globally or for one row.
+
+        :param value: Minimum row height.
+        :param row: Optional row index; None applies to all rows.
+        :return: This layout, allowing chained calls.
+        """
         self._get_row_constraint(row).min = value
         self.mark_dirty()
         return self
     
     def set_max_row_height(self, value: int, row: Optional[int] = None) -> "LayoutObject":
+        """
+        Set a maximum row height globally or for one row.
+
+        :param value: Maximum row height.
+        :param row: Optional row index; None applies to all rows.
+        :return: This layout, allowing chained calls.
+        """
         self._get_row_constraint(row).max = value
         self.mark_dirty()
         return self
@@ -1474,15 +1986,36 @@ class LayoutObject(RectObject):
     # region OBJECT PLACEMENT
     
     def on_object_addition(self, obj: PygameObject) -> None:
+        """
+        Forward an object-addition event to the layout behaviors.
+
+        :param obj: Object that was added to the layout.
+        """
         self.behaviors.on_object_addition(obj)
     
     def on_object_removal(self, obj: PygameObject) -> None:
+        """
+        Forward an object-removal event to the layout behaviors.
+
+        :param obj: Object that was removed from the layout.
+        """
         self.behaviors.on_object_removal(obj)
     
     def set_object_in_cell(self, obj: PygameObject, x: int, y: int, anchor: Optional[vec2] = None,
                            span_x: int = 1, span_y: int = 1, ignore_callbacks: bool = False) -> "LayoutObject":
-        """Places obj at (x, y). Fires on_object_addition only when the obj was not in this layout,
-        so moving an object already inside it is not an addition."""
+        """
+        Place an object at a cell and fire the addition hook for new objects.
+
+        :param obj: Object to place.
+        :param x: Target column index.
+        :param y: Target row index.
+        :param anchor: Optional anchor used inside the target cell.
+        :param span_x: Number of columns covered by the object.
+        :param span_y: Number of rows covered by the object.
+        :param ignore_callbacks: Whether to suppress the addition hook when the object is new.
+        :return: This layout, allowing chained calls.
+        :raises ValueError: span_x or span_y is less than one, or the object overlaps an existing object.
+        """
         span = self._validate_span((span_x, span_y))
         cell = (x, y)
         
@@ -1503,6 +2036,14 @@ class LayoutObject(RectObject):
         return self
     
     def remove_object(self, obj: PygameObject, ignore_callbacks: bool = False) -> "LayoutObject":
+        """
+        Remove an object from the layout and fire the removal hook unless ignored.
+
+        :param obj: Object to remove.
+        :param ignore_callbacks: Whether to suppress the removal hook.
+        :return: This layout, allowing chained calls.
+        :raises KeyError: The object is not part of this layout.
+        """
         if not self.has_object(obj):
             raise KeyError(f"Object {obj!r} is not part of this layout")
         
@@ -1516,17 +2057,38 @@ class LayoutObject(RectObject):
         return self
     
     def remove_object_in_cell(self, x: int, y: int, ignore_callbacks: bool = False) -> "LayoutObject":
+        """
+        Remove the object occupying a cell.
+
+        :param x: Column index.
+        :param y: Row index.
+        :param ignore_callbacks: Whether to suppress the removal hook.
+        :return: This layout, allowing chained calls.
+        """
         obj = self._cells_objects[(x, y)]
         return self.remove_object(obj, ignore_callbacks=ignore_callbacks)
     
     def clear(self, ignore_callbacks: bool = False) -> "LayoutObject":
-        """Removes every object from the layout. on_object_removal fires per object unless ignored."""
+        """
+        Remove every object from the layout, firing removal hooks unless ignored.
+
+        :param ignore_callbacks: Whether to suppress removal hooks for every object.
+        :return: This layout, allowing chained calls.
+        """
         self._clear_objects(ignore_callbacks)
         return self
     
     def replace_object(self, prev: PygameObject, new: Optional[PygameObject], ignore_callbacks: bool = False) -> "LayoutObject":
-        """Hands prev's cell over to new (or clears the cell when new is None). Fires
-        on_object_removal(prev) plus, when new is new to this layout, on_object_addition(new)."""
+        """
+        Hand a placed object's cell over to a new object.
+
+        :param prev: Object currently in the layout.
+        :param new: Replacement object, or None to clear the cell.
+        :param ignore_callbacks: Whether to suppress the removal and addition hooks.
+        :return: This layout, allowing chained calls.
+        :raises KeyError: prev is not part of this layout.
+        :raises ValueError: The replacement overlaps another object.
+        """
         if not self.has_object(prev):
             raise KeyError(f"Object {prev!r} is not part of this layout")
         
@@ -1537,15 +2099,28 @@ class LayoutObject(RectObject):
         
         return self
     
-    def replace_object_in_cell(self, x: int, y: int, new: PygameObject, anchor: Optional[vec2] = None,
+    def replace_object_in_cell(self, x: int, y: int, new: Optional[PygameObject], anchor: Optional[vec2] = None,
                                span: Optional[tuple[int, int]] = None, ignore_callbacks: bool = False) -> "LayoutObject":
-        """Swaps whatever occupies cell (x, y) for new. Span of new is, in order of precedence: the
-        explicit `span` argument, new's own span when it is already in this layout, otherwise
-        the span of the object it replaces. Either way the swap is all or nothing - a rejected
-        replacement leaves every object exactly where it was and fires no hook."""
+        """
+        Swap the object occupying a cell for a new object.
+
+        :param x: Column index.
+        :param y: Row index.
+        :param new: Replacement object, or None to clear the cell.
+        :param anchor: Optional anchor used for the replacement.
+        :param span: Optional span for the replacement.
+        :param ignore_callbacks: Whether to suppress the removal and addition hooks.
+        :return: This layout, allowing chained calls.
+        :raises ValueError: The replacement span is invalid or overlaps another object.
+        """
         pos: CellPos = (x, y)
         prev = self._cells_objects.get(pos, None)
-        
+
+        if new is None:
+            if prev is not None:
+                self.remove_object(prev, ignore_callbacks=ignore_callbacks)
+            return self
+
         if new is prev:
             if span is not None:
                 self.set_span(new, *span)
@@ -1596,7 +2171,15 @@ class LayoutObject(RectObject):
         return self
     
     def switch_object_positions(self, obj1: PygameObject, obj2: PygameObject) -> "LayoutObject":
-        """Swaps the anchor cells (and therefore the whole spans) of two objects. Nothing leaves the layout, so no hook fires."""
+        """
+        Swap the anchor cells of two placed objects.
+
+        :param obj1: First object to swap.
+        :param obj2: Second object to swap.
+        :return: This layout, allowing chained calls.
+        :raises KeyError: Either object is not part of this layout.
+        :raises ValueError: The swap would make the objects overlap.
+        """
         if obj1 is obj2:
             return self
         if not self.has_object(obj1) or not self.has_object(obj2):
@@ -1612,7 +2195,16 @@ class LayoutObject(RectObject):
         return self
     
     def switch_cells_content(self, x1: int, y1: int, x2: int, y2: int) -> "LayoutObject":
-        """Swaps two cells or moves the content when one side is empty. Nothing leaves the layout, so no hook fires."""
+        """
+        Swap two cells or move content when one of them is empty.
+
+        :param x1: Column index of the first cell.
+        :param y1: Row index of the first cell.
+        :param x2: Column index of the second cell.
+        :param y2: Row index of the second cell.
+        :return: This layout, allowing chained calls.
+        :raises ValueError: The move would make objects overlap.
+        """
         cell1: CellPos = (x1, y1)
         cell2: CellPos = (x2, y2)
         if cell1 == cell2:
@@ -1635,19 +2227,50 @@ class LayoutObject(RectObject):
         return self
     
     def insert_object_in_col(self, obj: PygameObject, col: int, row: int, span_x: int = 1, span_y: int = 1, ignore_callbacks: bool = False) -> "LayoutObject":
-        """Places obj at (col, row) and pushes the rest of the column one row down. Only obj fires on_object_addition."""
+        """
+        Place an object and push later objects in the column one row down.
+
+        :param obj: Object to insert.
+        :param col: Target column index.
+        :param row: Target row index.
+        :param span_x: Number of columns covered by the object.
+        :param span_y: Number of rows covered by the object.
+        :param ignore_callbacks: Whether to suppress the addition hook.
+        :return: This layout, allowing chained calls.
+        :raises ValueError: The span is invalid or the insertion would make objects overlap.
+        """
         moves = self._plan_lane_insert(False, col, row, obj, self._validate_span((span_x, span_y)))
         self._apply_relocation([m for m in moves if m[0] is not obj])
         return self.set_object_in_cell(obj, col, row, span_x=span_x, span_y=span_y, ignore_callbacks=ignore_callbacks)
     
     def insert_object_in_row(self, obj: PygameObject, col: int, row: int, span_x: int = 1, span_y: int = 1, ignore_callbacks: bool = False) -> "LayoutObject":
-        """Places obj at (col, row) and pushes the rest of the row one column right. Only obj fires on_object_addition."""
+        """
+        Place an object and push later objects in the row one column right.
+
+        :param obj: Object to insert.
+        :param col: Target column index.
+        :param row: Target row index.
+        :param span_x: Number of columns covered by the object.
+        :param span_y: Number of rows covered by the object.
+        :param ignore_callbacks: Whether to suppress the addition hook.
+        :return: This layout, allowing chained calls.
+        :raises ValueError: The span is invalid or the insertion would make objects overlap.
+        """
         moves = self._plan_lane_insert(True, row, col, obj, self._validate_span((span_x, span_y)))
         self._apply_relocation([m for m in moves if m[0] is not obj])
         return self.set_object_in_cell(obj, col, row, span_x=span_x, span_y=span_y, ignore_callbacks=ignore_callbacks)
     
     def set_span(self, obj: PygameObject, span_x: int = 1, span_y: int = 1) -> "LayoutObject":
-        """Resizes the span of an already placed object, keeping its anchor cell. Nothing leaves the layout, so no hook fires."""
+        """
+        Resize the span of a placed object while keeping its anchor cell.
+
+        :param obj: Placed object to resize.
+        :param span_x: Number of columns covered by the object.
+        :param span_y: Number of rows covered by the object.
+        :return: This layout, allowing chained calls.
+        :raises KeyError: The object is not part of this layout.
+        :raises ValueError: The span is invalid or overlaps another object.
+        """
         if not self.has_object(obj):
             raise KeyError("Object is not part of this layout")
         
@@ -1666,10 +2289,30 @@ class LayoutObject(RectObject):
     
     def stack_x(self, obj: PygameObject, y: int = 0, anchor: Optional[vec2] = None,
                 span_x: int = 1, span_y: int = 1) -> "LayoutObject":
+        """
+        Place an object at the next free column in a row.
+
+        :param obj: Object to place.
+        :param y: Row index to stack within.
+        :param anchor: Optional anchor used inside the target cell.
+        :param span_x: Number of columns covered by the object.
+        :param span_y: Number of rows covered by the object.
+        :return: This layout, allowing chained calls.
+        """
         return self.set_object_in_cell(obj, self._next_cols.get(y, 0), y, anchor, span_x, span_y)
     
     def stack_y(self, obj: PygameObject, x: int = 0, anchor: Optional[vec2] = None,
                 span_x: int = 1, span_y: int = 1) -> "LayoutObject":
+        """
+        Place an object at the next free row in a column.
+
+        :param obj: Object to place.
+        :param x: Column index to stack within.
+        :param anchor: Optional anchor used inside the target cell.
+        :param span_x: Number of columns covered by the object.
+        :param span_y: Number of rows covered by the object.
+        :return: This layout, allowing chained calls.
+        """
         return self.set_object_in_cell(obj, x, self._next_rows.get(x, 0), anchor, span_x, span_y)
     
     # endregion
@@ -1677,46 +2320,101 @@ class LayoutObject(RectObject):
     # region DIRTY CHECKING
     
     def enable_dirty_checking(self) -> "LayoutObject":
+        """
+        Enable automatic dirty detection from child movement or resizing.
+
+        :return: This layout, allowing chained calls.
+        """
         self._dirty_checking = True
         return self
     
     def disable_dirty_checking(self) -> "LayoutObject":
+        """
+        Disable automatic dirty detection.
+
+        :return: This layout, allowing chained calls.
+        """
         self._dirty_checking = False
         return self
     
     def toggle_dirty_checking(self) -> "LayoutObject":
+        """
+        Toggle automatic dirty detection.
+
+        :return: This layout, allowing chained calls.
+        """
         self._dirty_checking = not self._dirty_checking
         return self
     
     def add_to_dirty_checking_blacklist(self, obj: PygameObject) -> "LayoutObject":
+        """
+        Exclude an object from automatic dirty detection.
+
+        :param obj: Object to exclude.
+        :return: This layout, allowing chained calls.
+        """
         self._dirty_checking_blacklist.add(obj)
         return self
     
     def remove_from_dirty_checking_blacklist(self, obj: PygameObject) -> "LayoutObject":
+        """
+        Re-include an object in automatic dirty detection.
+
+        :param obj: Object to re-include.
+        :return: This layout, allowing chained calls.
+        """
         self._dirty_checking_blacklist.discard(obj)
         return self
     
     def clear_dirty_checking_blacklist(self) -> "LayoutObject":
+        """
+        Clear the dirty-checking exclusion list.
+
+        :return: This layout, allowing chained calls.
+        """
         self._dirty_checking_blacklist.clear()
         return self
     
     def add_to_object_positioning_blacklist(self, obj: PygameObject) -> "LayoutObject":
+        """
+        Stop automatic dirty detection from reacting to an object's position changes.
+
+        :param obj: Object whose position changes should be ignored.
+        :return: This layout, allowing chained calls.
+        """
         self._object_positioning_blacklist.add(obj)
         return self
     
     def remove_from_object_positioning_blacklist(self, obj: PygameObject) -> "LayoutObject":
+        """
+        Re-enable automatic dirty detection for an object's position changes.
+
+        :param obj: Object to re-enable.
+        :return: This layout, allowing chained calls.
+        """
         self._object_positioning_blacklist.discard(obj)
         return self
     
     def clear_object_positioning_blacklist(self) -> "LayoutObject":
+        """
+        Clear the position-change exclusion list.
+
+        :return: This layout, allowing chained calls.
+        """
         self._object_positioning_blacklist.clear()
         return self
     
     def mark_dirty(self) -> "LayoutObject":
+        """
+        Flag the layout for recalculation on the next update.
+
+        :return: This layout, allowing chained calls.
+        """
         self._dirty = True
         return self
     
     def _check_if_dirty(self) -> None:
+        """Mark the layout dirty when a child moved, resized, or changed anchor."""
         for obj in self._object_placements:
             if obj in self._dirty_checking_blacklist:
                 continue
@@ -1732,6 +2430,11 @@ class LayoutObject(RectObject):
     # region UPDATE
     
     def _update_layering(self) -> "LayoutObject":
+        """
+        Assign sub-layers to children according to the layering priority.
+
+        :return: This layout, allowing chained calls.
+        """
         if not self._layering_priority:
             return self
         
@@ -1757,6 +2460,12 @@ class LayoutObject(RectObject):
         return self
     
     def _update_self(self, dt: float) -> "LayoutObject":
+        """
+        Recalculate tracks and positions when the layout is dirty.
+
+        :param dt: Seconds elapsed since the previous update.
+        :return: This layout after the update.
+        """
         super()._update_self(dt)
         if self._dirty_checking and not self._dirty:
             self._check_if_dirty()
@@ -1777,10 +2486,17 @@ class LayoutObject(RectObject):
     # region MISC
     
     def __repr__(self) -> str:
+        """Return a debug string representation."""
         return f"LayoutObject({self._mode}, children={len(self._object_placements)}, dirty={self._dirty})"
 
-    def make_reorderable(self, placeholder_style: RectStyle = RectStyle()) -> "LayoutObject":
-        self.add_behavior(ReorderableLayoutBehavior(placeholder_style))
+    def make_reorderable(self, placeholder_style: Optional[RectStyle] = None) -> "LayoutObject":
+        """
+        Attach drag-and-drop reordering with an optional placeholder style.
+
+        :param placeholder_style: Optional rectangle style for the drag placeholder.
+        :return: This layout, allowing chained calls.
+        """
+        self.add_behavior(ReorderableLayoutBehavior(placeholder_style or RectStyle()))
         return self
     
     # endregion

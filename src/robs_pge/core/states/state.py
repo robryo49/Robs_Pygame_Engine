@@ -1,6 +1,8 @@
+"""Provides the runtime state that owns a scene's cameras, layers, and services."""
+
 from __future__ import annotations
 
-from typing import Any, Callable, Iterable, Optional, TYPE_CHECKING
+from typing import Any, Callable, Iterable, Optional, TYPE_CHECKING, Literal
 
 import pygame as pg
 
@@ -31,12 +33,19 @@ _LAYER_DEBUG = 1000.0
 
 
 class State:
+    """Runtime scene state containing cameras, layers, services, and managers."""
+
+    DEBUG_DISABLED: Literal[0] = 0
+    DEBUG_PERF: Literal[1] = 1
+    DEBUG_FULL: Literal[2] = 2
     
-    DEBUG_DISABLED: int = 0
-    DEBUG_PERF: int = 1
-    DEBUG_FULL: int = 100
-    
-    def __init__(self, engine: Engine, state_id: str, debug_mode: int = DEBUG_DISABLED):
+    def __init__(self, engine: Engine, state_id: str, debug_mode: Literal[0, 1, 2] = DEBUG_DISABLED) -> None:
+        """Register the state and build its cameras, managers, layers, and services.
+
+        :param engine: Engine that owns this state.
+        :param state_id: Unique identifier used to switch to this state.
+        :param debug_mode: Debug overlay level mode.
+        """
         
         self._id = state_id
         self._engine = engine
@@ -54,11 +63,8 @@ class State:
         
         self._factory = self._create_object_factory(self._services)
 
-        
-        self._layer_manager: LayerManager = LayerManager(self._services)
-        self._debug_layer = self.create_layer("debug", _LAYER_DEBUG, self.engine.default_camera, interactable=False)
-        self._ui_layer = self.create_layer("ui", _LAYER_UI, self.engine.default_camera, interactable=True)
-        self._world_layer = self.create_layer("world", _LAYER_WORLD, self.camera, interactable=True)
+        self._layer_manager = self._create_layer_manager()
+        self._debug_layer, self._ui_layer, self._world_layer = self._create_layers()
 
         self._dialogs_layer_id = "ui"
         self._dialogs_manager = self._create_dialog_manager(
@@ -79,6 +85,7 @@ class State:
         self.init_resources()
         self.init_keybinds()
         self.init_services()
+        self.init_events()
         self.init_object_constructors()
         self.init_debug_overlay_objects()
     
@@ -86,107 +93,133 @@ class State:
     
     @property
     def id(self) -> str:
+        """Return the unique state identifier."""
         return self._id
     
     @property
     def engine(self) -> Engine:
+        """Return the engine that owns this state."""
         return self._engine
     
     @property
     def clock(self) -> Clock:
+        """Return the engine clock."""
         return self.engine.clock
     
     @property
     def dt(self) -> float:
+        """Return the last frame's delta time in seconds."""
         return self.clock.dtime
     
     @property
     def input(self) -> InputManager:
+        """Return the shared input manager."""
         return self.engine.input
     
     @property
     def camera(self) -> Camera:
+        """Return the state's world camera."""
         return self._camera
     
     @property
     def default_camera(self) -> Camera:
+        """Return the engine's default camera."""
         return self.engine.default_camera
     
     @property
     def mouse(self) -> Mouse:
+        """Return the shared mouse state."""
         return self.input.mouse
     
     @property
     def renderer(self) -> Renderer:
+        """Return the engine renderer."""
         return self.engine.renderer
     
     @property
     def debug_overlay(self) -> DebugOverlay:
+        """Return the debug overlay object."""
         return self._debug_overlay
     
     @property
     def frame_timer(self) -> FrameTimer:
+        """Return the engine frame timer."""
         return self.engine.frame_timer
     
     @property
     def resources(self) -> ResourceManager:
+        """Return the shared resource manager."""
         return self.engine.resources
     
     @property
     def animation_manager(self) -> AnimationManager:
+        """Return the state's animation manager."""
         return self._animation_manager
     
     @property
     def interaction_manager(self) -> InteractionManager:
+        """Return the engine's interaction manager."""
         return self.engine.interaction_manager
     
     @property
     def event_manager(self) -> EventManager:
+        """Return the state's event manager."""
         return self._event_manager
     
     @property
     def async_process_manager(self) -> AsyncProcessManager:
+        """Return the state's asynchronous process manager."""
         return self._async_process_manager
     
     @property
     def quick_debug_manager(self) -> QuickDebugManager:
+        """Return the state's quick debug manager."""
         return self._quick_debug_manager
     
     @property
     def factory(self) -> ObjectFactory:
+        """Return the state's object factory."""
         return self._factory
     
     @property
     def create_object(self) -> ObjectFactory:
+        """Return the object factory used to construct game objects."""
         return self._factory
     
     @property
     def keybinds(self) -> KeybindsManager:
+        """Return the state's keybind manager."""
         return self._keybinds_manager
     
     @property
     def layer_manager(self) -> LayerManager:
+        """Return the state's layer manager."""
         return self._layer_manager
     
     @property
     def windows(self) -> WindowManager:
+        """Return the state's window manager."""
         return self._window_manager
     
     @property
     def dialogs(self) -> DialogManager:
+        """Return the state's dialog manager."""
         return self._dialogs_manager
     
     
     @property
     def debug_layer(self) -> Layer:
+        """Return the debug layer."""
         return self._debug_layer
     
     @property
     def ui_layer(self) -> Layer:
+        """Return the UI layer."""
         return self._ui_layer
     
     @property
     def world_layer(self) -> Layer:
+        """Return the world layer."""
         return self._world_layer
     
     # endregion
@@ -196,6 +229,15 @@ class State:
     @staticmethod
     def _create_services_collection() -> ServicesCollection:
         return ServicesCollection()
+
+    def _create_layer_manager(self) -> LayerManager:
+        return LayerManager(self._services)
+
+    def _create_layers(self) -> tuple[Layer, Layer, Layer]:
+        debug_layer = self.create_layer("debug", _LAYER_DEBUG, self.engine.default_camera, interactable=False)
+        ui_layer = self.create_layer("ui", _LAYER_UI, self.engine.default_camera, interactable=True)
+        world_layer = self.create_layer("world", _LAYER_WORLD, self.camera, interactable=True)
+        return debug_layer, ui_layer, world_layer
     
     @staticmethod
     def _create_event_manager() -> EventManager:
@@ -234,6 +276,7 @@ class State:
     # region INIT METHODS
     
     def init_debug_overlay_objects(self) -> None:
+        """Create and position debug panels according to the configured debug mode."""
         if not self._debug_mode:
             return
         
@@ -249,13 +292,13 @@ class State:
         titles_width = 150
         infos_width = panels_width - titles_width - 20
         
-        engine_pannel = self.create_object.ui.debug.debug_info_window(vec2(), "ENGINE", panels_width, titles_width, infos_width, font_white, font_gray, blue_style)
-        engine_pannel.add_line("FPS", "{} ms", lambda: round(self.clock.fps))
-        engine_pannel.add_line("SPF", "{} ms", lambda: round(self.clock.dtime * 1000, 1))
-        engine_pannel.add_line("Frames Elapsed", "{} frames", lambda: self.clock.tick_num)
-        engine_pannel.add_line("Time Elapsed", "{} s", lambda: round(self.clock.time, 1))
+        engine_panel = self.create_object.ui.debug.debug_info_window(vec2(), "ENGINE", panels_width, titles_width, infos_width, font_white, font_gray, blue_style)
+        engine_panel.add_line("FPS", "{} ms", lambda: round(self.clock.fps))
+        engine_panel.add_line("SPF", "{} ms", lambda: round(self.clock.dtime * 1000, 1))
+        engine_panel.add_line("Frames Elapsed", "{} frames", lambda: self.clock.tick_num)
+        engine_panel.add_line("Time Elapsed", "{} s", lambda: round(self.clock.time, 1))
         
-        state_panel = self.create_object.ui.debug.debug_info_window(vec2(), "ENGINE", panels_width, titles_width, infos_width, font_white, font_gray, green_style)
+        state_panel = self.create_object.ui.debug.debug_info_window(vec2(), "STATE", panels_width, titles_width, infos_width, font_white, font_gray, green_style)
         state_panel.add_line("Current", "{}", lambda: self.id)
         state_panel.add_line("Layers :", "{}", lambda: "")
         for layer in list(self.layer_manager.layers.values()):
@@ -306,7 +349,7 @@ class State:
         quick_debug_panel = self.create_object.ui.debug.dynamic_debug_info_window(vec2(), "QUICK DEBUG", panels_width, self.quick_debug_manager.get_values, titles_width-85, infos_width+85, font_white, font_gray, yellow_style)
     
         
-        if self._debug_mode >= self.DEBUG_PERF: self.debug_overlay.stack_y(engine_pannel, 0, Anchor.TL)
+        if self._debug_mode >= self.DEBUG_PERF: self.debug_overlay.stack_y(engine_panel, 0, Anchor.TL)
         if self._debug_mode >= self.DEBUG_PERF: self.debug_overlay.stack_y(state_panel, 0, Anchor.TL)
         if self._debug_mode >= self.DEBUG_PERF: self.debug_overlay.stack_y(rendering_panel, 0, Anchor.TL)
         if self._debug_mode >= self.DEBUG_PERF: self.debug_overlay.stack_y(frame_panel, 0, Anchor.TL)
@@ -322,9 +365,10 @@ class State:
         if self._debug_mode >= self.DEBUG_PERF: self.debug_overlay.stack_y(quick_debug_panel, 2, Anchor.TR)
     
     def init_resources(self) -> None:
-        pass
-    
+        """Hook for subclass-specific resource setup."""
+
     def init_services(self) -> None:
+        """Populate the service collection after all managers exist."""
         self._services.init(
             self,
             self.animation_manager,
@@ -337,41 +381,81 @@ class State:
         )
     
     def init_keybinds(self) -> None:
+        """Register the default F3 and F4 debug layer toggles."""
         self.register_keybind(pg.K_F3, lambda: self.debug_layer.toggle_rendering())
         self.register_keybind(pg.K_F4, lambda: self.debug_layer.toggle_frozen())
     
     def init_events(self) -> None:
-        pass
-    
+        """Hook for subclass-specific event registration."""
+
     def init_object_constructors(self) -> None:
-        pass
+        """Hook for subclass-specific object constructor registration."""
     
     # endregion
     
     # region REGISTRATION METHODS
     
     def register_object_constructor(self, name: str, constructor: Callable[[...], PygameObject]) -> None:
+        """Register a named object constructor on the factory.
+
+        :param name: Constructor name used by the factory.
+        :param constructor: Callable that builds a game object.
+        """
         self.factory.register_constructor(name, constructor)
     
     def register_keybind(self, key: int | tuple[int, ...], action: Callback[[], Any], *args) -> None:
+        """Register a keybind that runs an action when its key is pressed.
+
+        :param key: Key code or tuple of key codes to bind.
+        :param action: Callback invoked when the keybind activates.
+        :param args: Additional arguments forwarded to the keybind.
+        """
         self.keybinds.register(Keybind(key, action, *args))
 
     def register_event_callback(self, event_type: str, callback: Callback[[Event], Any], condition: Optional[Callable[[Event], bool]] = None) -> None:
+        """Register a callback for an event type.
+
+        :param event_type: Event type identifier to listen for.
+        :param callback: Callback invoked with the matching event.
+        :param condition: Optional predicate that must return True before dispatch.
+        """
         self.event_manager.register(event_type, callback, condition)
     
-    def register_object(self, layer: str, *obj: PygameObject | list[PygameObject]) -> None:
-        for o in obj:
-            self._layer_manager.add_object(layer, o)
-    
-    def unregister_object(self, layer: str, *obj: PygameObject | list[PygameObject]) -> None:
-        for o in obj:
-            self._layer_manager.remove_object(layer, o)
-    
+    def register_object(self, layer: Layer | str, obj: PygameObject | list[PygameObject]) -> None:
+        """Register one or more objects on a layer.
+
+        :param layer: Layer instance or layer identifier.
+        :param obj: Object or list of objects to add.
+        """
+        self._layer_manager.add_object(layer, obj)
+
+    def unregister_object(self, layer: Layer | str, obj: PygameObject | list[PygameObject]) -> None:
+        """Unregister one or more objects from a layer.
+
+        :param layer: Layer instance or layer identifier.
+        :param obj: Object or list of objects to remove.
+        """
+        self._layer_manager.remove_object(layer, obj)
+
     def create_layer(self, name: str, layer_value: float, camera: Optional[Camera] = None, interactable: bool = True) -> Layer:
+        """Create a layer using the supplied or default camera.
+
+        :param name: Unique layer name.
+        :param layer_value: Sort value that determines draw order.
+        :param camera: Camera for the layer; defaults to the engine camera.
+        :param interactable: Whether objects on the layer receive interaction updates.
+        :return: The created layer.
+        """
         cam = camera if camera is not None else self.default_camera
         return self._layer_manager.create_layer(name, layer_value, cam, interactable)
     
     def register_window(self, window: WindowObject, group: Optional[str] = None, layer: Layer | str = "ui") -> None:
+        """Register a window on a layer and with the window manager.
+
+        :param window: Window object to register.
+        :param group: Optional window group name.
+        :param layer: Layer instance or layer identifier.
+        """
         if isinstance(layer, str):
             self.register_object(layer, window)
         else:
@@ -379,21 +463,43 @@ class State:
         self.windows.register(window, group)
     
     def register_windows(self, windows: Iterable[WindowObject], group: Optional[str] = None, layer: Layer | str = "ui") -> None:
+        """Register multiple windows on a layer and with the window manager.
+
+        :param windows: Window objects to register.
+        :param group: Optional window group name.
+        :param layer: Layer instance or layer identifier.
+        """
         for window in windows:
             self.register_window(window, group, layer)
     
     def unregister_window(self, window: WindowObject, layer: Layer | str = "ui") -> None:
+        """Unregister a window from a layer and from the window manager.
+
+        :param window: Window object to unregister.
+        :param layer: Layer instance or layer identifier.
+        """
         if isinstance(layer, str):
             self.unregister_object(layer, window)
         else:
-            layer.add_object(window)
+            layer.remove_object(window)
         self.windows.unregister(window)
     
     def unregister_windows(self, windows: Iterable[WindowObject], layer: Layer | str = "ui") -> None:
+        """Unregister multiple windows from a layer and from the window manager.
+
+        :param windows: Window objects to unregister.
+        :param layer: Layer instance or layer identifier.
+        """
         for window in windows:
             self.unregister_window(window, layer)
     
     def register_quick_debug(self, name: str, getter: Callable, template: str = "{}") -> None:
+        """Register a named value getter for the quick debug panel.
+
+        :param name: Display name for the value.
+        :param getter: Callable that returns the value to display.
+        :param template: Format template applied to the getter result.
+        """
         self.quick_debug_manager.register_listener(name, getter, template)
     
     # endregion
@@ -401,23 +507,51 @@ class State:
     # region OTHER
     
     def trigger_event(self, event: Event) -> None:
+        """Queue an event on the state event manager.
+
+        :param event: Event to queue.
+        """
         self.event_manager.trigger(event)
     
     def start_async_process(self, fn: Callable, *args, **kwargs) -> None:
+        """Submit a callable to the asynchronous process manager.
+
+        :param fn: Callable to run asynchronously.
+        :param args: Positional arguments forwarded to the callable.
+        :param kwargs: Keyword arguments forwarded to the callable.
+        """
         self.async_process_manager.submit(fn, *args, **kwargs)
     
     def open_window(self, window_id: str | WindowObject) -> None:
+        """Open a registered window.
+
+        :param window_id: Window identifier or window object.
+        """
         self.windows.open(window_id)
     
     def close_window(self, window_id: str | WindowObject) -> None:
+        """Close a registered window.
+
+        :param window_id: Window identifier or window object.
+        """
         self.windows.close(window_id)
     
     def quick_debug(self, name: str, value: Any, duration: float = 0.0) -> None:
+        """Display a transient value in the quick debug panel.
+
+        :param name: Display name for the value.
+        :param value: Value to display.
+        :param duration: Seconds to keep the value visible.
+        """
         self.quick_debug_manager.quick_debug(name, value, duration)
     
     # endregion
     
     def update(self, dt: float) -> None:
+        """Advance animations, input, events, interactions, layers, and the camera.
+
+        :param dt: Elapsed time in seconds.
+        """
         self.animation_manager.update(dt)
         self.keybinds.update()
         self.event_manager.update(dt)
@@ -430,12 +564,18 @@ class State:
         self.quick_debug_manager.update(dt)
     
     def render(self) -> None:
-        for layer in self._layer_manager.sorted_layers:
-            layer.render(self.renderer.draw)
+        """Render all layers through the state renderer."""
+        self._layer_manager.render(self.renderer.draw)
 
     # region PHYSICS
 
     def enable_physics(self, layer_name: str = "world", gravity: vec2 = vec2(0, 980)) -> PhysicsWorld:
+        """Enable physics on a layer and return its physics world.
+
+        :param layer_name: Name of the layer to enable physics on.
+        :param gravity: Gravity vector applied by the physics world.
+        :return: Physics world attached to the layer.
+        """
         layer = self._layer_manager.get_layer(layer_name)
         pw = layer.enable_physics(gravity)
         return pw
@@ -443,5 +583,6 @@ class State:
     # endregion
     
     def __repr__(self) -> str:
+        """Return a debug string representation."""
         return f"State('{self.id}')"
     

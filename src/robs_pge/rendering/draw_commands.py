@@ -1,3 +1,5 @@
+"""Draw command dataclasses that describe and render queued draw operations."""
+
 from __future__ import annotations
 
 import math
@@ -22,6 +24,8 @@ _camera_cache_center: vec2 = None
 
 @dataclass
 class DrawCommand:
+    """Base dataclass for draw commands queued by renderers."""
+
     transform: Transform
     layer: Layer
     sub_layer: int
@@ -30,6 +34,10 @@ class DrawCommand:
     clip_area: Optional[FRect]
 
     def get_screen_clip_rect(self) -> Optional[pg.Rect]:
+        """Convert the command's clip area to a viewport-space rectangle.
+
+        :return: The clipped rectangle in screen coordinates, or ``None`` when no clip area is set.
+        """
         if self.clip_area is None:
             return None
 
@@ -42,6 +50,10 @@ class DrawCommand:
         return pg.Rect(round(x0), round(y0), round(x1 - x0), round(y1 - y0))
 
     def get_composed_transform(self):
+        """Combine this command's transform with its layer camera.
+
+        :return: A tuple of viewport position, rotation in degrees, and relative scale.
+        """
         global _camera_cache_layer, _camera_cache_transform, _camera_cache_center
         if self.layer is not _camera_cache_layer:
             _camera_cache_layer = self.layer
@@ -59,10 +71,25 @@ class DrawCommand:
         return viewport_pos, rotation, scale
     
     def draw(self, blit_call_queue: list[tuple[pg.Surface, vec2]], surface_cache, font_cache) -> bool | None:
+        """Draw the command into the blit queue.
+
+        :param blit_call_queue: Queue of surfaces and positions to blit this frame.
+        :param surface_cache: Cache used to reuse generated surfaces.
+        :param font_cache: Cache of rendered pygame fonts.
+        :raises NotImplementedError: Always, because subclasses must implement drawing.
+        """
         raise NotImplementedError("Draw command doesnt have a defined draw method")
     
     @staticmethod
     def add_blit(blit_call_queue: list[tuple[pg.Surface, vec2]], surface: pg.Surface, screen_pos: vec2, offset: Optional[vec2] = None, clip_rect: Optional[pg.Rect] = None):
+        """Append a surface blit to the queue, cropping it to the clip rectangle.
+
+        :param blit_call_queue: Queue of surfaces and positions to blit this frame.
+        :param surface: Surface to blit.
+        :param screen_pos: Screen position of the surface's anchor point.
+        :param offset: Offset subtracted from the screen position before blitting.
+        :param clip_rect: Optional screen-space rectangle used to crop the blit.
+        """
         top_left = screen_pos - (offset or vec2())
         
         if clip_rect is not None:
@@ -81,12 +108,31 @@ class DrawCommand:
     
     @staticmethod
     def get_cached(surface_cache: SurfaceCache, key: tuple):
+        """Look up a cached surface by key.
+
+        :param surface_cache: Cache to query.
+        :param key: Cache key identifying the surface.
+        :return: The cached surface, or ``None`` when the key is absent.
+        """
         return surface_cache.get(key)
     
     def create_surface(self, key, *args):
+        """Create the surface represented by this command.
+
+        :param key: Cache key describing the surface.
+        :param args: Additional values needed by concrete draw commands.
+        :raises NotImplementedError: Always, because subclasses must implement surface creation.
+        """
         raise NotImplementedError("Draw command doesn't have a defined create_surface method")
     
     def get_surface(self, surface_cache: SurfaceCache, key: tuple, *args):
+        """Return a surface from the cache or create and cache it when missing.
+
+        :param surface_cache: Cache used to store generated surfaces.
+        :param key: Cache key identifying the surface.
+        :param args: Additional values forwarded to ``create_surface``.
+        :return: A tuple of the surface and whether it was found in the cache.
+        """
         if not self.caching:
             return self.create_surface(key, *args), None
         
@@ -100,9 +146,17 @@ class DrawCommand:
 
 @dataclass
 class DrawTexture(DrawCommand):
+    """Draw command that blits a texture with rotation and scaling."""
+
     texture: Texture
     
     def create_surface(self, key, *args):
+        """Build a scaled and rotated surface for the texture.
+
+        :param key: Cache key containing texture id, LOD level, rotation, and scale.
+        :param args: Additional values passed by the draw method.
+        :return: The transformed texture surface.
+        """
         texture_id, _, rotation, scale = key
         
         if not rotation and scale == 1:
@@ -128,6 +182,13 @@ class DrawTexture(DrawCommand):
             surface_cache,
             font_cache,
     ):
+        """Submit the texture blit if it is visible at the current scale.
+
+        :param blit_call_queue: Queue of surfaces and positions to blit this frame.
+        :param surface_cache: Cache used to reuse generated surfaces.
+        :param font_cache: Cache of rendered pygame fonts, unused by textures.
+        :return: Whether the surface was served from the cache, or ``None`` when skipped.
+        """
         screen_pos, rotation, scale = self.get_composed_transform()
         
         if scale <= 0:
@@ -150,14 +211,29 @@ class DrawTexture(DrawCommand):
 
 @dataclass
 class DrawRect(DrawCommand):
+    """Draw command that renders a filled rectangle with an optional border."""
+
     dims: vec2
     style: RectStyle
     
     def create_surface(self, key, *args):
-        dims, bg_color, bd, bd_color, bd_radius, rotation = key
+        """Build the rectangle surface described by the cache key.
+
+        :param key: Cache key containing builder id, dimensions, colors, border, radius, and rotation.
+        :param args: Additional values passed by the draw method.
+        :return: The rendered rectangle surface.
+        """
+        builder_id, dims, bg_color, bd, bd_color, bd_radius, rotation = key
         return self.style.builder.build_surface(vec2(dims), bg_color, bd, bd_color, bd_radius, rotation)
     
     def draw(self, blit_call_queue: list[tuple[pg.Surface, vec2]], surface_cache, font_cache):
+        """Submit the rectangle blit if its scaled dimensions are positive.
+
+        :param blit_call_queue: Queue of surfaces and positions to blit this frame.
+        :param surface_cache: Cache used to reuse generated surfaces.
+        :param font_cache: Cache of rendered pygame fonts, unused by rectangles.
+        :return: Whether the surface was served from the cache, or ``None`` when skipped.
+        """
         screen_pos, rotation, scale = self.get_composed_transform()
         
         bg_color =  tuple(self.style.bg_color)
@@ -166,7 +242,7 @@ class DrawRect(DrawCommand):
         bd_radius = tuple(round(corner_radius * scale) for corner_radius in self.style.bd_radius) if isinstance(self.style.bd_radius, tuple) else round(self.style.bd_radius * scale)
         
         dims =      self.dims * scale
-        key =       (tuple(dims), bg_color, bd, bd_color, bd_radius, rotation)
+        key =       (id(self.style.builder), tuple(dims), bg_color, bd, bd_color, bd_radius, rotation)
         
         if dims[0] <= 0 or dims[1] <= 0:
             return None
@@ -180,10 +256,18 @@ class DrawRect(DrawCommand):
 
 @dataclass
 class DrawCircle(DrawCommand):
+    """Draw command that renders a filled circle with an optional border."""
+
     radius: int
     style: CircleStyle
     
     def create_surface(self, key, *args):
+        """Build the circle surface described by the cache key.
+
+        :param key: Cache key containing radius, colors, border width, and scale.
+        :param args: Additional values passed by the draw method.
+        :return: The rendered circle surface.
+        """
         radius, bg_color, bd, bd_color, scale = key
         
         surface = pg.Surface((radius*2, radius*2), pg.SRCALPHA)
@@ -194,6 +278,13 @@ class DrawCircle(DrawCommand):
         return surface
     
     def draw(self, blit_call_queue: list[tuple[pg.Surface, vec2]], surface_cache, font_cache):
+        """Submit the circle blit if its scaled radius is positive.
+
+        :param blit_call_queue: Queue of surfaces and positions to blit this frame.
+        :param surface_cache: Cache used to reuse generated surfaces.
+        :param font_cache: Cache of rendered pygame fonts, unused by circles.
+        :return: Whether the surface was served from the cache, or ``None`` when skipped.
+        """
         screen_pos, rotation, scale = self.get_composed_transform()
         
         radius =    round(self.radius * scale)
@@ -216,10 +307,18 @@ class DrawCircle(DrawCommand):
 
 @dataclass
 class DrawText(DrawCommand):
+    """Draw command that renders multi-line text using a cached pygame font."""
+
     text: str
     font: Font
     
     def create_surface(self, key, *args):
+        """Build a multi-line text surface with spacing, scaling, and rotation applied.
+
+        :param key: Cache key containing text, font key, color, spacing, rotation, and scale.
+        :param args: Additional values passed by the draw method; the first is a pygame font.
+        :return: The rendered text surface.
+        """
         # Added scale to the cache key unpack
         text, font_key, color, spacing, rotation, scale = key
         pg_font: pg.font.Font = args[0]
@@ -252,6 +351,13 @@ class DrawText(DrawCommand):
         return surface
     
     def draw(self, blit_call_queue, surface_cache, font_cache):
+        """Submit the text blit if the text is non-empty.
+
+        :param blit_call_queue: Queue of surfaces and positions to blit this frame.
+        :param surface_cache: Cache used to reuse generated surfaces.
+        :param font_cache: Cache of rendered pygame fonts.
+        :return: Whether the surface was served from the cache, or ``None`` when skipped.
+        """
         if not self.text:
             return None
         
@@ -291,10 +397,18 @@ class DrawText(DrawCommand):
     
 @dataclass
 class DrawLine(DrawCommand):
+    """Draw command that renders a connected polyline."""
+
     points: list[vec2]
     style: LineStyle
     
     def create_surface(self, key, *args):
+        """Build a surface for the polyline from precomputed screen points.
+
+        :param key: Cache key containing local points, color, width, rotation, and scale.
+        :param args: Additional values passed by the draw method; the first is the screen points.
+        :return: The rendered polyline surface.
+        """
         points, color, width, rotation, scale = key
         screen_points: list[vec2] = args[0]
         
@@ -326,9 +440,18 @@ class DrawLine(DrawCommand):
         return surface
     
     def draw(self, blit_call_queue, surface_cache, font_cache):
-        
+        """Submit the polyline blit if it has points.
+
+        :param blit_call_queue: Queue of surfaces and positions to blit this frame.
+        :param surface_cache: Cache used to reuse generated surfaces.
+        :param font_cache: Cache of rendered pygame fonts, unused by lines.
+        :return: Whether the surface was served from the cache, or ``None`` when skipped.
+        """
+        if not self.points:
+            return None
+
         position, rotation, scale = self.get_composed_transform()
-        
+
         color = tuple(self.style.color)
         width = max(1, round(self.style.width * scale))
         
@@ -349,11 +472,19 @@ class DrawLine(DrawCommand):
 
 @dataclass
 class DrawSubSurface(DrawCommand):
+    """Draw command that renders a cropped, scaled region of a texture."""
+
     texture: Texture
     sub_rect: Rect
     target_dims: vec2
     
     def create_surface(self, key, *args):
+        """Build a cropped and scaled region of the texture.
+
+        :param key: Cache key containing texture id, LOD level, source rect, and view size.
+        :param args: Additional values passed by the draw method; the first is the LOD surface.
+        :return: The rendered sub-surface, including transparent out-of-bounds areas.
+        """
         _, _, lod_level, sx, sy, sw, sh, view_w, view_h = key
         lod_surface: pg.Surface = args[0]
         
@@ -386,6 +517,13 @@ class DrawSubSurface(DrawCommand):
         return surface
     
     def draw(self, blit_call_queue: list[tuple[pg.Surface, vec2]], surface_cache, font_cache):
+        """Submit the cropped texture blit, applying rotation when present.
+
+        :param blit_call_queue: Queue of surfaces and positions to blit this frame.
+        :param surface_cache: Cache used to reuse generated surfaces.
+        :param font_cache: Cache of rendered pygame fonts, unused by sub-surfaces.
+        :return: Whether the surface was served from the cache.
+        """
         screen_pos, rotation, scale = self.get_composed_transform()
         
         view_w = max(1, round(self.target_dims.x * scale))
@@ -410,10 +548,18 @@ class DrawSubSurface(DrawCommand):
 
 @dataclass
 class DrawChunkedSprite(DrawCommand):
+    """Draw command that renders a texture in independently cached chunks."""
+
     texture: Texture
     chunk_size: int = 256
     
     def create_surface(self, key, *args):
+        """Build one scaled or rotated chunk of the texture.
+
+        :param key: Cache key containing texture id, chunk rect, rotation, scale, and LOD level.
+        :param args: Additional values passed by the draw method; the first is the LOD surface.
+        :return: The transformed chunk surface.
+        """
         texture_id, cx, cy, cw, ch, rotation, scale, lod_level = key
         lod_surface: pg.Surface = args[0]
         
@@ -445,6 +591,13 @@ class DrawChunkedSprite(DrawCommand):
         return sub_surf.convert_alpha()
     
     def draw(self, blit_call_queue: list[tuple[pg.Surface, vec2]], surface_cache, font_cache):
+        """Submit visible texture chunks, culling those outside the viewport.
+
+        :param blit_call_queue: Queue of surfaces and positions to blit this frame.
+        :param surface_cache: Cache used to reuse generated surfaces.
+        :param font_cache: Cache of rendered pygame fonts, unused by chunked sprites.
+        :return: Whether all submitted chunk surfaces were served from the cache, or ``None`` when skipped.
+        """
         screen_pos, rotation, scale = self.get_composed_transform()
         
         if scale <= 0:

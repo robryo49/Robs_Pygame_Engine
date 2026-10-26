@@ -1,3 +1,5 @@
+"""Shared type aliases, style helpers, and signature validation utilities."""
+
 from __future__ import annotations
 
 import inspect
@@ -22,15 +24,33 @@ type ValueOrGetter[T] = T | Callable[[], T]
 
 @dataclass
 class Style:
+    """Base class for immutable dataclass-based style configurations."""
+
     def with_(self, **kwargs):
+        """Return a copy with selected fields replaced.
+
+        :param kwargs: Field values to replace.
+        :return: A new style instance with the merged fields.
+        """
         return replace(self, **kwargs)  # type: ignore[arg-type]
     
     def copy(self):
+        """Return a copy of this style.
+
+        :return: A new style instance with the same fields.
+        """
         return replace(self)
 
 
 
 def validate_signature(method: Callable[..., Any], *args: Any, **kwargs: Any) -> None:
+    """Validate that arguments can bind to a callable's signature.
+
+    :param method: Callable whose signature is checked.
+    :param args: Positional arguments to validate.
+    :param kwargs: Keyword arguments to validate.
+    :raises ValueError: If binding fails or unknown keyword arguments are supplied.
+    """
     sig = inspect.signature(method)
     
     try:

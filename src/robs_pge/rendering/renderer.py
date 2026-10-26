@@ -1,3 +1,5 @@
+"""Renderer that executes queued draw commands and presents the scaled viewport."""
+
 from __future__ import annotations
 
 from typing import Optional, TYPE_CHECKING
@@ -13,8 +15,15 @@ if TYPE_CHECKING:
 
 
 class Renderer:
-    def __init__(self, display: Display, default_camera: Camera, max_cache_size: int = 2048 * 1024 * 1024):
-        
+    """Collects draw commands, renders them to the viewport, and scales to the display."""
+
+    def __init__(self, display: Display, default_camera: Camera, max_cache_size: int = 2048 * 1024 * 1024) -> None:
+        """Initialize the renderer, caches, and per-frame counters.
+
+        :param display: Display that owns the target screen surface.
+        :param default_camera: Camera retained as the renderer's default camera.
+        :param max_cache_size: Maximum surface-cache size in bytes.
+        """
         self._display: Display = display
         self._default_camera: Camera = default_camera
         
@@ -38,54 +47,82 @@ class Renderer:
     
     @property
     def display(self) -> Display:
+        """Return the display rendered to by this renderer."""
         return self._display
     
     @property
     def commands(self) -> list[DrawCommand]:
+        """Return the commands currently queued for the next render."""
         return self._commands
     
     @property
     def total_commands_count(self) -> int:
+        """Return the number of commands executed during the last render."""
         return self._total_commands_count
     
     @property
-    def blit_count(self):
+    def blit_count(self) -> int:
+        """Return the number of surface blits issued during the last render."""
         return self._blit_count
-    
+
     @property
-    def cache_hits(self):
+    def cache_hits(self) -> int:
+        """Return the number of surface-cache hits during the last render."""
         return self._cache_hits
-    
+
     @property
-    def cache_misses(self):
+    def cache_misses(self) -> int:
+        """Return the number of surface-cache misses during the last render."""
         return self._cache_misses
-    
+
     @property
-    def cache_skips(self):
+    def cache_skips(self) -> int:
+        """Return the number of commands that skipped caching during the last render."""
         return self._cache_skips
-    
+
     @property
-    def surface_cache_size(self):
+    def surface_cache_size(self) -> int:
+        """Return the number of surfaces currently stored in the surface cache."""
         return self._surface_cache.size
-    
+
     @property
-    def surface_cache_memory_size(self):
+    def surface_cache_memory_size(self) -> float:
+        """Return the approximate memory used by cached surfaces in bytes."""
         return self._surface_cache.memory_size
-    
+
     @property
-    def font_cache_size(self):
+    def font_cache_size(self) -> int:
+        """Return the number of fonts currently stored in the font cache."""
         return len(self._font_cache)
     
     # endregion
     
-    def draw(self, cmd: DrawCommand) -> "Renderer":
+    def draw(self, cmd: DrawCommand) -> Renderer:
+        """Queue a draw command for the next render.
+
+        :param cmd: Draw command to queue.
+        :return: This renderer for method chaining.
+        """
         self._commands.append(cmd)
         return self
-    
-    def clear(self):
+
+    def clear(self) -> Renderer:
+        """Clear the viewport surface to the display clear color.
+
+        :return: This renderer for method chaining.
+        """
         self._draw_surface.fill(self.display.clear_color)
-    
-    def render(self, _camera: Optional[Camera] = None) -> "Renderer":
+        return self
+
+    def render(self, _camera: Optional[Camera] = None) -> Renderer:
+        """Execute queued commands and present the scaled viewport.
+
+        Commands already carry their layer cameras, so ``_camera`` is retained
+        for API compatibility and is intentionally unused.
+
+        :param _camera: Optional camera retained for API compatibility.
+        :return: This renderer for method chaining.
+        """
         self.clear()
         
         self._cache_hits = 0
@@ -107,7 +144,12 @@ class Renderer:
         
         return self
     
-    def _execute_command(self, cmd: DrawCommand) -> "Renderer":
+    def _execute_command(self, cmd: DrawCommand) -> Renderer:
+        """Execute one command and update cache statistics.
+
+        :param cmd: Draw command to execute.
+        :return: This renderer.
+        """
         cache_hit = cmd.draw(self._blit_calls, self._surface_cache, self._font_cache)
         
         if cache_hit is None:

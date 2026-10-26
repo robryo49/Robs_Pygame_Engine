@@ -1,3 +1,5 @@
+"""Surface builders that render rectangle and sliced-rectangle backgrounds."""
+
 from __future__ import annotations
 
 from typing import Any, Literal, Optional, TYPE_CHECKING
@@ -11,12 +13,33 @@ if TYPE_CHECKING:
 
 
 class SurfaceBuilder:
-    def build_surface(self, *args) -> pg.Surface: ...
+    """Base class for objects that build pygame surfaces."""
+
+    def build_surface(self, *args) -> pg.Surface:
+        """Build a surface from builder-specific arguments.
+
+        :param args: Builder-specific arguments.
+        :return: The generated surface.
+        """
+        ...
 
 
 class RectBuilder(SurfaceBuilder):
+    """Builds rectangle surfaces with optional borders, corner radius, and rotation."""
+
     def build_surface(self, dims: vec2 = vec2(), bg_color: Color = Colors.WHITE, bd: int = 0, bd_color: Color = Colors.BLACK,
                       bd_radius: int | tuple[int, int, int, int] = 0, rotation: float = 0.0, *args: Any) -> pg.Surface:
+        """Build a rectangle surface with an optional border and rotation.
+
+        :param dims: Surface dimensions in pixels.
+        :param bg_color: Fill color of the rectangle.
+        :param bd: Border width; zero skips the border.
+        :param bd_color: Border color.
+        :param bd_radius: Corner radius or four per-corner radii.
+        :param rotation: Rotation in degrees applied to the finished surface.
+        :param args: Additional builder arguments that are ignored.
+        :return: The generated rectangle surface.
+        """
         
         surface = pg.Surface(dims, pg.SRCALPHA)
         
@@ -37,7 +60,8 @@ class RectBuilder(SurfaceBuilder):
 
 
 class SlicedRectBuilder(RectBuilder):
-    
+    """Builds nine-slice style rectangle surfaces from a template texture."""
+
     def __init__(
             self, template: Texture, grid_width: Literal[1, 2, 3] = 2, grid_height: Literal[1, 2, 3] = 2,
             horizontal_region_sizes: Optional[int | tuple[int, int] | tuple[int, int, int]] = None,
@@ -46,7 +70,19 @@ class SlicedRectBuilder(RectBuilder):
             vertical_fill_mode: Literal["stretch", "repeat"] = "stretch",
             template_bg_color: Optional[Color] = None,
             template_bd_color: Optional[Color] = None,
-    ):
+    ) -> None:
+        """Initialize the sliced rectangle builder and split the template into regions.
+
+        :param template: Template texture whose surface is sliced.
+        :param grid_width: Number of horizontal regions in the template grid.
+        :param grid_height: Number of vertical regions in the template grid.
+        :param horizontal_region_sizes: Optional per-region widths or border sizes.
+        :param vertical_region_sizes: Optional per-region heights or border sizes.
+        :param horizontal_fill_mode: Fill mode for the horizontal middle region.
+        :param vertical_fill_mode: Fill mode for the vertical middle region.
+        :param template_bg_color: Color in the template to replace with the requested background.
+        :param template_bd_color: Color in the template to replace with the requested border color.
+        """
         super().__init__()
         
         self._template = template.surface
@@ -69,6 +105,17 @@ class SlicedRectBuilder(RectBuilder):
     def build_surface(self, dims: vec2 = vec2(), bg_color: Color = Colors.WHITE, bd: int = 0,
                       bd_color: Color = Colors.BLACK, bd_radius: int | tuple[int, int, int, int] = 0,
                       rotation: float = 0.0, *args: Any) -> pg.Surface:
+        """Build a sliced rectangle by scaling or repeating template regions.
+
+        :param dims: Surface dimensions in pixels.
+        :param bg_color: Color used to replace the template background, when configured.
+        :param bd: Border width; unused by the sliced template rendering.
+        :param bd_color: Color used to replace the template border, when configured.
+        :param bd_radius: Corner radius metadata; unused by the sliced template rendering.
+        :param rotation: Rotation in degrees applied to the finished surface.
+        :param args: Additional builder arguments that are ignored.
+        :return: The generated sliced rectangle surface.
+        """
         key = (tuple(bg_color), tuple(bd_color))
 
         try:
@@ -130,10 +177,22 @@ class SlicedRectBuilder(RectBuilder):
 
     @staticmethod
     def _is_middle_region(index: int, region_count: int) -> bool:
+        """Return whether a region index is the expandable middle region.
+
+        :param index: Region index along one axis.
+        :param region_count: Total number of regions along that axis.
+        :return: ``True`` for a single-region grid or the middle index of a three-region grid.
+        """
         return region_count == 1 or index == 1
 
     @staticmethod
     def _get_destination_sizes(total_size: int, source_sizes: list[int]) -> list[int]:
+        """Compute destination region sizes that fill the requested total size.
+
+        :param total_size: Target size along one axis in pixels.
+        :param source_sizes: Source region sizes along the same axis.
+        :return: Destination sizes with fixed edge regions and an expandable middle region.
+        """
         if len(source_sizes) == 1:
             return [total_size]
 
@@ -152,6 +211,14 @@ class SlicedRectBuilder(RectBuilder):
             stretch_horizontal: bool,
             stretch_vertical: bool,
     ) -> None:
+        """Blit one template region, stretching or repeating it as configured.
+
+        :param destination: Surface being assembled.
+        :param source: Template region to blit.
+        :param dest_rect: Destination rectangle for the region.
+        :param stretch_horizontal: Whether the horizontal middle region may stretch.
+        :param stretch_vertical: Whether the vertical middle region may stretch.
+        """
         if dest_rect.width <= 0 or dest_rect.height <= 0:
             return
 
@@ -188,6 +255,10 @@ class SlicedRectBuilder(RectBuilder):
 
 
     def _build_regions(self) -> list[list[pg.Rect]]:
+        """Split the template surface into a grid of source rectangles.
+
+        :return: Rows of source rectangles covering the template surface.
+        """
         width, height = self._template.get_size()
 
         x_sizes = self._get_source_sizes(width, self._grid_width, self._horizontal_region_sizes)
@@ -211,6 +282,14 @@ class SlicedRectBuilder(RectBuilder):
 
     @staticmethod
     def _get_source_sizes(total_size: int, grid_size: int, sizes: int | tuple[int, ...] | None) -> list[int]:
+        """Resolve source region sizes for one axis of the template grid.
+
+        :param total_size: Template size along the axis in pixels.
+        :param grid_size: Number of regions along the axis.
+        :param sizes: Optional explicit region sizes or border size.
+        :return: Region sizes that sum to the template size along the axis.
+        :raises ValueError: If the requested region sizes cannot fit the template dimension.
+        """
         if grid_size == 1:
             return [total_size]
 

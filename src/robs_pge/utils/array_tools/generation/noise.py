@@ -1,3 +1,5 @@
+"""Perlin noise array generation."""
+
 from random import randrange
 from typing import Optional
 
@@ -17,6 +19,19 @@ def create_noise_array(
         persistence: float = 0.5,
         lacunarity: float = 2.0,
 ) -> np.ndarray:
+    """Generate a two-dimensional Perlin noise array.
+
+    :param dims: Output dimensions as ``(width, height)``.
+    :param noise_offset: Spatial offset applied to the noise coordinates.
+    :param seed: Random seed, chosen randomly when omitted.
+    :param scale: Noise scale multiplied by 100 before the coordinate divisor is derived.
+    :param amplitude: Multiplier applied to the centered noise values.
+    :param value_offset: Constant added to the centered noise values.
+    :param octaves: Number of noise octaves to combine.
+    :param persistence: Amplitude multiplier between successive octaves.
+    :param lacunarity: Frequency multiplier between successive octaves.
+    :return: A float32 array containing the generated noise.
+    """
     scale *= 100
     seed = randrange(10_000) if seed is None else seed
     width, height = (int(dims.x), int(dims.y)) if isinstance(dims, vec2) else dims

@@ -1,3 +1,5 @@
+"""Geometric array generators for grid points and Voronoi regions."""
+
 from random import Random, randrange
 from typing import Optional
 
@@ -11,6 +13,14 @@ def generate_grid_points(
         jitter: float = 0.7,
         rng: Optional[Random] = None
 ) -> list[tuple[float, float]]:
+    """Generate jittered points at the centers of a regular grid.
+
+    :param canvas_dims: Canvas dimensions as ``(width, height)``.
+    :param grid_dims: Grid dimensions as ``(columns, rows)``.
+    :param jitter: Fraction of each cell's half-size used as random offset range.
+    :param rng: Random generator to use, defaulting to a new ``Random`` instance.
+    :return: Point coordinates clamped to the canvas bounds.
+    """
     
     c_width, c_height = canvas_dims
     cols, rows = grid_dims
@@ -47,7 +57,16 @@ def create_voronoi_array(
         metric: str = 'euclidean',
         seed: Optional[int] = None,
 ) -> np.ndarray:
-    """Metric is Euclidean / manhattan / chebyshev"""
+    """Create a Voronoi region array using the nearest generated grid point.
+
+    :param dims: Output dimensions as ``(width, height)``.
+    :param grid_dims: Grid dimensions as ``(columns, rows)``.
+    :param jitter: Fraction of each cell's half-size used as random offset range.
+    :param metric: Distance metric, either ``euclidean``, ``manhattan``, or ``chebyshev``.
+    :param seed: Random seed, chosen randomly when omitted.
+    :return: An int32 array where each pixel holds its nearest point index.
+    :raises ValueError: If ``metric`` is not a supported distance metric.
+    """
     width, height = (int(dims.x), int(dims.y)) if isinstance(dims, vec2) else dims
     grid_dims = (int(grid_dims.x), int(grid_dims.y)) if isinstance(grid_dims, vec2) else grid_dims
     
@@ -88,6 +107,14 @@ def create_bfs_voronoi_array(
         jitter: float = 0.7,
         seed: Optional[int] = None,
 ) -> np.ndarray:
+    """Create a Voronoi region array by breadth-first expansion from grid points.
+
+    :param dims: Output dimensions as ``(width, height)``.
+    :param grid_dims: Grid dimensions as ``(columns, rows)``.
+    :param jitter: Fraction of each cell's half-size used as random offset range.
+    :param seed: Random seed, chosen randomly when omitted.
+    :return: An int32 array where each pixel holds the index of the region that reached it first.
+    """
     width, height = (int(dims.x), int(dims.y)) if isinstance(dims, vec2) else dims
     grid_dims = (int(grid_dims.x), int(grid_dims.y)) if isinstance(grid_dims, vec2) else grid_dims
     

@@ -1,3 +1,7 @@
+"""
+Factories for creating windows, menus, and dialogs.
+"""
+
 import time
 from typing import Any, Optional
 
@@ -10,7 +14,15 @@ from ...utils import Anchor, Callback, Font, StyleOrName, vec2, ObjectFlags
 
 
 class WindowObjectFactory(SubObjectFactory):
-    def __init__(self, object_factory):
+    """
+    Create window objects, including content windows, menus, and dialogs.
+    """
+    def __init__(self, object_factory) -> None:
+        """
+        Initialize the window factory with its parent object factory.
+
+        :param object_factory: Main object factory used for resource lookup and object creation.
+        """
         super().__init__(object_factory)
         
     def create_window[WT](
@@ -20,6 +32,28 @@ class WindowObjectFactory(SubObjectFactory):
             draggable: bool = False, style: StyleOrName[WindowStyle] = None,
             rotation: float = 0.0, scale: float = 1.0, layer: int = 0, anchor: vec2 = Anchor.C, cache: bool = True, *args: Any
     ) -> WT:
+        """
+        Create a window with optional header, title panel, content panel, and scrollbar.
+
+        :param window_cls: Window class to instantiate.
+        :param position: World-space position of the object.
+        :param title: Window title; generated from the current time when omitted.
+        :param width: Fixed width of the window.
+        :param height: Fixed height of the window; content height is derived when omitted.
+        :param mode: Layout mode for the content panel.
+        :param fit_mode: Fit mode used to size content cells.
+        :param overflow_mode: Fit mode used when content overflows.
+        :param justification: Anchor used to justify content within the content panel.
+        :param draggable: Whether the window can be dragged by its header, title panel, or content.
+        :param style: Window style or registered window style name.
+        :param rotation: Rotation angle in degrees.
+        :param scale: Uniform scale factor.
+        :param layer: Rendering layer.
+        :param anchor: Anchor point used to position the object.
+        :param cache: Whether to cache the rendered surface.
+        :param args: Additional positional arguments passed to the window constructor.
+        :return: The created window object.
+        """
         
         window_style = self._get_resource(style, WindowStyle)
         bg_style = self._get_resource(window_style.bg_style, RectStyle)
@@ -71,11 +105,13 @@ class WindowObjectFactory(SubObjectFactory):
         if header is not None and show_header_buttons:
             buttons_dims = vec2(1.2, 1) * (header_height - header_margin * 2)
             
-            header.set_object_in_cell(self.factory.ui.button.icon_button(vec2(), Icons.XMARK, header_height * 0.8, lambda: window.close, buttons_dims, style=icon_buttons_style), 1, 0, anchor=Anchor.R)
+            header.set_object_in_cell(self.factory.ui.button.icon_button(vec2(), Icons.XMARK, header_height * 0.8, lambda: window.close(), buttons_dims, style=icon_buttons_style), 1, 0, anchor=Anchor.R)
             header.set_fixed_col_width(round(buttons_dims.x + header_margin * 2), 1)
         
         
-        content_panel_height = None if height is None else (height - (title_panel_height or 0) - (header_height or 0))
+        content_panel_height = None if height is None else (
+            height - (title_panel_height if title_panel is not None else 0) - (header_height if header is not None else 0)
+        )
         content_panel = self.factory.ui.layout.grid_layout(vec2(), width, content_panel_height, mode, fit_mode, overflow_mode, justification, layer=layer)
         content_panel.set_padding(margin)
         
@@ -109,6 +145,26 @@ class WindowObjectFactory(SubObjectFactory):
             draggable: bool = False, style: StyleOrName[WindowStyle] = None,
             rotation: float = 0.0, scale: float = 1.0, layer: int = 0, anchor: vec2 = Anchor.C, cache: bool = True
     ) -> WindowObject:
+        """
+        Create a standard window with the configured header, title, and content panel.
+
+        :param position: World-space position of the object.
+        :param title: Window title; generated from the current time when omitted.
+        :param width: Fixed width of the window.
+        :param height: Fixed height of the window; content height is derived when omitted.
+        :param mode: Layout mode for the content panel.
+        :param fit_mode: Fit mode used to size content cells.
+        :param overflow_mode: Fit mode used when content overflows.
+        :param justification: Anchor used to justify content within the content panel.
+        :param draggable: Whether the window can be dragged by its header, title panel, or content.
+        :param style: Window style or registered window style name.
+        :param rotation: Rotation angle in degrees.
+        :param scale: Uniform scale factor.
+        :param layer: Rendering layer.
+        :param anchor: Anchor point used to position the object.
+        :param cache: Whether to cache the rendered surface.
+        :return: The created window object.
+        """
         
         return self.create_window(WindowObject, position, title, width, height, mode, fit_mode, overflow_mode, justification, draggable, style, rotation, scale, layer, anchor, cache)
     
@@ -120,6 +176,27 @@ class WindowObjectFactory(SubObjectFactory):
             draggable: bool = False, style: StyleOrName[WindowStyle] = None,
             rotation: float = 0.0, scale: float = 1.0, layer: int = 0, anchor: vec2 = Anchor.C, cache: bool = True
     ) -> WindowObject:
+        """
+        Create a standard window and replace its content panel with the given layout.
+
+        :param position: World-space position of the object.
+        :param title: Window title; generated from the current time when omitted.
+        :param width: Fixed width of the window.
+        :param height: Fixed height of the window; content height is derived when omitted.
+        :param content: Layout object used as the window content.
+        :param mode: Layout mode for the content panel.
+        :param fit_mode: Fit mode used to size content cells.
+        :param overflow_mode: Fit mode used when content overflows.
+        :param justification: Anchor used to justify content within the content panel.
+        :param draggable: Whether the window can be dragged by its header, title panel, or content.
+        :param style: Window style or registered window style name.
+        :param rotation: Rotation angle in degrees.
+        :param scale: Uniform scale factor.
+        :param layer: Rendering layer.
+        :param anchor: Anchor point used to position the object.
+        :param cache: Whether to cache the rendered surface.
+        :return: The created window object.
+        """
         window = self.regular(position, title, width, height, mode, fit_mode, overflow_mode, justification, draggable, style, rotation, scale, layer, anchor, cache)
         
         if content is not None:
@@ -134,6 +211,29 @@ class WindowObjectFactory(SubObjectFactory):
         draggable: bool = False, window_style: StyleOrName[WindowStyle] = None, button_style: StyleOrName[ButtonStyle] = None,
         rotation: float = 0.0, scale: float = 1.0, layer: int = 0, anchor: vec2 = Anchor.C, cache: bool = True
     ) -> WindowObject:
+        """
+        Create a window whose content is a vertical list of menu option buttons.
+
+        :param position: World-space position of the object.
+        :param title: Window title; generated from the current time when omitted.
+        :param options: Pairs of button labels and click callbacks.
+        :param button_dims: Dimensions of each menu button.
+        :param width: Fixed width of the window.
+        :param height: Fixed height of the window; content height is derived when omitted.
+        :param mode: Layout mode for the content panel.
+        :param fit_mode: Fit mode used to size content cells.
+        :param overflow_mode: Fit mode used when content overflows.
+        :param justification: Anchor used to justify content within the content panel.
+        :param draggable: Whether the window can be dragged by its header, title panel, or content.
+        :param window_style: Window style or registered window style name.
+        :param button_style: Button style or registered button style name.
+        :param rotation: Rotation angle in degrees.
+        :param scale: Uniform scale factor.
+        :param layer: Rendering layer.
+        :param anchor: Anchor point used to position the object.
+        :param cache: Whether to cache the rendered surface.
+        :return: The created menu window.
+        """
         
         window = self.regular(position, title, width, height, mode, fit_mode, overflow_mode, justification, draggable, window_style, rotation, scale, layer, anchor, cache)
         
@@ -153,6 +253,31 @@ class WindowObjectFactory(SubObjectFactory):
             draggable: bool = False, window_style: StyleOrName[WindowStyle] = None, button_style: StyleOrName[ButtonStyle] = None,
             rotation: float = 0.0, scale: float = 1.0, layer: int = 0, anchor: vec2 = Anchor.C, cache: bool = True
     ):
+        """
+        Create a window containing arbitrary content and a row or column of option buttons.
+
+        :param position: World-space position of the object.
+        :param content: Object placed above the dialog options.
+        :param options: Pairs of button labels and click callbacks.
+        :param width: Fixed width of the window.
+        :param height: Fixed height of the window; content height is derived when omitted.
+        :param buttons_height: Height of each dialog button.
+        :param options_vertical: Whether the option buttons are stacked vertically.
+        :param spacing: Spacing between content and option buttons.
+        :param mode: Layout mode for the content panel.
+        :param fit_mode: Fit mode used to size content cells.
+        :param overflow_mode: Fit mode used when content overflows.
+        :param justification: Anchor used to justify content within the content panel.
+        :param draggable: Whether the window can be dragged by its header, title panel, or content.
+        :param window_style: Window style or registered window style name.
+        :param button_style: Button style or registered button style name.
+        :param rotation: Rotation angle in degrees.
+        :param scale: Uniform scale factor.
+        :param layer: Rendering layer.
+        :param anchor: Anchor point used to position the object.
+        :param cache: Whether to cache the rendered surface.
+        :return: The created dialog window.
+        """
         window = self.regular(position, None, width, height, mode, fit_mode, overflow_mode, justification, draggable, window_style, rotation, scale, layer, anchor, cache)
     
         button_style = self._get_resource(button_style, ButtonStyle)
@@ -183,4 +308,24 @@ class WindowObjectFactory(SubObjectFactory):
             draggable: bool = False, style: StyleOrName[WindowStyle] = None,
             rotation: float = 0.0, scale: float = 1.0, layer: int = 0, anchor: vec2 = Anchor.C, cache: bool = True
     ) -> WindowObject:
+        """
+        Create a standard window; alias for :meth:`regular`.
+
+        :param position: World-space position of the object.
+        :param title: Window title; generated from the current time when omitted.
+        :param width: Fixed width of the window.
+        :param height: Fixed height of the window; content height is derived when omitted.
+        :param mode: Layout mode for the content panel.
+        :param fit_mode: Fit mode used to size content cells.
+        :param overflow_mode: Fit mode used when content overflows.
+        :param justification: Anchor used to justify content within the content panel.
+        :param draggable: Whether the window can be dragged by its header, title panel, or content.
+        :param style: Window style or registered window style name.
+        :param rotation: Rotation angle in degrees.
+        :param scale: Uniform scale factor.
+        :param layer: Rendering layer.
+        :param anchor: Anchor point used to position the object.
+        :param cache: Whether to cache the rendered surface.
+        :return: The created window object.
+        """
         return self.regular(position, title, width, height, mode, fit_mode, overflow_mode, justification, draggable, style, rotation, scale, layer, anchor, cache)

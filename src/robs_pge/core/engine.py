@@ -1,3 +1,5 @@
+"""Provides the main engine loop and the core services shared by game states."""
+
 import logging
 import sys
 
@@ -17,7 +19,14 @@ from ..utils import Anchor, Color, Colors
 
 
 class Engine:
-    def __init__(self, name: str, resolution: vec2 = vec2(1920, 1080)):
+    """Own the display, timing, input, resources, rendering, and state services."""
+
+    def __init__(self, name: str, resolution: vec2 = vec2(1920, 1080)) -> None:
+        """Create and initialize the engine services.
+
+        :param name: Engine name used for identification.
+        :param resolution: Logical viewport resolution.
+        """
         self._name: str = name
         logging.basicConfig(level=logging.INFO, stream=sys.stdout, format='%(name)s - %(levelname)s : %(message)s')
         
@@ -45,54 +54,67 @@ class Engine:
     
     @property
     def name(self) -> str:
+        """Return the engine name."""
         return self._name
     
     @property
     def display(self) -> Display:
+        """Return the engine display."""
         return self._display
     
     @property
     def clock(self) -> Clock:
+        """Return the engine clock."""
         return self._clock
     
     @property
     def input(self) -> InputManager:
+        """Return the input manager."""
         return self._input
     
     @property
     def interaction_manager(self) -> InteractionManager:
+        """Return the interaction manager used for hover and click detection."""
         return self._interaction_manager
     
     @property
     def resources(self) -> ResourceManager:
+        """Return the resource manager."""
         return self._resources
     
     @property
     def frame_timer(self) -> FrameTimer:
+        """Return the frame timer used for debug profiling."""
         return self._frame_timer
     
     @property
     def state_manager(self) -> StateManager:
+        """Return the state manager."""
         return self._state_manager
     
     @property
     def renderer(self) -> Renderer:
+        """Return the renderer."""
         return self._renderer
     
     @property
     def state(self):
+        """Return the currently active state."""
         return self.state_manager.state
     
     @property
     def state_camera(self) -> Camera:
+        """Return the active state's camera."""
         return self.state.camera
     
     @property
     def default_camera(self) -> Camera:
+        """Return the engine's default camera."""
         return self._default_camera
     
     @property
     def running(self) -> bool:
+        """Return whether the main loop is running."""
         return self._running
     
     # endregion
@@ -135,6 +157,10 @@ class Engine:
     # endregion
     
     def init_resources(self) -> "Engine":
+        """Initialize folders, textures, palettes, fonts, and styles.
+
+        :return: This engine for chaining.
+        """
         logging.info("Initializing resources")
         self.init_folders()
         self.init_textures()
@@ -145,9 +171,11 @@ class Engine:
         return self
     
     def init_folders(self):
+        """Initialize resource folders; this base implementation performs no work."""
         pass
     
     def init_color_palettes(self):
+        """Create the default and debug color palettes."""
         logging.info("Initializing color palettes")
         self.resources.create_color_palette(
             "default",
@@ -179,6 +207,7 @@ class Engine:
         )
     
     def init_fonts(self):
+        """Create the default and debug font sets."""
         logging.info("Initializing fonts")
         
         sizes = [10, 14, 18]
@@ -200,14 +229,20 @@ class Engine:
         })
         
     def init_textures(self):
+        """Initialize textures; this base implementation performs no work."""
         logging.info("Initializing textures")
     
     def init_styles(self):
+        """Initialize the engine's UI styles."""
         logging.info("Initializing styles")
         
         self.init_debug_styles()
 
     def init_debug_styles(self) -> "Engine":
+        """Register panel, header, chart, and progress-bar styles for debug UI.
+
+        :return: This engine for chaining.
+        """
         logging.info("Initializing debug styles")
         
         debug = self.resources.get_color_palette("debug")
@@ -262,6 +297,10 @@ class Engine:
     
     
     def init_default_resources(self) -> "Engine":
+        """Initialize resources required by all games.
+
+        :return: This engine for chaining.
+        """
         logging.info("Initializing default resources")
         
         self.init_default_styles()
@@ -269,14 +308,25 @@ class Engine:
         return self
     
     def init_default_styles(self):
+        """Initialize default styles; this base implementation performs no work."""
         logging.info("Initializing default styles")
     
     
-    def set_state(self, state: str | State):
+    def set_state(self, state: str | State) -> "Engine":
+        """Request a state switch through the state manager.
+
+        :param state: State instance or registered state identifier.
+        :return: This engine for chaining.
+        """
         self.state_manager.set_state(state)
+        return self
     
     
     def process_events(self) -> "Engine":
+        """Process pygame events, handle quit, and forward events to input.
+
+        :return: This engine for chaining.
+        """
         events = pg.event.get()
         for event in events:
             if event.type == pg.QUIT:
@@ -287,6 +337,11 @@ class Engine:
         return self
         
     def update(self, dt: float) -> "Engine":
+        """Process events and update the active state and input.
+
+        :param dt: Elapsed time in seconds.
+        :return: This engine for chaining.
+        """
         self.frame_timer.time("Update.Events",  self.process_events)
         self.frame_timer.time("Update.State",   lambda: self.state_manager.update(dt))
         self.frame_timer.time("Update.Input",   self.input.update)
@@ -294,16 +349,25 @@ class Engine:
         
     
     def render(self) -> "Engine":
+        """Render the active state and present the display.
+
+        :return: This engine for chaining.
+        """
         self.frame_timer.time("Rendering.Draw Calls",       self.state_manager.render)
         self.frame_timer.time("Rendering.Drawing",          lambda: self.renderer.render(self.state_camera))
         self.frame_timer.time("Rendering.Screen Update",    lambda: self.display.update(self.clock.dtime))
         return self
         
     def tick(self) -> "Engine":
+        """Advance the clock by one tick.
+
+        :return: This engine for chaining.
+        """
         self.clock.tick()
         return self
     
     def run(self) -> None:
+        """Run the update, render, and tick loop until the engine stops."""
         while self.running:
             self.frame_timer.time("Update", lambda: self.update(self.clock.dtime))
             self.frame_timer.time("Rendering", self.render)
@@ -312,5 +376,9 @@ class Engine:
         pg.quit()
         
     def quit(self) -> "Engine":
+        """Stop the main loop.
+
+        :return: This engine for chaining.
+        """
         self._running = False
         return self

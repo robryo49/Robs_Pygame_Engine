@@ -1,3 +1,5 @@
+"""Numpy mask generators for circular and rectangular regions."""
+
 from typing import Optional
 
 import numpy as np
@@ -9,6 +11,13 @@ def create_circle_mask(
         dims: Optional[vec2 | tuple[int, int]] = None,
         center: Optional[vec2 | tuple[float, float]] = None,
 ) -> np.ndarray:
+    """Create a mask that marks pixels inside a circle.
+
+    :param radius: Circle radius in pixels.
+    :param dims: Output dimensions as ``(width, height)``, defaulting to a square that fits the radius.
+    :param center: Circle center in pixels, defaulting to the image center.
+    :return: A float32 mask with 1 inside the circle and 0 outside.
+    """
     if dims is None:
         size = int(np.ceil(radius)) * 2 + 1
         width, height = size, size
@@ -31,6 +40,13 @@ def create_rect_mask(
         rect: Optional[tuple[int, int, int, int]] = None,
         soft_edge: float = 0.0,
 ) -> np.ndarray:
+    """Create a mask that marks pixels inside a rectangle.
+
+    :param dims: Output dimensions as ``(width, height)``.
+    :param rect: Rectangle as ``(x, y, width, height)``, defaulting to the full image.
+    :param soft_edge: Width in pixels of a linear falloff inside the rectangle edges.
+    :return: A float32 mask with 1 inside the rectangle and 0 outside, or a soft edge gradient.
+    """
     width, height = (int(dims.x), int(dims.y)) if isinstance(dims, vec2) else dims
     x, y, w, h = rect if rect else (0, 0, width, height)
     

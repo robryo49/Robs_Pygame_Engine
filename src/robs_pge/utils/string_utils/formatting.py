@@ -1,3 +1,5 @@
+"""Text wrapping and numeric string formatting helpers."""
+
 import math
 from typing import Optional
 
@@ -5,6 +7,13 @@ from ..font import Font
 
 
 def split_text(text: str, font: Optional[Font] = None, max_width: Optional[int] = None) -> list[str]:
+    """Split text into lines, wrapping by rendered width when possible.
+
+    :param text: Text to split, including explicit newline characters.
+    :param font: Font used to measure text width; without it, only newlines are split.
+    :param max_width: Maximum line width in pixels; values of zero or less disable wrapping.
+    :return: The resulting list of lines.
+    """
     if font is None or max_width is None or max_width <= 0:
         return text.split("\n")
 
@@ -61,6 +70,15 @@ def split_text(text: str, font: Optional[Font] = None, max_width: Optional[int] 
 
 
 def format_number(number: int | float, max_symbols: int | None = None, precision: int = 6, force_scientific: bool = False, ) -> str:
+    """Format a number compactly, using scientific notation when needed.
+
+    :param number: Number to format.
+    :param max_symbols: Maximum number of characters to use, excluding the sign.
+    :param precision: Maximum number of fractional or significant digits.
+    :param force_scientific: Whether to always use scientific notation.
+    :return: The formatted number as a string.
+    :raises ValueError: If ``precision`` is negative.
+    """
     if number == 0:
         return "0"
 
@@ -124,7 +142,7 @@ def format_number(number: int | float, max_symbols: int | None = None, precision
             mantissa_digits = max_symbols - exponent_digits
             mantissa_digits = max(1, mantissa_digits)
 
-        decimals = min(precision, mantissa_digits - 1)
+        decimals = min(precision, mantissa_digits - 1, exponent)
 
         divisor = 10 ** (exponent - decimals)
         significant = value // divisor
