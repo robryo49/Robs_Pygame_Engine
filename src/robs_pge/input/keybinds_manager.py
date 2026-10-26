@@ -2,7 +2,8 @@
 
 from .input_manager import InputManager
 from .keybind import Keybind
-from ..utils import KeybindFlags, Keybinds
+from .keybind_flags import KeybindFlags
+from .keybinds import Keybinds
 
 
 class KeybindsManager:

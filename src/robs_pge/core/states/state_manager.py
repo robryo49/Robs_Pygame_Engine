@@ -66,14 +66,14 @@ class StateManager:
                 self._state.trigger_event(Event(Events.STATE_ENTER, state_id=self._state.id))
 
 
-        if s := self.state is not None:
+        if (s := self.state) is not None:
             s.update(dt)
 
         return self
         
     def render(self) -> "StateManager":
         """Render the currently active state, if one exists."""
-        if s := self.state is not None:
+        if (s := self.state) is not None:
             s.render()
 
         return self

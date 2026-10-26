@@ -2,8 +2,7 @@
 
 from __future__ import annotations
 
-from collections.abc import Callable, Iterable
-from typing import Any, TYPE_CHECKING
+from typing import Any, TYPE_CHECKING, Callable, Iterable
 
 from .layer import Layer
 from ..rendering import DrawCommand

@@ -2,8 +2,7 @@
 
 from __future__ import annotations
 
-from collections.abc import Callable, Iterable, Iterator
-from typing import Any, Optional, TYPE_CHECKING, cast
+from typing import Any, Optional, TYPE_CHECKING, cast, Callable, Iterable, Iterator
 
 from .object_collection import ObjectCollection
 from .object import PygameObject

@@ -4,8 +4,9 @@ from __future__ import annotations
 
 from typing import Any, Optional, TYPE_CHECKING
 
-from ..behavior import ObjectBehavior
-from ...utils import ObjectFlags, vec2, Callback
+from .behavior import ObjectBehavior
+from ..object_flags import ObjectFlags
+from ...utils import vec2, Callback
 
 if TYPE_CHECKING:
     from ...core import Camera

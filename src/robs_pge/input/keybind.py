@@ -3,7 +3,8 @@
 from dataclasses import dataclass
 from typing import Any
 
-from ..utils import KeybindFlags, Callback
+from .keybind_flags import KeybindFlags
+from ..utils.types import Callback
 
 
 @dataclass

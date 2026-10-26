@@ -15,6 +15,7 @@ from ..input import InputManager
 from ..objects import InteractionManager
 from ..rendering import LineChartStyle, ProgressBarStyle, RectStyle, Renderer, WindowStyle
 from ..resources import ResourceManager
+from ..sound import SoundManager
 from ..utils import Anchor, Color, Colors
 
 
@@ -37,6 +38,7 @@ class Engine:
         self._interaction_manager: InteractionManager = self._create_interaction_manager(self.input)
         
         self._resources: ResourceManager = self._create_resource_manager()
+        self._sound_manager: SoundManager = self._create_sound_manager(self._resources)
         
         self._frame_timer: FrameTimer = self._create_frame_timer()
         
@@ -81,6 +83,11 @@ class Engine:
     def resources(self) -> ResourceManager:
         """Return the resource manager."""
         return self._resources
+
+    @property
+    def sounds(self):
+        """Return the sound manager"""
+        return self._sound_manager
     
     @property
     def frame_timer(self) -> FrameTimer:
@@ -140,6 +147,10 @@ class Engine:
     @staticmethod
     def _create_resource_manager() -> ResourceManager:
         return ResourceManager()
+
+    @staticmethod
+    def _create_sound_manager(resource_manager: ResourceManager) -> SoundManager:
+        return SoundManager(resource_manager)
     
     @staticmethod
     def _create_frame_timer() -> FrameTimer:
@@ -163,6 +174,7 @@ class Engine:
         """
         logging.info("Initializing resources")
         self.init_folders()
+        self.init_sounds()
         self.init_textures()
         self.init_color_palettes()
         self.init_fonts()
@@ -229,8 +241,12 @@ class Engine:
         })
         
     def init_textures(self):
-        """Initialize textures; this base implementation performs no work."""
+        """Initialize textures. """
         logging.info("Initializing textures")
+
+    def init_sounds(self):
+        """Initialize sounds. """
+        logging.info("Initializing sounds")
     
     def init_styles(self):
         """Initialize the engine's UI styles."""

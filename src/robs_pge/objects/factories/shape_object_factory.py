@@ -2,17 +2,17 @@
 Factories for creating rectangle, circle, and line shape objects.
 """
 
-from .sub_factory import SubObjectFactory
+from .sub_object_factory import SubObjectFactory
 from ..custom import CircleObject, LineObject, RectObject
 from ...rendering import CircleRenderer, CircleStyle, LineRenderer, LineStyle, RectRenderer, RectStyle
 from ...utils import Anchor, StyleOrName, vec2
 
 
-class ShapeFactory(SubObjectFactory):
+class ShapeObjectFactory(SubObjectFactory):
     """
     Create rectangle, circle, and line objects with configurable styles.
     """
-    
+
     def rect(
             self, position: vec2, dims: vec2, style: StyleOrName[RectStyle] = None,
             rotation: float = 0.0, scale: float = 1.0, layer: int = 0, anchor: vec2 = Anchor.C, cache: bool = True
@@ -30,12 +30,12 @@ class ShapeFactory(SubObjectFactory):
         :param cache: Whether to cache the rendered surface.
         :return: The created rectangle object.
         """
-        
+
         style = self._get_resource(style, RectStyle)
         obj = self._create_object(RectObject, position, rotation, scale, RectRenderer(dims, style, cache), layer, anchor)
-        
+
         return obj
-    
+
     def circle(
             self, position: vec2, radius: int, style: StyleOrName[CircleStyle] = None,
             rotation: float = 0.0, scale: float = 1.0, layer: int = 0, anchor: vec2 = Anchor.C, cache: bool = True
@@ -53,12 +53,12 @@ class ShapeFactory(SubObjectFactory):
         :param cache: Whether to cache the rendered surface.
         :return: The created circle object.
         """
-        
+
         style = self._get_resource(style, CircleStyle)
         obj = self._create_object(CircleObject, position, rotation, scale, CircleRenderer(radius, style, cache), layer, anchor)
-        
+
         return obj
-    
+
     def line(
             self, position: vec2, points: list[vec2], style: StyleOrName[LineStyle] = None,
             rotation: float = 0.0, scale: float = 1.0, layer: int = 0, anchor: vec2 = Anchor.C, cache: bool = True
@@ -76,9 +76,9 @@ class ShapeFactory(SubObjectFactory):
         :param cache: Whether to cache the rendered surface.
         :return: The created line object.
         """
-        
+
         style = self._get_resource(style, LineStyle)
         obj = self._create_object(LineObject, position, rotation, scale, LineRenderer(points, style, cache), layer, anchor)
-        
+
         return obj
-    
+

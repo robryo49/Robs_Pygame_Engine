@@ -18,23 +18,3 @@ from .object_renderers import (
 )
 from .renderer import Renderer
 from .surface_builders import SurfaceBuilder, RectBuilder, SlicedRectBuilder
-
-__all__ = [
-    # styles
-    "Style", "ShapeStyle", "Font",
-    "RectStyle", "CircleStyle", "PolygonStyle",
-    "LineStyle", "ButtonStyle", "ProgressBarStyle",
-    "LineChartStyle", "DebugPanelStyle", "SliderStyle",
-    "IconButtonStyle", "SpriteButtonStyle", "ToggleButtonStyle",
-    "RadioButtonStyle", "WindowStyle", "ScrollbarStyle",
-    "ValueSelectorStyle", "ValueCyclerStyle",
-    # draw commands
-    "DrawCommand",
-    "DrawRect", "DrawCircle", "DrawTexture", "DrawText", "DrawLine", "DrawSubSurface", "DrawChunkedSprite",
-    # renderers
-    "ObjectRenderer",
-    "RectRenderer", "CircleRenderer", "LineRenderer",
-    "SpriteRenderer", "TextRenderer", "SubSurfaceRenderer", "ChunkedSpriteRenderer", "IconRenderer",
-    
-    "Renderer", "SurfaceBuilder", "RectBuilder", "SlicedRectBuilder"
-]

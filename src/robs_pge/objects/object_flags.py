@@ -3,7 +3,6 @@
 from enum import IntFlag, auto
 
 
-
 class ObjectFlags(IntFlag):
     """Flags controlling object interaction, rendering, updates, and physics."""
 
@@ -30,13 +29,4 @@ class ObjectFlags(IntFlag):
 
     COLLIDABLE = auto()
     PHYSICS = auto()
-
-
-class KeybindFlags(IntFlag):
-    """Flags describing keybind activation phases."""
-
-    PRESS = auto()
-    HOLD = auto()
-    RELEASE = auto()
-
 

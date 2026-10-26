@@ -5,7 +5,7 @@ from __future__ import annotations
 from concurrent.futures import Future
 from typing import Any, Optional
 
-from ..management_tools import Callback
+from ..types import Callback
 
 
 class AsyncProcess:

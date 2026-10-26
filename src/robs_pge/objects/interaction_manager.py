@@ -6,10 +6,11 @@ from typing import Callable, Optional, TYPE_CHECKING
 
 import pygame as pg
 
+from .object_flags import ObjectFlags
 from .object import PygameObject
 from .object_collection import ObjectCollection
 from ..input import InputManager
-from ..utils import ObjectFlags, vec2
+from ..utils import vec2
 
 if TYPE_CHECKING:
     from ..objects import LayerManager
@@ -189,3 +190,5 @@ class InteractionManager:
             pg.mouse.set_cursor(pg.SYSTEM_CURSOR_HAND)
         else:
             pg.mouse.set_cursor(pg.SYSTEM_CURSOR_ARROW)
+
+        return self

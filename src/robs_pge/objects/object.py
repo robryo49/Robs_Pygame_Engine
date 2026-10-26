@@ -2,18 +2,17 @@
 
 from __future__ import annotations
 
-from collections.abc import Callable
-from typing import Any, Literal, Optional, TYPE_CHECKING, cast
+from typing import Any, Literal, Optional, TYPE_CHECKING, cast, Callable
 
-from .behavior import ObjectBehavior
-from .behavior_manager import BehaviorManager
+from .object_flags import ObjectFlags
+from .object_tags import ObjectTags
 from .behaviors import *
 from .object_collection import ObjectCollection
 from ..animation import Animation
 from ..events import Event
 from ..physics import BodyTypes, PhysicsBody, ShapeTypes
 from ..rendering import DrawCommand
-from ..utils import Anchor, Callback, FRect, ObjectFlags, ObjectTags, Transform, length, vec2
+from ..utils import Anchor, Callback, FRect, Transform, length, vec2
 
 if TYPE_CHECKING:
     from ..objects import Layer

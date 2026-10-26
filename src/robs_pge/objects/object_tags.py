@@ -7,7 +7,5 @@ class ObjectTags(IntFlag):
     """Tags identifying broad object categories."""
 
     NONE = 0
-    OBJECT = auto()
-    FLOOR = auto()
     
     

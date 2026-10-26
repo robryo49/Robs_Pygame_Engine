@@ -4,11 +4,11 @@ from __future__ import annotations
 
 from typing import Callable, Optional, TYPE_CHECKING
 
-from ..events import Event
-from ..utils import vec2
+from ...events import Event
+from ...utils import vec2
 
 if TYPE_CHECKING:
-    from ..objects import PygameObject, LayoutObject
+    from ...objects import PygameObject, LayoutObject
 
 
 class ObjectBehavior[OwnerType: PygameObject = PygameObject]:

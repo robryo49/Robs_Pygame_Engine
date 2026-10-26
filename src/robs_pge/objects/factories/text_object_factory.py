@@ -4,7 +4,7 @@ Factories for creating labels, dynamic labels, and text boxes.
 
 from typing import Any, Callable, Optional
 
-from .sub_factory import SubObjectFactory
+from .sub_object_factory import SubObjectFactory
 from ..custom import *
 from ...rendering import *
 from ...utils import Anchor, Font, StyleOrName, vec2, split_text
@@ -31,12 +31,12 @@ class TextObjectFactory(SubObjectFactory):
         :param cache: Whether to cache the rendered surface.
         :return: The created text object.
         """
-        
+
         font = self._get_resource(font, Font)
         obj = self._create_object(TextObject, position, rotation, scale, TextRenderer(text, font, cache), layer, anchor)
-        
+
         return obj
-    
+
     def dynamic_label(
             self, position: vec2, template: str, getter: Callable[[], Any | tuple[Any, ...]], font: StyleOrName[Font] = None,
             rotation: float = 0.0, scale: float = 1.0, layer: int = 0, anchor: vec2 = Anchor.C, cache: bool = True
@@ -55,11 +55,11 @@ class TextObjectFactory(SubObjectFactory):
         :param cache: Whether to cache the rendered surface.
         :return: The created dynamic text object.
         """
-        
+
         font = self._get_resource(font, Font)
         obj = self.label(position, "", font, rotation, scale, layer, anchor, cache)
         obj.make_attribute_dynamic("text", getter, template)
-        
+
         return obj
 
     def text_box(
@@ -99,7 +99,7 @@ class TextObjectFactory(SubObjectFactory):
             for line in lines
         ]
 
-        obj: TextBoxObject = self.factory.ui.layout.create_layout(
+        obj: TextBoxObject = self._factory.layout._create_layout(
             TextBoxObject, position, width, height,
             TextBoxObject.GRID_MODE, TextBoxObject.PRESERVE_MODE, TextBoxObject.PRESERVE_MODE,
             justification, False, bg_style, rotation, scale, layer, anchor, cache,
@@ -114,23 +114,3 @@ class TextObjectFactory(SubObjectFactory):
         obj.outer_padding = margin
 
         return obj
-
-    def __call__(
-                 self, position: vec2, text: str, font: StyleOrName[Font] = None,
-    rotation: float = 0.0, scale: float = 1.0, layer: int = 0, anchor: vec2 = Anchor.C, cache: bool = True
-    ) -> TextObject:
-        """
-        Create a text label; alias for :meth:`label`.
-
-        :param position: World-space position of the object.
-        :param text: Text displayed by the label.
-        :param font: Font or registered font name used to render the text.
-        :param rotation: Rotation angle in degrees.
-        :param scale: Uniform scale factor.
-        :param layer: Rendering layer.
-        :param anchor: Anchor point used to position the object.
-        :param cache: Whether to cache the rendered surface.
-        :return: The created text object.
-        """
-        
-        return self.label(position, text, font, rotation, scale, layer, anchor, cache)

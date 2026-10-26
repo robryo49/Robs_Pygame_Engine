@@ -6,7 +6,7 @@ import pygame as pg
 
 from .color import Color
 from .math import vec2
-from .management_tools import Style
+from .types import Style
 
 
 class Font(Style):

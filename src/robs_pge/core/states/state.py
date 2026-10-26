@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Callable, Iterable, Optional, TYPE_CHECKING, Literal
+from typing import Any, Callable, Iterable, Optional, TYPE_CHECKING, Literal, cast
 
 import pygame as pg
 
@@ -74,8 +74,8 @@ class State:
         )
         
         self._debug_mode = debug_mode
-        self._debug_overlay = (
-            self.create_object.ui.debug
+        self._debug_overlay: DebugOverlay = cast(DebugOverlay,
+            self.create_object.debug
             .debug_overlay(ScreenAnchor.TL, width=self.engine.display.viewport_dims.x, anchor=Anchor.TL)
             .set_cell_spacing(20, True)
         )
@@ -150,6 +150,11 @@ class State:
     def resources(self) -> ResourceManager:
         """Return the shared resource manager."""
         return self.engine.resources
+
+    @property
+    def sounds(self):
+        """Return the shared sound manager."""
+        return self.engine.sounds
     
     @property
     def animation_manager(self) -> AnimationManager:
@@ -292,26 +297,26 @@ class State:
         titles_width = 150
         infos_width = panels_width - titles_width - 20
         
-        engine_panel = self.create_object.ui.debug.debug_info_window(vec2(), "ENGINE", panels_width, titles_width, infos_width, font_white, font_gray, blue_style)
+        engine_panel = self.create_object.debug.debug_info_window(vec2(), "ENGINE", panels_width, titles_width, infos_width, font_white, font_gray, blue_style)
         engine_panel.add_line("FPS", "{} ms", lambda: round(self.clock.fps))
         engine_panel.add_line("SPF", "{} ms", lambda: round(self.clock.dtime * 1000, 1))
         engine_panel.add_line("Frames Elapsed", "{} frames", lambda: self.clock.tick_num)
         engine_panel.add_line("Time Elapsed", "{} s", lambda: round(self.clock.time, 1))
         
-        state_panel = self.create_object.ui.debug.debug_info_window(vec2(), "STATE", panels_width, titles_width, infos_width, font_white, font_gray, green_style)
+        state_panel = self.create_object.debug.debug_info_window(vec2(), "STATE", panels_width, titles_width, infos_width, font_white, font_gray, green_style)
         state_panel.add_line("Current", "{}", lambda: self.id)
         state_panel.add_line("Layers :", "{}", lambda: "")
         for layer in list(self.layer_manager.layers.values()):
             state_panel.add_line("- " + layer.id, "{} Objects ({})", layer.get_objects_count)
         
-        rendering_panel = self.create_object.ui.debug.debug_info_window(vec2(), "RENDERING", panels_width, titles_width, infos_width, font_white, font_gray, yellow_style)
+        rendering_panel = self.create_object.debug.debug_info_window(vec2(), "RENDERING", panels_width, titles_width, infos_width, font_white, font_gray, yellow_style)
         rendering_panel.add_line("Cache Size",  "{} ({}Mo)", lambda: (self.renderer.surface_cache_size, round(self.renderer.surface_cache_memory_size, 1)))
         rendering_panel.add_line("Cache Hits",  "{}", lambda: self.renderer.cache_hits)
         rendering_panel.add_line("Cache Skips", "{}", lambda: self.renderer.cache_skips)
         rendering_panel.add_line("Cache Misses", "{}", lambda: self.renderer.cache_misses)
         rendering_panel.add_line("Blits count", "{}", lambda: self.renderer.blit_count)
         
-        frame_panel = self.create_object.ui.debug.debug_info_window(vec2(), "FRAME", panels_width, titles_width, infos_width, font_white, font_gray, red_style)
+        frame_panel = self.create_object.debug.debug_info_window(vec2(), "FRAME", panels_width, titles_width, infos_width, font_white, font_gray, red_style)
         frame_panel.add_line("Update",          "{} ms", lambda: self.frame_timer.get_time_ms("Update"))
         frame_panel.add_line("- Events",        "{} ms", lambda: self.frame_timer.get_time_ms("Update.Events"))
         frame_panel.add_line("- State",         "{} ms", lambda: self.frame_timer.get_time_ms("Update.State"))
@@ -324,29 +329,29 @@ class State:
         frame_panel.add_line_break()
         frame_panel.add_line("Ticking",         "{} ms", lambda: self.frame_timer.get_time_ms("Ticking"))
         
-        camera_panel = self.create_object.ui.debug.debug_info_window(vec2(), "CAMERA", panels_width, titles_width, infos_width, font_white, font_gray, blue_style)
+        camera_panel = self.create_object.debug.debug_info_window(vec2(), "CAMERA", panels_width, titles_width, infos_width, font_white, font_gray, blue_style)
         camera_panel.add_line("Position",       "{}", lambda: self.camera.pos.to_tuple())
         camera_panel.add_line("Zoom",           "{}x (min: {} max: {})", lambda: (round_sig(self.camera.zoom, 2), self.camera.min_zoom, self.camera.max_zoom))
         camera_panel.add_line("Rotation",       "{}°", lambda: round(self.camera.rotation, 1))
         
-        mouse_panel = self.create_object.ui.debug.debug_info_window(vec2(), "MOUSE", panels_width, titles_width, infos_width, font_white, font_gray, green_style)
+        mouse_panel = self.create_object.debug.debug_info_window(vec2(), "MOUSE", panels_width, titles_width, infos_width, font_white, font_gray, green_style)
         mouse_panel.add_line("Screen Position", "{}", lambda: self.mouse.pos.to_tuple())
         mouse_panel.add_line("Camera Position", "{}", lambda: self.camera.screen_to_camera_pos(self.mouse.pos).to_tuple())
         mouse_panel.add_line("World Position",  "{}", lambda: self.camera.screen_to_world_pos(self.mouse.pos).to_tuple())
         mouse_panel.add_line("Pressed Buttons", "{}", lambda: self.mouse.held_buttons)
         mouse_panel.add_line("Hovered",         "{}", lambda: self.interaction_manager.hovered)
 
-        input_panel = self.create_object.ui.debug.debug_info_window(vec2(), "INPUT", panels_width, titles_width, infos_width, font_white, font_gray, yellow_style)
+        input_panel = self.create_object.debug.debug_info_window(vec2(), "INPUT", panels_width, titles_width, infos_width, font_white, font_gray, yellow_style)
         input_panel.add_line("Pressed Keys",    "{}", lambda: '{' + ", ".join(": ".join([pg.key.name(k), str(t)]) for k, t in self.input.held_keys.items()) + '}')
         
-        animation_panel = self.create_object.ui.debug.debug_info_window(vec2(), "ANIMATION", panels_width, titles_width, infos_width, font_white, font_gray, blue_style)
+        animation_panel = self.create_object.debug.debug_info_window(vec2(), "ANIMATION", panels_width, titles_width, infos_width, font_white, font_gray, blue_style)
         animation_panel.add_line("Running",     "{}", lambda: len(self.animation_manager.active))
         animation_panel.add_line("Scheduled",   "{}", lambda: len(self.animation_manager.scheduled))
         
-        async_panel = self.create_object.ui.debug.debug_info_window(vec2(), "ASYNC", panels_width, titles_width, infos_width, font_white, font_gray, red_style)
+        async_panel = self.create_object.debug.debug_info_window(vec2(), "ASYNC", panels_width, titles_width, infos_width, font_white, font_gray, red_style)
         async_panel.add_line("Running",         "{}", lambda: self.async_process_manager.pending_count)
         
-        quick_debug_panel = self.create_object.ui.debug.dynamic_debug_info_window(vec2(), "QUICK DEBUG", panels_width, self.quick_debug_manager.get_values, titles_width-85, infos_width+85, font_white, font_gray, yellow_style)
+        quick_debug_panel = self.create_object.debug.dynamic_debug_info_window(vec2(), "QUICK DEBUG", panels_width, self.quick_debug_manager.get_values, titles_width-85, infos_width+85, font_white, font_gray, yellow_style)
     
         
         if self._debug_mode >= self.DEBUG_PERF: self.debug_overlay.stack_y(engine_panel, 0, Anchor.TL)

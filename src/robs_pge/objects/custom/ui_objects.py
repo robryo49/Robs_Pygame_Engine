@@ -4,7 +4,8 @@ from __future__ import annotations
 
 from typing import cast, Callable, TYPE_CHECKING, Any, Optional
 
-from .primitive_objects import CircleObject, LineObject, RectObject, TextObject
+from .shape_objects import CircleObject, LineObject, RectObject
+from .text_objects import TextObject
 from .sprite_objects import IconObject, SpriteObject
 from .layout_objects import LayoutObject
 from ...animation import SetterAnimation

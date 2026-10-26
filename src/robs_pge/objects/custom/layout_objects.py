@@ -4,9 +4,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Iterator, Literal, Optional, TYPE_CHECKING, cast
 
-from .primitive_objects import RectObject
-from ..behavior_manager import LayoutBehaviorManager
-from ..behaviors import ReorderableLayoutBehavior
+from .shape_objects import RectObject
+from ..behaviors import ReorderableLayoutBehavior, LayoutBehaviorManager
 from ..object import PygameObject
 from ...rendering import RectRenderer, RectStyle
 from ...utils import Anchor, Transform, vec2

@@ -4,7 +4,7 @@ Factories for creating layout objects and populating them with objects.
 
 from typing import Any, Callable, Iterable, Optional
 
-from .sub_factory import SubObjectFactory
+from .sub_object_factory import SubObjectFactory
 from ..custom import FitMode, LayoutMode, LayoutObject
 from ..object import PygameObject
 from ...rendering import RectRenderer, RectStyle
@@ -15,8 +15,8 @@ class LayoutObjectFactory(SubObjectFactory):
     """
     Create layout objects and arrange child objects in rows, columns, or grids.
     """
-    
-    def create_layout[LT: LayoutObject](
+
+    def _create_layout[LT: LayoutObject](
             self, layout_type: type[LT], position: vec2, width: Optional[int] = None, height: Optional[int] = None,
             mode: LayoutMode = LayoutObject.GRID_MODE, fit_mode: FitMode = LayoutObject.STRETCH_MODE,
             overflow_mode: FitMode = LayoutObject.STRETCH_MODE, justification: vec2 = Anchor.C, reorderable: bool = False,
@@ -94,7 +94,7 @@ class LayoutObjectFactory(SubObjectFactory):
         :param cache: Whether to cache the rendered surface.
         :return: The created layout object.
         """
-        return self.create_layout(LayoutObject, position, width, height, mode, fit_mode, overflow_mode, justification, reorderable, style, rotation, scale, layer, anchor, cache)
+        return self._create_layout(LayoutObject, position, width, height, mode, fit_mode, overflow_mode, justification, reorderable, style, rotation, scale, layer, anchor, cache)
 
     def stack_in_row(
             self, position: vec2, width: Optional[int] = None, height: Optional[int] = None, objects: Optional[Iterable[PygameObject]] = None, cell_anchor: vec2 = Anchor.C,
@@ -211,11 +211,11 @@ class LayoutObjectFactory(SubObjectFactory):
         return layout
 
     def stack_in_cols(
-        self, position: vec2, width: Optional[int] = None, height: Optional[int] = None, objects: Optional[Iterable[Iterable[PygameObject]]] = None, cell_anchor: vec2 = Anchor.C,
-        fit_mode: FitMode = LayoutObject.STRETCH_MODE,
-        overflow_mode: FitMode = LayoutObject.STRETCH_MODE, justification: vec2 = Anchor.C, reorderable: bool = False,
-        style: StyleOrName[RectStyle] = None,
-        rotation: float = 0.0, scale: float = 1.0, layer: int = 0, anchor: vec2 = Anchor.C, cache: bool = True
+            self, position: vec2, width: Optional[int] = None, height: Optional[int] = None, objects: Optional[Iterable[Iterable[PygameObject]]] = None, cell_anchor: vec2 = Anchor.C,
+            fit_mode: FitMode = LayoutObject.STRETCH_MODE,
+            overflow_mode: FitMode = LayoutObject.STRETCH_MODE, justification: vec2 = Anchor.C, reorderable: bool = False,
+            style: StyleOrName[RectStyle] = None,
+            rotation: float = 0.0, scale: float = 1.0, layer: int = 0, anchor: vec2 = Anchor.C, cache: bool = True
     ) -> LayoutObject:
         """
         Create a column-oriented grid layout from a two-dimensional iterable of objects.
@@ -241,11 +241,11 @@ class LayoutObjectFactory(SubObjectFactory):
         return layout
 
     def stack_in_rows(
-        self, position: vec2, width: Optional[int] = None, height: Optional[int] = None, objects: Optional[Iterable[Iterable[PygameObject]]] = None, cell_anchor: vec2 = Anchor.C,
-        fit_mode: FitMode = LayoutObject.STRETCH_MODE,
-        overflow_mode: FitMode = LayoutObject.STRETCH_MODE, justification: vec2 = Anchor.C, reorderable: bool = False,
-        style: StyleOrName[RectStyle] = None,
-        rotation: float = 0.0, scale: float = 1.0, layer: int = 0, anchor: vec2 = Anchor.C, cache: bool = True
+            self, position: vec2, width: Optional[int] = None, height: Optional[int] = None, objects: Optional[Iterable[Iterable[PygameObject]]] = None, cell_anchor: vec2 = Anchor.C,
+            fit_mode: FitMode = LayoutObject.STRETCH_MODE,
+            overflow_mode: FitMode = LayoutObject.STRETCH_MODE, justification: vec2 = Anchor.C, reorderable: bool = False,
+            style: StyleOrName[RectStyle] = None,
+            rotation: float = 0.0, scale: float = 1.0, layer: int = 0, anchor: vec2 = Anchor.C, cache: bool = True
     ) -> LayoutObject:
         """
         Create a row-oriented grid layout from a two-dimensional iterable of objects.

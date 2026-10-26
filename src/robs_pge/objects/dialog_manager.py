@@ -4,11 +4,12 @@ from __future__ import annotations
 
 from typing import Any, Callable, Optional, TYPE_CHECKING
 
+from .object_flags import ObjectFlags
 from .custom import RectObject, WindowObject
 from .object import PygameObject
-from .object_factory import ObjectFactory
+from .factories import ObjectFactory
 from ..rendering import ButtonStyle, Font, RectStyle, ValueCyclerStyle, ValueSelectorStyle, WindowStyle
-from ..utils import Anchor, Callback, Color, ObjectFlags, ScreenAnchor, StyleOrName, ValueOrGetter, inf, vec2
+from ..utils import Anchor, Callback, Color, ScreenAnchor, StyleOrName, ValueOrGetter, inf, vec2
 
 if TYPE_CHECKING:
     from .window_manager import WindowManager
@@ -200,7 +201,7 @@ class DialogManager:
         text = self._object_factory.text(vec2(), message, font)
         value_selector = self._object_factory.ui.value_selector(vec2(), vec2(width - 20*2, 50), default_value, min_value, max_value, increments, callback, value_selector_style)
         
-        content = self._object_factory.ui.layout.stack_in_col(vec2(), None, None, objects = [text, value_selector])
+        content = self._object_factory.layout.stack_in_col(vec2(), None, None, objects = [text, value_selector])
         content.set_cell_spacing(20)
         
         options = [("Confirm", lambda: value_selector.value), ("Cancel", lambda: None)] if allow_cancel else [("Confirm", lambda: value_selector.value)]
@@ -240,7 +241,7 @@ class DialogManager:
         text = self._object_factory.text(vec2(), message, font)
         value_selector = self._object_factory.ui.value_cycler(vec2(), vec2(width - 20*2, 50), values, default_index, callback, value_cycler_style)
         
-        content = self._object_factory.ui.layout.stack_in_col(vec2(), None, None, objects = [text, value_selector])
+        content = self._object_factory.layout.stack_in_col(vec2(), None, None, objects = [text, value_selector])
         content.set_cell_spacing(20)
         
         options = [("Confirm", lambda: value_selector.value), ("Cancel", lambda: None)] if allow_cancel else [("Confirm", lambda: value_selector.value)]

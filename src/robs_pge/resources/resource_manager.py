@@ -8,6 +8,7 @@ from typing import Any, Optional, TYPE_CHECKING
 
 from .texture import Texture
 from ..rendering import Style
+from ..sound import Sound, Music, Playlist
 from ..utils import Color, ColorPalette, Font, vec2, StyleOrName
 
 if TYPE_CHECKING:
@@ -70,9 +71,7 @@ class ResourceManager:
         :return: the registered default
         :raises TypeError: if the default is neither an instance of ``resource_type`` nor a string
         """
-        if not isinstance(resource, (resource_type, str)):
-            raise TypeError(f"Resource '{resource}' is not of type '{resource_type.__name__}' but of type '{type(resource).__name__}'")
-        
+
         logging.info(f"Registering default {resource_type.__name__}")
         
         self._defaults[resource_type] = resource
@@ -470,4 +469,69 @@ class ResourceManager:
         """
         return self.get(Font, name)
     
+    # endregion
+
+    # region SOUNDS
+
+    def load_sound(self, name: str, path: str, folder: str):
+        full_path = self.get_path(folder).joinpath(path)
+        sound = Sound(full_path)
+        self.register_sound(name, sound)
+        return sound
+
+    def register_sound(self, name: str, sound: Sound) -> Sound:
+        self.register(Sound, name, sound)
+        return sound
+
+    def get_sound(self, name: str) -> Sound:
+        return self.get(Sound, name)
+
+
+    def load_music(self, name: str, path: str, folder: str, playlist: Optional[Playlist | str] = None):
+        full_path = self.get_path(folder).joinpath(path)
+        music = Music(name, str(full_path))
+        self.register_music(name, music, playlist)
+        return music
+
+    def register_music(self, name: str, music: Music, playlist: Optional[Playlist | str] = None) -> Music:
+        self.register(Music, name, music)
+
+        if isinstance(playlist, str):
+            try:
+                playlist: Playlist = self.get_playlist(playlist)
+            except KeyError:
+                playlist: Playlist = self.register_playlist(str(playlist), Playlist(str(playlist), []))
+        if isinstance(playlist, Playlist):
+            playlist.add_music(music)
+
+        return music
+
+    def get_music(self, name: str) -> Music:
+        return self.get(Music, name)
+
+
+    def load_playlist(self, name: str, path: str, folder: str):
+        full_path = self.get_path(folder).joinpath(path)
+        valid_extensions = {".mp3", ".ogg", ".wav"}
+        music_files = [p for p in full_path.iterdir() if p.is_file() and p.suffix.lower() in valid_extensions]
+        playlist = Playlist(name, [])
+        for music_path in music_files:
+            music_name = music_path.stem
+            music = Music(music_name, str(music_path))
+            self.register_music(music_name, music, playlist)
+        self.register_playlist(name, playlist)
+        return playlist
+
+    def create_playlist(self, name, musics: list[Music | str]):
+        playlist = Playlist(name, list(music if isinstance(music, Music) else self.get_music(music) for music in musics))
+        self.register_playlist(name, playlist)
+        return playlist
+
+    def register_playlist(self, name: str, playlist: Playlist) -> Playlist:
+        self.register(Playlist, name, playlist)
+        return playlist
+
+    def get_playlist(self, name: str) -> Playlist:
+        return self.get(Playlist, name)
+
     # endregion

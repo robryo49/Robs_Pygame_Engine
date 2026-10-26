@@ -2,16 +2,16 @@
 
 from __future__ import annotations
 
-from collections.abc import Iterator
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Optional, Iterator
 
 from .behavior import ObjectBehavior, LayoutObjectBehavior
-from ..events import Event
-from ..utils import vec2
+from ...events import Event
+from ...utils import vec2
 
 if TYPE_CHECKING:
-    from .object import PygameObject
-    from .custom import LayoutObject
+    from ..object import PygameObject
+    from ..custom import LayoutObject
+
 
 class BehaviorManager:
     """Ordered collection of behaviors attached to a single object."""

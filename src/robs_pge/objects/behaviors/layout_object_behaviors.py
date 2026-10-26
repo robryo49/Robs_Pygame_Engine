@@ -4,13 +4,12 @@ from __future__ import annotations
 
 from typing import Any, Optional, TYPE_CHECKING
 
-from ..behavior import LayoutObjectBehavior
+from .behavior import LayoutObjectBehavior
 from ...rendering import RectStyle
 from ...utils import vec2, Callback, Anchor
 
 if TYPE_CHECKING:
-    from ...objects import PygameObject, LayoutObject
-    from ..object_factory import ObjectFactory
+    from ...objects import PygameObject, LayoutObject, ObjectFactory
 
 
 class ActionOnObjectAdditionBehavior(LayoutObjectBehavior):
