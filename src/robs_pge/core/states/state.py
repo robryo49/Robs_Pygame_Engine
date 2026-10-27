@@ -510,6 +510,19 @@ class State:
         self.quick_debug_manager.register_listener(name, getter, template)
     
     # endregion
+
+    # region CALLBACKS
+
+    def on_open(self):
+        pass
+
+    def on_close(self):
+        pass
+
+    def on_update(self):
+        pass
+
+    # endregion
     
     # region OTHER
     
@@ -568,9 +581,11 @@ class State:
         self.event_manager.update(dt)
         
         self.frame_timer.time("Update.State.Interactions",     lambda: self.interaction_manager.update(self._layer_manager))
-        self.frame_timer.time("Update.State.Async Generation", self.async_process_manager.update)
+        self.frame_timer.time("Update.State.Async Generation", lambda: self.async_process_manager.update(dt))
         self.frame_timer.time("Update.State.Layers",           lambda: self._layer_manager.update(dt))
         self.frame_timer.time("Update.State.Camera",           lambda: self.camera.update(dt))
+
+        self.on_update()
         
         self.quick_debug_manager.update(dt)
     

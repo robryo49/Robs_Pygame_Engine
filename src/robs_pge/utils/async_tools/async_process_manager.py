@@ -42,7 +42,7 @@ class AsyncProcessManager:
         self._handles.append(handle)
         return handle
 
-    def update(self) -> AsyncProcessManager:
+    def update(self, dt: float) -> AsyncProcessManager:
         """Resolve all futures that have completed.
 
         :return: This manager for chained calls.
