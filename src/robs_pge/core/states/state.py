@@ -9,6 +9,7 @@ import pygame as pg
 from .services_collection import ServicesCollection
 from ..camera import Camera
 from ..clock import Clock
+from ...sound import Sound, SoundManager
 from ...animation import AnimationManager
 from ...debug import FrameTimer, QuickDebugManager
 from ...events import Event, EventManager
@@ -382,6 +383,7 @@ class State:
             self.event_manager,
             self.async_process_manager,
             self.resources,
+            self.sounds,
             self.quick_debug_manager
         )
     
@@ -517,6 +519,10 @@ class State:
         :param event: Event to queue.
         """
         self.event_manager.trigger(event)
+
+    def play_sound(self, sound: Sound | str, volume: float=1.0, loops: int = 0,
+                   max_time: float = 0.0, fade_time: float = 0.0, category: str = "main"):
+        self.sounds.play_sound(sound, volume, loops, max_time, fade_time, category)
     
     def start_async_process(self, fn: Callable, *args, **kwargs) -> None:
         """Submit a callable to the asynchronous process manager.

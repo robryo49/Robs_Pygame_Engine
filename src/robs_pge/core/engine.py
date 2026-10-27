@@ -347,7 +347,7 @@ class Engine:
         for event in events:
             if event.type == pg.QUIT:
                 self.quit()
-            
+            self.sounds.handle_event(event)
             self.input.process_event(event)
         
         return self

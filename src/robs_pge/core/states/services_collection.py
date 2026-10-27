@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from ...core import State
     from ...animation import AnimationManager
+    from ...sound import SoundManager
     from ...input import InputManager
     from ...objects import ObjectFactory
     from ...events import EventManager
@@ -27,6 +28,7 @@ class ServicesCollection:
         self._event_manager: EventManager
         self._async_process_manager: AsyncProcessManager
         self._resource_manager: ResourceManager
+        self._sound_manager: SoundManager
         self._quick_debug_manager: QuickDebugManager
 
     def init(
@@ -38,6 +40,7 @@ class ServicesCollection:
             event_manager: EventManager,
             async_process_manager: AsyncProcessManager,
             resource_manager: ResourceManager,
+            sound_manager: SoundManager,
             quick_debug_manager: QuickDebugManager
     ) -> None:
         """Populate the collection with a state and its shared services.
@@ -49,6 +52,7 @@ class ServicesCollection:
         :param event_manager: Event manager for the state.
         :param async_process_manager: Manager for asynchronous work.
         :param resource_manager: Shared resource manager.
+        :param sound_manager: Shared sound manager.
         :param quick_debug_manager: Manager for quick debug values.
         """
         self._state = state
@@ -58,6 +62,7 @@ class ServicesCollection:
         self._event_manager = event_manager
         self._async_process_manager = async_process_manager
         self._resource_manager = resource_manager
+        self._sound_manager: SoundManager = sound_manager
         self._quick_debug_manager = quick_debug_manager
 
     def get_state(self) -> State:
@@ -115,4 +120,11 @@ class ServicesCollection:
         :return: Quick debug manager.
         """
         return self._quick_debug_manager
+
+    def get_sound_manager(self):
+        """Return the shared sound manager
+
+        :return: Sound manager
+        """
+        return self._sound_manager
 

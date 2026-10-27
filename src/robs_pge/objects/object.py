@@ -8,6 +8,7 @@ from .object_flags import ObjectFlags
 from .object_tags import ObjectTags
 from .behaviors import *
 from .object_collection import ObjectCollection
+from ..sound import Sound
 from ..animation import Animation
 from ..events import Event
 from ..physics import BodyTypes, PhysicsBody, ShapeTypes
@@ -2257,6 +2258,10 @@ class PygameObject[R]:
         """
         self.services.get_event_manager().trigger(event)
         return self
+
+    def play_sound(self, sound: Sound | str, volume: float=1.0, loops: int = 0,
+                   max_time: float = 0.0, fade_time: float = 0.0, category: str = "main"):
+        self.services.get_sound_manager().play_sound(sound, volume, loops, max_time, fade_time, category)
     
     def play_animation(self, animation: Animation) -> PygameObject:
         """
