@@ -172,7 +172,7 @@ class Texture:
         """
         if dims or width or height:
             new_dims = self._get_dims(self.surface, dims, width, height)
-            self._surface = pg.transform.scale(self.surface, new_dims)
+            self._surface = pg.transform.smoothscale(self.surface, new_dims)
             self._invalidate_lod()
         return self
 

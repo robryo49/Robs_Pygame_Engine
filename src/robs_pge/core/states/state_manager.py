@@ -3,7 +3,6 @@
 from typing import Optional
 
 from .state import State
-from ... import State
 from ...events import Event, Events
 
 
