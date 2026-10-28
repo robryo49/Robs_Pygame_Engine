@@ -78,6 +78,11 @@ class LayoutObject(RectObject):
     LAYER_PRIORITY_BOTTOM_TOP_LEFT_RIGHT: Literal["bottom_top_left_right"] = "bottom_top_left_right"
     LAYER_PRIORITY_BOTTOM_TOP_RIGHT_LEFT: Literal["bottom_top_right_left"] = "bottom_top_right_left"
 
+    # Layout capabilities - override in subclasses to customize behavior
+    _supports_spans: bool = True
+    _supports_spanning_cuts: bool = True
+    _max_span_resolution_iterations: int = 16
+
     # region INIT / STATE
     
     def __init__(self, transform: Transform, renderer: RectRenderer, services: ServicesCollection, sub_layer: int = 0, anchor: vec2 = Anchor.C) -> None:
@@ -425,6 +430,16 @@ class LayoutObject(RectObject):
     def objects(self) -> tuple[PygameObject, ...]:
         """Return the placed objects as a tuple."""
         return tuple(self._object_placements)
+
+    @property
+    def placed_objects(self) -> tuple[PygameObject, ...]:
+        """Return the placed objects as a tuple (alias for clarity in subclasses)."""
+        return tuple(self._object_placements)
+
+    @property
+    def layout_mode(self) -> LayoutMode:
+        """Return the current layout mode (alias for clarity in subclasses)."""
+        return self.mode
     
     # endregion
     
@@ -546,30 +561,35 @@ class LayoutObject(RectObject):
     @staticmethod
     def _fit_dimensions(dimensions: dict[int, int], target_size: int, spacing: int, constraints: dict[int, SizeConstraint], default_constraint: SizeConstraint,
                         stretch: bool, stretch_indices: Optional[set[int]] = None) -> None:
+        return LayoutObject._distribute_track_space(dimensions, target_size, spacing, constraints, default_constraint, stretch, stretch_indices)
+
+    @staticmethod
+    def _distribute_track_space(dimensions: dict[int, int], target_size: int, spacing: int, constraints: dict[int, SizeConstraint], default_constraint: SizeConstraint,
+                                stretch: bool, stretch_indices: Optional[set[int]] = None) -> None:
         if not dimensions or not stretch:
             return
-        
+
         target_size = max(0, target_size - spacing * (len(dimensions) - 1))
         indices = sorted(dimensions)
         active = set(indices) if stretch_indices is None else set(indices) & set(stretch_indices)
         if not active:
             return
-        
+
         current_size = sum(dimensions.values())
         if current_size == target_size:
             return
-        
+
         if target_size > current_size:
             remaining = target_size - current_size
             while remaining > 0 and active:
                 total_weight = sum(max(dimensions[i], 1) for i in active)
                 if total_weight <= 0:
                     break
-                
+
                 changes: dict[int, int] = {}
                 consumed = 0
                 constrained: set[int] = set()
-                
+
                 for index in active:
                     old_size = dimensions[index]
                     ideal = remaining * max(old_size, 1) / total_weight
@@ -580,11 +600,11 @@ class LayoutObject(RectObject):
                     changes[index] = delta
                     if constrained_size < round(proposed):
                         constrained.add(index)
-                
+
                 for index, delta in changes.items():
                     dimensions[index] += delta
                     consumed += delta
-                
+
                 if consumed <= 0:
                     break
                 remaining -= consumed
@@ -595,11 +615,11 @@ class LayoutObject(RectObject):
                 total_weight = sum(max(dimensions[i], 1) for i in active)
                 if total_weight <= 0:
                     break
-                
+
                 changes: dict[int, int] = {}
                 consumed = 0
                 constrained: set[int] = set()
-                
+
                 for index in active:
                     old_size = dimensions[index]
                     ideal = remaining * max(old_size, 1) / total_weight
@@ -610,15 +630,18 @@ class LayoutObject(RectObject):
                     changes[index] = delta
                     if constrained_size > round(proposed):
                         constrained.add(index)
-                
+
                 for index, delta in changes.items():
                     dimensions[index] -= delta
                     consumed += delta
-                
+
                 if consumed <= 0:
                     break
                 remaining -= consumed
                 active -= constrained
+
+    _stretch_tracks = _distribute_track_space
+    _distribute_space = _distribute_track_space
     
     def _fit_col_dimensions(self, dimensions: dict[int, int], target_size: int) -> None:
         stretch = self._get_fit_mode(True) == self.STRETCH_MODE or self._get_overflow_mode(True) == self.STRETCH_MODE
@@ -667,98 +690,160 @@ class LayoutObject(RectObject):
         return cols, rows
     
     def _calculate_col_and_row_dims(self) -> None:
+        self._reset_track_size_caches()
+        cols, rows = self._collect_layout_tracks()
+        self._initialize_track_sizes(cols, rows)
+        self._size_tracks_from_children()
+        self._apply_track_constraints()
+        self._resolve_spans_iteratively()
+
+    def _reset_track_size_caches(self) -> None:
+        """Clear cached track sizes for a fresh calculation."""
         self._calculated_col_widths.clear()
         self._calculated_row_heights.clear()
         self._row_mode_calculated_col_widths.clear()
         self._col_mode_calculated_row_heights.clear()
-        
-        cols, rows = self._collect_tracks()
+
+    def _collect_layout_tracks(self) -> tuple[set[int], set[int]]:
+        """Collect all column/row tracks used by placed children."""
+        return self._collect_tracks()
+
+    _gather_tracks = _collect_layout_tracks
+
+    def _initialize_track_sizes(self, cols: set[int], rows: set[int]) -> None:
+        """Initialize track size maps for collected tracks."""
         for col in cols:
             self._calculated_col_widths[col] = 0
         for row in rows:
             self._calculated_row_heights[row] = 0
-        
+
+    _init_track_sizes = _initialize_track_sizes
+
+    def _size_tracks_from_children(self) -> None:
+        """Compute initial track sizes based on children and layout mode."""
         for obj, (col, row) in self._object_placements.items():
             sx, sy = self._get_span(obj)
-            cell_w, cell_h = self._calculate_cell_dims(obj, (col, row))
-            
+            cell_w, cell_h = self._calculate_child_cell_size(obj, (col, row))
+
             if self._mode == self.GRID_MODE:
-                if sx == 1:
-                    self._calculated_col_widths[col] = max(self._calculated_col_widths.get(col, 0), cell_w)
-                if sy == 1:
-                    self._calculated_row_heights[row] = max(self._calculated_row_heights.get(row, 0), cell_h)
-            
+                self._size_tracks_for_grid_mode((col, row), sx, sy, cell_w, cell_h)
             elif self._mode == self.ROW_MODE:
-                for r in self._indices_between(row, sy):
-                    row_widths = self._row_mode_calculated_col_widths.setdefault(r, {})
-                    if r == row:
-                        for c in self._indices_between(col, sx):
-                            row_widths.setdefault(c, 0)
-                        if sx == 1:
-                            row_widths[col] = max(row_widths.get(col, 0), cell_w)
-                if sy == 1:
-                    self._calculated_row_heights[row] = max(self._calculated_row_heights.get(row, 0), cell_h)
-            
+                self._size_tracks_for_row_mode((col, row), sx, sy, cell_w, cell_h)
             elif self._mode == self.COL_MODE:
-                self._calculated_col_widths[col] = max(self._calculated_col_widths.get(col, 0), cell_w if sx == 1 else 0)
+                self._size_tracks_for_column_mode((col, row), sx, sy, cell_w, cell_h)
+
+    def _calculate_child_cell_size(self, obj: PygameObject, cell: CellPos) -> tuple[int, int]:
+        """Calculate the size a child requires in its cell."""
+        return self._calculate_cell_dims(obj, cell)
+
+    _get_child_required_size = _calculate_child_cell_size
+
+    def _size_tracks_for_grid_mode(self, cell: CellPos, sx: int, sy: int, cell_w: int, cell_h: int) -> None:
+        col, row = cell
+        if sx == 1:
+            self._calculated_col_widths[col] = max(self._calculated_col_widths.get(col, 0), cell_w)
+        if sy == 1:
+            self._calculated_row_heights[row] = max(self._calculated_row_heights.get(row, 0), cell_h)
+
+    def _size_tracks_for_row_mode(self, cell: CellPos, sx: int, sy: int, cell_w: int, cell_h: int) -> None:
+        col, row = cell
+        for r in self._indices_between(row, sy):
+            row_widths = self._row_mode_calculated_col_widths.setdefault(r, {})
+            if r == row:
                 for c in self._indices_between(col, sx):
-                    col_heights = self._col_mode_calculated_row_heights.setdefault(c, {})
-                    if c == col:
-                        for r in self._indices_between(row, sy):
-                            col_heights.setdefault(r, 0)
-                        if sy == 1:
-                            col_heights[row] = max(col_heights.get(row, 0), cell_h)
-        
-        for col in sorted(cols):
+                    row_widths.setdefault(c, 0)
+                if sx == 1:
+                    row_widths[col] = max(row_widths.get(col, 0), cell_w)
+        if sy == 1:
+            self._calculated_row_heights[row] = max(self._calculated_row_heights.get(row, 0), cell_h)
+
+    def _size_tracks_for_column_mode(self, cell: CellPos, sx: int, sy: int, cell_w: int, cell_h: int) -> None:
+        col, row = cell
+        self._calculated_col_widths[col] = max(self._calculated_col_widths.get(col, 0), cell_w if sx == 1 else 0)
+        for c in self._indices_between(col, sx):
+            col_heights = self._col_mode_calculated_row_heights.setdefault(c, {})
+            if c == col:
+                for r in self._indices_between(row, sy):
+                    col_heights.setdefault(r, 0)
+                if sy == 1:
+                    col_heights[row] = max(col_heights.get(row, 0), cell_h)
+
+    def _apply_track_constraints(self) -> None:
+        """Apply width/height constraints to all tracks."""
+        for col in sorted(self._calculated_col_widths):
             self._calculated_col_widths[col] = self._apply_col_width_constraints(col, self._calculated_col_widths.get(col, 0))
-        for row in sorted(rows):
+        for row in sorted(self._calculated_row_heights):
             self._calculated_row_heights[row] = self._apply_row_height_constraints(row, self._calculated_row_heights.get(row, 0))
-        
+
         for row, widths in self._row_mode_calculated_col_widths.items():
             for col in list(widths):
                 widths[col] = self._apply_col_width_constraints(col, widths[col])
-        
+
         for col, heights in self._col_mode_calculated_row_heights.items():
             for row in list(heights):
                 heights[row] = self._apply_row_height_constraints(row, heights[row])
-        
-        for _ in range(16):
+
+    _constrain_tracks = _apply_track_constraints
+
+    def _resolve_spans_iteratively(self) -> None:
+        """Iteratively resolve spanning requirements until stable."""
+        if not self._supports_spans:
+            return
+        iterations = max(0, self._max_span_resolution_iterations)
+        for _ in range(iterations):
             before = self._snapshot_dimensions()
-            
-            for obj, (col, row) in self._object_placements.items():
-                sx, sy = self._get_span(obj)
-                req_w, req_h = self._calculate_cell_dims(obj, (col, row))
-                cols = self._indices_between(col, sx)
-                rows = self._indices_between(row, sy)
-                
-                if self._mode == self.GRID_MODE:
-                    self._ensure_span_requirement(self._calculated_col_widths, cols, req_w, round(self._cell_spacing.x),
-                                                  self._col_widths_constraints, self._col_width_constraint)
-                    self._ensure_span_requirement(self._calculated_row_heights, rows, req_h, round(self._cell_spacing.y),
-                                                  self._row_heights_constraints, self._row_height_constraint)
-                
-                elif self._mode == self.ROW_MODE:
-                    anchor_widths = self._row_mode_calculated_col_widths.setdefault(row, {})
-                    for c in cols:
-                        anchor_widths.setdefault(c, 0)
-                    self._ensure_span_requirement(anchor_widths, cols, req_w, round(self._cell_spacing.x),
-                                                  self._col_widths_constraints, self._col_width_constraint)
-                    self._ensure_span_requirement(self._calculated_row_heights, rows, req_h, round(self._cell_spacing.y),
-                                                  self._row_heights_constraints, self._row_height_constraint)
-                
-                elif self._mode == self.COL_MODE:
-                    self._ensure_span_requirement(self._calculated_col_widths, cols, req_w, round(self._cell_spacing.x),
-                                                  self._col_widths_constraints, self._col_width_constraint)
-                    anchor_heights = self._col_mode_calculated_row_heights.setdefault(col, {})
-                    for r in rows:
-                        anchor_heights.setdefault(r, 0)
-                    self._ensure_span_requirement(anchor_heights, rows, req_h, round(self._cell_spacing.y),
-                                                  self._row_heights_constraints, self._row_height_constraint)
-            
+            self._resolve_span_requirements_pass()
             after = self._snapshot_dimensions()
-            changed = before != after
-            if not changed:
+            if before == after:
                 break
+
+    _expand_tracks_for_spans = _resolve_spans_iteratively
+
+    def _resolve_span_requirements_pass(self) -> None:
+        """Single pass of span requirement resolution."""
+        for obj, (col, row) in self._object_placements.items():
+            sx, sy = self._get_span(obj)
+            if sx <= 1 and sy <= 1 and self._should_skip_single_cell_span():
+                continue
+            req_w, req_h = self._calculate_child_cell_size(obj, (col, row))
+            cols = self._indices_between(col, sx)
+            rows = self._indices_between(row, sy)
+
+            if self._mode == self.GRID_MODE:
+                self._resolve_span_requirements_grid(cols, rows, req_w, req_h)
+            elif self._mode == self.ROW_MODE:
+                self._resolve_span_requirements_row(cols, rows, req_w, req_h, row)
+            elif self._mode == self.COL_MODE:
+                self._resolve_span_requirements_column(cols, rows, req_w, req_h, col)
+
+    @staticmethod
+    def _should_skip_single_cell_span() -> bool:
+        """Whether to skip single-cell span resolution (can be overridden)."""
+        return False
+
+    def _resolve_span_requirements_grid(self, cols: list[int], rows: list[int], req_w: int, req_h: int) -> None:
+        self._ensure_span_requirement(self._calculated_col_widths, cols, req_w, round(self._cell_spacing.x),
+                                      self._col_widths_constraints, self._col_width_constraint)
+        self._ensure_span_requirement(self._calculated_row_heights, rows, req_h, round(self._cell_spacing.y),
+                                      self._row_heights_constraints, self._row_height_constraint)
+
+    def _resolve_span_requirements_row(self, cols: list[int], rows: list[int], req_w: int, req_h: int, anchor_row: int) -> None:
+        anchor_widths = self._row_mode_calculated_col_widths.setdefault(anchor_row, {})
+        for c in cols:
+            anchor_widths.setdefault(c, 0)
+        self._ensure_span_requirement(anchor_widths, cols, req_w, round(self._cell_spacing.x),
+                                      self._col_widths_constraints, self._col_width_constraint)
+        self._ensure_span_requirement(self._calculated_row_heights, rows, req_h, round(self._cell_spacing.y),
+                                      self._row_heights_constraints, self._row_height_constraint)
+
+    def _resolve_span_requirements_column(self, cols: list[int], rows: list[int], req_w: int, req_h: int, anchor_col: int) -> None:
+        self._ensure_span_requirement(self._calculated_col_widths, cols, req_w, round(self._cell_spacing.x),
+                                      self._col_widths_constraints, self._col_width_constraint)
+        anchor_heights = self._col_mode_calculated_row_heights.setdefault(anchor_col, {})
+        for r in rows:
+            anchor_heights.setdefault(r, 0)
+        self._ensure_span_requirement(anchor_heights, rows, req_h, round(self._cell_spacing.y),
+                                      self._row_heights_constraints, self._row_height_constraint)
     
     def _snapshot_dimensions(self):
         return (
@@ -773,33 +858,51 @@ class LayoutObject(RectObject):
     # region SIZE / FITTING
     
     def _calculate_dims(self):
+        self._compute_layout_bounds()
+
+    def _compute_layout_bounds(self):
         outer_pad_x = round(self._outer_padding.x)
         outer_pad_y = round(self._outer_padding.y)
         spacing_x = round(self._cell_spacing.x)
         spacing_y = round(self._cell_spacing.y)
-        
+
         if self._mode == self.GRID_MODE:
-            self._calculated_row_widths = self._calculate_total_size(self._calculated_col_widths, spacing_x)
-            self._calculated_col_heights = self._calculate_total_size(self._calculated_row_heights, spacing_y)
-        
+            self._compute_bounds_for_grid_mode(spacing_x, spacing_y)
         elif self._mode == self.ROW_MODE:
-            self._row_mode_calculated_row_widths = {
-                row: self._calculate_total_size(widths, spacing_x)
-                for row, widths in self._row_mode_calculated_col_widths.items()
-            }
-            self._calculated_row_widths = max(self._row_mode_calculated_row_widths.values(), default=0)
-            self._calculated_col_heights = self._calculate_total_size(self._calculated_row_heights, spacing_y)
-        
+            self._compute_bounds_for_row_mode(spacing_x, spacing_y)
         else:
-            self._col_mode_calculated_col_heights = {
-                col: self._calculate_total_size(heights, spacing_y)
-                for col, heights in self._col_mode_calculated_row_heights.items()
-            }
-            self._calculated_row_widths = self._calculate_total_size(self._calculated_col_widths, spacing_x)
-            self._calculated_col_heights = max(self._col_mode_calculated_col_heights.values(), default=0)
-        
-        self._calculated_width = self._width_constraint.apply(self._calculated_row_widths + 2 * outer_pad_x)
-        self._calculated_height = self._height_constraint.apply(self._calculated_col_heights + 2 * outer_pad_y)
+            self._compute_bounds_for_column_mode(spacing_x, spacing_y)
+
+        self._calculated_width = self._apply_layout_width_constraint(self._calculated_row_widths + 2 * outer_pad_x)
+        self._calculated_height = self._apply_layout_height_constraint(self._calculated_col_heights + 2 * outer_pad_y)
+
+    def _apply_layout_width_constraint(self, width: int) -> int:
+        return self._width_constraint.apply(width)
+
+    def _apply_layout_height_constraint(self, height: int) -> int:
+        return self._height_constraint.apply(height)
+
+    def _compute_bounds_for_grid_mode(self, spacing_x: int, spacing_y: int) -> None:
+        self._calculated_row_widths = self._calculate_total_size(self._calculated_col_widths, spacing_x)
+        self._calculated_col_heights = self._calculate_total_size(self._calculated_row_heights, spacing_y)
+
+    def _compute_bounds_for_row_mode(self, spacing_x: int, spacing_y: int) -> None:
+        self._row_mode_calculated_row_widths = {
+            row: self._calculate_total_size(widths, spacing_x)
+            for row, widths in self._row_mode_calculated_col_widths.items()
+        }
+        self._calculated_row_widths = max(self._row_mode_calculated_row_widths.values(), default=0)
+        self._calculated_col_heights = self._calculate_total_size(self._calculated_row_heights, spacing_y)
+
+    def _compute_bounds_for_column_mode(self, spacing_x: int, spacing_y: int) -> None:
+        self._col_mode_calculated_col_heights = {
+            col: self._calculate_total_size(heights, spacing_y)
+            for col, heights in self._col_mode_calculated_row_heights.items()
+        }
+        self._calculated_row_widths = self._calculate_total_size(self._calculated_col_widths, spacing_x)
+        self._calculated_col_heights = max(self._col_mode_calculated_col_heights.values(), default=0)
+
+    _compute_content_bounds = _compute_layout_bounds
     
     def _content_size(self) -> tuple[int, int]:
         spacing_x = round(self._cell_spacing.x)
@@ -818,42 +921,52 @@ class LayoutObject(RectObject):
         return content_w, content_h
     
     def _fit_col_and_row_dims(self):
+        self._fit_tracks_to_available_space()
+
+    def _fit_tracks_to_available_space(self) -> None:
         outer_pad_x = round(self._outer_padding.x)
         outer_pad_y = round(self._outer_padding.y)
         available_width = max(0, self._calculated_width - 2 * outer_pad_x)
         available_height = max(0, self._calculated_height - 2 * outer_pad_y)
-        
+
         if self._mode == self.GRID_MODE:
-            current_width = self._calculate_total_size(self._calculated_col_widths, round(self._cell_spacing.x))
-            current_height = self._calculate_total_size(self._calculated_row_heights, round(self._cell_spacing.y))
-            if ((current_width < available_width and self._get_fit_mode(True) == self.STRETCH_MODE) or
-                    (current_width > available_width and self._get_overflow_mode(True) == self.STRETCH_MODE)):
-                self._fit_col_dimensions(self._calculated_col_widths, available_width)
-            if ((current_height < available_height and self._get_fit_mode(False) == self.STRETCH_MODE) or
-                    (current_height > available_height and self._get_overflow_mode(False) == self.STRETCH_MODE)):
-                self._fit_row_dimensions(self._calculated_row_heights, available_height)
-        
+            self._fit_tracks_grid_mode(available_width, available_height)
         elif self._mode == self.ROW_MODE:
-            for row, widths in self._row_mode_calculated_col_widths.items():
-                current = self._calculate_total_size(widths, round(self._cell_spacing.x))
-                if ((current < available_width and self._get_fit_mode(True) == self.STRETCH_MODE) or
-                        (current > available_width and self._get_overflow_mode(True) == self.STRETCH_MODE)):
-                    self._fit_local_col_dimensions(row, widths, available_width)
-            current_height = self._calculate_total_size(self._calculated_row_heights, round(self._cell_spacing.y))
-            if ((current_height < available_height and self._get_fit_mode(False) == self.STRETCH_MODE) or
-                    (current_height > available_height and self._get_overflow_mode(False) == self.STRETCH_MODE)):
-                self._fit_row_dimensions(self._calculated_row_heights, available_height)
-        
-        else:
-            current_width = self._calculate_total_size(self._calculated_col_widths, round(self._cell_spacing.x))
-            if ((current_width < available_width and self._get_fit_mode(True) == self.STRETCH_MODE) or
-                    (current_width > available_width and self._get_overflow_mode(True) == self.STRETCH_MODE)):
-                self._fit_col_dimensions(self._calculated_col_widths, available_width)
-            for col, heights in self._col_mode_calculated_row_heights.items():
-                current = self._calculate_total_size(heights, round(self._cell_spacing.y))
-                if ((current < available_height and self._get_fit_mode(False) == self.STRETCH_MODE) or
-                        (current > available_height and self._get_overflow_mode(False) == self.STRETCH_MODE)):
-                    self._fit_local_row_dimensions(col, heights, available_height)
+            self._fit_tracks_row_mode(available_width, available_height)
+        elif self._mode == self.COL_MODE:
+            self._fit_tracks_column_mode(available_width, available_height)
+
+    def _fit_tracks_grid_mode(self, available_width: int, available_height: int) -> None:
+        current_width = self._calculate_total_size(self._calculated_col_widths, round(self._cell_spacing.x))
+        current_height = self._calculate_total_size(self._calculated_row_heights, round(self._cell_spacing.y))
+        if ((current_width < available_width and self._get_fit_mode(True) == self.STRETCH_MODE) or
+                (current_width > available_width and self._get_overflow_mode(True) == self.STRETCH_MODE)):
+            self._fit_col_dimensions(self._calculated_col_widths, available_width)
+        if ((current_height < available_height and self._get_fit_mode(False) == self.STRETCH_MODE) or
+                (current_height > available_height and self._get_overflow_mode(False) == self.STRETCH_MODE)):
+            self._fit_row_dimensions(self._calculated_row_heights, available_height)
+
+    def _fit_tracks_row_mode(self, available_width: int, available_height: int) -> None:
+        for row, widths in self._row_mode_calculated_col_widths.items():
+            current = self._calculate_total_size(widths, round(self._cell_spacing.x))
+            if ((current < available_width and self._get_fit_mode(True) == self.STRETCH_MODE) or
+                    (current > available_width and self._get_overflow_mode(True) == self.STRETCH_MODE)):
+                self._fit_local_col_dimensions(row, widths, available_width)
+        current_height = self._calculate_total_size(self._calculated_row_heights, round(self._cell_spacing.y))
+        if ((current_height < available_height and self._get_fit_mode(False) == self.STRETCH_MODE) or
+                (current_height > available_height and self._get_overflow_mode(False) == self.STRETCH_MODE)):
+            self._fit_row_dimensions(self._calculated_row_heights, available_height)
+
+    def _fit_tracks_column_mode(self, available_width: int, available_height: int) -> None:
+        current_width = self._calculate_total_size(self._calculated_col_widths, round(self._cell_spacing.x))
+        if ((current_width < available_width and self._get_fit_mode(True) == self.STRETCH_MODE) or
+                (current_width > available_width and self._get_overflow_mode(True) == self.STRETCH_MODE)):
+            self._fit_col_dimensions(self._calculated_col_widths, available_width)
+        for col, heights in self._col_mode_calculated_row_heights.items():
+            current = self._calculate_total_size(heights, round(self._cell_spacing.y))
+            if ((current < available_height and self._get_fit_mode(False) == self.STRETCH_MODE) or
+                    (current > available_height and self._get_overflow_mode(False) == self.STRETCH_MODE)):
+                self._fit_local_row_dimensions(col, heights, available_height)
     
     # endregion
     
@@ -1045,54 +1158,70 @@ class LayoutObject(RectObject):
                 cursor += dimensions[i] + spacing
         
         return result
-    
-    def _calculate_row_and_col_offsets(self):
+
+    def _compute_track_offsets(self):
         spacing_x = round(self._cell_spacing.x)
         spacing_y = round(self._cell_spacing.y)
-        
+
+        self._clear_offset_caches()
+
+        if self._mode == self.GRID_MODE:
+            self._compute_offsets_for_grid_mode(spacing_x, spacing_y)
+            return
+
+        if self._mode == self.ROW_MODE:
+            self._compute_offsets_for_row_mode(spacing_x, spacing_y)
+            return
+
+        self._compute_offsets_for_column_mode(spacing_x, spacing_y)
+
+    def _clear_offset_caches(self) -> None:
         self._calculated_col_offsets.clear()
         self._calculated_row_offsets.clear()
         self._row_mode_calculated_col_offsets.clear()
         self._col_mode_calculated_row_offsets.clear()
-        
-        if self._mode == self.GRID_MODE:
-            self._calculated_col_offsets = self._calculate_offsets(self._calculated_col_widths, spacing_x)
-            self._calculated_row_offsets = self._calculate_offsets(self._calculated_row_heights, spacing_y)
-            self._calculated_row_widths = self._calculate_total_size(self._calculated_col_widths, spacing_x)
-            self._calculated_col_heights = self._calculate_total_size(self._calculated_row_heights, spacing_y)
-            return
-        
-        if self._mode == self.ROW_MODE:
-            cuts = self._build_row_mode_cuts()
-            self._fit_row_mode_segments(cuts)
-            self._row_mode_calculated_row_widths = {
-                row: self._calculate_total_size(widths, spacing_x)
-                for row, widths in self._row_mode_calculated_col_widths.items()
-            }
-            self._row_mode_calculated_col_offsets = {
-                row: self._calculate_offsets(widths, spacing_x)
-                for row, widths in self._row_mode_calculated_col_widths.items()
-            }
-            self._calculated_row_offsets = self._calculate_offsets(self._calculated_row_heights, spacing_y)
-            self._calculated_row_widths = max(self._row_mode_calculated_row_widths.values(), default=0)
-            self._calculated_col_heights = self._calculate_total_size(self._calculated_row_heights, spacing_y)
-            for row, row_cuts in cuts.items():
-                widths = self._row_mode_calculated_col_widths.get(row, {})
-                self._row_mode_calculated_col_offsets[row] = self._calculate_cut_offsets(
-                    widths, row_cuts, spacing_x, horizontal=True
-                )
-            for row, row_cuts in cuts.items():
-                row_offsets = self._row_mode_calculated_col_offsets.setdefault(row, {})
-                for start_col, end_col, start_x, end_x, obj in row_cuts:
-                    anchor_row = self._object_placements[obj][1]
-                    if row == anchor_row:
-                        row_offsets[start_col] = start_x
-                    else:
-                        anchor_offsets = self._row_mode_calculated_col_offsets.get(anchor_row, {})
-                        row_offsets[start_col] = anchor_offsets.get(start_col, start_x)
-            return
-        
-        cuts = self._build_col_mode_cuts()
+
+    def _compute_offsets_for_grid_mode(self, spacing_x: int, spacing_y: int) -> None:
+        self._calculated_col_offsets = self._calculate_offsets(self._calculated_col_widths, spacing_x)
+        self._calculated_row_offsets = self._calculate_offsets(self._calculated_row_heights, spacing_y)
+        self._calculated_row_widths = self._calculate_total_size(self._calculated_col_widths, spacing_x)
+        self._calculated_col_heights = self._calculate_total_size(self._calculated_row_heights, spacing_y)
+
+    def _compute_offsets_for_row_mode(self, spacing_x: int, spacing_y: int) -> None:
+        cuts = self._build_row_mode_cuts() if self._supports_spanning_cuts else {}
+        self._fit_row_mode_segments(cuts)
+        self._row_mode_calculated_row_widths = {
+            row: self._calculate_total_size(widths, spacing_x)
+            for row, widths in self._row_mode_calculated_col_widths.items()
+        }
+        self._row_mode_calculated_col_offsets = {
+            row: self._calculate_offsets(widths, spacing_x)
+            for row, widths in self._row_mode_calculated_col_widths.items()
+        }
+        self._calculated_row_offsets = self._calculate_offsets(self._calculated_row_heights, spacing_y)
+        self._calculated_row_widths = max(self._row_mode_calculated_row_widths.values(), default=0)
+        self._calculated_col_heights = self._calculate_total_size(self._calculated_row_heights, spacing_y)
+        if self._supports_spanning_cuts:
+            self._apply_row_mode_spanning_cuts(cuts, spacing_x)
+
+    def _apply_row_mode_spanning_cuts(self, cuts: dict, spacing_x: int) -> None:
+        for row, row_cuts in cuts.items():
+            widths = self._row_mode_calculated_col_widths.get(row, {})
+            self._row_mode_calculated_col_offsets[row] = self._calculate_cut_offsets(
+                widths, row_cuts, spacing_x, horizontal=True
+            )
+        for row, row_cuts in cuts.items():
+            row_offsets = self._row_mode_calculated_col_offsets.setdefault(row, {})
+            for start_col, end_col, start_x, end_x, obj in row_cuts:
+                anchor_row = self._object_placements[obj][1]
+                if row == anchor_row:
+                    row_offsets[start_col] = start_x
+                else:
+                    anchor_offsets = self._row_mode_calculated_col_offsets.get(anchor_row, {})
+                    row_offsets[start_col] = anchor_offsets.get(start_col, start_x)
+
+    def _compute_offsets_for_column_mode(self, spacing_x: int, spacing_y: int) -> None:
+        cuts = self._build_col_mode_cuts() if self._supports_spanning_cuts else {}
         self._fit_col_mode_segments(cuts)
         self._calculated_col_offsets = self._calculate_offsets(self._calculated_col_widths, spacing_x)
         self._col_mode_calculated_row_offsets = {
@@ -1105,7 +1234,11 @@ class LayoutObject(RectObject):
         }
         self._calculated_row_widths = self._calculate_total_size(self._calculated_col_widths, spacing_x)
         self._calculated_col_heights = max(self._col_mode_calculated_col_heights.values(), default=0)
-        
+
+        if self._supports_spanning_cuts:
+            self._apply_col_mode_spanning_cuts(cuts, spacing_y)
+
+    def _apply_col_mode_spanning_cuts(self, cuts: dict, spacing_y: int) -> None:
         for col, col_cuts in cuts.items():
             heights = self._col_mode_calculated_row_heights.get(col, {})
             self._col_mode_calculated_row_offsets[col] = self._calculate_cut_offsets(
@@ -1155,37 +1288,51 @@ class LayoutObject(RectObject):
         return self._calculated_col_offsets.get(col, 0), self._col_mode_calculated_row_offsets.get(col, {}).get(row, 0)
     
     def _position_objects(self):
+        self._apply_child_positions()
+
+    def _apply_child_positions(self):
         outer_pad_x = round(self._outer_padding.x)
         outer_pad_y = round(self._outer_padding.y)
         justify_x, justify_y = self._justification
         layout_w, layout_h = self._calculated_width, self._calculated_height
-        content_w, content_h = self._content_size()
-        
+        content_w, content_h = self._get_content_size()
+
         start_x = round(outer_pad_x + (layout_w - 2 * outer_pad_x - content_w) * justify_x)
         start_y = round(outer_pad_y + (layout_h - 2 * outer_pad_y - content_h) * justify_y)
-        
-        for obj, cell in self._object_placements.items():
-            cell_anchor_x, cell_anchor_y = self._get_cell_anchor(cell)
-            cell_offset_x, cell_offset_y = self._get_object_cell_offset(obj, cell)
-            cell_w, cell_h = self._span_dimensions(obj, cell)
-            pad = self._get_cell_padding(cell)
-            
-            obj_w, obj_h = round(obj.dims.x), round(obj.dims.y)
-            obj_anchor_x, obj_anchor_y = obj.anchor
-            cell_x = start_x + cell_offset_x
-            cell_y = start_y + cell_offset_y
-            
-            anchor_x = cell_x + cell_w * cell_anchor_x
-            anchor_y = cell_y + cell_h * cell_anchor_y
-            anchor_x += pad.x * (1 - 2 * cell_anchor_x)
-            anchor_y += pad.y * (1 - 2 * cell_anchor_y)
-            
-            obj_x = anchor_x + obj_w * (obj_anchor_x - cell_anchor_x) + self._content_offset.x
-            obj_y = anchor_y + obj_h * (obj_anchor_y - cell_anchor_y) + self._content_offset.y
 
-            obj.x_pos = round(obj_x)
-            obj.y_pos = round(obj_y)
+        for obj, cell in self._object_placements.items():
+            pos = self._compute_child_position(obj, cell, start_x, start_y)
+            obj.x_pos = round(pos[0])
+            obj.y_pos = round(pos[1])
             self._dirty_checking_values[obj] = (vec2(obj.pos), vec2(obj.dims), vec2(obj.anchor))
+
+    def _compute_child_position(self, obj: PygameObject, cell: CellPos, start_x: int, start_y: int) -> tuple[float, float]:
+        cell_anchor_x, cell_anchor_y = self._get_cell_anchor(cell)
+        cell_offset_x, cell_offset_y = self._get_object_cell_offset(obj, cell)
+        cell_w, cell_h = self._get_cell_size_for_object(obj, cell)
+        pad = self._get_cell_padding(cell)
+
+        obj_w, obj_h = round(obj.dims.x), round(obj.dims.y)
+        obj_anchor_x, obj_anchor_y = obj.anchor
+        cell_x = start_x + cell_offset_x
+        cell_y = start_y + cell_offset_y
+
+        anchor_x = cell_x + cell_w * cell_anchor_x
+        anchor_y = cell_y + cell_h * cell_anchor_y
+        anchor_x += pad.x * (1 - 2 * cell_anchor_x)
+        anchor_y += pad.y * (1 - 2 * cell_anchor_y)
+
+        obj_x = anchor_x + obj_w * (obj_anchor_x - cell_anchor_x) + self._content_offset.x
+        obj_y = anchor_y + obj_h * (obj_anchor_y - cell_anchor_y) + self._content_offset.y
+        return obj_x, obj_y
+
+    def _get_cell_size_for_object(self, obj: PygameObject, cell: CellPos) -> tuple[int, int]:
+        return self._span_dimensions(obj, cell)
+
+    _get_object_cell_dimensions = _get_cell_size_for_object
+
+    def _get_content_size(self) -> tuple[int, int]:
+        return self._content_size()
     
     # endregion
     
@@ -1568,6 +1715,10 @@ class LayoutObject(RectObject):
 
         :return: The (width, height) content size.
         """
+        return self._content_size()
+
+    def get_layout_content_size(self) -> tuple[int, int]:
+        """Return the laid out content size, excluding outer padding."""
         return self._content_size()
     
     # endregion
@@ -2120,13 +2271,14 @@ class LayoutObject(RectObject):
                 self.remove_object(prev, ignore_callbacks=ignore_callbacks)
             return self
 
+        new: PygameObject
         if new is prev:
             if span is not None:
                 self.set_span(new, *span)
             if anchor is not None:
                 self.set_cell_anchor(anchor, pos)
             return self
-        
+
         prev_cell, prev_span = (self._object_placements[prev], self._get_span(prev)) if prev is not None else (pos, (1, 1))
         new_is_new = new is not None and not self.has_object(new)
         new_cell, new_old_span = (self._object_placements[new], self._get_span(new)) if not new_is_new else (pos, (1, 1))
@@ -2326,7 +2478,7 @@ class LayoutObject(RectObject):
         """
         self._dirty_checking = True
         return self
-    
+
     def disable_dirty_checking(self) -> "LayoutObject":
         """
         Disable automatic dirty detection.
@@ -2373,7 +2525,7 @@ class LayoutObject(RectObject):
         """
         self._dirty_checking_blacklist.clear()
         return self
-    
+
     def add_to_object_positioning_blacklist(self, obj: PygameObject) -> "LayoutObject":
         """
         Stop automatic dirty detection from reacting to an object's position changes.
@@ -2383,7 +2535,7 @@ class LayoutObject(RectObject):
         """
         self._object_positioning_blacklist.add(obj)
         return self
-    
+
     def remove_from_object_positioning_blacklist(self, obj: PygameObject) -> "LayoutObject":
         """
         Re-enable automatic dirty detection for an object's position changes.
@@ -2393,7 +2545,7 @@ class LayoutObject(RectObject):
         """
         self._object_positioning_blacklist.discard(obj)
         return self
-    
+
     def clear_object_positioning_blacklist(self) -> "LayoutObject":
         """
         Clear the position-change exclusion list.
@@ -2411,18 +2563,32 @@ class LayoutObject(RectObject):
         """
         self._dirty = True
         return self
+
+    def request_relayout(self) -> "LayoutObject":
+        """Request a layout recalculation on the next update."""
+        return self.mark_dirty()
+
+    def invalidate_layout(self) -> "LayoutObject":
+        """Invalidate the layout and request recalculation."""
+        return self.mark_dirty()
     
     def _check_if_dirty(self) -> None:
         """Mark the layout dirty when a child moved, resized, or changed anchor."""
+        self._detect_child_transform_changes()
+
+    def _detect_child_transform_changes(self) -> None:
+        """Check placed children for transform changes and mark dirty if needed."""
         for obj in self._object_placements:
             if obj in self._dirty_checking_blacklist:
                 continue
-            
+
             pos, dims, anchor = self._dirty_checking_values.get(obj, (None, None, None))
             moved = obj not in self._object_positioning_blacklist and obj.pos != pos
             if moved or obj.dims != dims or obj.anchor != anchor:
                 self._dirty = True
                 return
+
+    _check_if_children_changed = _detect_child_transform_changes
     
     # endregion
     
@@ -2434,29 +2600,35 @@ class LayoutObject(RectObject):
 
         :return: This layout, allowing chained calls.
         """
+        return self._apply_layering_to_children()
+
+    def _apply_layering_to_children(self) -> "LayoutObject":
+        """Apply z-ordering to placed children based on layering priority."""
         if not self._layering_priority:
             return self
-        
+
         priority = self._layering_priority.upper()
         vertical_first = "TOP_BOTTOM_" in priority or "BOTTOM_TOP_" in priority
         top_first = "TOP_BOTTOM" in priority
         left_first = "LEFT_RIGHT" in priority
-        
-        col_count = self.max_col + 1
-        row_count = self.max_row + 1
-        
+
+        col_count = max(1, self.max_col + 1)
+        row_count = max(1, self.max_row + 1)
+
         for obj, (x, y) in self._object_placements.items():
             layer_x = x if left_first else (col_count - 1 - x)
             layer_y = y if top_first else (row_count - 1 - y)
-            
+
             if vertical_first:
                 layer = layer_x + layer_y * col_count
             else:
                 layer = layer_y + layer_x * row_count
-            
+
             obj.sub_layer = layer
-        
+
         return self
+
+    _sort_children_by_priority = _apply_layering_to_children
     
     def _update_self(self, dt: float) -> "LayoutObject":
         """
@@ -2467,18 +2639,66 @@ class LayoutObject(RectObject):
         """
         super()._update_self(dt)
         if self._dirty_checking and not self._dirty:
-            self._check_if_dirty()
+            self._check_for_layout_changes()
         if self._dirty:
-            self._calculate_col_and_row_dims()
-            self._calculate_dims()
-            self._fit_col_and_row_dims()
-            self._calculate_row_and_col_offsets()
-            self._position_objects()
-            self._update_layering()
-            self.width = self._calculated_width
-            self.height = self._calculated_height
-            self._dirty = False
+            self._perform_layout_pass()
         return self
+
+    def _check_for_layout_changes(self) -> None:
+        """Detect child movement/resizing/anchor changes and mark layout dirty."""
+        self._check_if_dirty()
+
+    def _perform_layout_pass(self) -> "LayoutObject":
+        """Run the full layout pipeline in phases."""
+        self._on_before_layout()
+        self._prepare_layout()
+        self._compute_track_sizes()
+        self._compute_layout_dimensions()
+        self._fit_tracks_to_space()
+        self._compute_track_offsets()
+        self._position_children()
+        self._apply_child_layering()
+        self._finalize_layout()
+        self._on_after_layout()
+        return self
+
+    def _on_before_layout(self) -> None:
+        """Hook called before layout recalculation begins."""
+        pass
+
+    def _on_after_layout(self) -> None:
+        """Hook called after layout recalculation completes."""
+        pass
+
+    def _prepare_layout(self) -> None:
+        """Reset layout caches before computing new track sizes."""
+        pass
+
+    def _compute_track_sizes(self) -> None:
+        """Compute initial track sizes from placed children."""
+        self._calculate_col_and_row_dims()
+
+    def _compute_layout_dimensions(self) -> None:
+        """Compute total content and layout dimensions."""
+        self._calculate_dims()
+
+    def _fit_tracks_to_space(self) -> None:
+        """Fit tracks to available space based on fit/overflow modes."""
+        self._fit_col_and_row_dims()
+
+    def _position_children(self) -> None:
+        """Position all children within their cells."""
+        self._position_objects()
+
+    def _apply_child_layering(self) -> "LayoutObject":
+        """Apply z-ordering to children based on layering priority."""
+        return self._update_layering()
+
+    def _finalize_layout(self) -> None:
+        """Apply computed layout size and clear dirty flag."""
+        self.width = self._calculated_width
+        self.height = self._calculated_height
+        self._dirty = False
     
     # endregion
     
