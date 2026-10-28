@@ -124,12 +124,6 @@ class ReorderableLayoutBehavior(ActionOnObjectAdditionBehavior):
         """
         placeholder = obj.get_property("layout_placeholder")
         obj.remove_property("layout_placeholder")
-        print(placeholder)
-        print(obj)
-        print()
-        for o in self.owner._object_placements:
-            print(o)
-        print()
         if placeholder is not None:
             self.owner.replace_object(placeholder, obj, ignore_callbacks=True)
         obj.unfocus()
