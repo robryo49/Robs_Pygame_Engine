@@ -2,9 +2,11 @@
 
 from __future__ import annotations
 
-from typing import Any, Optional, TYPE_CHECKING
+from typing import Any, Optional, TYPE_CHECKING, Callable
 
-from .behavior import LayoutObjectBehavior
+from .behavior import LayoutObjectBehavior, ObjectBehavior
+from .object_behaviors import DraggableBehavior
+from ..object import DRAGGABLE_BEHAVIOR_ID
 from ...rendering import RectStyle
 from ...utils import vec2, Callback, Anchor
 
@@ -18,6 +20,7 @@ class ActionOnObjectAdditionBehavior(LayoutObjectBehavior):
             self,
             on_object_addition: Callback[[LayoutObject, PygameObject], Any] = None,
             on_object_removal: Callback[[LayoutObject, PygameObject], Any] = None,
+            execute_on_already_present=True
     ) -> None:
         """
         Store the addition and removal callbacks.
@@ -27,8 +30,15 @@ class ActionOnObjectAdditionBehavior(LayoutObjectBehavior):
         """
         super().__init__()
 
+        self._execute_on_already_present = execute_on_already_present
         self._on_object_addition: Callback[[LayoutObject, PygameObject], Any] = on_object_addition
         self._on_object_removal: Callback[[LayoutObject, PygameObject], Any] = on_object_removal
+
+    def on_attach(self) -> None:
+        super().on_attach()
+
+        for obj in self.owner.objects:
+            self.on_object_addition(obj)
 
     def on_object_addition(self, obj: PygameObject) -> None:
         """
@@ -47,7 +57,19 @@ class ActionOnObjectAdditionBehavior(LayoutObjectBehavior):
         self._exec(self._on_object_removal, self.owner, obj)
 
 
-class ReorderableLayoutBehavior(ActionOnObjectAdditionBehavior):
+class LayoutChildrenBehavior(ActionOnObjectAdditionBehavior):
+    """Adds and remove behaviors to objects that are added and removed from a layout"""
+    def __init__(self, behavior: Callable[[], ObjectBehavior], behavior_id: Optional[str] = None):
+        self._behavior_id = behavior_id or f"layout_children_behavior_{hash(self)}"
+        self._behavior = behavior
+
+        super().__init__(
+            on_object_addition= lambda l, o: o.add_behavior(behavior(), self._behavior_id),
+            on_object_removal= lambda l, o: o.remove_behavior(self._behavior_id)
+        )
+
+
+class ReorderableLayoutBehavior(LayoutChildrenBehavior):
     """Add drag-and-drop reordering with placeholder rectangles to a layout object."""
     def __init__(self, placeholder_style: RectStyle) -> None:
         """
@@ -55,7 +77,11 @@ class ReorderableLayoutBehavior(ActionOnObjectAdditionBehavior):
 
         :param placeholder_style: Rectangle style for the placeholder left behind while dragging.
         """
-        super().__init__()
+        super().__init__(lambda: DraggableBehavior(
+            on_drag_start=self._start_dragging_object,
+            while_dragging=self._while_dragging_object,
+            on_drag_end=self._end_dragging_object
+        ), DRAGGABLE_BEHAVIOR_ID)
 
         self._placeholder_style = placeholder_style
         self._factory: Optional[ObjectFactory] = None
@@ -64,9 +90,6 @@ class ReorderableLayoutBehavior(ActionOnObjectAdditionBehavior):
         """Cache the object factory and make existing children reorderable."""
         super().on_attach()
         self._factory = self.owner.services.get_object_factory()
-
-        for obj in self.owner.objects:
-            self.on_object_addition(obj)
 
     def _start_dragging_object(self, obj: PygameObject):
         """
@@ -128,26 +151,4 @@ class ReorderableLayoutBehavior(ActionOnObjectAdditionBehavior):
             self.owner.replace_object(placeholder, obj, ignore_callbacks=True)
         obj.unfocus()
 
-    def on_object_addition(self, obj: PygameObject) -> None:
-        """
-        Make the added object draggable within the layout.
-
-        :param obj: Object that was added to the layout.
-        """
-        super().on_object_addition(obj)
-
-        obj.make_draggable(
-            on_drag_start=self._start_dragging_object,
-            while_dragging=self._while_dragging_object,
-            on_drag_end=self._end_dragging_object,
-        )
-
-    def on_object_removal(self, obj: PygameObject) -> None:
-        """
-        Remove the draggable behavior from the removed object.
-
-        :param obj: Object that was removed from the layout.
-        """
-        super().on_object_removal(obj)
-        obj.remove_behavior("draggable_behavior")
 
